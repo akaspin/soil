@@ -1,0 +1,6 @@
+[Unit]
+Description=test
+[Service]
+ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=default.target

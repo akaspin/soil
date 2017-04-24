@@ -1,0 +1,60 @@
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/hashicorp/serf"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/akaspin/concurrency"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/akaspin/cut"
+
+[[dependencies]]
+  version = "1.1.0"
+  name = "github.com/akaspin/logx"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/akaspin/supervisor"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/coreos/go-systemd"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/davecgh/go-spew"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/hashicorp/go-memdb"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/hashicorp/hcl"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/mitchellh/copystructure"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/mitchellh/hashstructure"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/mitchellh/mapstructure"
+
+[[dependencies]]
+  name = "github.com/pmezard/go-difflib"
+  version = "^1.0.0"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/stretchr/testify"
+
+[[dependencies]]
+  branch = "master"
+  name = "github.com/pkg/errors"

@@ -1,0 +1,109 @@
+memo = "4e6f8069e6d32aae8ba9e22ff3330a9790904fc19611de6bb505535626e1504c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/akaspin/concurrency"
+  packages = ["."]
+  revision = "ff1de03f2988207218e59f0f2b4242f1fd9a707e"
+
+[[projects]]
+  name = "github.com/akaspin/cut"
+  packages = ["."]
+  revision = "85cd551c8eacfa274e0559da220c0ed217b2fb97"
+  version = "1.1.0"
+
+[[projects]]
+  name = "github.com/akaspin/logx"
+  packages = ["."]
+  revision = "6d32b95caad844420e2f12c8509d61ed1504d279"
+  version = "1.1.0"
+
+[[projects]]
+  name = "github.com/akaspin/supervisor"
+  packages = ["."]
+  revision = "6c5c7954cee18b32168ee057ecd42664bcf85cb9"
+  version = "1.1.2"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/coreos/go-systemd"
+  packages = ["dbus","unit"]
+  revision = "1f9909e51b2dab2487c26d64c8f2e7e580e4c9f5"
+
+[[projects]]
+  name = "github.com/davecgh/go-spew"
+  packages = ["spew"]
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
+
+[[projects]]
+  name = "github.com/godbus/dbus"
+  packages = ["."]
+  revision = "5f6efc7ef2759c81b7ba876593971bfce311eab3"
+  version = "v4.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-immutable-radix"
+  packages = ["."]
+  revision = "30664b879c9a771d8d50b137ab80ee0748cb2fcc"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-memdb"
+  packages = ["."]
+  revision = "ed59a4bb9146689d4b00d060b70b9e9648b523af"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/golang-lru"
+  packages = ["simplelru"]
+  revision = "0a025b7e63adc15a622f29b0b2c4c3848243bbf6"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/hcl"
+  packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/hashstructure"
+  packages = ["."]
+  revision = "9204ce590301a868e3e86938bc12eadd416b211e"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "c605e284fe17294bda444b34710735b29d1a9d90"
+
+[[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "fb1f39915d092e6ecbdb38c0861170bdf4416800"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/stretchr/testify"
+  packages = ["assert","require"]
+  revision = "4d4bfba8f1d1027c4fdbe371823030df51419987"

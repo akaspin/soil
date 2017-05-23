@@ -11,15 +11,15 @@ import (
 )
 
 func TestPlanUnit(t *testing.T) {
-	left := &allocation.Unit{
-		UnitHeader: &allocation.UnitHeader{
+	left := &allocation.AllocationUnit{
+		AllocationUnitHeader: &allocation.AllocationUnitHeader{
 			Transition: manifest.Transition{
 				Create:  "start",
 				Update:  "restart",
 				Destroy: "stop",
 			},
 		},
-		File: &allocation.File{
+		AllocationFile: &allocation.AllocationFile{
 			Path:   "/run/systemd/system/unit-1.service",
 			Source: "unit-1-0",
 		},
@@ -33,15 +33,15 @@ func TestPlanUnit(t *testing.T) {
 		assert.Equal(t, "[2:write:/run/systemd/system/unit-1.service 3:disable:/run/systemd/system/unit-1.service 4:start:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
 	})
 	t.Run("update", func(t *testing.T) {
-		right := &allocation.Unit{
-			UnitHeader: &allocation.UnitHeader{
+		right := &allocation.AllocationUnit{
+			AllocationUnitHeader: &allocation.AllocationUnitHeader{
 				Transition: manifest.Transition{
 					Create:  "start",
 					Update:  "restart",
 					Destroy: "stop",
 				},
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/run/systemd/system/unit-1.service",
 				Source: "unit-1-1",
 			},
@@ -50,15 +50,15 @@ func TestPlanUnit(t *testing.T) {
 		assert.Equal(t, "[2:write:/run/systemd/system/unit-1.service 3:disable:/run/systemd/system/unit-1.service 4:restart:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
 	})
 	t.Run("runtime to local", func(t *testing.T) {
-		right := &allocation.Unit{
-			UnitHeader: &allocation.UnitHeader{
+		right := &allocation.AllocationUnit{
+			AllocationUnitHeader: &allocation.AllocationUnitHeader{
 				Transition: manifest.Transition{
 					Create:  "start",
 					Update:  "restart",
 					Destroy: "stop",
 				},
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/etc/systemd/system/unit-1.service",
 				Source: "unit-1-0",
 			},
@@ -69,24 +69,24 @@ func TestPlanUnit(t *testing.T) {
 }
 
 func TestPlan(t *testing.T) {
-	left := &allocation.Pod{
-		PodHeader: &allocation.PodHeader{
+	left := &allocation.Allocation{
+		AllocationHeader: &allocation.AllocationHeader{
 			Name:      "pod-1",
 			AgentMark: 123,
 			PodMark:   456,
 			Namespace: "private",
 		},
-		File: &allocation.File{
+		AllocationFile: &allocation.AllocationFile{
 			Path:   "/etc/systemd/system/pod-pod-1.service",
 			Source: "fake",
 		},
-		Units: []*allocation.Unit{
+		Units: []*allocation.AllocationUnit{
 			{
-				File: &allocation.File{
+				AllocationFile: &allocation.AllocationFile{
 					Path:   "/etc/systemd/system/unit-1.service",
 					Source: "fake",
 				},
-				UnitHeader: &allocation.UnitHeader{
+				AllocationUnitHeader: &allocation.AllocationUnitHeader{
 					Permanent: true,
 					Transition: manifest.Transition{
 						Create:  "start",
@@ -96,11 +96,11 @@ func TestPlan(t *testing.T) {
 				},
 			},
 			{
-				File: &allocation.File{
+				AllocationFile: &allocation.AllocationFile{
 					Path:   "/etc/systemd/system/unit-2.service",
 					Source: "fake",
 				},
-				UnitHeader: &allocation.UnitHeader{
+				AllocationUnitHeader: &allocation.AllocationUnitHeader{
 					Permanent: true,
 					Transition: manifest.Transition{
 						Create:  "start",
@@ -113,24 +113,24 @@ func TestPlan(t *testing.T) {
 	}
 
 	t.Run("noop pod", func(t *testing.T) {
-		right := &allocation.Pod{
-			PodHeader: &allocation.PodHeader{
+		right := &allocation.Allocation{
+			AllocationHeader: &allocation.AllocationHeader{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/etc/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*allocation.Unit{
+			Units: []*allocation.AllocationUnit{
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -140,11 +140,11 @@ func TestPlan(t *testing.T) {
 					},
 				},
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -158,24 +158,24 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[]", fmt.Sprint(executor.Plan(left, right)))
 	})
 	t.Run("unit-1 perm to disabled", func(t *testing.T) {
-		right := &allocation.Pod{
-			PodHeader: &allocation.PodHeader{
+		right := &allocation.Allocation{
+			AllocationHeader: &allocation.AllocationHeader{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/etc/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*allocation.Unit{
+			Units: []*allocation.AllocationUnit{
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: false,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -185,11 +185,11 @@ func TestPlan(t *testing.T) {
 					},
 				},
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -203,24 +203,24 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(executor.Plan(left, right)))
 	})
 	t.Run("update unit-1", func(t *testing.T) {
-		right := &allocation.Pod{
-			PodHeader: &allocation.PodHeader{
+		right := &allocation.Allocation{
+			AllocationHeader: &allocation.AllocationHeader{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/etc/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*allocation.Unit{
+			Units: []*allocation.AllocationUnit{
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake1",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -230,11 +230,11 @@ func TestPlan(t *testing.T) {
 					},
 				},
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -254,24 +254,24 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service]", fmt.Sprint(executor.Plan(left, nil)))
 	})
 	t.Run("change prefix", func(t *testing.T) {
-		right := &allocation.Pod{
-			PodHeader: &allocation.PodHeader{
+		right := &allocation.Allocation{
+			AllocationHeader: &allocation.AllocationHeader{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/etc/systemd/system/pod-local-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*allocation.Unit{
+			Units: []*allocation.AllocationUnit{
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -281,11 +281,11 @@ func TestPlan(t *testing.T) {
 					},
 				},
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -299,24 +299,24 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/pod-local-pod-1.service 3:enable:/etc/systemd/system/pod-local-pod-1.service 4:start:/etc/systemd/system/pod-local-pod-1.service]", fmt.Sprint(executor.Plan(left, right)))
 	})
 	t.Run("local to runtime", func(t *testing.T) {
-		right := &allocation.Pod{
-			PodHeader: &allocation.PodHeader{
+		right := &allocation.Allocation{
+			AllocationHeader: &allocation.AllocationHeader{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path:   "/run/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*allocation.Unit{
+			Units: []*allocation.AllocationUnit{
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/run/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -326,11 +326,11 @@ func TestPlan(t *testing.T) {
 					},
 				},
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path:   "/run/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: true,
 						Transition: manifest.Transition{
 							Create:  "start",

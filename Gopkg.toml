@@ -1,7 +1,7 @@
 
 [[dependencies]]
   branch = "master"
-  name = "github.com/hashicorp/serf"
+  name = "github.com/hashicorp/memberlist"
 
 [[dependencies]]
   branch = "master"

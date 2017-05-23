@@ -15,7 +15,7 @@ type Runtime struct {
 	*supervisor.Control
 	log *logx.Log
 
-	executorRt *executor.Runtime
+	executorRt *executor.Executor
 	blocker agent.Filter
 	namespace string
 
@@ -39,7 +39,7 @@ func (r *Runtime) Wait() (err error) {
 	return
 }
 
-func NewRuntime(ctx context.Context, log *logx.Log, executorRt *executor.Runtime, blocker agent.Filter, namespace string) (r *Runtime) {
+func NewRuntime(ctx context.Context, log *logx.Log, executorRt *executor.Executor, blocker agent.Filter, namespace string) (r *Runtime) {
 	r = &Runtime{
 		Control:    supervisor.NewControl(ctx),
 		log:        log.GetLog("scheduler", namespace),
@@ -94,7 +94,7 @@ func (r *Runtime) allocate(name string, pod *manifest.Pod) (err error) {
 	}
 	r.blocker.Submit(name, pod, func(reason error) {
 		r.log.Debugf(">>> %s %s", name, reason)
-		var alloc *allocation.Pod
+		var alloc *allocation.Allocation
 		if pod != nil && reason == nil {
 			if alloc, err = allocation.NewFromManifest(r.namespace, pod, r.blocker.Environment()); err != nil {
 				return

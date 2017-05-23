@@ -45,14 +45,14 @@ func TestRestoreAllocation(t *testing.T) {
 
 	alloc, err := executor.RestoreAllocation("/run/systemd/system/pod-test-1.service")
 	assert.NoError(t, err)
-	assert.Equal(t, &allocation.Pod{
-		PodHeader: &allocation.PodHeader{
+	assert.Equal(t, &allocation.Allocation{
+		AllocationHeader: &allocation.AllocationHeader{
 			Name:      "test-1",
 			PodMark:   123,
 			AgentMark: 456,
 			Namespace: "private",
 		},
-		File: &allocation.File{
+		AllocationFile: &allocation.AllocationFile{
 			Path: "/run/systemd/system/pod-test-1.service",
 			Source: `### POD test-1 {"AgentMark":456,"Namespace":"private","PodMark":123}
 ### UNIT /run/systemd/system/test-1-0.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
@@ -66,9 +66,9 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 		},
-		Units: []*allocation.Unit{
+		Units: []*allocation.AllocationUnit{
 			{
-				File: &allocation.File{
+				AllocationFile: &allocation.AllocationFile{
 					Path: "/run/systemd/system/test-1-0.service",
 					Source: `[Unit]
 Description=Unit test-1-0.service
@@ -78,7 +78,7 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 				},
-				UnitHeader: &allocation.UnitHeader{
+				AllocationUnitHeader: &allocation.AllocationUnitHeader{
 					Transition: manifest.Transition{
 						Create:  "start",
 						Update:  "restart",
@@ -88,7 +88,7 @@ WantedBy=multi-user.target
 				},
 			},
 			{
-				File: &allocation.File{
+				AllocationFile: &allocation.AllocationFile{
 					Path: "/run/systemd/system/test-1-1.service",
 					Source: `[Unit]
 Description=Unit test-1-1.service
@@ -98,7 +98,7 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 				},
-				UnitHeader: &allocation.UnitHeader{
+				AllocationUnitHeader: &allocation.AllocationUnitHeader{
 					Transition: manifest.Transition{
 						Create:  "start",
 						Update:  "restart",
@@ -148,14 +148,14 @@ func TestRuntime_Submit(t *testing.T) {
 	assert.NoError(t, sv.Open())
 
 	t.Run("create pod-1", func(t *testing.T) {
-		alloc := &allocation.Pod{
-			PodHeader: &allocation.PodHeader{
+		alloc := &allocation.Allocation{
+			AllocationHeader: &allocation.AllocationHeader{
 				Name:      "pod-1",
 				PodMark:   1,
 				AgentMark: 0,
 				Namespace: "private",
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path: "/run/systemd/system/pod-private-pod-1.service",
 				Source: `### POD pod-1 {"AgentMark":0,"PodMark":1,"Namespace":"private"}
 ### UNIT unit-1.service {"Permanent":false,"Create":"start","Update":"restart","Destroy":"stop"}
@@ -168,9 +168,9 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=default.target
 `,
 			},
-			Units: []*allocation.Unit{
+			Units: []*allocation.AllocationUnit{
 				{
-					File: &allocation.File{
+					AllocationFile: &allocation.AllocationFile{
 						Path: "/run/systemd/system/unit-1.service",
 						Source: `
 [Unit]
@@ -181,7 +181,7 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=default.target
 `,
 					},
-					UnitHeader: &allocation.UnitHeader{
+					AllocationUnitHeader: &allocation.AllocationUnitHeader{
 						Permanent: false,
 						Transition: manifest.Transition{
 							Create:  "start",
@@ -201,7 +201,7 @@ WantedBy=default.target
 				"pod-private-pod-1.service": "active",
 				"unit-1.service": "active",
 			}))
-		assert.Equal(t, map[string]*allocation.PodHeader{
+		assert.Equal(t, map[string]*allocation.AllocationHeader{
 			"pod-1": {
 				Name: "pod-1",
 				Namespace: "private",
@@ -219,7 +219,7 @@ WantedBy=default.target
 				"pod-private-pod-1.service": "active",
 				"unit-1.service": "active",
 			}))
-		assert.Equal(t, map[string]*allocation.PodHeader{
+		assert.Equal(t, map[string]*allocation.AllocationHeader{
 			"pod-1": {
 				Name: "pod-1",
 				Namespace: "private",
@@ -234,7 +234,7 @@ WantedBy=default.target
 		assert.NoError(t, assertUnits(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{}))
-		assert.Equal(t, map[string]*allocation.PodHeader{}, ex.List("private"))
+		assert.Equal(t, map[string]*allocation.AllocationHeader{}, ex.List("private"))
 	})
 
 	//

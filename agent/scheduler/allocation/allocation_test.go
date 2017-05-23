@@ -39,40 +39,40 @@ func TestNewFromManifest(t *testing.T) {
 
 	res, err := allocation.NewFromManifest("private", m, e)
 	assert.NoError(t, err)
-	assert.Equal(t, &allocation.Pod{
-		PodHeader: &allocation.PodHeader{
+	assert.Equal(t, &allocation.Allocation{
+		AllocationHeader: &allocation.AllocationHeader{
 			Name: "pod-1",
 			PodMark: 12378424092920473463,
 			AgentMark: 10913175000834197307,
 			Namespace: "private",
 		},
-		File: &allocation.File{
+		AllocationFile: &allocation.AllocationFile{
 			Path: "/run/systemd/system/pod-private-pod-1.service",
 			Source: "### POD pod-1 {\"AgentMark\":10913175000834197307,\"Namespace\":\"private\",\"PodMark\":12378424092920473463}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 		},
-		Units: []*allocation.Unit{
+		Units: []*allocation.AllocationUnit{
 			{
-				UnitHeader: &allocation.UnitHeader{
+				AllocationUnitHeader: &allocation.AllocationUnitHeader{
 					Permanent: false,
 					Transition: manifest.Transition{
 						Create: "start",
 						Destroy: "stop",
 					},
 				},
-				File: &allocation.File{
+				AllocationFile: &allocation.AllocationFile{
 					Path: "/run/systemd/system/unit-1.service",
 					Source: "# true",
 				},
 			},
 			{
-				UnitHeader: &allocation.UnitHeader{
+				AllocationUnitHeader: &allocation.AllocationUnitHeader{
 					Permanent: false,
 					Transition: manifest.Transition{
 						Create: "start",
 						Destroy: "stop",
 					},
 				},
-				File: &allocation.File{
+				AllocationFile: &allocation.AllocationFile{
 					Path: "/run/systemd/system/unit-2.service",
 					Source: "# true",
 				},
@@ -87,15 +87,15 @@ func TestHeader_Unmarshal(t *testing.T) {
 ### UNIT /etc/systemd/system/unit-2.service {"Create":"","Update":"start","Destroy":"","Permanent":false}
 [Unit]
 `
-	header := &allocation.PodHeader{}
+	header := &allocation.AllocationHeader{}
 	units, err := header.Unmarshal(src)
 	assert.NoError(t, err)
-	assert.Equal(t, []*allocation.Unit{
+	assert.Equal(t, []*allocation.AllocationUnit{
 		{
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path: "/etc/systemd/system/unit-1.service",
 			},
-			UnitHeader: &allocation.UnitHeader{
+			AllocationUnitHeader: &allocation.AllocationUnitHeader{
 				Permanent: true,
 				Transition: manifest.Transition{
 					Create: "start",
@@ -103,10 +103,10 @@ func TestHeader_Unmarshal(t *testing.T) {
 			},
 		},
 		{
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path: "/etc/systemd/system/unit-2.service",
 			},
-			UnitHeader: &allocation.UnitHeader{
+			AllocationUnitHeader: &allocation.AllocationUnitHeader{
 				Permanent: false,
 				Transition: manifest.Transition{
 					Update: "start",
@@ -114,7 +114,7 @@ func TestHeader_Unmarshal(t *testing.T) {
 			},
 		},
 	}, units)
-	assert.Equal(t, &allocation.PodHeader{
+	assert.Equal(t, &allocation.AllocationHeader{
 		Name:      "pod-1",
 		AgentMark: 123,
 		PodMark:   345,
@@ -123,20 +123,20 @@ func TestHeader_Unmarshal(t *testing.T) {
 }
 
 func TestHeader_Marshal(t *testing.T) {
-	units := []*allocation.Unit{
+	units := []*allocation.AllocationUnit{
 		{
-			UnitHeader: &allocation.UnitHeader{
+			AllocationUnitHeader: &allocation.AllocationUnitHeader{
 				Permanent: true,
 				Transition: manifest.Transition{
 					Create: "start",
 				},
 			},
-			File: &allocation.File{
+			AllocationFile: &allocation.AllocationFile{
 				Path: "/etc/systemd/system/unit-1.service",
 			},
 		},
 	}
-	h := &allocation.PodHeader{
+	h := &allocation.AllocationHeader{
 		Namespace: "private",
 		AgentMark: 234,
 		PodMark:   123,

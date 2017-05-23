@@ -1,16 +1,16 @@
 package command
 
 import (
-	"github.com/akaspin/cut"
-	"github.com/akaspin/soil/agent"
-	"github.com/akaspin/logx"
 	"context"
 	"github.com/akaspin/concurrency"
+	"github.com/akaspin/cut"
+	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent"
+	"github.com/akaspin/soil/agent/arbiter"
+	"github.com/akaspin/soil/agent/registry"
+	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/scheduler/executor"
 	"github.com/akaspin/supervisor"
-	"github.com/akaspin/soil/agent/filter"
-	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/registry"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,7 +42,7 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	// Private
 
-	privateFilter := filter.NewStatic(ctx, log, filter.StaticConfig{
+	privateFilter := arbiter.NewStatic(ctx, log, arbiter.StaticConfig{
 		Id: config.Id,
 		Meta: config.Meta,
 		PodExec: config.Exec,

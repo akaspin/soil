@@ -12,7 +12,7 @@ const (
 	phaseDeployCommand
 )
 
-func Plan(left, right *allocation.Pod) (res []Instruction) {
+func Plan(left, right *allocation.Allocation) (res []Instruction) {
 	phases := map[int][]Instruction{
 		phaseDestroyCommand: nil,
 		phaseDestroyFS:      nil,
@@ -36,7 +36,7 @@ func Plan(left, right *allocation.Pod) (res []Instruction) {
 	return
 }
 
-func PlanPhases(left, right *allocation.Pod) (res []Instruction) {
+func PlanPhases(left, right *allocation.Allocation) (res []Instruction) {
 	if right == nil {
 		res = append(res, planUnitDestroy(left.PodUnit())...)
 		for _, u := range left.Units {
@@ -57,9 +57,9 @@ func PlanPhases(left, right *allocation.Pod) (res []Instruction) {
 	res = append(res, PlanUnit(left.PodUnit(), right.PodUnit())...)
 
 	done := map[string]bool{}
-	candidates := map[string]*allocation.Unit{}
+	candidates := map[string]*allocation.AllocationUnit{}
 	for _, u := range right.Units {
-		candidates[u.File.UnitName()] = u
+		candidates[u.AllocationFile.UnitName()] = u
 	}
 
 	for _, u := range left.Units {
@@ -67,7 +67,7 @@ func PlanPhases(left, right *allocation.Pod) (res []Instruction) {
 		done[u.UnitName()] = true
 	}
 	for _, u := range right.Units {
-		if _, ok := done[u.File.UnitName()]; ok {
+		if _, ok := done[u.AllocationFile.UnitName()]; ok {
 			continue
 		}
 		res = append(res, PlanUnit(nil, u)...)
@@ -76,45 +76,45 @@ func PlanPhases(left, right *allocation.Pod) (res []Instruction) {
 	return
 }
 
-func PlanUnit(left, right *allocation.Unit) (res []Instruction) {
+func PlanUnit(left, right *allocation.AllocationUnit) (res []Instruction) {
 	if right == nil {
 		res = planUnitDestroy(left)
 		return
 	}
 
 	if left == nil {
-		res = planUnitDeploy(right.File, right.Permanent, right.Transition.Create)
+		res = planUnitDeploy(right.AllocationFile, right.Permanent, right.Transition.Create)
 		return
 	}
-	if left.File.Path != right.File.Path {
+	if left.AllocationFile.Path != right.AllocationFile.Path {
 		// unit path changed: generate destroy/create
 		res = append(res, planUnitDestroy(left)...)
-		res = append(res, planUnitDeploy(right.File, right.Permanent, right.Transition.Create)...)
+		res = append(res, planUnitDeploy(right.AllocationFile, right.Permanent, right.Transition.Create)...)
 		return
 	}
-	if left.File.Source != right.File.Source {
-		res = planUnitDeploy(right.File, right.Permanent, right.Transition.Update)
+	if left.AllocationFile.Source != right.AllocationFile.Source {
+		res = planUnitDeploy(right.AllocationFile, right.Permanent, right.Transition.Update)
 		return
 	}
 	// just permanency check
 	if left.Permanent != right.Permanent {
-		res = append(res, planUnitPerm(right.File, right.Permanent))
+		res = append(res, planUnitPerm(right.AllocationFile, right.Permanent))
 	}
 
 	return
 }
 
-func planUnitDestroy(what *allocation.Unit) (res []Instruction) {
+func planUnitDestroy(what *allocation.AllocationUnit) (res []Instruction) {
 	res = []Instruction{
-		NewDeleteUnitInstruction(what.File),
+		NewDeleteUnitInstruction(what.AllocationFile),
 	}
 	if what.Transition.Destroy != "" {
-		res = append(res, NewCommandInstruction(phaseDestroyCommand, what.File, what.Transition.Destroy))
+		res = append(res, NewCommandInstruction(phaseDestroyCommand, what.AllocationFile, what.Transition.Destroy))
 	}
 	return
 }
 
-func planUnitDeploy(what *allocation.File, permanent bool, command string) (res []Instruction) {
+func planUnitDeploy(what *allocation.AllocationFile, permanent bool, command string) (res []Instruction) {
 	res = append(res, NewWriteUnitInstruction(what), planUnitPerm(what, permanent))
 	if command != "" {
 		res = append(res, NewCommandInstruction(phaseDeployCommand, what, command))
@@ -122,7 +122,7 @@ func planUnitDeploy(what *allocation.File, permanent bool, command string) (res 
 	return
 }
 
-func planUnitPerm(what *allocation.File, permanent bool) (res Instruction) {
+func planUnitPerm(what *allocation.AllocationFile, permanent bool) (res Instruction) {
 	if permanent {
 		res = NewEnableUnitInstruction(what)
 		return

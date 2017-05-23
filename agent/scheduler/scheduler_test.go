@@ -5,7 +5,7 @@ import (
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/scheduler/allocation"
-	"github.com/akaspin/soil/agent/filter"
+	"github.com/akaspin/soil/agent/arbiter"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/scheduler/executor"
 	"github.com/akaspin/soil/fixture"
@@ -84,7 +84,7 @@ WantedBy=default.target
 		Capacity: 2,
 	})
 	executorRt := executor.New(ctx, logx.GetLog("test"), workerPool)
-	blockerRt := filter.NewStatic(ctx, log, filter.StaticConfig{
+	blockerRt := arbiter.NewStatic(ctx, log, arbiter.StaticConfig{
 		Id: "one",
 		Meta: map[string]string{
 			"consul": "true",
@@ -104,7 +104,7 @@ WantedBy=default.target
 	schedulerRt.Sync(pods)
 	time.Sleep(time.Second)
 
-	assert.Equal(t, map[string]*allocation.PodHeader{
+	assert.Equal(t, map[string]*allocation.AllocationHeader{
 		"pod-2": {
 			Name: "pod-2",
 			PodMark: 15470258743007982206,

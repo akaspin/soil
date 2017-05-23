@@ -21,7 +21,7 @@ func TestWantsInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &allocation.File{
+	unitFile := &allocation.AllocationFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
@@ -48,7 +48,7 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &allocation.File{
+	unitFile := &allocation.AllocationFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
@@ -100,7 +100,7 @@ func TestFSInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &allocation.File{
+	unitFile := &allocation.AllocationFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())

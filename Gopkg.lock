@@ -52,7 +52,7 @@ memo = "4e6f8069e6d32aae8ba9e22ff3330a9790904fc19611de6bb505535626e1504c"
   branch = "master"
   name = "github.com/hashicorp/go-memdb"
   packages = ["."]
-  revision = "ed59a4bb9146689d4b00d060b70b9e9648b523af"
+  revision = "e889dc5b880d6619aa3ccc653d802ae172c0904c"
 
 [[projects]]
   branch = "master"
@@ -94,7 +94,7 @@ memo = "4e6f8069e6d32aae8ba9e22ff3330a9790904fc19611de6bb505535626e1504c"
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "fb1f39915d092e6ecbdb38c0861170bdf4416800"
+  revision = "ca57f0f5dba473a8a58765d16d7e811fb8027add"
 
 [[projects]]
   branch = "master"

@@ -2,16 +2,20 @@ agent {
   // agent id
   id = "localhost-1"
 
-  // public namespace
-  public {
+  serf {
     join = [
+      "127.0.0.1:7171",
+      "127.0.0.1:7172",
       "127.0.0.1:7173"
     ]
-    bind_addr = "0.0.0.0:7171"
-    advertise_addr = "127.0.0.1:7171"
+    bind = "0.0.0.0:7171"
+    advertise = "127.0.0.1:7171"
+    retry = "30s"
+  }
 
-    retry_join = "30s"
-
+  rpc {
+    bind = "0.0.0.0:7181"
+    advertise = "127.0.0.1:7181"
   }
 
   meta {

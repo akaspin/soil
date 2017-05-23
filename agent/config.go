@@ -11,10 +11,10 @@ import (
 )
 
 type Config struct {
-	Workers int
 	Id string
 	Meta map[string]string `hcl:"meta" json:"meta"`
 	Exec string
+	Workers int
 	Local []*manifest.Pod
 }
 

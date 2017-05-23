@@ -12,33 +12,33 @@ var (
 )
 
 type State struct {
-	ready   map[string]*allocation.Pod
-	active  map[string]*allocation.Pod
-	pending map[string]*allocation.Pod
+	ready   map[string]*allocation.Allocation
+	active  map[string]*allocation.Allocation
+	pending map[string]*allocation.Allocation
 
 	mu      *sync.Mutex
 }
 
-func NewState(initial []*allocation.Pod) (s *State) {
+func NewState(initial []*allocation.Allocation) (s *State) {
 	s = &State{
-		ready:   map[string]*allocation.Pod{},
-		active:  map[string]*allocation.Pod{},
-		pending: map[string]*allocation.Pod{},
+		ready:   map[string]*allocation.Allocation{},
+		active:  map[string]*allocation.Allocation{},
+		pending: map[string]*allocation.Allocation{},
 		mu:      &sync.Mutex{},
 	}
 	for _, a := range initial {
-		s.ready[a.PodHeader.Name] = a
+		s.ready[a.AllocationHeader.Name] = a
 	}
 	return
 }
 
 // Submit allocation to pending. Use <nil> for destroy.
 // Submit returns ok if state actually submitted.
-func (s *State) Submit(name string, pending *allocation.Pod) (ok bool) {
+func (s *State) Submit(name string, pending *allocation.Allocation) (ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	latest := s.getLatest(name)
-	if !allocation.ComparePods(latest, pending) {
+	if !s.comparePods(latest, pending) {
 		s.pending[name] = pending
 		ok = true
 	}
@@ -47,7 +47,7 @@ func (s *State) Submit(name string, pending *allocation.Pod) (ok bool) {
 
 // Promote allocation from pending to active and return ready and active pair.
 // or error if evaluation is not possible at this time.
-func (s *State) Promote(name string) (ready, active *allocation.Pod, err error) {
+func (s *State) Promote(name string) (ready, active *allocation.Allocation, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -88,13 +88,13 @@ func (s *State) Commit(name string, failures []error) (destroyed bool, err error
 	return
 }
 
-// list
-func (s *State) ListActual(namespace string) (res map[string]*allocation.PodHeader) {
+// List
+func (s *State) ListActual(namespace string) (res map[string]*allocation.AllocationHeader) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	res = map[string]*allocation.PodHeader{}
+	res = map[string]*allocation.AllocationHeader{}
 
-	for _, what := range []map[string]*allocation.Pod{
+	for _, what := range []map[string]*allocation.Allocation{
 		s.pending, s.active, s.ready,
 	} {
 		for k, v := range what {
@@ -103,7 +103,7 @@ func (s *State) ListActual(namespace string) (res map[string]*allocation.PodHead
 					res[k] = nil
 					continue
 				}
-				res[k] = v.PodHeader
+				res[k] = v.AllocationHeader
 			}
 		}
 	}
@@ -116,7 +116,7 @@ func (s *State) ListActual(namespace string) (res map[string]*allocation.PodHead
 }
 
 // returns latest (done/active/pending) pod
-func (s *State) getLatest(name string) (res *allocation.Pod) {
+func (s *State) getLatest(name string) (res *allocation.Allocation) {
 	var ok bool
 	if res, ok = s.pending[name]; ok {
 		return
@@ -127,5 +127,17 @@ func (s *State) getLatest(name string) (res *allocation.Pod) {
 	if res, ok = s.ready[name]; ok {
 		return
 	}
+	return
+}
+
+func (s *State) comparePods(left, right *allocation.Allocation) (ok bool) {
+	var leftMark, rightMark uint64
+	if left != nil {
+		leftMark = left.AllocationHeader.Mark()
+	}
+	if right != nil {
+		rightMark = right.AllocationHeader.Mark()
+	}
+	ok = leftMark == rightMark
 	return
 }

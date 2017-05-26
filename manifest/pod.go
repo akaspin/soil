@@ -1,24 +1,30 @@
 package manifest
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/hashstructure"
+	"sort"
+	"strings"
 )
 
 const defaultPodTarget = "default.target"
 
+
+
 type Pod struct {
+	Namespace string
 	Name       string
 	Runtime    bool
 	Target     string
-	Count      int
-	Constraint map[string]string
+	Constraint Constraint
 	Units      []*Unit
 }
 
-func newPodFromItem(raw *ast.ObjectItem) (p *Pod, err error) {
+func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
 	p = &Pod{
+		Namespace: namespace,
 		Target: defaultPodTarget,
 		Runtime: true,
 	}
@@ -37,6 +43,41 @@ func newPodFromItem(raw *ast.ObjectItem) (p *Pod, err error) {
 
 func (p *Pod) Mark() (res uint64) {
 	res, _ = hashstructure.Hash(p, nil)
+	return
+}
+
+type Constraint map[string]string
+
+// Extract constraint fields by namespaces
+func (c Constraint) ExtractFields() (res map[string][]string) {
+	res = map[string][]string{}
+	collected := map[string]struct{}{}
+	for k, v := range c {
+		for _, f := range ExtractEnv(k+v) {
+			collected[f] = struct{}{}
+		}
+	}
+	for k := range collected {
+		split := strings.SplitN(k, ".", 2)
+		if len(split) == 2 {
+			res[split[0]] = append(res[split[0]], split[1])
+		}
+	}
+	for _, v := range res {
+		sort.Strings(v)
+	}
+	return
+}
+
+func (c Constraint) Check(env map[string]string) (err error) {
+	for left, right := range c {
+		leftV := Interpolate(left, env)
+		rightV := Interpolate(right, env)
+		if leftV != rightV {
+			err = fmt.Errorf("constraint failed %s != %s (%s:%s)", leftV, rightV, left, right)
+			return
+		}
+	}
 	return
 }
 

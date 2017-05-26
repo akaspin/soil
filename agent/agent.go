@@ -5,14 +5,21 @@ import (
 )
 
 type Scheduler interface {
-	Sync(pods []*manifest.Pod) (err error)
-	Submit(name string, pod *manifest.Pod) (err error)
+	// SyncNamespace internal state with given manifests
+	Sync(namespace string, pods []*manifest.Pod) (err error)
 }
 
-type Filter interface {
-	// Register Pod manifest with given name and callback.
-	Submit(name string, pod *manifest.Pod, fn func(reason error))
+// Arbiter holds any state and returns internal values
+type Arbiter interface {
+	// Name returns arbiter name
+	Name() string
 
-	// Get environment
-	Environment() (res *Environment)
+	RegisterManager(callback func(env map[string]string)) (current map[string]string, marked bool)
+
+	// RegisterPod returns values for given fields. Arbiter may
+	// evaluate given fields. For example try to allocate counter.
+	RegisterPod(name string, fields []string)
+
+	// DeregisterPod pod
+	DeregisterPod(name string)
 }

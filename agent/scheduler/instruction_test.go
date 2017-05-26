@@ -1,9 +1,8 @@
-package executor_test
+package scheduler_test
 
 import (
 	"fmt"
-	"github.com/akaspin/soil/agent/scheduler/allocation"
-	"github.com/akaspin/soil/agent/scheduler/executor"
+	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/stretchr/testify/assert"
@@ -21,18 +20,18 @@ func TestWantsInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &allocation.AllocationFile{
+	unitFile := &scheduler.AllocationFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
 
 	t.Run("disable", func(t *testing.T) {
-		assert.NoError(t, executor.NewDisableUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, scheduler.NewDisableUnitInstruction(unitFile).Execute(conn))
 		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/test-1-0.service")
 		assert.Error(t, err)
 	})
 	t.Run("enable", func(t *testing.T) {
-		assert.NoError(t, executor.NewEnableUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, scheduler.NewEnableUnitInstruction(unitFile).Execute(conn))
 		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/test-1-0.service")
 		assert.NoError(t, err)
 	})
@@ -48,13 +47,13 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &allocation.AllocationFile{
+	unitFile := &scheduler.AllocationFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
 
 	testCommand := func(command string, state string) (err error) {
-		c := executor.NewCommandInstruction(0, unitFile, command)
+		c := scheduler.NewCommandInstruction(0, unitFile, command)
 		if err = c.Execute(conn); err != nil {
 			return
 		}
@@ -100,23 +99,23 @@ func TestFSInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &allocation.AllocationFile{
+	unitFile := &scheduler.AllocationFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
 
 	t.Run("delete", func(t *testing.T) {
-		assert.NoError(t, executor.NewCommandInstruction(0, unitFile, "stop").Execute(conn))
-		assert.NoError(t, executor.NewDisableUnitInstruction(unitFile).Execute(conn))
-		assert.NoError(t, executor.NewDeleteUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, scheduler.NewCommandInstruction(0, unitFile, "stop").Execute(conn))
+		assert.NoError(t, scheduler.NewDisableUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, scheduler.NewDeleteUnitInstruction(unitFile).Execute(conn))
 		_, err := os.Stat(unitFile.Path)
 		assert.Error(t, err)
 	})
 	t.Run("write", func(t *testing.T) {
-		assert.NoError(t, executor.NewWriteUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, scheduler.NewWriteUnitInstruction(unitFile).Execute(conn))
 		_, err := os.Stat(unitFile.Path)
 		assert.NoError(t, err)
-		assert.NoError(t, executor.NewCommandInstruction(0, unitFile, "start").Execute(conn))
+		assert.NoError(t, scheduler.NewCommandInstruction(0, unitFile, "start").Execute(conn))
 	})
 
 }

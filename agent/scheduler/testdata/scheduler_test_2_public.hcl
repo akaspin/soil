@@ -1,0 +1,18 @@
+pod "first" {
+  constraint {
+    "${meta.first_public}" = "1"
+  }
+  unit "first-1.service" {
+    create = "start"
+    source = <<EOF
+    [Unit]
+    Description=%p
+
+    [Service]
+    ExecStart=/usr/bin/sleep inf
+
+    [Install]
+    WantedBy=default.target
+  EOF
+  }
+}

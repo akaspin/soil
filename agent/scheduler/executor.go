@@ -1,10 +1,9 @@
-package executor
+package scheduler
 
 import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/scheduler/allocation"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/pkg/errors"
@@ -14,11 +13,14 @@ type Executor struct {
 	*supervisor.Control
 	log *logx.Log
 
+	// bounded worker pool
 	pool  *concurrency.WorkerPool
-	state *State
+
+	// bounded state
+	state *ExecutorState
 }
 
-func New(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool) (r *Executor) {
+func NewExecutor(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool) (r *Executor) {
 	r = &Executor{
 		Control: supervisor.NewControl(ctx),
 		log:     log.GetLog("executor"),
@@ -29,11 +31,11 @@ func New(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool) (r *E
 
 func (r *Executor) Open() (err error) {
 	r.log.Debug("open")
-	var allocs []*allocation.Allocation
-	if allocs, err = r.restore(); err != nil {
+	var restored []*Allocation
+	if restored, err = r.restoreState(); err != nil {
 		return
 	}
-	r.state = NewState(allocs)
+	r.state = NewExecutorState(restored)
 	err = r.Control.Open()
 	return
 }
@@ -44,17 +46,17 @@ func (r *Executor) Close() (err error) {
 	return
 }
 
-func (r *Executor) Submit(name string, candidate *allocation.Allocation) {
+func (r *Executor) Submit(name string, candidate *Allocation) {
 	if r.state.Submit(name, candidate) {
 		defer r.deploy(name)
 		return
 	}
-	r.log.Debugf("skip submit %s %s", name, allocation.AllocationToString(candidate))
+	r.log.Debugf("skip submit %s %s", name, AllocationToString(candidate))
 }
 
 // ListActual latest allocations
-func (r *Executor) List(namespace string) (res map[string]*allocation.AllocationHeader) {
-	res = r.state.ListActual(namespace)
+func (r *Executor) List() (res map[string]*AllocationHeader) {
+	res = r.state.ListActual()
 	return
 }
 
@@ -67,7 +69,7 @@ func (r *Executor) deploy(name string) {
 		log.Debugf("skip promote : %s", err)
 		return
 	}
-	log.Debugf("begin %s->%s", allocation.AllocationToString(ready), allocation.AllocationToString(active))
+	log.Debugf("begin %s->%s", AllocationToString(ready), AllocationToString(active))
 	go r.pool.Execute(r.Control.Ctx(), func() {
 		defer r.deploy(name)
 		failures := r.execute(log, ready, active)
@@ -75,11 +77,11 @@ func (r *Executor) deploy(name string) {
 		if _, commitErr = r.state.Commit(name, failures); commitErr != nil {
 			log.Errorf("can't commit %s", err)
 		}
-		log.Debugf("done %s->%s", allocation.AllocationToString(ready), allocation.AllocationToString(active))
+		log.Debugf("done %s->%s", AllocationToString(ready), AllocationToString(active))
 	})
 }
 
-func (r *Executor) execute(log *logx.Log, ready, active *allocation.Allocation) (failures []error) {
+func (r *Executor) execute(log *logx.Log, ready, active *Allocation) (failures []error) {
 
 	plan := Plan(ready, active)
 	log.Debugf("begin plan %v", plan)
@@ -105,8 +107,8 @@ func (r *Executor) execute(log *logx.Log, ready, active *allocation.Allocation) 
 	return
 }
 
-func (r *Executor) restore() (res []*allocation.Allocation, err error) {
-	log := r.log.GetLog(r.log.Prefix(), "restore")
+func (r *Executor) restoreState() (res []*Allocation, err error) {
+	log := r.log.GetLog(r.log.Prefix(), "restoreState")
 	log.Debug("begin")
 	conn, err := dbus.New()
 	if err != nil {
@@ -120,37 +122,15 @@ func (r *Executor) restore() (res []*allocation.Allocation, err error) {
 	}
 	for _, record := range files {
 		log.Debugf("begin %s", record.Path)
-		var alloc *allocation.Allocation
+		var alloc *Allocation
 		var allocErr error
-		if alloc, allocErr = RestoreAllocation(record.Path); allocErr != nil {
-			log.Warningf("can't restore allocation from %s", record.Path)
+		if alloc, allocErr = NewAllocationFromSystemD(record.Path); allocErr != nil {
+			log.Warningf("can't restoreState allocation from %s", record.Path)
 			continue
 		}
 		res = append(res, alloc)
 		log.Debugf("done %v", alloc.AllocationHeader)
 	}
 	r.log.Debug("done")
-	return
-}
-
-func RestoreAllocation(path string) (res *allocation.Allocation, err error) {
-	res = &allocation.Allocation{
-		AllocationFile: &allocation.AllocationFile{
-			Path: path,
-		},
-		AllocationHeader: &allocation.AllocationHeader{},
-	}
-	if err = res.AllocationFile.Read(); err != nil {
-		return
-	}
-	if res.Units, err = res.AllocationHeader.Unmarshal(res.AllocationFile.Source); err != nil {
-		return
-	}
-
-	for _, u := range res.Units {
-		if err = u.AllocationFile.Read(); err != nil {
-			return
-		}
-	}
 	return
 }

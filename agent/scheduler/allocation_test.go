@@ -1,9 +1,9 @@
-package allocation_test
+package scheduler_test
 
 import (
-	"github.com/akaspin/soil/agent"
-	"github.com/akaspin/soil/agent/scheduler/allocation"
+	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
+	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,6 +11,7 @@ import (
 func TestNewFromManifest(t *testing.T) {
 	m := &manifest.Pod{
 		Runtime: true,
+		Namespace: "private",
 		Name: "pod-1",
 		Target: "multi-user.target",
 		Units: []*manifest.Unit{
@@ -32,47 +33,48 @@ func TestNewFromManifest(t *testing.T) {
 			},
 		},
 	}
-	e := agent.NewEnvironment(map[string]string{
+	env := map[string]string{
 		"meta.consul": "true",
-		"agent.pod.exec": "ExecStart=/usr/bin/sleep inf",
-	})
+		"agent.pod_exec": "ExecStart=/usr/bin/sleep inf",
+	}
+	mark, _ := hashstructure.Hash(env, nil)
 
-	res, err := allocation.NewFromManifest("private", m, e)
+	res, err := scheduler.NewAllocationFromManifest(m, env, mark)
 	assert.NoError(t, err)
-	assert.Equal(t, &allocation.Allocation{
-		AllocationHeader: &allocation.AllocationHeader{
+	assert.Equal(t, &scheduler.Allocation{
+		AllocationHeader: &scheduler.AllocationHeader{
 			Name: "pod-1",
-			PodMark: 12378424092920473463,
-			AgentMark: 10913175000834197307,
+			PodMark: 14368791351692071250,
+			AgentMark: 13519672434109364665,
 			Namespace: "private",
 		},
-		AllocationFile: &allocation.AllocationFile{
+		AllocationFile: &scheduler.AllocationFile{
 			Path: "/run/systemd/system/pod-private-pod-1.service",
-			Source: "### POD pod-1 {\"AgentMark\":10913175000834197307,\"Namespace\":\"private\",\"PodMark\":12378424092920473463}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+			Source: "### POD pod-1 {\"AgentMark\":13519672434109364665,\"Namespace\":\"private\",\"PodMark\":14368791351692071250}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 		},
-		Units: []*allocation.AllocationUnit{
+		Units: []*scheduler.AllocationUnit{
 			{
-				AllocationUnitHeader: &allocation.AllocationUnitHeader{
+				AllocationUnitHeader: &scheduler.AllocationUnitHeader{
 					Permanent: false,
 					Transition: manifest.Transition{
 						Create: "start",
 						Destroy: "stop",
 					},
 				},
-				AllocationFile: &allocation.AllocationFile{
+				AllocationFile: &scheduler.AllocationFile{
 					Path: "/run/systemd/system/unit-1.service",
 					Source: "# true",
 				},
 			},
 			{
-				AllocationUnitHeader: &allocation.AllocationUnitHeader{
+				AllocationUnitHeader: &scheduler.AllocationUnitHeader{
 					Permanent: false,
 					Transition: manifest.Transition{
 						Create: "start",
 						Destroy: "stop",
 					},
 				},
-				AllocationFile: &allocation.AllocationFile{
+				AllocationFile: &scheduler.AllocationFile{
 					Path: "/run/systemd/system/unit-2.service",
 					Source: "# true",
 				},
@@ -87,15 +89,15 @@ func TestHeader_Unmarshal(t *testing.T) {
 ### UNIT /etc/systemd/system/unit-2.service {"Create":"","Update":"start","Destroy":"","Permanent":false}
 [Unit]
 `
-	header := &allocation.AllocationHeader{}
+	header := &scheduler.AllocationHeader{}
 	units, err := header.Unmarshal(src)
 	assert.NoError(t, err)
-	assert.Equal(t, []*allocation.AllocationUnit{
+	assert.Equal(t, []*scheduler.AllocationUnit{
 		{
-			AllocationFile: &allocation.AllocationFile{
+			AllocationFile: &scheduler.AllocationFile{
 				Path: "/etc/systemd/system/unit-1.service",
 			},
-			AllocationUnitHeader: &allocation.AllocationUnitHeader{
+			AllocationUnitHeader: &scheduler.AllocationUnitHeader{
 				Permanent: true,
 				Transition: manifest.Transition{
 					Create: "start",
@@ -103,10 +105,10 @@ func TestHeader_Unmarshal(t *testing.T) {
 			},
 		},
 		{
-			AllocationFile: &allocation.AllocationFile{
+			AllocationFile: &scheduler.AllocationFile{
 				Path: "/etc/systemd/system/unit-2.service",
 			},
-			AllocationUnitHeader: &allocation.AllocationUnitHeader{
+			AllocationUnitHeader: &scheduler.AllocationUnitHeader{
 				Permanent: false,
 				Transition: manifest.Transition{
 					Update: "start",
@@ -114,7 +116,7 @@ func TestHeader_Unmarshal(t *testing.T) {
 			},
 		},
 	}, units)
-	assert.Equal(t, &allocation.AllocationHeader{
+	assert.Equal(t, &scheduler.AllocationHeader{
 		Name:      "pod-1",
 		AgentMark: 123,
 		PodMark:   345,
@@ -123,20 +125,20 @@ func TestHeader_Unmarshal(t *testing.T) {
 }
 
 func TestHeader_Marshal(t *testing.T) {
-	units := []*allocation.AllocationUnit{
+	units := []*scheduler.AllocationUnit{
 		{
-			AllocationUnitHeader: &allocation.AllocationUnitHeader{
+			AllocationUnitHeader: &scheduler.AllocationUnitHeader{
 				Permanent: true,
 				Transition: manifest.Transition{
 					Create: "start",
 				},
 			},
-			AllocationFile: &allocation.AllocationFile{
+			AllocationFile: &scheduler.AllocationFile{
 				Path: "/etc/systemd/system/unit-1.service",
 			},
 		},
 	}
-	h := &allocation.AllocationHeader{
+	h := &scheduler.AllocationHeader{
 		Namespace: "private",
 		AgentMark: 234,
 		PodMark:   123,

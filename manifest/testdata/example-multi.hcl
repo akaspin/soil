@@ -3,7 +3,6 @@ agent {
 }
 
 pod "first" {
-  count = 2
   runtime = true
   target = "multi-user.target"
 

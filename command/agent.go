@@ -2,15 +2,15 @@ package command
 
 import (
 	"context"
-	"github.com/akaspin/concurrency"
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/arbiter"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/scheduler/executor"
+	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
+	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,58 +19,103 @@ import (
 type Agent struct {
 	*cut.Environment
 	*ConfigOptions
+
+	// reconfigurable
+	config *agent.Config
+	privatePods []*manifest.Pod
+
+	log *logx.Log
+	agentArbiter *arbiter.MapArbiter
+	metaArbiter *arbiter.MapArbiter
+	privateRegistry *registry.Private
+}
+
+func (c *Agent) Bind(cc *cobra.Command) {
+	cc.Short = "Run agent"
 }
 
 func (c *Agent) Run(args ...string) (err error) {
-	log := logx.GetLog("init")
+	c.log = logx.GetLog("root")
 
 	// parse configs
-	config := agent.DefaultConfig()
-	failures := config.Read(c.ConfigPath...)
-	if len(failures) != 0 {
-		log.Warningf("configuration parsed with errors %v", failures)
-	}
+	c.readConfig()
+	c.readPrivatePods()
 
 	ctx := context.Background()
 
-	// Executor
-	pool := concurrency.NewWorkerPool(ctx, concurrency.Config{
-		Capacity: config.Workers,
-	})
-	executorRt := executor.New(ctx, log, pool)
-	executorSV := supervisor.NewChain(ctx, pool, executorRt)
+	// Arbiters (premature initialize)
+	c.agentArbiter = arbiter.NewMapArbiter(ctx, c.log, "agent", true)
+	c.metaArbiter = arbiter.NewMapArbiter(ctx, c.log, "meta", true)
+	c.configureArbiters()
 
-	// Private
-
-	privateFilter := arbiter.NewStatic(ctx, log, arbiter.StaticConfig{
-		Id: config.Id,
-		Meta: config.Meta,
-		PodExec: config.Exec,
-		Constraint: config.Local,
-	})
-	privateScheduler := scheduler.NewRuntime(ctx, log, executorRt, privateFilter, "private")
-	privateRegistry := registry.NewPrivate(ctx, log, privateScheduler, registry.PrivateConfig{
-		Pods: config.Local,
-	})
-	privateSV := supervisor.NewChain(ctx, privateFilter, privateScheduler, privateRegistry)
+	sink, schedulerSV := scheduler.New(ctx, c.log, c.config.Workers, c.agentArbiter, c.metaArbiter)
+	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
 
 	// agent
-	agentSV := supervisor.NewChain(ctx, executorSV, privateSV)
+	agentSV := supervisor.NewChain(ctx,
+		schedulerSV,
+		c.privateRegistry,
+	)
 
 	if err = agentSV.Open(); err != nil {
 		return
 	}
 
+	c.configurePrivateRegistry()
+
 	// bind signals
 	signalCh := make(chan os.Signal)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM)
-	select {
-	case <-signalCh:
-		agentSV.Close()
-	case <-ctx.Done():
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	LOOP:
+	for {
+		select {
+		case sig := <-signalCh:
+			switch sig {
+			case syscall.SIGINT, syscall.SIGTERM:
+				agentSV.Close()
+				break LOOP
+			case syscall.SIGHUP:
+				c.log.Infof("SIGHUP received")
+				c.readConfig()
+				c.readPrivatePods()
+				c.configurePrivateRegistry()
+				c.configureArbiters()
+			}
+		case <-ctx.Done():
+			break LOOP
+		}
 	}
 
 	err = agentSV.Wait()
-	log.Debug("exiting")
+	c.log.Info("Bye")
+	return
+}
+
+func (c *Agent) readConfig() {
+	c.config = agent.DefaultConfig()
+	if err := c.config.Read(c.ConfigPath...); err != nil {
+		c.log.Warningf("error reading config %s", err)
+	}
+	return
+}
+
+func (c *Agent) readPrivatePods() {
+	var err error
+	if c.privatePods, err = manifest.ParseFromFiles("private", c.ConfigPath...); err != nil {
+		c.log.Warningf("error reading private pods %s", err)
+	}
+}
+
+func (c *Agent) configureArbiters() {
+	c.agentArbiter.Configure(map[string]string{
+		"id": c.config.Id,
+		"pod_exec": c.config.Exec,
+	})
+	c.metaArbiter.Configure(c.config.Meta)
+}
+
+func (c *Agent) configurePrivateRegistry() (err error) {
+	c.privateRegistry.Sync(c.privatePods)
 	return
 }

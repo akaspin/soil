@@ -3,7 +3,6 @@ package agent
 import (
 	"bytes"
 	"fmt"
-	"github.com/akaspin/soil/manifest"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"io"
@@ -15,7 +14,6 @@ type Config struct {
 	Meta map[string]string `hcl:"meta" json:"meta"`
 	Exec string
 	Workers int
-	Local []*manifest.Pod
 }
 
 func DefaultConfig() (c *Config)  {
@@ -28,49 +26,50 @@ func DefaultConfig() (c *Config)  {
 	return
 }
 
-func (c *Config) Unmarshal(r io.Reader) (failures []error) {
-	var err error
+func (c *Config) Unmarshal(r io.Reader) (err error) {
 	var buf bytes.Buffer
 	if _, err = io.Copy(&buf, r); err != nil {
-		failures = append(failures, err)
 		return
 	}
 
 	root, err := hcl.Parse(buf.String())
 	if err != nil {
-		failures = append(failures, fmt.Errorf("error parsing: %s", err))
 		return
 	}
 	buf.Reset()
 
 	list, ok := root.Node.(*ast.ObjectList)
 	if !ok {
-		failures = append(failures, fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object")))
+		err = fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object"))
 		return
 	}
+	var failures []error
 	for _, chunk := range list.Filter("agent").Items {
 		if err = hcl.DecodeObject(c, chunk); err != nil {
 			failures = append(failures, err)
 		}
 	}
-	pods, podFailures := manifest.ParseFromList(list)
-	c.Local = append(c.Local, pods...)
-	failures = append(failures, podFailures...)
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
+	}
 	return
 }
 
-func (c *Config) Read(path ...string) (failures []error) {
+func (c *Config) Read(path ...string) (err error) {
+	var failures []error
 	for _, p := range path {
-		failures = append(failures, func(configPath string) (errs []error) {
+		failures = append(failures, func(configPath string) (err error) {
 			f, err := os.Open(configPath)
 			if err != nil {
-				errs = append(errs, err)
 				return
 			}
 			defer f.Close()
-			errs = c.Unmarshal(f)
+			err = c.Unmarshal(f)
 			return
-		}(p)...)
+		}(p))
+	}
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
 	}
 	return
 }

@@ -7,6 +7,6 @@ type ConfigOptions struct {
 }
 
 func (o *ConfigOptions) Bind(cc *cobra.Command) {
-	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "c", nil, "configuration file")
+	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "c", []string{"/etc/soil/config.hcl"}, "configuration file")
 }
 

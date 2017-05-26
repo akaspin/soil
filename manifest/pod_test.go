@@ -13,17 +13,17 @@ func TestManifest(t *testing.T) {
 	require.NoError(t, err)
 	defer r.Close()
 
-	res, failures, err := manifest.ParseManifests(r)
+	res, failures, err := manifest.ParseFromReader("private", r)
 	assert.NoError(t, err)
 	assert.Len(t, failures, 0)
 
 	t.Run("parse", func(t *testing.T) {
 		assert.Equal(t, []*manifest.Pod{
 			{
+				Namespace: "private",
 				Name:    "first",
 				Runtime: true,
 				Target:  "multi-user.target",
-				Count:   2,
 				Units: []*manifest.Unit{
 					{
 						Transition: manifest.Transition{
@@ -44,6 +44,7 @@ func TestManifest(t *testing.T) {
 				},
 			},
 			{
+				Namespace: "private",
 				Name:   "second",
 				Target: "default.target",
 				Constraint: map[string]string{
@@ -63,9 +64,45 @@ func TestManifest(t *testing.T) {
 		}, res)
 
 	})
+	t.Run("fields", func(t *testing.T) {
+		for _, pod := range []*manifest.Pod{
+			{
+				Constraint: map[string]string{
+					"${counter.test-1}": "< 4",
+					"${meta.consul}": "true",
+					"${meta.a}": "true",
+				},
+			},
+		} {
+			assert.Equal(t, map[string][]string{
+				"meta": {"a", "consul"},
+				"counter": {"test-1"}},
+				pod.Constraint.ExtractFields())
+		}
+	})
+	t.Run("constraint ok", func(t *testing.T) {
+		cns := manifest.Constraint(map[string]string{
+			"${meta.consul}": "true",
+			"${agent.id}":    "localhost",
+		})
+		assert.NoError(t, cns.Check(map[string]string{
+			"meta.consul": "true",
+			"agent.id": "localhost",
+		}))
+	})
+	t.Run("constraint fail", func(t *testing.T) {
+		cns := manifest.Constraint(map[string]string{
+			"${meta.consul}": "true",
+			"${agent.id}":    "localhost",
+		})
+		assert.Error(t, cns.Check(map[string]string{
+			"agent.id": "localhost",
+		}))
+	})
+
 	t.Run("mark", func(t *testing.T) {
 		for i, mark := range []uint64{
-			0xe731e287ec137dd2, 0xb664ee7391a2f659,
+			0x82ef4b1fcb7c003e, 0xdac422c99944007c,
 		} {
 			assert.Equal(t, mark, res[i].Mark())
 		}

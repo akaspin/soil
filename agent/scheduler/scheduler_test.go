@@ -2,118 +2,190 @@ package scheduler_test
 
 import (
 	"context"
-	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/scheduler/allocation"
 	"github.com/akaspin/soil/agent/arbiter"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/scheduler/executor"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
-	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func TestRuntime_Sync(t *testing.T) {
-	pods := []*manifest.Pod{
-		{
-			Name: "pod-2",
-			Runtime: true,
-			Target: "default.target",
-			Constraint: map[string]string{
-				"${meta.consul}": "true",
-			},
-			Units: []*manifest.Unit{
-				{
-					Name: "pod-2-unit-1.service",
-					Transition: manifest.Transition{
-						Create: "start",
-						Update: "restart",
-						Destroy: "stop",
-					},
-					Source: `[Unit]
-Description=pod-2-unit-1.service
-[Service]
-ExecStart=/usr/bin/sleep inf
-[Install]
-WantedBy=default.target
-`,
-				},
-			},
-		},
-		{
-			Name: "pod-3",
-			Runtime: true,
-			Target: "default.target",
-			Constraint: map[string]string{
-				"${meta.undefined}": "true",
-			},
-			Units: []*manifest.Unit{
-				{
-					Name: "pod-3-unit-1.service",
-					Transition: manifest.Transition{
-						Create: "start",
-						Update: "restart",
-						Destroy: "stop",
-					},
-					Source: `[Unit]
-Description=pod-2-unit-1.service
-[Service]
-ExecStart=/usr/bin/sleep inf
-[Install]
-WantedBy=default.target
-`,
-				},
-			},
-		},
-	}
-
+func TestNew(t *testing.T) {
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
-	assert.NoError(t, sd.DeployPod("sync-1", 2))
-
-	time.Sleep(time.Second)
 
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	// executor
-	workerPool := concurrency.NewWorkerPool(ctx, concurrency.Config{
-		Capacity: 2,
-	})
-	executorRt := executor.New(ctx, logx.GetLog("test"), workerPool)
-	blockerRt := arbiter.NewStatic(ctx, log, arbiter.StaticConfig{
-		Id: "one",
-		Meta: map[string]string{
-			"consul": "true",
-			"test": "true",
-		},
-		PodExec: "ExecStart=/usr/bin/sleep inf",
-		Constraint: pods,
+	t.Run("0", func(t *testing.T) {
+		agentArbiter := arbiter.NewMapArbiter(ctx, log, "agent", true)
+		metaArbiter := arbiter.NewMapArbiter(ctx, log, "meta", true)
+		sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
+
+		// premature init arbiters
+		metaArbiter.Configure(map[string]string{
+			"first_private": "1",
+			"second_private": "1",
+			"third_public": "1",
+		})
+		agentArbiter.Configure(map[string]string{
+			"id": "one",
+			"pod_exec": "ExecStart=/usr/bin/sleep inf",
+		})
+		assert.NoError(t, sv.Open())
+		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
+		assert.NoError(t, err)
+		sink.Sync("private", private)
+		public, err := manifest.ParseFromFiles("public", "testdata/scheduler_test_0_public.hcl")
+		assert.NoError(t, err)
+		sink.Sync("public", public)
+
+		time.Sleep(time.Second)
+
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"first": "/run/systemd/system/pod-private-first.service",
+			"second": "/run/systemd/system/pod-private-second.service",
+			"third": "/run/systemd/system/pod-public-third.service",
+		}, res)
+
+		assert.NoError(t, sv.Close())
+		assert.NoError(t, sv.Wait())
 	})
 
-	// Scheduler
-	schedulerRt := scheduler.NewRuntime(ctx, logx.GetLog("test"), executorRt, blockerRt, "private")
+	// create new arbiter
 
-	sv := supervisor.NewChain(ctx, blockerRt, workerPool, executorRt, schedulerRt)
+	agentArbiter := arbiter.NewMapArbiter(ctx, log, "agent", true)
+	metaArbiter := arbiter.NewMapArbiter(ctx, log, "meta", true)
+	sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
+	// premature init arbiters
+	metaArbiter.Configure(map[string]string{
+		"first_private": "1",
+		"second_private": "1",
+	})
+	agentArbiter.Configure(map[string]string{
+		"id": "one",
+		"pod_exec": "ExecStart=/usr/bin/sleep inf",
+	})
 	assert.NoError(t, sv.Open())
 
+	t.Run("1", func(t *testing.T) {
+		// assert all pods are still running
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"first": "/run/systemd/system/pod-private-first.service",
+			"second": "/run/systemd/system/pod-private-second.service",
+			"third": "/run/systemd/system/pod-public-third.service",
+		}, res)
+	})
+	t.Run("2", func(t *testing.T) {
+		// re sync private
+		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_2_private.hcl")
+		assert.NoError(t, err)
+		sink.Sync("private", private)
+		time.Sleep(time.Second)
 
-	schedulerRt.Sync(pods)
-	time.Sleep(time.Second)
+		// Deploy first in public namespace
+		public, err := manifest.ParseFromFiles("public", "testdata/scheduler_test_2_public.hcl")
+		assert.NoError(t, err)
+		sink.Sync("public", public)
+		time.Sleep(time.Second)
 
-	assert.Equal(t, map[string]*allocation.AllocationHeader{
-		"pod-2": {
-			Name: "pod-2",
-			PodMark: 15470258743007982206,
-			AgentMark: 10997408034734681612,
-			Namespace: "private",
-		},
-	}, executorRt.List("private"))
+		// assert first pod is not overrided by public
+		// assert third pod is gone
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"first": "/run/systemd/system/pod-private-first.service",
+			"second": "/run/systemd/system/pod-private-second.service",
+		}, res)
+	})
+	t.Run("3", func(t *testing.T) {
+		// Remove first private
+		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_3_private.hcl")
+		assert.NoError(t, err)
+		sink.Sync("private", private)
+		time.Sleep(time.Second)
+
+		// ensure first is gone
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"second": "/run/systemd/system/pod-private-second.service",
+		}, res)
+	})
+	t.Run("4", func(t *testing.T) {
+		// modify meta
+		metaArbiter.Configure(map[string]string{
+			"first_private": "1",
+			"first_public": "1",
+			"second_private": "1",
+		})
+		time.Sleep(time.Second)
+
+		// ensure first public is deployed
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"first": "/run/systemd/system/pod-public-first.service",
+			"second": "/run/systemd/system/pod-private-second.service",
+		}, res)
+	})
+	t.Run("5", func(t *testing.T) {
+		// reenter first private
+		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_5_private.hcl")
+		assert.NoError(t, err)
+		sink.Sync("private", private)
+		time.Sleep(time.Second)
+
+		// ensure first is private
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"first": "/run/systemd/system/pod-private-first.service",
+			"second": "/run/systemd/system/pod-private-second.service",
+		}, res)
+	})
+	t.Run("6", func(t *testing.T) {
+		// remove first private
+		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_6_private.hcl")
+		assert.NoError(t, err)
+		sink.Sync("private", private)
+		time.Sleep(time.Second)
+
+		// ensure first is public
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"first": "/run/systemd/system/pod-public-first.service",
+			"second": "/run/systemd/system/pod-private-second.service",
+		}, res)
+	})
+	t.Run("7", func(t *testing.T) {
+		// update private and meta
+		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_7_private.hcl")
+		assert.NoError(t, err)
+		sink.Sync("private", private)
+
+		metaArbiter.Configure(map[string]string{
+			"first_private": "2",
+			"first_public": "1",
+			"second_private": "1",
+		})
+		time.Sleep(time.Second)
+
+		// ensure first is public
+		res, err := sd.ListPods()
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"second": "/run/systemd/system/pod-private-second.service",
+		}, res)
+	})
 
 	assert.NoError(t, sv.Close())
 	assert.NoError(t, sv.Wait())
-
 }

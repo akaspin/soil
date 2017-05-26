@@ -1,9 +1,8 @@
-package allocation
+package scheduler
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
 	"io/ioutil"
@@ -17,7 +16,7 @@ const (
 Description=${pod.name}
 Before=${pod.units}
 [Service]
-${agent.pod.exec}
+${agent.pod_exec}
 [Install]
 WantedBy=${pod.target}
 `
@@ -32,15 +31,15 @@ type Allocation struct {
 	Units []*AllocationUnit
 }
 
-func NewFromManifest(namespace string, m *manifest.Pod, env *agent.Environment) (p *Allocation, err error) {
+func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint64) (p *Allocation, err error) {
 	p = &Allocation{
 		AllocationHeader: &AllocationHeader{
 			Name:      m.Name,
 			PodMark:   m.Mark(),
-			AgentMark: env.Mark(),
-			Namespace: namespace,
+			AgentMark: mark,
+			Namespace: m.Namespace,
 		},
-		AllocationFile: NewFile(fmt.Sprintf("pod-%s-%s.service", namespace, m.Name), m.Runtime),
+		AllocationFile: NewFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), m.Runtime),
 	}
 	var names []string
 	for _, u := range m.Units {
@@ -51,17 +50,39 @@ func NewFromManifest(namespace string, m *manifest.Pod, env *agent.Environment) 
 			},
 			AllocationFile: NewFile(u.Name, m.Runtime),
 		}
-		pu.Source = env.Interpolate(u.Source)
+		pu.Source = manifest.Interpolate(u.Source, env)
 		p.Units = append(p.Units, pu)
 		names = append(names, u.Name)
 	}
 	p.Source, err = p.AllocationHeader.Marshal(p.Name, p.Units)
-	p.Source += env.Interpolate(podUnitTemplate, map[string]string{
+	p.Source += manifest.Interpolate(podUnitTemplate, map[string]string{
 			"pod.units":    strings.Join(names, " "),
 			"pod.name":   m.Name,
 			"pod.target": m.Target,
-		})
+		}, env)
 
+	return
+}
+
+func NewAllocationFromSystemD(path string) (res *Allocation, err error) {
+	res = &Allocation{
+		AllocationFile: &AllocationFile{
+			Path: path,
+		},
+		AllocationHeader: &AllocationHeader{},
+	}
+	if err = res.AllocationFile.Read(); err != nil {
+		return
+	}
+	if res.Units, err = res.AllocationHeader.Unmarshal(res.AllocationFile.Source); err != nil {
+		return
+	}
+
+	for _, u := range res.Units {
+		if err = u.AllocationFile.Read(); err != nil {
+			return
+		}
+	}
 	return
 }
 

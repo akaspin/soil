@@ -1,42 +1,29 @@
-package executor
+package scheduler
 
 import (
-	"github.com/akaspin/soil/agent/scheduler/allocation"
+	"sort"
 )
 
-const (
-	phaseDestroyCommand = iota
-	phaseDestroyFS
-	phaseDeployFS
-	phaseDeployPerm
-	phaseDeployCommand
-)
 
-func Plan(left, right *allocation.Allocation) (res []Instruction) {
-	phases := map[int][]Instruction{
-		phaseDestroyCommand: nil,
-		phaseDestroyFS:      nil,
-		phaseDeployFS:       nil,
-		phaseDeployPerm:     nil,
-		phaseDeployCommand:  nil,
-	}
-	for _, i := range PlanPhases(left, right) {
+
+func Plan(left, right *Allocation) (res []Instruction) {
+	phases1 := map[int][]Instruction{}
+	var phaseIds []int
+	for _, i := range planPhases(left, right) {
 		phase := i.Phase()
-		phases[phase] = append(phases[phase], i)
+		phases1[phase] = append(phases1[phase], i)
 	}
-	for _, phase := range []int{
-		phaseDestroyCommand,
-		phaseDestroyFS,
-		phaseDeployFS,
-		phaseDeployPerm,
-		phaseDeployCommand,
-	} {
-		res = append(res, phases[phase]...)
+	for i := range phases1 {
+		phaseIds = append(phaseIds, i)
+	}
+	sort.Ints(phaseIds)
+	for _, i := range phaseIds {
+		res = append(res, phases1[i]...)
 	}
 	return
 }
 
-func PlanPhases(left, right *allocation.Allocation) (res []Instruction) {
+func planPhases(left, right *Allocation) (res []Instruction) {
 	if right == nil {
 		res = append(res, planUnitDestroy(left.PodUnit())...)
 		for _, u := range left.Units {
@@ -57,7 +44,7 @@ func PlanPhases(left, right *allocation.Allocation) (res []Instruction) {
 	res = append(res, PlanUnit(left.PodUnit(), right.PodUnit())...)
 
 	done := map[string]bool{}
-	candidates := map[string]*allocation.AllocationUnit{}
+	candidates := map[string]*AllocationUnit{}
 	for _, u := range right.Units {
 		candidates[u.AllocationFile.UnitName()] = u
 	}
@@ -76,7 +63,7 @@ func PlanPhases(left, right *allocation.Allocation) (res []Instruction) {
 	return
 }
 
-func PlanUnit(left, right *allocation.AllocationUnit) (res []Instruction) {
+func PlanUnit(left, right *AllocationUnit) (res []Instruction) {
 	if right == nil {
 		res = planUnitDestroy(left)
 		return
@@ -104,7 +91,7 @@ func PlanUnit(left, right *allocation.AllocationUnit) (res []Instruction) {
 	return
 }
 
-func planUnitDestroy(what *allocation.AllocationUnit) (res []Instruction) {
+func planUnitDestroy(what *AllocationUnit) (res []Instruction) {
 	res = []Instruction{
 		NewDeleteUnitInstruction(what.AllocationFile),
 	}
@@ -114,7 +101,7 @@ func planUnitDestroy(what *allocation.AllocationUnit) (res []Instruction) {
 	return
 }
 
-func planUnitDeploy(what *allocation.AllocationFile, permanent bool, command string) (res []Instruction) {
+func planUnitDeploy(what *AllocationFile, permanent bool, command string) (res []Instruction) {
 	res = append(res, NewWriteUnitInstruction(what), planUnitPerm(what, permanent))
 	if command != "" {
 		res = append(res, NewCommandInstruction(phaseDeployCommand, what, command))
@@ -122,7 +109,7 @@ func planUnitDeploy(what *allocation.AllocationFile, permanent bool, command str
 	return
 }
 
-func planUnitPerm(what *allocation.AllocationFile, permanent bool) (res Instruction) {
+func planUnitPerm(what *AllocationFile, permanent bool) (res Instruction) {
 	if permanent {
 		res = NewEnableUnitInstruction(what)
 		return

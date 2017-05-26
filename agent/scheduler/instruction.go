@@ -1,10 +1,17 @@
-package executor
+package scheduler
 
 import (
 	"fmt"
-	"github.com/akaspin/soil/agent/scheduler/allocation"
 	"github.com/coreos/go-systemd/dbus"
 	"os"
+)
+
+const (
+	phaseDestroyCommand = iota
+	phaseDestroyFS
+	phaseDeployFS
+	phaseDeployPerm
+	phaseDeployCommand
 )
 
 type Instruction interface {
@@ -14,10 +21,10 @@ type Instruction interface {
 
 type baseInstruction struct {
 	phase    int
-	unitFile *allocation.AllocationFile
+	unitFile *AllocationFile
 }
 
-func newBaseInstruction(phase int, unitFile *allocation.AllocationFile) *baseInstruction {
+func newBaseInstruction(phase int, unitFile *AllocationFile) *baseInstruction {
 	return &baseInstruction{
 		phase:    phase,
 		unitFile: unitFile,
@@ -33,7 +40,7 @@ type WriteUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewWriteUnitInstruction(unitFile *allocation.AllocationFile) *WriteUnitInstruction {
+func NewWriteUnitInstruction(unitFile *AllocationFile) *WriteUnitInstruction {
 	return &WriteUnitInstruction{
 		newBaseInstruction(phaseDeployFS, unitFile),
 	}
@@ -57,7 +64,7 @@ type DeleteUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewDeleteUnitInstruction(unitFile *allocation.AllocationFile) *DeleteUnitInstruction {
+func NewDeleteUnitInstruction(unitFile *AllocationFile) *DeleteUnitInstruction {
 	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyFS, unitFile)}
 }
 
@@ -79,7 +86,7 @@ type EnableUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewEnableUnitInstruction(unitFile *allocation.AllocationFile) *EnableUnitInstruction {
+func NewEnableUnitInstruction(unitFile *AllocationFile) *EnableUnitInstruction {
 	return &EnableUnitInstruction{newBaseInstruction(phaseDeployPerm, unitFile)}
 }
 
@@ -97,7 +104,7 @@ type DisableUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewDisableUnitInstruction(unitFile *allocation.AllocationFile) *DisableUnitInstruction {
+func NewDisableUnitInstruction(unitFile *AllocationFile) *DisableUnitInstruction {
 	return &DisableUnitInstruction{newBaseInstruction(phaseDeployPerm, unitFile)}
 }
 
@@ -116,7 +123,7 @@ type CommandInstruction struct {
 	command string
 }
 
-func NewCommandInstruction(phase int, unitFile *allocation.AllocationFile, command string) *CommandInstruction {
+func NewCommandInstruction(phase int, unitFile *AllocationFile, command string) *CommandInstruction {
 	return &CommandInstruction{
 		baseInstruction: newBaseInstruction(phase, unitFile),
 		command:         command,

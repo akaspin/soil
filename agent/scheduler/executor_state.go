@@ -1,7 +1,6 @@
-package executor
+package scheduler
 
 import (
-	"github.com/akaspin/soil/agent/scheduler/allocation"
 	"github.com/pkg/errors"
 	"sync"
 )
@@ -11,19 +10,19 @@ var (
 	AllocationNotUnique     = errors.New("allocation is not unique")
 )
 
-type State struct {
-	ready   map[string]*allocation.Allocation
-	active  map[string]*allocation.Allocation
-	pending map[string]*allocation.Allocation
+type ExecutorState struct {
+	ready   map[string]*Allocation
+	active  map[string]*Allocation
+	pending map[string]*Allocation
 
 	mu      *sync.Mutex
 }
 
-func NewState(initial []*allocation.Allocation) (s *State) {
-	s = &State{
-		ready:   map[string]*allocation.Allocation{},
-		active:  map[string]*allocation.Allocation{},
-		pending: map[string]*allocation.Allocation{},
+func NewExecutorState(initial []*Allocation) (s *ExecutorState) {
+	s = &ExecutorState{
+		ready:   map[string]*Allocation{},
+		active:  map[string]*Allocation{},
+		pending: map[string]*Allocation{},
 		mu:      &sync.Mutex{},
 	}
 	for _, a := range initial {
@@ -33,8 +32,8 @@ func NewState(initial []*allocation.Allocation) (s *State) {
 }
 
 // Submit allocation to pending. Use <nil> for destroy.
-// Submit returns ok if state actually submitted.
-func (s *State) Submit(name string, pending *allocation.Allocation) (ok bool) {
+// Submit returns ok if pods actually submitted.
+func (s *ExecutorState) Submit(name string, pending *Allocation) (ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	latest := s.getLatest(name)
@@ -47,7 +46,7 @@ func (s *State) Submit(name string, pending *allocation.Allocation) (ok bool) {
 
 // Promote allocation from pending to active and return ready and active pair.
 // or error if evaluation is not possible at this time.
-func (s *State) Promote(name string) (ready, active *allocation.Allocation, err error) {
+func (s *ExecutorState) Promote(name string) (ready, active *Allocation, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -69,7 +68,7 @@ func (s *State) Promote(name string) (ready, active *allocation.Allocation, err 
 }
 
 // Commit active to ready
-func (s *State) Commit(name string, failures []error) (destroyed bool, err error) {
+func (s *ExecutorState) Commit(name string, failures []error) (destroyed bool, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -89,12 +88,12 @@ func (s *State) Commit(name string, failures []error) (destroyed bool, err error
 }
 
 // List
-func (s *State) ListActual(namespace string) (res map[string]*allocation.AllocationHeader) {
+func (s *ExecutorState) ListActual() (res map[string]*AllocationHeader) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	res = map[string]*allocation.AllocationHeader{}
+	res = map[string]*AllocationHeader{}
 
-	for _, what := range []map[string]*allocation.Allocation{
+	for _, what := range []map[string]*Allocation{
 		s.pending, s.active, s.ready,
 	} {
 		for k, v := range what {
@@ -108,7 +107,7 @@ func (s *State) ListActual(namespace string) (res map[string]*allocation.Allocat
 		}
 	}
 	for k, v := range res {
-		if v == nil || v.Namespace != namespace {
+		if v == nil {
 			delete(res, k)
 		}
 	}
@@ -116,7 +115,7 @@ func (s *State) ListActual(namespace string) (res map[string]*allocation.Allocat
 }
 
 // returns latest (done/active/pending) pod
-func (s *State) getLatest(name string) (res *allocation.Allocation) {
+func (s *ExecutorState) getLatest(name string) (res *Allocation) {
 	var ok bool
 	if res, ok = s.pending[name]; ok {
 		return
@@ -130,7 +129,7 @@ func (s *State) getLatest(name string) (res *allocation.Allocation) {
 	return
 }
 
-func (s *State) comparePods(left, right *allocation.Allocation) (ok bool) {
+func (s *ExecutorState) comparePods(left, right *Allocation) (ok bool) {
 	var leftMark, rightMark uint64
 	if left != nil {
 		leftMark = left.AllocationHeader.Mark()

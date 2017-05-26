@@ -6,8 +6,6 @@ import (
 	"io"
 )
 
-var V string
-
 type Soil struct {
 	*cut.Environment
 }
@@ -27,7 +25,13 @@ func Run(stderr, stdout io.Writer, stdin io.Reader, args ...string) (err error) 
 	cmd := cut.Attach(
 		&Soil{env}, []cut.Binder{env},
 		cut.Attach(
-			&Agent{env, configs}, []cut.Binder{configs},
+			&Agent{
+				Environment: env,
+				ConfigOptions: configs,
+			}, []cut.Binder{configs},
+		),
+		cut.Attach(
+			&Version{env}, nil,
 		),
 	)
 	cmd.SetArgs(args)

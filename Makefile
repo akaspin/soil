@@ -50,6 +50,10 @@ test-debug:
 dist-docker: dist/$(BIN)-$(V)-linux-amd64.tar.gz
 	docker build --build-arg V=$(V) -t akaspin/soil:$(V) .
 
+dist-docker-push: dist-docker
+	echo $(V) | grep dirty && exit 2 || true
+	docker push akaspin/soil:$(V)
+
 dist: \
 	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \
 	dist/$(BIN)-$(V)-linux-amd64.tar.gz

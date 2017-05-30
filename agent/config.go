@@ -13,12 +13,10 @@ type Config struct {
 	Id string
 	Meta map[string]string `hcl:"meta" json:"meta"`
 	Exec string
-	Workers int
 }
 
 func DefaultConfig() (c *Config)  {
 	c = &Config{
-		Workers: 4,
 		Id: "localhost",
 		Meta: map[string]string{},
 		Exec: "ExecStart=/usr/bin/sleep inf",

@@ -15,6 +15,8 @@ pod "my-pod" {
   }
 
   unit "my-1.service" {
+    permanent = false
+  
     create = ""
     update = ""
     destroy = "stop"
@@ -33,4 +35,3 @@ pod "my-pod" {
 }
 
 ```
-

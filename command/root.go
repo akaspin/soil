@@ -20,14 +20,14 @@ func Run(stderr, stdout io.Writer, stdin io.Reader, args ...string) (err error) 
 		Stdin:  stdin,
 		Stdout: stdout,
 	}
-	configs := &ConfigOptions{}
+	configs := &AgentOptions{}
 
 	cmd := cut.Attach(
 		&Soil{env}, []cut.Binder{env},
 		cut.Attach(
 			&Agent{
-				Environment: env,
-				ConfigOptions: configs,
+				Environment:  env,
+				AgentOptions: configs,
 			}, []cut.Binder{configs},
 		),
 		cut.Attach(

@@ -16,9 +16,19 @@ import (
 	"syscall"
 )
 
+type AgentOptions struct {
+	ConfigPath []string
+	PoolSize   int
+}
+
+func (o *AgentOptions) Bind(cc *cobra.Command) {
+	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "", []string{"/etc/soil/config.hcl"}, "configuration file")
+	cc.Flags().IntVarP(&o.PoolSize, "pool", "", 4, "worker pool size")
+}
+
 type Agent struct {
 	*cut.Environment
-	*ConfigOptions
+	*AgentOptions
 
 	// reconfigurable
 	config *agent.Config
@@ -48,7 +58,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	c.metaArbiter = arbiter.NewMapArbiter(ctx, c.log, "meta", true)
 	c.configureArbiters()
 
-	sink, schedulerSV := scheduler.New(ctx, c.log, c.config.Workers, c.agentArbiter, c.metaArbiter)
+	sink, schedulerSV := scheduler.New(ctx, c.log, c.PoolSize, c.agentArbiter, c.metaArbiter)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
 
 	// agent

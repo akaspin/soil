@@ -11,7 +11,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 	assert.Error(t, config.Read("testdata/config1.hcl", "testdata/config2.hcl", "testdata/config3.json", "testdata/non-exists.hcl"))
 
 	assert.Equal(t, &agent.Config{
-		Workers: 4,
 		Id:   "localhost-1",
 		Exec: "ExecStart=/usr/bin/sleep inf",
 		Meta: map[string]string{

@@ -30,7 +30,6 @@ test:
 	docker -H 127.0.0.1:2375 run --rm \
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /run/systemd/system:/run/systemd/system \
-		-v /usr/lib/systemd/system:/usr/lib/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.8 go test -run=$(TESTS) -p=1 $(PACKAGES)
@@ -40,7 +39,7 @@ test-debug:
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /run/systemd/system:/run/systemd/system \
 		-v /usr/lib/systemd/system:/usr/lib/systemd/system \
-		-v /var/run/dbus:/var/run/dbus \
+		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.8 go test -v -run=$(TESTS) -p=1 -tags="debug" $(PACKAGES)
 
@@ -50,10 +49,6 @@ test-debug:
 
 dist-docker: dist/$(BIN)-$(V)-linux-amd64.tar.gz
 	docker build --build-arg V=$(V) -t akaspin/soil:$(V) .
-
-dist-docker-push: dist-docker
-	echo $(V) | grep dirty && exit 2 || true
-	docker push akaspin/soil:$(V)
 
 dist: \
 	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \

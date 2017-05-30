@@ -28,17 +28,16 @@ endif
 
 test:
 	docker -H 127.0.0.1:2375 run --rm \
-		-v /etc/systemd/system:/etc/systemd/system \
 		-v /run/systemd/system:/run/systemd/system \
+		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.8 go test -run=$(TESTS) -p=1 $(PACKAGES)
 
 test-debug:
 	docker -H 127.0.0.1:2375 run --rm \
-		-v /etc/systemd/system:/etc/systemd/system \
 		-v /run/systemd/system:/run/systemd/system \
-		-v /usr/lib/systemd/system:/usr/lib/systemd/system \
+		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.8 go test -v -run=$(TESTS) -p=1 -tags="debug" $(PACKAGES)

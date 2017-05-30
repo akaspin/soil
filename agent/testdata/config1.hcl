@@ -26,8 +26,6 @@ agent {
 
   exec = "ExecStart=/usr/bin/sleep inf"
   workers = 4
-
-
 }
 
 // private pod

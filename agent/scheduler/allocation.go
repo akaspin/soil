@@ -20,7 +20,7 @@ ${agent.pod_exec}
 [Install]
 WantedBy=${pod.target}
 `
-	systemdLocalDir   = "/usr/lib/systemd/system"
+	systemdLocalDir   = "/etc/systemd/system"
 	systemdRuntimeDir = "/run/systemd/system"
 )
 

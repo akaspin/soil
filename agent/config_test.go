@@ -8,7 +8,13 @@ import (
 
 func TestConfig_Unmarshal(t *testing.T) {
 	config := agent.DefaultConfig()
-	assert.Error(t, config.Read("testdata/config1.hcl", "testdata/config2.hcl", "testdata/config3.json", "testdata/non-exists.hcl"))
+	assert.Error(t, config.Read(
+		"testdata/config1.hcl",
+		"testdata/config2.hcl",
+		"testdata/config3.hcl",
+		"testdata/config3.json",
+		"testdata/non-exists.hcl",
+	))
 
 	assert.Equal(t, &agent.Config{
 		Id:   "localhost-1",
@@ -19,6 +25,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			"field":         "all,consul",
 			"override":      "true",
 			"from_json":     "true",
+			"from-line1":"true",
+			"from-line2":"true",
 		},
 	}, config)
 }

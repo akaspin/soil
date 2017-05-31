@@ -25,7 +25,7 @@ func TestNewFromManifest(t *testing.T) {
 			},
 			{
 				Name: "unit-2.service",
-				Source: `# ${meta.consul}`,
+				Source: `# ${meta.consul} ${blob.etc-test}`,
 				Transition: manifest.Transition{
 					Create: "start",
 					Destroy: "stop",
@@ -51,13 +51,13 @@ func TestNewFromManifest(t *testing.T) {
 	assert.Equal(t, &scheduler.Allocation{
 		AllocationHeader: &scheduler.AllocationHeader{
 			Name: "pod-1",
-			PodMark: 14962049288988460541,
+			PodMark: 17423788635976699056,
 			AgentMark: 13519672434109364665,
 			Namespace: "private",
 		},
 		AllocationFile: &scheduler.AllocationFile{
 			Path: "/run/systemd/system/pod-private-pod-1.service",
-			Source: "### POD pod-1 {\"AgentMark\":13519672434109364665,\"Namespace\":\"private\",\"PodMark\":14962049288988460541}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+			Source: "### POD pod-1 {\"AgentMark\":13519672434109364665,\"Namespace\":\"private\",\"PodMark\":17423788635976699056}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 		},
 		Units: []*scheduler.AllocationUnit{
 			{
@@ -83,7 +83,7 @@ func TestNewFromManifest(t *testing.T) {
 				},
 				AllocationFile: &scheduler.AllocationFile{
 					Path: "/run/systemd/system/unit-2.service",
-					Source: "# true",
+					Source: "# true 10090666253179731817",
 				},
 			},
 		},

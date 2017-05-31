@@ -43,6 +43,18 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 		},
 		AllocationFile: NewFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), m.Runtime),
 	}
+	fileHashes := map[string]string{}
+	for _, b := range m.Files {
+		ab := &AllocationBlob{
+			Name: b.Name,
+			Permissions: b.Permissions,
+			Leave: b.Leave,
+			Source: manifest.Interpolate(b.Source, env),
+		}
+		p.Blobs = append(p.Blobs, ab)
+		fileHash, _ := hashstructure.Hash(ab.Source, nil)
+		fileHashes[fmt.Sprintf("blob.%s", strings.Replace(strings.Trim(ab.Name, "/"), "/", "-", -1))] = fmt.Sprintf("%d", fileHash)
+	}
 	var unitNames []string
 	for _, u := range m.Units {
 		pu := &AllocationUnit{
@@ -52,18 +64,9 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 			},
 			AllocationFile: NewFile(u.Name, m.Runtime),
 		}
-		pu.Source = manifest.Interpolate(u.Source, env)
+		pu.Source = manifest.Interpolate(u.Source, fileHashes, env)
 		p.Units = append(p.Units, pu)
 		unitNames = append(unitNames, u.Name)
-	}
-	for _, b := range m.Files {
-		ab := &AllocationBlob{
-			Name: b.Name,
-			Permissions: b.Permissions,
-			Leave: b.Leave,
-			Source: manifest.Interpolate(b.Source, env),
-		}
-		p.Blobs = append(p.Blobs, ab)
 	}
 
 	p.Source, err = p.AllocationHeader.Marshal(p.Name, p.Units, p.Blobs)

@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -29,6 +30,7 @@ type Allocation struct {
 	*AllocationHeader
 	*AllocationFile
 	Units []*AllocationUnit
+	Blobs []*AllocationBlob
 }
 
 func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint64) (p *Allocation, err error) {
@@ -41,7 +43,7 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 		},
 		AllocationFile: NewFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), m.Runtime),
 	}
-	var names []string
+	var unitNames []string
 	for _, u := range m.Units {
 		pu := &AllocationUnit{
 			AllocationUnitHeader: &AllocationUnitHeader{
@@ -52,11 +54,21 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 		}
 		pu.Source = manifest.Interpolate(u.Source, env)
 		p.Units = append(p.Units, pu)
-		names = append(names, u.Name)
+		unitNames = append(unitNames, u.Name)
 	}
-	p.Source, err = p.AllocationHeader.Marshal(p.Name, p.Units)
+	for _, b := range m.Files {
+		ab := &AllocationBlob{
+			Name: b.Name,
+			Permissions: b.Permissions,
+			Leave: b.Leave,
+			Source: manifest.Interpolate(b.Source, env),
+		}
+		p.Blobs = append(p.Blobs, ab)
+	}
+
+	p.Source, err = p.AllocationHeader.Marshal(p.Name, p.Units, p.Blobs)
 	p.Source += manifest.Interpolate(podUnitTemplate, map[string]string{
-			"pod.units":    strings.Join(names, " "),
+			"pod.units":    strings.Join(unitNames, " "),
 			"pod.name":   m.Name,
 			"pod.target": m.Target,
 		}, env)
@@ -74,12 +86,17 @@ func NewAllocationFromSystemD(path string) (res *Allocation, err error) {
 	if err = res.AllocationFile.Read(); err != nil {
 		return
 	}
-	if res.Units, err = res.AllocationHeader.Unmarshal(res.AllocationFile.Source); err != nil {
+	if res.Units, res.Blobs, err = res.AllocationHeader.Unmarshal(res.AllocationFile.Source); err != nil {
 		return
 	}
 
 	for _, u := range res.Units {
 		if err = u.AllocationFile.Read(); err != nil {
+			return
+		}
+	}
+	for _, b := range res.Blobs {
+		if err = b.Read(); err != nil {
 			return
 		}
 	}
@@ -114,7 +131,7 @@ func (h *AllocationHeader) Mark() (res uint64) {
 	return
 }
 
-func (h *AllocationHeader) Unmarshal(src string) (units []*AllocationUnit, err error) {
+func (h *AllocationHeader) Unmarshal(src string) (units []*AllocationUnit, blobs []*AllocationBlob, err error) {
 	split := strings.Split(src, "\n")
 	// extract header
 	var jsonSrc string
@@ -125,25 +142,35 @@ func (h *AllocationHeader) Unmarshal(src string) (units []*AllocationUnit, err e
 		return
 	}
 	for _, line := range split[1:] {
-		if !strings.HasPrefix(line, "### UNIT") {
-			break
+		if strings.HasPrefix(line, "### UNIT") {
+			u := &AllocationUnit{
+				AllocationFile:       &AllocationFile{},
+				AllocationUnitHeader: &AllocationUnitHeader{},
+			}
+			if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.AllocationFile.Path, &jsonSrc); err != nil {
+				return
+			}
+			if err = json.Unmarshal([]byte(jsonSrc), &u); err != nil {
+				return
+			}
+			units = append(units, u)
 		}
-		u := &AllocationUnit{
-			AllocationFile:       &AllocationFile{},
-			AllocationUnitHeader: &AllocationUnitHeader{},
+		if strings.HasPrefix(line, "### BLOB") {
+			b := &AllocationBlob{
+			}
+			if _, err = fmt.Sscanf(line, "### BLOB %s %s", &b.Name, &jsonSrc); err != nil {
+				return
+			}
+			if err = json.Unmarshal([]byte(jsonSrc), &b); err != nil {
+				return
+			}
+			blobs = append(blobs, b)
 		}
-		if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.AllocationFile.Path, &jsonSrc); err != nil {
-			return
-		}
-		if err = json.Unmarshal([]byte(jsonSrc), &u); err != nil {
-			return
-		}
-		units = append(units, u)
 	}
 	return
 }
 
-func (h *AllocationHeader) Marshal(name string, units []*AllocationUnit) (res string, err error) {
+func (h *AllocationHeader) Marshal(name string, units []*AllocationUnit, blobs []*AllocationBlob) (res string, err error) {
 	var jsonRes []byte
 
 	if jsonRes, err = json.Marshal(map[string]interface{}{
@@ -159,6 +186,15 @@ func (h *AllocationHeader) Marshal(name string, units []*AllocationUnit) (res st
 			return
 		}
 		res += fmt.Sprintf("### UNIT %s %s\n", u.AllocationFile.Path, string(jsonRes))
+	}
+	for _, b := range blobs {
+		if jsonRes, err = json.Marshal(map[string]interface{}{
+			"Permissions": b.Permissions,
+			"Leave": b.Leave,
+		}); err != nil {
+			return
+		}
+		res += fmt.Sprintf("### BLOB %s %s\n", b.Name, string(jsonRes))
 	}
 
 	return
@@ -220,5 +256,29 @@ func AllocationToString(p *Allocation) (res string) {
 		return
 	}
 	res = fmt.Sprintf("%v", p.AllocationHeader)
+	return
+}
+
+type AllocationBlob struct {
+	Name string
+	Permissions int
+	Leave bool
+	Source string
+}
+
+func (b *AllocationBlob) Read() (err error) {
+	src, err := ioutil.ReadFile(b.Name)
+	if err != nil {
+		return
+	}
+	b.Source = string(src)
+	return
+}
+
+func (b *AllocationBlob) Write() (err error) {
+	if err = os.MkdirAll(filepath.Dir(b.Name), os.FileMode(b.Permissions)); err != nil {
+		return
+	}
+	err = ioutil.WriteFile(b.Name, []byte(b.Source), os.FileMode(b.Permissions))
 	return
 }

@@ -6,7 +6,14 @@ pod "first" {
   runtime = true
   target = "multi-user.target"
 
-  // Count
+  file "/etc/vpn/users/env" {
+    permissions = "0644"
+    leave = false
+    source = <<EOF
+My file
+EOF
+  }
+
   unit "first-1.service" {
     permanent = true
     create = "start"

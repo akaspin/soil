@@ -32,6 +32,13 @@ func TestNewFromManifest(t *testing.T) {
 				},
 			},
 		},
+		Files: []*manifest.File{
+			{
+				Name: "/etc/test",
+				Permissions: 0644,
+				Source: "test",
+			},
+		},
 	}
 	env := map[string]string{
 		"meta.consul": "true",
@@ -44,13 +51,13 @@ func TestNewFromManifest(t *testing.T) {
 	assert.Equal(t, &scheduler.Allocation{
 		AllocationHeader: &scheduler.AllocationHeader{
 			Name: "pod-1",
-			PodMark: 14368791351692071250,
+			PodMark: 14962049288988460541,
 			AgentMark: 13519672434109364665,
 			Namespace: "private",
 		},
 		AllocationFile: &scheduler.AllocationFile{
 			Path: "/run/systemd/system/pod-private-pod-1.service",
-			Source: "### POD pod-1 {\"AgentMark\":13519672434109364665,\"Namespace\":\"private\",\"PodMark\":14368791351692071250}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+			Source: "### POD pod-1 {\"AgentMark\":13519672434109364665,\"Namespace\":\"private\",\"PodMark\":14962049288988460541}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 		},
 		Units: []*scheduler.AllocationUnit{
 			{
@@ -80,6 +87,13 @@ func TestNewFromManifest(t *testing.T) {
 				},
 			},
 		},
+		Blobs: []*scheduler.AllocationBlob{
+			{
+				Name: "/etc/test",
+				Permissions: 0644,
+				Source: "test",
+			},
+		},
 	}, res)
 }
 
@@ -87,10 +101,11 @@ func TestHeader_Unmarshal(t *testing.T) {
 	src := `### POD pod-1 {"AgentMark":123,"Namespace":"private","PodMark":345}
 ### UNIT /etc/systemd/system/unit-1.service {"Create":"start","Update":"","Destroy":"","Permanent":true}
 ### UNIT /etc/systemd/system/unit-2.service {"Create":"","Update":"start","Destroy":"","Permanent":false}
+### BLOB /etc/test {"Leave":true,"Permissions":420}
 [Unit]
 `
 	header := &scheduler.AllocationHeader{}
-	units, err := header.Unmarshal(src)
+	units, blobs, err := header.Unmarshal(src)
 	assert.NoError(t, err)
 	assert.Equal(t, []*scheduler.AllocationUnit{
 		{
@@ -116,6 +131,13 @@ func TestHeader_Unmarshal(t *testing.T) {
 			},
 		},
 	}, units)
+	assert.Equal(t, []*scheduler.AllocationBlob{
+		{
+			Name: "/etc/test",
+			Leave: true,
+			Permissions: 0644,
+		},
+	}, blobs)
 	assert.Equal(t, &scheduler.AllocationHeader{
 		Name:      "pod-1",
 		AgentMark: 123,
@@ -138,14 +160,21 @@ func TestHeader_Marshal(t *testing.T) {
 			},
 		},
 	}
+	blobs := []*scheduler.AllocationBlob{
+		{
+			Name: "/etc/test",
+			Permissions: 0644,
+			Source: "my-file",
+		},
+	}
 	h := &scheduler.AllocationHeader{
 		Namespace: "private",
 		AgentMark: 234,
 		PodMark:   123,
 	}
-	res, err := h.Marshal("pod-1", units)
+	res, err := h.Marshal("pod-1", units, blobs)
 	assert.NoError(t, err)
-	assert.Equal(t, "### POD pod-1 {\"AgentMark\":234,\"Namespace\":\"private\",\"PodMark\":123}\n### UNIT /etc/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"\",\"Permanent\":true}\n", res)
+	assert.Equal(t, "### POD pod-1 {\"AgentMark\":234,\"Namespace\":\"private\",\"PodMark\":123}\n### UNIT /etc/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"\",\"Permanent\":true}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n", res)
 }
 
 

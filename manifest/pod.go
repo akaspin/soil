@@ -20,6 +20,7 @@ type Pod struct {
 	Target     string
 	Constraint Constraint
 	Units      []*Unit
+	Files []*File
 }
 
 func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
@@ -37,6 +38,13 @@ func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
 			return
 		}
 		p.Units = append(p.Units, unit)
+	}
+	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("file").Items {
+		var blob *File
+		if blob, err = newFileFromHCL(f); err != nil {
+			return
+		}
+		p.Files = append(p.Files, blob)
 	}
 	return
 }
@@ -100,8 +108,27 @@ func newUnitFromHCL(raw *ast.ObjectItem) (res *Unit, err error) {
 	return
 }
 
+// Unit transition
 type Transition struct {
 	Create  string
 	Update  string
 	Destroy string
+}
+
+// Pod file
+type File struct {
+	Name string
+	Permissions int
+	Leave bool
+	Source string
+}
+
+func newFileFromHCL(raw *ast.ObjectItem) (res *File, err error) {
+	res = &File{
+		Permissions: 0644,
+	}
+	res.Name = raw.Keys[0].Token.Value().(string)
+	err = hcl.DecodeObject(res, raw)
+	res.Source = Heredoc(res.Source)
+	return
 }

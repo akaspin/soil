@@ -29,6 +29,9 @@ func planPhases(left, right *Allocation) (res []Instruction) {
 		for _, u := range left.Units {
 			res = append(res, planUnitDestroy(u)...)
 		}
+		for _, b := range left.Blobs {
+			res = append(res, PlanBlob(b, nil)...)
+		}
 		return
 	}
 
@@ -37,27 +40,46 @@ func planPhases(left, right *Allocation) (res []Instruction) {
 		for _, u := range right.Units {
 			res = append(res, PlanUnit(nil, u)...)
 		}
+		for _, b := range right.Blobs {
+			res = append(res, PlanBlob(nil, b)...)
+		}
 		return
 	}
 
 	// ok. hard case
 	res = append(res, PlanUnit(left.PodUnit(), right.PodUnit())...)
 
-	done := map[string]bool{}
-	candidates := map[string]*AllocationUnit{}
-	for _, u := range right.Units {
-		candidates[u.AllocationFile.UnitName()] = u
-	}
+	unitsDone := map[string]bool{}
+	unitsCandidates := map[string]*AllocationUnit{}
 
+	for _, u := range right.Units {
+		unitsCandidates[u.AllocationFile.UnitName()] = u
+	}
 	for _, u := range left.Units {
-		res = append(res, PlanUnit(u, candidates[u.UnitName()])...)
-		done[u.UnitName()] = true
+		res = append(res, PlanUnit(u, unitsCandidates[u.UnitName()])...)
+		unitsDone[u.UnitName()] = true
 	}
 	for _, u := range right.Units {
-		if _, ok := done[u.AllocationFile.UnitName()]; ok {
+		if _, ok := unitsDone[u.AllocationFile.UnitName()]; ok {
 			continue
 		}
 		res = append(res, PlanUnit(nil, u)...)
+	}
+
+	blobsDone := map[string]bool{}
+	blobCandidates := map[string]*AllocationBlob{}
+	for _, b := range right.Blobs {
+		blobCandidates[b.Name] = b
+	}
+	for _, b := range left.Blobs {
+		res = append(res, PlanBlob(b, blobCandidates[b.Name])...)
+		blobsDone[b.Name] = true
+	}
+	for _, b := range right.Blobs {
+		if _, ok := blobsDone[b.Name]; ok {
+			continue
+		}
+		res = append(res, PlanBlob(nil, b)...)
 	}
 
 	return
@@ -115,5 +137,26 @@ func planUnitPerm(what *AllocationFile, permanent bool) (res Instruction) {
 		return
 	}
 	res = NewDisableUnitInstruction(what)
+	return
+}
+
+func PlanBlob(left, right *AllocationBlob) (res []Instruction) {
+	if left == nil && right ==nil {
+		return
+	}
+	if left == nil {
+		res = append(res, NewWriteBlobInstruction(phaseDeployFS, right))
+		return
+	}
+	if right == nil {
+		if !left.Leave {
+			res = append(res, NewDestroyBlobInstruction(phaseDeployFS, left))
+		}
+		return
+	}
+	// ok we have two blobs
+	if left.Source != right.Source || left.Permissions != right.Permissions {
+		res = append(res, NewWriteBlobInstruction(phaseDeployFS, right))
+	}
 	return
 }

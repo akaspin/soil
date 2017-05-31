@@ -67,6 +67,50 @@ func TestPlanUnit(t *testing.T) {
 	})
 }
 
+func TestPlanBlob(t *testing.T) {
+	left1 := &scheduler.AllocationBlob{
+		Name: "/etc/test",
+		Permissions: 0644,
+		Source: "left1",
+	}
+	left2 := &scheduler.AllocationBlob{
+		Name: "/etc/test",
+		Permissions: 0644,
+		Leave: true,
+		Source: "left2",
+	}
+	right1 := &scheduler.AllocationBlob{
+		Name: "/etc/test",
+		Permissions: 0644,
+		Source: "right1",
+	}
+	right2 := &scheduler.AllocationBlob{
+		Name: "/etc/test",
+		Permissions: 0755,
+		Source: "left1",
+	}
+	t.Run("destroy left 1", func(t *testing.T) {
+		res := scheduler.PlanBlob(left1, nil)
+		assert.Equal(t, "[2:blob-destroy:/etc/test]", fmt.Sprint(res))
+	})
+	t.Run("destroy left 2", func(t *testing.T) {
+		res := scheduler.PlanBlob(left2, nil)
+		assert.Equal(t, "[]", fmt.Sprint(res))
+	})
+	t.Run("write right 1", func(t *testing.T) {
+		res := scheduler.PlanBlob(nil, right1)
+		assert.Equal(t, "[2:blob-write:/etc/test]", fmt.Sprint(res))
+	})
+	t.Run("write right 1 over left 1", func(t *testing.T) {
+		res := scheduler.PlanBlob(left1, right1)
+		assert.Equal(t, "[2:blob-write:/etc/test]", fmt.Sprint(res))
+	})
+	t.Run("write right 2 over left 1", func(t *testing.T) {
+		res := scheduler.PlanBlob(left1, right2)
+		assert.Equal(t, "[2:blob-write:/etc/test]", fmt.Sprint(res))
+	})
+}
+
 func TestPlan(t *testing.T) {
 	left := &scheduler.Allocation{
 		AllocationHeader: &scheduler.AllocationHeader{
@@ -107,6 +151,13 @@ func TestPlan(t *testing.T) {
 						Destroy: "stop",
 					},
 				},
+			},
+		},
+		Blobs: []*scheduler.AllocationBlob{
+			{
+				Name: "/etc/test1",
+				Permissions: 0644,
+				Source: "test",
 			},
 		},
 	}
@@ -151,6 +202,13 @@ func TestPlan(t *testing.T) {
 							Destroy: "stop",
 						},
 					},
+				},
+			},
+			Blobs: []*scheduler.AllocationBlob{
+				{
+					Name: "/etc/test1",
+					Permissions: 0644,
+					Source: "test",
 				},
 			},
 		}
@@ -199,9 +257,9 @@ func TestPlan(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "[3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
+		assert.Equal(t, "[2:blob-destroy:/etc/test1 3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
 	})
-	t.Run("update unit-1", func(t *testing.T) {
+	t.Run("update unit-1 and file", func(t *testing.T) {
 		right := &scheduler.Allocation{
 			AllocationHeader: &scheduler.AllocationHeader{
 				Name:      "pod-1",
@@ -243,14 +301,21 @@ func TestPlan(t *testing.T) {
 					},
 				},
 			},
+			Blobs: []*scheduler.AllocationBlob{
+				{
+					Name: "/etc/test1",
+					Permissions: 0644,
+					Source: "test1",
+				},
+			},
 		}
-		assert.Equal(t, "[2:write:/etc/systemd/system/unit-1.service 3:enable:/etc/systemd/system/unit-1.service 4:restart:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
+		assert.Equal(t, "[2:write:/etc/systemd/system/unit-1.service 2:blob-write:/etc/test1 3:enable:/etc/systemd/system/unit-1.service 4:restart:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
 	})
 	t.Run("create pod", func(t *testing.T) {
-		assert.Equal(t, "[2:write:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/unit-1.service 2:write:/etc/systemd/system/unit-2.service 3:enable:/etc/systemd/system/pod-pod-1.service 3:enable:/etc/systemd/system/unit-1.service 3:enable:/etc/systemd/system/unit-2.service 4:start:/etc/systemd/system/pod-pod-1.service 4:start:/etc/systemd/system/unit-1.service 4:start:/etc/systemd/system/unit-2.service]", fmt.Sprint(scheduler.Plan(nil, left)))
+		assert.Equal(t, "[2:write:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/unit-1.service 2:write:/etc/systemd/system/unit-2.service 2:blob-write:/etc/test1 3:enable:/etc/systemd/system/pod-pod-1.service 3:enable:/etc/systemd/system/unit-1.service 3:enable:/etc/systemd/system/unit-2.service 4:start:/etc/systemd/system/pod-pod-1.service 4:start:/etc/systemd/system/unit-1.service 4:start:/etc/systemd/system/unit-2.service]", fmt.Sprint(scheduler.Plan(nil, left)))
 	})
 	t.Run("destroy pod", func(t *testing.T) {
-		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service]", fmt.Sprint(scheduler.Plan(left, nil)))
+		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:blob-destroy:/etc/test1]", fmt.Sprint(scheduler.Plan(left, nil)))
 	})
 	t.Run("change prefix", func(t *testing.T) {
 		right := &scheduler.Allocation{
@@ -292,6 +357,13 @@ func TestPlan(t *testing.T) {
 							Destroy: "stop",
 						},
 					},
+				},
+			},
+			Blobs: []*scheduler.AllocationBlob{
+				{
+					Name: "/etc/test1",
+					Permissions: 0644,
+					Source: "test",
 				},
 			},
 		}
@@ -337,6 +409,13 @@ func TestPlan(t *testing.T) {
 							Destroy: "stop",
 						},
 					},
+				},
+			},
+			Blobs: []*scheduler.AllocationBlob{
+				{
+					Name: "/etc/test1",
+					Permissions: 0644,
+					Source: "test",
 				},
 			},
 		}

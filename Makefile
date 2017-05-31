@@ -28,6 +28,8 @@ endif
 
 test:
 	docker -H 127.0.0.1:2375 run --rm \
+		-v /run/soil:/run/soil \
+		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
@@ -36,6 +38,8 @@ test:
 
 test-debug:
 	docker -H 127.0.0.1:2375 run --rm \
+		-v /run/soil:/run/soil \
+		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \

@@ -77,7 +77,7 @@ func (r *Executor) deploy(name string) {
 		if _, commitErr = r.state.Commit(name, failures); commitErr != nil {
 			log.Errorf("can't commit %s", err)
 		}
-		log.Debugf("done %s->%s", AllocationToString(ready), AllocationToString(active))
+		log.Infof("done %s->%s %v", AllocationToString(ready), AllocationToString(active), failures)
 	})
 }
 

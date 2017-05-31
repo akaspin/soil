@@ -13,9 +13,8 @@ func TestManifest(t *testing.T) {
 	require.NoError(t, err)
 	defer r.Close()
 
-	res, failures, err := manifest.ParseFromReader("private", r)
+	res, err := manifest.ParseFromReader("private", r)
 	assert.NoError(t, err)
-	assert.Len(t, failures, 0)
 
 	t.Run("parse", func(t *testing.T) {
 		assert.Equal(t, []*manifest.Pod{

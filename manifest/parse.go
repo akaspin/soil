@@ -12,46 +12,50 @@ import (
 func ParseFromFiles(namespace string, paths ...string) (res []*Pod, err error) {
 	var failures []error
 	for _, path := range paths {
-		failures = append(failures, func(configPath string) (errs []error) {
+		failures = append(failures, func(configPath string) (err error) {
 			f, err := os.Open(configPath)
 			if err != nil {
-				errs = append(errs, err)
 				return
 			}
 			defer f.Close()
 
 			var buf bytes.Buffer
 			if _, err = io.Copy(&buf, f); err != nil {
-				failures = append(failures, err)
 				return
 			}
 
 			root, err := hcl.Parse(buf.String())
 			if err != nil {
-				failures = append(failures, fmt.Errorf("error parsing: %s", err))
+				err = fmt.Errorf("error parsing: %s", err)
 				return
 			}
 			buf.Reset()
 
 			list, ok := root.Node.(*ast.ObjectList)
 			if !ok {
-				failures = append(failures, fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object")))
+				err = fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object"))
 				return
 			}
 
-			pods, errs := ParseFromList(namespace, list)
+			pods, err := ParseFromList(namespace, list)
 			res = append(res, pods...)
 			return
-		}(path)...)
+		}(path))
 	}
-	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+	var filtered []error
+	for _, failure := range failures {
+		if failure != nil {
+			filtered = append(filtered, failure)
+		}
+	}
+	if len(filtered) > 0 {
+		err = fmt.Errorf("%v", filtered)
 	}
 	return
 }
 
 // Parse manifests from root
-func ParseFromReader(namespace string, r io.Reader) (res []*Pod, failures []error, err error) {
+func ParseFromReader(namespace string, r io.Reader) (res []*Pod, err error) {
 	var buf bytes.Buffer
 	if _, err = io.Copy(&buf, r); err != nil {
 		return
@@ -69,17 +73,17 @@ func ParseFromReader(namespace string, r io.Reader) (res []*Pod, failures []erro
 		err = fmt.Errorf("error parsing: root should be an object")
 		return
 	}
-	res, failures = ParseFromList(namespace, list)
-
+	res, err = ParseFromList(namespace, list)
 	return
 }
 
-func ParseFromList(namespace string, list *ast.ObjectList) (res []*Pod, failures []error) {
+func ParseFromList(namespace string, list *ast.ObjectList) (res []*Pod, err error) {
 	matches := list.Filter("pod")
 	if len(matches.Items) == 0 {
 		return
 	}
 
+	var failures []error
 	for _, m := range matches.Items {
 		var p *Pod
 		var pErr error
@@ -87,6 +91,9 @@ func ParseFromList(namespace string, list *ast.ObjectList) (res []*Pod, failures
 			failures = append(failures, pErr)
 		}
 		res = append(res, p)
+	}
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
 	}
 	return
 }

@@ -50,38 +50,36 @@ func (m *Manager) Open() (err error) {
 
 func (m *Manager) Register(name string, pod *manifest.Pod, fn managerCallback) {
 	if pod == nil {
-		go m.deregister(name, fn)
+		go m.removePod(name, fn)
 		return
 	}
-	go m.register(name, pod, fn)
+	go m.addPod(name, pod, fn)
 }
 
 
-func (m *Manager) register(name string, pod *manifest.Pod, fn managerCallback)  {
+func (m *Manager) addPod(name string, pod *manifest.Pod, fn managerCallback)  {
 	m.mu.Lock()
 	m.managed[name] = &ManagedPod{
 		Pod: pod,
 		Fn: fn,
 	}
 	m.mu.Unlock()
-	interest := pod.Constraint.ExtractFields()
 	for _, arbiter := range m.arbiters {
 		arbiterName := arbiter.Name()
-		interests := interest[arbiterName]
-		arbiter.RegisterPod(name, interests)
-		m.log.Debugf("%s is registered on %s arbiter with %v", name, arbiterName, interests)
+		arbiter.SubmitPod(name, pod.Constraint)
+		m.log.Debugf("%s is registered on %s arbiter with %v", name, arbiterName, pod.Constraint)
 	}
 }
 
-func (m *Manager) deregister(name string, fn managerCallback) {
+func (m *Manager) removePod(name string, fn managerCallback) {
 	m.mu.Lock()
 	delete(m.managed, name)
 	m.mu.Unlock()
 	for _, a := range m.arbiters {
-		a.DeregisterPod(name)
+		a.RemovePod(name)
 	}
 	fn(nil, nil, 0)
-	m.log.Debugf("deregister %s", name)
+	m.log.Debugf("remove %s", name)
 }
 
 func (m *Manager) onCallback(arbiterName string, env map[string]string) {

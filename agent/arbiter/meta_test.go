@@ -26,7 +26,9 @@ func TestMetaArbiter(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(0), atomic.LoadInt32(&changes))
 
-	a.RegisterPod("test", []string{"first"})
+	a.SubmitPod("test", map[string]string{
+		"${meta.first}": "1",
+	})
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(1), atomic.LoadInt32(&changes))
 

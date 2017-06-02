@@ -7,15 +7,11 @@ import (
 	"sync"
 )
 
-type MapArbiterRegistration struct {
-	fields []string
-}
-
 // MapArbiter arbiter dynamically evaluates map of parameters
 type MapArbiter struct {
 	*supervisor.Control
-	log *logx.Log
-	name string
+	log    *logx.Log
+	name   string
 	marked bool
 
 	callback func(map[string]string)
@@ -23,14 +19,13 @@ type MapArbiter struct {
 	mu       *sync.Mutex
 }
 
-
-func NewMapArbiter(ctx context.Context, log *logx.Log, name string, marked bool) (a *MapArbiter)  {
+func NewMapArbiter(ctx context.Context, log *logx.Log, name string, marked bool) (a *MapArbiter) {
 	a = &MapArbiter{
 		Control:  supervisor.NewControl(ctx),
 		log:      log.GetLog("arbiter", "map", name),
 		name:     name,
 		marked:   marked,
-		callback: func(map[string]string){},
+		callback: func(map[string]string) {},
 		fields:   map[string]string{},
 		mu:       &sync.Mutex{},
 	}
@@ -51,7 +46,7 @@ func (a *MapArbiter) RegisterManager(callback func(env map[string]string)) (curr
 	return
 }
 
-func (a *MapArbiter) RegisterPod(name string, interests []string) {
+func (a *MapArbiter) SubmitPod(name string, constraints map[string]string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.callback != nil {
@@ -59,7 +54,7 @@ func (a *MapArbiter) RegisterPod(name string, interests []string) {
 	}
 }
 
-func (a *MapArbiter) DeregisterPod(name string) {
+func (a *MapArbiter) RemovePod(name string) {
 }
 
 func (a *MapArbiter) Configure(v map[string]string) {

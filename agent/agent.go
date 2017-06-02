@@ -16,10 +16,10 @@ type Arbiter interface {
 
 	RegisterManager(callback func(env map[string]string)) (current map[string]string, marked bool)
 
-	// RegisterPod returns values for given fields. Arbiter may
+	// RemovePod returns values for given fields. Arbiter may
 	// evaluate given fields. For example try to allocate counter.
-	RegisterPod(name string, fields []string)
+	SubmitPod(name string, constraints map[string]string)
 
-	// DeregisterPod pod
-	DeregisterPod(name string)
+	// RemovePod pod
+	RemovePod(name string)
 }

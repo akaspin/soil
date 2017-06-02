@@ -31,9 +31,19 @@ func NewSinkState(namespaces []string, dirty map[string]string) (s *SinkState)  
 func (s *SinkState) SyncNamespace(namespace string, pods []*manifest.Pod) (changes map[string]*manifest.Pod) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	var ok bool
+
+	// Save current state
+	current := map[string]*manifest.Pod{}
+	for _, ns := range s.namespaces {
+		for name, pod := range s.registrations[ns] {
+			if _, ok = current[name]; !ok {
+				current[name] = pod
+			}
+		}
+	}
 
 	changes = map[string]*manifest.Pod{}
-
 	ingest := map[string]*manifest.Pod{}
 	for _, pod := range pods {
 		ingest[pod.Name] = pod
@@ -41,14 +51,13 @@ func (s *SinkState) SyncNamespace(namespace string, pods []*manifest.Pod) (chang
 
 	// evaluate deletions from given namespace
 	for name := range s.registrations[namespace] {
-		if in, ok := ingest[name] ; !ok {
+		var in *manifest.Pod
+		if in, ok = ingest[name] ; !ok {
 			delete(s.registrations[namespace], name)
 		} else {
 			s.registrations[in.Namespace][in.Name] = in
 		}
 		changes[name] = s.get(name)
-
-		// also delete from dirty
 		delete(s.dirty, name)
 	}
 	// evaluate deletions from dirty stale
@@ -64,12 +73,19 @@ func (s *SinkState) SyncNamespace(namespace string, pods []*manifest.Pod) (chang
 	s.registrations[namespace] = ingest
 	for _, ns := range s.namespaces {
 		for name, pod := range s.registrations[ns] {
-			if _, ok := changes[name]; !ok {
+			if _, ok = changes[name]; !ok {
 				changes[name] = pod
 			}
 			delete(s.dirty, name)
 		}
 	}
+	// cleanup
+	for name, pod := range changes {
+		if pod != nil && manifest.IsEqual(pod, current[name]) {
+			delete(changes, name)
+		}
+	}
+
 	return
 }
 

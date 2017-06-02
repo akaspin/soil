@@ -132,3 +132,18 @@ func newFileFromHCL(raw *ast.ObjectItem) (res *File, err error) {
 	res.Source = Heredoc(res.Source)
 	return
 }
+
+// Compare
+func IsEqual(left, right *Pod) (ok bool) {
+	if left == nil {
+		if right != nil {
+			return
+		}
+		ok = true
+		return
+	}
+	if left.Mark() == right.Mark() {
+		ok = true
+	}
+	return
+}

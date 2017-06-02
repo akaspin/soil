@@ -17,10 +17,6 @@ type Sink struct {
 	manager *Manager
 	state *SinkState
 
-	//pods map[string]*manifest.Pod
-
-	// namespaces in order
-
 	mu *sync.Mutex
 }
 

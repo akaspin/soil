@@ -27,15 +27,15 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 		}, changes)
 	})
 	t.Run("public", func(t *testing.T) {
-		ingestPrivate, err := manifest.ParseFromFiles("private", "testdata/sink_state_test_1.hcl")
-		assert.NoError(t, err)
+		//ingestPrivate, err := manifest.ParseFromFiles("private", "testdata/sink_state_test_1.hcl")
+		//assert.NoError(t, err)
 
 		ingestPublic, err := manifest.ParseFromFiles("public", "testdata/sink_state_test_2.hcl")
 		assert.NoError(t, err)
 		changes := state.SyncNamespace("public", ingestPublic)
 		assert.Equal(t, map[string]*manifest.Pod{
+			//"pod-1": ingestPrivate[0],
 			"pod-4": nil,
-			"pod-1": ingestPrivate[0],
 			"pod-3": ingestPublic[1],
 		}, changes)
 	})

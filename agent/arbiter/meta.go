@@ -5,6 +5,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/supervisor"
 	"sync"
+	"github.com/akaspin/soil/manifest"
 )
 
 // MapArbiter arbiter dynamically evaluates map of parameters
@@ -46,7 +47,7 @@ func (a *MapArbiter) RegisterManager(callback func(env map[string]string)) (curr
 	return
 }
 
-func (a *MapArbiter) SubmitPod(name string, constraints map[string]string) {
+func (a *MapArbiter) SubmitPod(name string, constraints manifest.Constraint) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.callback != nil {

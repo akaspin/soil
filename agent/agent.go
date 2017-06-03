@@ -18,7 +18,7 @@ type Arbiter interface {
 
 	// RemovePod returns values for given fields. Arbiter may
 	// evaluate given fields. For example try to allocate counter.
-	SubmitPod(name string, constraints map[string]string)
+	SubmitPod(name string, constraints manifest.Constraint)
 
 	// RemovePod pod
 	RemovePod(name string)

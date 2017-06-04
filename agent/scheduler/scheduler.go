@@ -8,12 +8,12 @@ import (
 	"github.com/akaspin/supervisor"
 )
 
-func New(ctx context.Context, log *logx.Log, workers int, arbiter ...agent.Arbiter) (sink *Sink, sv supervisor.Component) {
+func New(ctx context.Context, log *logx.Log, workers int, arbiter ...agent.Source) (sink *Sink, sv supervisor.Component) {
 	pool := concurrency.NewWorkerPool(ctx, concurrency.Config{
 		Capacity: workers,
 	})
 	executor := NewExecutor(ctx, log, pool)
-	manager := NewManager(ctx, log, arbiter...)
+	manager := NewArbiter(ctx, log, arbiter...)
 	var arbiterComponents []supervisor.Component
 	for _, a := range arbiter {
 		arbiterComponents = append(arbiterComponents, a.(supervisor.Component))

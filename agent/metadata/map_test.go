@@ -1,17 +1,17 @@
-package arbiter_test
+package metadata_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/arbiter"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
 	"time"
 )
 
-func TestMetaArbiter(t *testing.T) {
-	a := arbiter.NewMapArbiter(context.Background(), logx.GetLog("test"), "meta", true)
+func TestMapMetadata(t *testing.T) {
+	a := metadata.NewMapMetadata(context.Background(), logx.GetLog("test"), "meta", true)
 	a.Open()
 	var changes int32
 	callback := func(v map[string]string) {
@@ -22,7 +22,7 @@ func TestMetaArbiter(t *testing.T) {
 		"first": "1",
 		"second": "2",
 	})
-	a.RegisterManager(callback)
+	a.Register(callback)
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(0), atomic.LoadInt32(&changes))
 

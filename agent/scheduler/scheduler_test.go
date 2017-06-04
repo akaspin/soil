@@ -3,7 +3,7 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/arbiter"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -20,8 +20,8 @@ func TestNew(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentArbiter := arbiter.NewMapArbiter(ctx, log, "agent", true)
-		metaArbiter := arbiter.NewMapArbiter(ctx, log, "meta", true)
+		agentArbiter := metadata.NewMapMetadata(ctx, log, "agent", true)
+		metaArbiter := metadata.NewMapMetadata(ctx, log, "meta", true)
 		sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 
 		// premature init arbiters
@@ -58,8 +58,8 @@ func TestNew(t *testing.T) {
 
 	// create new arbiter
 
-	agentArbiter := arbiter.NewMapArbiter(ctx, log, "agent", true)
-	metaArbiter := arbiter.NewMapArbiter(ctx, log, "meta", true)
+	agentArbiter := metadata.NewMapMetadata(ctx, log, "agent", true)
+	metaArbiter := metadata.NewMapMetadata(ctx, log, "meta", true)
 	sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 	// premature init arbiters
 	metaArbiter.Configure(map[string]string{

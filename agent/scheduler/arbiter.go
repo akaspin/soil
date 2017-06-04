@@ -12,11 +12,11 @@ import (
 
 type managerCallback func(reason error, environment map[string]string, mark uint64)
 
-type Manager struct {
+type Arbiter struct {
 	*supervisor.Control
 	log *logx.Log
 
-	arbiters []agent.Arbiter
+	sources []agent.Source
 
 	mu *sync.Mutex
 	managed map[string]*ManagedPod
@@ -24,23 +24,23 @@ type Manager struct {
 	marked map[string]bool
 }
 
-func NewManager(ctx context.Context, log *logx.Log, arbiters ...agent.Arbiter) (m *Manager) {
-	m = &Manager{
+func NewArbiter(ctx context.Context, log *logx.Log, arbiters ...agent.Source) (m *Arbiter) {
+	m = &Arbiter{
 		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("manager"),
-		arbiters: arbiters,
-		mu: &sync.Mutex{},
+		log:     log.GetLog("manager"),
+		sources: arbiters,
+		mu:      &sync.Mutex{},
 		managed: map[string]*ManagedPod{},
-		cache: map[string]map[string]string{},
-		marked: map[string]bool{},
+		cache:   map[string]map[string]string{},
+		marked:  map[string]bool{},
 	}
 	return
 }
 
-func (m *Manager) Open() (err error) {
-	for _, a := range m.arbiters {
-		n := a.Name()
-		m.cache[n], m.marked[n] = a.RegisterManager(func(env map[string]string) {
+func (m *Arbiter) Open() (err error) {
+	for _, a1 := range m.sources {
+		n := a1.Name()
+		m.cache[n], m.marked[n] = a1.Register(func(env map[string]string) {
 			m.onCallback(n, env)
 		})
 	}
@@ -48,7 +48,7 @@ func (m *Manager) Open() (err error) {
 	return
 }
 
-func (m *Manager) Register(name string, pod *manifest.Pod, fn managerCallback) {
+func (m *Arbiter) Register(name string, pod *manifest.Pod, fn managerCallback) {
 	if pod == nil {
 		go m.removePod(name, fn)
 		return
@@ -57,32 +57,31 @@ func (m *Manager) Register(name string, pod *manifest.Pod, fn managerCallback) {
 }
 
 
-func (m *Manager) addPod(name string, pod *manifest.Pod, fn managerCallback)  {
+func (m *Arbiter) addPod(name string, pod *manifest.Pod, fn managerCallback)  {
 	m.mu.Lock()
 	m.managed[name] = &ManagedPod{
 		Pod: pod,
 		Fn: fn,
 	}
 	m.mu.Unlock()
-	for _, arbiter := range m.arbiters {
-		arbiterName := arbiter.Name()
-		arbiter.SubmitPod(name, pod.Constraint)
-		m.log.Debugf("%s is registered on %s arbiter with %v", name, arbiterName, pod.Constraint)
+	for _, source := range m.sources {
+		source.SubmitPod(name, pod.Constraint)
+		m.log.Debugf("%s is registered on %s with %v", name, source.Name(), pod.Constraint)
 	}
 }
 
-func (m *Manager) removePod(name string, fn managerCallback) {
+func (m *Arbiter) removePod(name string, fn managerCallback) {
 	m.mu.Lock()
 	delete(m.managed, name)
 	m.mu.Unlock()
-	for _, a := range m.arbiters {
+	for _, a := range m.sources {
 		a.RemovePod(name)
 	}
 	fn(nil, nil, 0)
 	m.log.Debugf("remove %s", name)
 }
 
-func (m *Manager) onCallback(arbiterName string, env map[string]string) {
+func (m *Arbiter) onCallback(arbiterName string, env map[string]string) {
 	flat := map[string]string{}
 	m.mu.Lock()
 	defer m.mu.Unlock()

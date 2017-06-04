@@ -14,13 +14,13 @@ type Sink struct {
 	log *logx.Log
 
 	executor  *Executor
-	manager *Manager
+	manager *Arbiter
 	state *SinkState
 
 	mu *sync.Mutex
 }
 
-func NewSink(ctx context.Context, log *logx.Log, executor *Executor, manager *Manager) (r *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, executor *Executor, manager *Arbiter) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler"),

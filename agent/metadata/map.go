@@ -1,15 +1,15 @@
-package arbiter
+package metadata
 
 import (
 	"context"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"sync"
-	"github.com/akaspin/soil/manifest"
 )
 
-// MapArbiter arbiter dynamically evaluates map of parameters
-type MapArbiter struct {
+// MapMetadata arbiter dynamically evaluates map of parameters
+type MapMetadata struct {
 	*supervisor.Control
 	log    *logx.Log
 	name   string
@@ -20,10 +20,10 @@ type MapArbiter struct {
 	mu       *sync.Mutex
 }
 
-func NewMapArbiter(ctx context.Context, log *logx.Log, name string, marked bool) (a *MapArbiter) {
-	a = &MapArbiter{
+func NewMapMetadata(ctx context.Context, log *logx.Log, name string, marked bool) (a *MapMetadata) {
+	a = &MapMetadata{
 		Control:  supervisor.NewControl(ctx),
-		log:      log.GetLog("arbiter", "map", name),
+		log:      log.GetLog("metadata", "map", name),
 		name:     name,
 		marked:   marked,
 		callback: func(map[string]string) {},
@@ -33,21 +33,21 @@ func NewMapArbiter(ctx context.Context, log *logx.Log, name string, marked bool)
 	return
 }
 
-func (a *MapArbiter) Name() string {
+func (a *MapMetadata) Name() string {
 	return a.name
 }
 
-func (a *MapArbiter) RegisterManager(callback func(env map[string]string)) (current map[string]string, marked bool) {
+func (a *MapMetadata) Register(callback func(env map[string]string)) (current map[string]string, marked bool) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.callback = callback
-	a.log.Debugf("register manager")
+	a.log.Debugf("register")
 	current = a.fields
 	marked = a.marked
 	return
 }
 
-func (a *MapArbiter) SubmitPod(name string, constraints manifest.Constraint) {
+func (a *MapMetadata) SubmitPod(name string, constraints manifest.Constraint) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if a.callback != nil {
@@ -55,10 +55,10 @@ func (a *MapArbiter) SubmitPod(name string, constraints manifest.Constraint) {
 	}
 }
 
-func (a *MapArbiter) RemovePod(name string) {
+func (a *MapMetadata) RemovePod(name string) {
 }
 
-func (a *MapArbiter) Configure(v map[string]string) {
+func (a *MapMetadata) Configure(v map[string]string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.fields = v

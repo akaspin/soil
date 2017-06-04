@@ -5,7 +5,7 @@ import (
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
-	"github.com/akaspin/soil/agent/arbiter"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
@@ -35,8 +35,8 @@ type Agent struct {
 	privatePods []*manifest.Pod
 
 	log *logx.Log
-	agentArbiter *arbiter.MapArbiter
-	metaArbiter *arbiter.MapArbiter
+	agentArbiter *metadata.MapMetadata
+	metaArbiter *metadata.MapMetadata
 	privateRegistry *registry.Private
 }
 
@@ -54,8 +54,8 @@ func (c *Agent) Run(args ...string) (err error) {
 	ctx := context.Background()
 
 	// Arbiters (premature initialize)
-	c.agentArbiter = arbiter.NewMapArbiter(ctx, c.log, "agent", true)
-	c.metaArbiter = arbiter.NewMapArbiter(ctx, c.log, "meta", true)
+	c.agentArbiter = metadata.NewMapMetadata(ctx, c.log, "agent", true)
+	c.metaArbiter = metadata.NewMapMetadata(ctx, c.log, "meta", true)
 	c.configureArbiters()
 
 	sink, schedulerSV := scheduler.New(ctx, c.log, c.PoolSize, c.agentArbiter, c.metaArbiter)

@@ -3,7 +3,7 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/arbiter"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -17,18 +17,18 @@ func TestManager(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := arbiter.NewMapArbiter(ctx, log, "meta", true)
+	a1 := metadata.NewMapMetadata(ctx, log, "meta", true)
 	a1.Configure(map[string]string{
 		"first": "1",
 		"second": "1",
 	})
-	a2 := arbiter.NewMapArbiter(ctx, log, "agent", false)
+	a2 := metadata.NewMapMetadata(ctx, log, "agent", false)
 	a2.Configure(map[string]string{
 		"first": "1",
 		"second": "1",
 	})
 
-	man := scheduler.NewManager(ctx, log, a1, a2)
+	man := scheduler.NewArbiter(ctx, log, a1, a2)
 	sv := supervisor.NewChain(ctx, a1, man)
 	assert.NoError(t, sv.Open())
 

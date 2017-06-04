@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/arbiter"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -86,8 +86,8 @@ WantedBy=default.target
 	})
 	executor := scheduler.NewExecutor(ctx, log, workerPool)
 
-	arbiter1 := arbiter.NewMapArbiter(ctx, log, "meta", true)
-	arbiter2 := arbiter.NewMapArbiter(ctx, log, "agent", true)
+	arbiter1 := metadata.NewMapMetadata(ctx, log, "meta", true)
+	arbiter2 := metadata.NewMapMetadata(ctx, log, "agent", true)
 
 	// Both map arbiters must be pre initialised
 	arbiter1.Configure(map[string]string{
@@ -99,7 +99,7 @@ WantedBy=default.target
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
-	manager := scheduler.NewManager(ctx, log, arbiter1, arbiter2)
+	manager := scheduler.NewArbiter(ctx, log, arbiter1, arbiter2)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), executor, manager)
 
 	sv := supervisor.NewChain(ctx,

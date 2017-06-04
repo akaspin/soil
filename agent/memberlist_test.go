@@ -26,8 +26,15 @@ func TestMemberlist(t *testing.T) {
 		assert.Equal(t, 1, n)
 		assert.NoError(t, err)
 	}
-	time.Sleep(time.Millisecond * 300)
+	time.Sleep(time.Millisecond * 500)
 	for _, list := range lists {
 		assert.Equal(t, 10, list.NumMembers())
 	}
+	for _, member := range lists[3].Members() {
+		t.Log(member.Meta)
+	}
+}
+
+func TestMemberlistDelegate(t *testing.T) {
+
 }

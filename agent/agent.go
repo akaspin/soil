@@ -9,17 +9,16 @@ type Scheduler interface {
 	Sync(namespace string, pods []*manifest.Pod) (err error)
 }
 
-// Arbiter holds any state and returns internal values
-type Arbiter interface {
+type Source interface {
 	// Name returns arbiter name
 	Name() string
 
-	RegisterManager(callback func(env map[string]string)) (current map[string]string, marked bool)
+	// Bind consumer. Source source will call callback on
+	// change states.
+	Register(callback func(env map[string]string)) (env map[string]string, marked bool)
 
-	// RemovePod returns values for given fields. Arbiter may
-	// evaluate given fields. For example try to allocate counter.
+
 	SubmitPod(name string, constraints manifest.Constraint)
 
-	// RemovePod pod
 	RemovePod(name string)
 }

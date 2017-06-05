@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -86,8 +86,8 @@ WantedBy=default.target
 	})
 	executor := scheduler.NewExecutor(ctx, log, workerPool)
 
-	arbiter1 := metadata.NewMapMetadata(ctx, log, "meta", true)
-	arbiter2 := metadata.NewMapMetadata(ctx, log, "agent", true)
+	arbiter1 := source.NewMapSource(ctx, log, "meta", true)
+	arbiter2 := source.NewMapSource(ctx, log, "agent", true)
 
 	// Both map arbiters must be pre initialised
 	arbiter1.Configure(map[string]string{
@@ -124,7 +124,7 @@ WantedBy=default.target
 			"pod-2": {
 				Name: "pod-2",
 				PodMark: 17758535129175298412,
-				AgentMark: 17181089283766246249,
+				AgentMark: 17231133757460468042,
 				Namespace: "private",
 			},
 		}, executor.List())
@@ -141,13 +141,13 @@ WantedBy=default.target
 			"pod-2": {
 				Name: "pod-2",
 				PodMark: 17758535129175298412,
-				AgentMark: 7974185893712093708,
+				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
 			"pod-3": {
 				Name: "pod-3",
 				PodMark: 5122382858169432775,
-				AgentMark: 7974185893712093708,
+				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
 		}, executor.List())

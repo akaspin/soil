@@ -10,13 +10,19 @@ type Scheduler interface {
 }
 
 type Source interface {
+
 	// Name returns arbiter name
 	Name() string
 
+	// Source namespaces
+	Namespaces() []string
+
+	// Mark state
+	Mark() bool
+
 	// Bind consumer. Source source will call callback on
 	// change states.
-	Register(callback func(env map[string]string)) (env map[string]string, marked bool)
-
+	Register(callback func(active bool, env map[string]string))
 
 	SubmitPod(name string, constraints manifest.Constraint)
 

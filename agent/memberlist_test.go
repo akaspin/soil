@@ -9,6 +9,7 @@ import (
 )
 
 func TestMemberlist(t *testing.T) {
+	t.Skip()
 	var lists []*memberlist.Memberlist
 	for i := 9000; i < 9010; i++ {
 		config := memberlist.DefaultLocalConfig()
@@ -33,8 +34,4 @@ func TestMemberlist(t *testing.T) {
 	for _, member := range lists[3].Members() {
 		t.Log(member.Meta)
 	}
-}
-
-func TestMemberlistDelegate(t *testing.T) {
-
 }

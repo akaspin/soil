@@ -3,8 +3,8 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -13,24 +13,25 @@ import (
 	"time"
 )
 
-func TestManager(t *testing.T) {
+func TestArbiter(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := metadata.NewMapMetadata(ctx, log, "meta", true)
-	a1.Configure(map[string]string{
-		"first": "1",
-		"second": "1",
-	})
-	a2 := metadata.NewMapMetadata(ctx, log, "agent", false)
-	a2.Configure(map[string]string{
-		"first": "1",
-		"second": "1",
-	})
+	a1 := source.NewMapSource(ctx, log, "meta", true)
+	a2 := source.NewMapSource(ctx, log, "agent", false)
 
 	man := scheduler.NewArbiter(ctx, log, a1, a2)
 	sv := supervisor.NewChain(ctx, a1, man)
 	assert.NoError(t, sv.Open())
+
+	a1.Configure(map[string]string{
+		"first": "1",
+		"second": "1",
+	})
+	a2.Configure(map[string]string{
+		"first": "1",
+		"second": "1",
+	})
 
 	privatePods, err := manifest.ParseFromFiles("private", "testdata/manager_test.hcl")
 	assert.NoError(t, err)

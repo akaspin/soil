@@ -1,9 +1,9 @@
-package metadata_test
+package source_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/source"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
@@ -11,10 +11,10 @@ import (
 )
 
 func TestMapMetadata(t *testing.T) {
-	a := metadata.NewMapMetadata(context.Background(), logx.GetLog("test"), "meta", true)
+	a := source.NewMapSource(context.Background(), logx.GetLog("test"), "meta", true)
 	a.Open()
 	var changes int32
-	callback := func(v map[string]string) {
+	callback := func(active bool, v map[string]string) {
 		atomic.AddInt32(&changes, 1)
 	}
 

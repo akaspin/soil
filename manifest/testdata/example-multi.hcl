@@ -1,4 +1,4 @@
-agent {
+meta {
   fake = "string"
 }
 
@@ -6,12 +6,12 @@ pod "first" {
   runtime = true
   target = "multi-user.target"
 
-  file "/etc/vpn/users/env" {
+  blob "/etc/vpn/users/env" {
     permissions = "0644"
     leave = false
     source = <<EOF
-My file
-EOF
+      My file
+    EOF
   }
 
   unit "first-1.service" {

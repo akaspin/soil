@@ -44,7 +44,7 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 		AllocationFile: NewFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), m.Runtime),
 	}
 	fileHashes := map[string]string{}
-	for _, b := range m.Files {
+	for _, b := range m.Blobs {
 		ab := &AllocationBlob{
 			Name: b.Name,
 			Permissions: b.Permissions,

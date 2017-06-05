@@ -6,8 +6,8 @@ import (
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/hashstructure"
 	"sort"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -22,13 +22,13 @@ const (
 
 
 type Pod struct {
-	Namespace string
+	Namespace  string
 	Name       string
 	Runtime    bool
 	Target     string
 	Constraint Constraint
 	Units      []*Unit
-	Files []*File
+	Blobs      []*Blob
 }
 
 func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
@@ -47,12 +47,12 @@ func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
 		}
 		p.Units = append(p.Units, unit)
 	}
-	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("file").Items {
-		var blob *File
-		if blob, err = newFileFromHCL(f); err != nil {
+	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("blob").Items {
+		var blob *Blob
+		if blob, err = newBlobFromHCL(f); err != nil {
 			return
 		}
-		p.Files = append(p.Files, blob)
+		p.Blobs = append(p.Blobs, blob)
 	}
 	return
 }
@@ -126,15 +126,15 @@ type Transition struct {
 }
 
 // Pod file
-type File struct {
+type Blob struct {
 	Name string
 	Permissions int
 	Leave bool
 	Source string
 }
 
-func newFileFromHCL(raw *ast.ObjectItem) (res *File, err error) {
-	res = &File{
+func newBlobFromHCL(raw *ast.ObjectItem) (res *Blob, err error) {
+	res = &Blob{
 		Permissions: 0644,
 	}
 	res.Name = raw.Keys[0].Token.Value().(string)

@@ -123,7 +123,7 @@ WantedBy=default.target
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-2": {
 				Name: "pod-2",
-				PodMark: 17758535129175298412,
+				PodMark: 11007710424567484036,
 				AgentMark: 17231133757460468042,
 				Namespace: "private",
 			},
@@ -140,13 +140,13 @@ WantedBy=default.target
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-2": {
 				Name: "pod-2",
-				PodMark: 17758535129175298412,
+				PodMark: 11007710424567484036,
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
 			"pod-3": {
 				Name: "pod-3",
-				PodMark: 5122382858169432775,
+				PodMark: 3001543335992272175,
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},

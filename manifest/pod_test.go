@@ -123,7 +123,7 @@ func TestManifest(t *testing.T) {
 						Source: "[Service]\n# ${NONEXISTENT}\nExecStart=/usr/bin/sleep inf\n",
 					},
 				},
-				Files: []*manifest.File{
+				Blobs: []*manifest.Blob{
 					{
 						Name: "/etc/vpn/users/env",
 						Permissions: 0644,
@@ -190,7 +190,7 @@ func TestManifest(t *testing.T) {
 
 	t.Run("mark", func(t *testing.T) {
 		for i, mark := range []uint64{
-			0x71bb2988cec20b6d, 0x96a775b34837d54b,
+			0x929c7bc2b806e194, 0xf816b6607f484aa3,
 		} {
 			assert.Equal(t, mark, res[i].Mark())
 		}

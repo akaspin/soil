@@ -1,10 +1,8 @@
-agent {
-  meta {
-    "override" = "true"
-  }
-
-  exec = "ExecStart=/usr/bin/sleep inf"
+meta {
+  "override" = "true"
 }
+
+exec = "ExecStart=/usr/bin/sleep inf"
 
 // private pod 2
 pod "one-2" {

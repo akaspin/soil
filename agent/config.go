@@ -9,15 +9,15 @@ import (
 	"os"
 )
 
+// Agent - specific config
 type Config struct {
-	Id string
+	//Id string
 	Meta map[string]string `hcl:"meta" json:"meta"`
 	Exec string
 }
 
 func DefaultConfig() (c *Config)  {
 	c = &Config{
-		Id: "localhost",
 		Meta: map[string]string{},
 		Exec: "ExecStart=/usr/bin/sleep inf",
 	}
@@ -42,11 +42,11 @@ func (c *Config) Unmarshal(r io.Reader) (err error) {
 		return
 	}
 	var failures []error
-	for _, chunk := range list.Filter("agent").Items {
-		if err = hcl.DecodeObject(c, chunk); err != nil {
-			failures = append(failures, err)
-		}
+	//for _, chunk := range list.Filter("agent").Items {
+	if err = hcl.DecodeObject(c, list); err != nil {
+		failures = append(failures, err)
 	}
+	//}
 	if len(failures) > 0 {
 		err = fmt.Errorf("%v", failures)
 	}

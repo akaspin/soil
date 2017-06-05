@@ -5,9 +5,9 @@ import (
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
-	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/spf13/cobra"
@@ -19,11 +19,13 @@ import (
 type AgentOptions struct {
 	ConfigPath []string
 	PoolSize   int
+	Id string
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "", []string{"/etc/soil/config.hcl"}, "configuration file")
 	cc.Flags().IntVarP(&o.PoolSize, "pool", "", 4, "worker pool size")
+	cc.Flags().StringVarP(&o.Id, "id", "", "localhost", "agent id")
 }
 
 type Agent struct {
@@ -56,7 +58,6 @@ func (c *Agent) Run(args ...string) (err error) {
 	// Arbiters (premature initialize)
 	c.agentArbiter = source.NewMapSource(ctx, c.log, "agent", true)
 	c.metaArbiter = source.NewMapSource(ctx, c.log, "meta", true)
-	c.configureArbiters()
 
 	sink, schedulerSV := scheduler.New(ctx, c.log, c.PoolSize, c.agentArbiter, c.metaArbiter)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
@@ -71,6 +72,7 @@ func (c *Agent) Run(args ...string) (err error) {
 		return
 	}
 
+	c.configureArbiters()
 	c.configurePrivateRegistry()
 
 	// bind signals
@@ -119,7 +121,7 @@ func (c *Agent) readPrivatePods() {
 
 func (c *Agent) configureArbiters() {
 	c.agentArbiter.Configure(map[string]string{
-		"id": c.config.Id,
+		"id": c.Id,
 		"pod_exec": c.config.Exec,
 	})
 	c.metaArbiter.Configure(c.config.Meta)

@@ -17,7 +17,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 	))
 
 	assert.Equal(t, &agent.Config{
-		Id:   "localhost-1",
 		Exec: "ExecStart=/usr/bin/sleep inf",
 		Meta: map[string]string{
 			"consul":        "true",

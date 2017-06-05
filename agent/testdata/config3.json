@@ -1,7 +1,5 @@
 {
-  "Agent": {
-    "Meta": [{
-      "from_json": "true"
-    }]
-  }
+  "Meta": [{
+    "from_json": "true"
+  }]
 }

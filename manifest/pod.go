@@ -7,9 +7,17 @@ import (
 	"github.com/mitchellh/hashstructure"
 	"sort"
 	"strings"
+	"strconv"
 )
 
-const defaultPodTarget = "default.target"
+const (
+	defaultPodTarget = "default.target"
+
+	opEqual = "="
+	opLess = "<"
+	opGreater = ">"
+	opIn = "~"
+)
 
 
 
@@ -54,6 +62,8 @@ func (p *Pod) Mark() (res uint64) {
 	return
 }
 
+// Constraint can contain interpolations in form ${ns.key}.
+// Right field can also begins with compare operation: "<", ">" or "~" (in).
 type Constraint map[string]string
 
 // Extract constraint fields by namespaces
@@ -81,7 +91,7 @@ func (c Constraint) Check(env map[string]string) (err error) {
 	for left, right := range c {
 		leftV := Interpolate(left, env)
 		rightV := Interpolate(right, env)
-		if leftV != rightV {
+		if !checkPair(leftV, rightV) {
 			err = fmt.Errorf("constraint failed %s != %s (%s:%s)", leftV, rightV, left, right)
 			return
 		}
@@ -145,5 +155,56 @@ func IsEqual(left, right *Pod) (ok bool) {
 	if left.Mark() == right.Mark() {
 		ok = true
 	}
+	return
+}
+
+func checkPair(left, right string) (res bool) {
+	// check for operation
+	op := opEqual
+	split := strings.SplitN(right, " ", 2)
+	if len(split) == 2 {
+		// have op
+		switch split[0] {
+		case opLess, opGreater:
+			op = split[0]
+			right = split[1]
+			leftN, leftErr := strconv.ParseFloat(left, 64)
+			rightN, rightErr := strconv.ParseFloat(split[1], 64)
+			if leftErr != nil || rightErr != nil {
+				switch op {
+				case opLess:
+					res = left < right
+				case opGreater:
+					res = left > right
+				}
+			} else {
+				switch op {
+				case opLess:
+					res = leftN < rightN
+				case opGreater:
+					res = leftN > rightN
+				}
+			}
+			return
+		case opIn:
+			// inside
+			rightSplit := strings.Split(split[1], ",")
+			LEFT:
+			for _, leftChunk := range strings.Split(left, ",") {
+				for _, rightChunk := range rightSplit {
+					if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {
+						continue LEFT
+					}
+				}
+				// nothing found
+				return
+			}
+			// found all
+			res = true
+		}
+		return
+	}
+	// ordinal string comparison
+	res = left == right
 	return
 }

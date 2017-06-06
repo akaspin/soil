@@ -15,6 +15,7 @@ type MapSource struct {
 	name       string
 	namespaces []string
 	mark       bool
+	required manifest.Constraint
 
 	callback func(bool, map[string]string)
 	fields   map[string]string
@@ -22,13 +23,14 @@ type MapSource struct {
 	mu       *sync.Mutex
 }
 
-func NewMapSource(ctx context.Context, log *logx.Log, name string, mark bool) (s *MapSource) {
+func NewMapSource(ctx context.Context, log *logx.Log, name string, mark bool, required manifest.Constraint) (s *MapSource) {
 	s = &MapSource{
 		Control:    supervisor.NewControl(ctx),
 		log:        log.GetLog("metadata", "map", name),
 		name:       name,
 		namespaces: []string{"private", "public"},
 		mark:       mark,
+		required: required,
 		callback:   func(bool, map[string]string) {},
 		fields:     map[string]string{},
 		mu:         &sync.Mutex{},
@@ -46,6 +48,10 @@ func (s *MapSource) Namespaces() []string {
 
 func (s *MapSource) Mark() bool {
 	return s.mark
+}
+
+func (s *MapSource) Required() manifest.Constraint {
+	return s.required
 }
 
 func (s *MapSource) Register(callback func(active bool, env map[string]string)) {

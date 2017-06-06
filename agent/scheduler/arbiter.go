@@ -96,14 +96,14 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 	}
 
 	// get data
-	namespaces := map[string]int{}
+	required := map[string][]manifest.Constraint{}
+	inactive := map[string]struct{}{}
 	marked := map[string]string{}
 	all := map[string]string{}
+
 	for _, s := range a.sources {
 		if s.active {
-			for _, ns := range s.source.Namespaces() {
-				namespaces[ns] = namespaces[ns] + 1
-			}
+			// add fields if active
 			for k, v := range s.cache {
 				key := s.source.Name() + "." + k
 				all[key] = v
@@ -111,13 +111,26 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 					marked[key] = v
 				}
 			}
+			for _, ns := range s.source.Namespaces() {
+				required[ns] = append(required[ns], s.source.Required())
+			}
+			continue
+		}
+		for _, ns := range s.source.Namespaces() {
+			inactive[ns] = struct{}{}
 		}
 	}
 
 	mark, _ := hashstructure.Hash(marked, nil)
 	for n, managed := range a.managed {
-		if namespaces[managed.Pod.Namespace] > 0 {
-			checkErr := managed.Pod.Constraint.Check(all)
+		if _, ok := inactive[managed.Pod.Namespace]; !ok {
+			var checkErr error
+			CONSTRAINT:
+			for _, constraint := range append(required[managed.Pod.Namespace], managed.Pod.Constraint) {
+				if checkErr = constraint.Check(all); checkErr != nil {
+					break CONSTRAINT
+				}
+			}
 			a.log.Debugf("notify %s %v %v", n, checkErr, all)
 			managed.Fn(checkErr, all, mark)
 		}
@@ -133,8 +146,4 @@ type Source struct {
 	source agent.Source
 	active bool
 	cache map[string]string
-}
-
-func (s *Source) CanManage(namespace string) (res bool) {
-	return
 }

@@ -3,8 +3,8 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
@@ -20,8 +20,10 @@ func TestNew(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentArbiter := source.NewMapSource(ctx, log, "agent", true)
-		metaArbiter := source.NewMapSource(ctx, log, "meta", true)
+		agentArbiter := source.NewMapSource(ctx, log, "agent", true, manifest.Constraint{
+			"${agent.drain}": "false",
+		})
+		metaArbiter := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
 		sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 
 		// premature init arbiters
@@ -33,6 +35,7 @@ func TestNew(t *testing.T) {
 		agentArbiter.Configure(map[string]string{
 			"id": "one",
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
+			"drain": "false",
 		})
 		assert.NoError(t, sv.Open())
 		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
@@ -58,8 +61,8 @@ func TestNew(t *testing.T) {
 
 	// create new arbiter
 
-	agentArbiter := source.NewMapSource(ctx, log, "agent", true)
-	metaArbiter := source.NewMapSource(ctx, log, "meta", true)
+	agentArbiter := source.NewMapSource(ctx, log, "agent", true, manifest.Constraint{})
+	metaArbiter := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
 	sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 	// premature init arbiters
 	metaArbiter.Configure(map[string]string{

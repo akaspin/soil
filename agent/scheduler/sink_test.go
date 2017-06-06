@@ -86,8 +86,8 @@ WantedBy=default.target
 	})
 	executor := scheduler.NewExecutor(ctx, log, workerPool)
 
-	arbiter1 := source.NewMapSource(ctx, log, "meta", true)
-	arbiter2 := source.NewMapSource(ctx, log, "agent", true)
+	arbiter1 := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
+	arbiter2 := source.NewMapSource(ctx, log, "agent", true, manifest.Constraint{})
 
 	// Both map arbiters must be pre initialised
 	arbiter1.Configure(map[string]string{

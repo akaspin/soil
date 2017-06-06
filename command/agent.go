@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"fmt"
 )
 
 type AgentOptions struct {
@@ -56,8 +57,10 @@ func (c *Agent) Run(args ...string) (err error) {
 	ctx := context.Background()
 
 	// Arbiters (premature initialize)
-	c.agentArbiter = source.NewMapSource(ctx, c.log, "agent", true)
-	c.metaArbiter = source.NewMapSource(ctx, c.log, "meta", true)
+	c.agentArbiter = source.NewMapSource(ctx, c.log, "agent", true, manifest.Constraint{
+		"${agent.drain}": "false",
+	})
+	c.metaArbiter = source.NewMapSource(ctx, c.log, "meta", true, manifest.Constraint{})
 
 	sink, schedulerSV := scheduler.New(ctx, c.log, c.PoolSize, c.agentArbiter, c.metaArbiter)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
@@ -122,6 +125,7 @@ func (c *Agent) readPrivatePods() {
 func (c *Agent) configureArbiters() {
 	c.agentArbiter.Configure(map[string]string{
 		"id": c.Id,
+		"drain": fmt.Sprintf("%t", c.config.Drain),
 		"pod_exec": c.config.Exec,
 	})
 	c.metaArbiter.Configure(c.config.Meta)

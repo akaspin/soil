@@ -20,6 +20,9 @@ type Source interface {
 	// Mark state
 	Mark() bool
 
+	// Required constraints
+	Required() manifest.Constraint
+
 	// Bind consumer. Source source will call callback on
 	// change states.
 	Register(callback func(active bool, env map[string]string))

@@ -29,59 +29,65 @@ func TestSplit(t *testing.T) {
 
 func TestConstraint_Check(t *testing.T) {
 	t.Run("equal", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"one,two": "${meta.field}",
-		})
+		}
 		t.Log()
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.field": "one,two",
 		}))
 	})
 	t.Run("in ok", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"one,two": "~ ${meta.field}",
-		})
+		}
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.field": "one,two,three",
 		}))
 	})
 	t.Run("in fail", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"one,two": "~ ${meta.field}",
-		})
+		}
 		assert.Error(t, constraint.Check(map[string]string{
 			"meta.field": "one,three",
 		}))
 	})
 	t.Run("less ok", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"2": "< ${meta.num}",
-		})
+		}
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.num": "11",
 		}))
 	})
 	t.Run("less fail", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"2": "< ${meta.num}",
-		})
+		}
 		assert.Error(t, constraint.Check(map[string]string{
 			"meta.num": "1",
 		}))
 	})
 	t.Run("greater ok", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"2": "> ${meta.num}",
-		})
+		}
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.num": "1",
 		}))
 	})
 	t.Run("greater fail", func(t *testing.T) {
-		constraint := manifest.Constraint(map[string]string{
+		constraint := manifest.Constraint{
 			"2": "> ${meta.num}",
-		})
+		}
 		assert.Error(t, constraint.Check(map[string]string{
+			"meta.num": "3",
+		}))
+	})
+	t.Run("empty", func(t *testing.T) {
+		constraint := manifest.Constraint{}
+		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.num": "3",
 		}))
 	})

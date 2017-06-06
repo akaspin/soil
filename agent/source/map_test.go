@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
@@ -11,7 +12,7 @@ import (
 )
 
 func TestMapMetadata(t *testing.T) {
-	a := source.NewMapSource(context.Background(), logx.GetLog("test"), "meta", true)
+	a := source.NewMapSource(context.Background(), logx.GetLog("test"), "meta", true, manifest.Constraint{})
 	a.Open()
 	var changes int32
 	callback := func(active bool, v map[string]string) {

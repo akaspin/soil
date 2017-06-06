@@ -1,4 +1,13 @@
+---
+title: Soil
+layout: landing
+index: true
+weight: 0
+---
+
 # Soil
 
-Soil is minimalistic systemd orchestrator.
+#### Let's play with hammer!
+
+---
 

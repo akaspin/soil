@@ -1,0 +1,17 @@
+{% assign chunks = page.url | split:"/" %}
+{% assign section_url = "/" | append:chunks[1] %}
+
+<ul class="nav">
+  {% assign pages = site.pages | sort: "weight" %}
+  {% for p in pages %}
+    {% assign candidate_chunks = p.url | split:"/" %}
+    {% assign candidate_length = candidate_chunks | size %}
+    {% if p.url != "/" and candidate_chunks[1] == chunks[1] and candidate_length > 2 %}
+    <li>
+      <a href="{{ p.url | prepend:site.baseurl }}" {% if p.url == page.url %}
+         class="active"
+      {% endif %}>{{ p.title }}</a>
+    </li>
+    {% endif %}
+  {% endfor %}
+</ul>

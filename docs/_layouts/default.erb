@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include head.erb %}
+
+<body>
+  {% include header.erb %}
+
+<div class="row body">
+  <nav class="col-md-3 col-md-offset-1 section">
+    {% include section.erb %}
+  </nav>
+  <div class="col-md-7 content">
+      {{ content }}
+  </div>
+</div>
+
+{% include footer.erb %}
+
+<script src="{{site.baseurl}}/assets/contrib/jquery.js?t={{site.time}}"></script>
+<script src="{{site.baseurl}}/assets/js/site.js?t={{site.time}}"></script>
+</body>
+</html>

@@ -1,4 +1,10 @@
-# Namespaces
+---
+title: Namespaces
+layout: default
+weight: 200
+---
+
+# Agent namespaces
 
 > Only "private" is supported at this time.
 

@@ -102,5 +102,14 @@ uninstall:
 clean-dist:
 	rm -rf dist
 
+###
+### docs
+###
 
-.PHONY: test
+docs:
+	docker run --rm -v $(CWD)/docs:/site -p 4000:4000 andredumas/github-pages serve --watch
+
+clean-docs:
+	rm -rf docs/_site
+
+.PHONY: docs test clean

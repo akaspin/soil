@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include head.erb %}
+
+<body class="bg-default" class="bg-default">
+<header id="header" class="landing">
+  <nav class="row" role="navigation">
+    <div class="col-md-2 col-md-offset-1">
+      <a href="{{ site.baseurl }}/" class="logo">Soil</a>
+    </div>
+
+    <div class="col-md-8">
+      <div class="pull-right">
+        {% include sections.erb %}
+      </div>
+    </div>
+
+  </nav>
+</header>
+
+<div class="row body landing">
+  <div class="col-md-10 col-md-offset-1">
+    {{ content }}
+  </div>
+</div>
+
+{% include footer.erb %}
+
+<script src="{{site.baseurl}}/assets/contrib/jquery.js?t={{site.time}}"></script>
+</body>
+</html>

@@ -1,3 +1,9 @@
+---
+title: Constraints
+layout: default
+weight: 10
+---
+
 # Pod constraints
 
 Each pod can be constrained to agent metadata like:
@@ -10,14 +16,16 @@ constraint {
 }
 ```
 
-Soil will deploy pod only if all constraints are met. Both left and right 
-values of constraint can me [interpolated](/soil/pod/interpolation).
+Soil will deploy pod only if all constraints are met. Both left and right values of constraint can me [interpolated](/soil/pod/interpolation). If pod is already deployed but constraints become fail it will be destroyed and vise versa
 
 Also right value of constraint can be prefixed with operation:
 
-`<` or `>` Soil tries to convert values to number and compare them. If at least 
-one of values can't be converted Soil compares values as strings in 
-lexicographical order. 
+`<` or `>` Soil tries to convert values to number and compare them. If at least one of values can't be converted Soil compares values as strings in lexicographical order. 
 
-`~` Subset operation. This constraint assumes what all values from left subset 
-are present in right subset. Subsets are delimited by comma.
+`~` Subset operation. This constraint assumes what all values from left subset are present in right subset. Subsets are delimited by comma.
+
+## Default constraints
+
+Default constraints are defined for each pod:
+
+`"${agent.drain}" = "false"` All pods managed by Agent in `drain` state will be destroyed.

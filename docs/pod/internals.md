@@ -1,10 +1,15 @@
+---
+title: Internals
+layout: default
+weight: 100
+---
+
 # Pod internals
 
-Soil always deploy one additional unit for each pod. Soil uses this unit to 
-hold pod metadata and recover state after agent restarts.
+Soil always deploy one additional unit for each pod. Soil uses this unit to hold pod metadata and recover state after agent restarts.
 
 ```
-### POD my-pod {"AgentMark":13519672434109364665,"Namespace":"private","PodMark":8958585432400940686}
+### POD my-pod {"AgentMark":...,"Namespace":"private","PodMark":...}
 ### UNIT /run/systemd/system/my-unit.service {"Create":"start","Update":"restart","Destroy":"stop","Permanent":false}
 ### BLOB /etc/my-pod/sample {"Leave":false,"Permissions":420}
 [Unit]
@@ -16,7 +21,6 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=default.target
 ```
 
-Name of this unit is depends on unit name and namespace like 
-`pod-private-my-pod.service`.
+Name of this unit is depends on unit name and namespace like `pod-private-my-pod.service`.
  
-`ExecStart` lines can be configured by `exec` agent configuration setting.
+`ExecStart` lines can be configured by [`exec`]({{site.baseurl}}/agent/configuration) agent configuration setting.

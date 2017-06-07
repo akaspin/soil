@@ -56,6 +56,8 @@ dist-docker: dist/$(BIN)-$(V)-linux-amd64.tar.gz
 dist-docker-push: dist-docker
 	echo $(V) | grep dirty && exit 2 || true
 	docker push akaspin/soil:$(V)
+	docker tag akaspin/soil:$(V) akaspin/soil:latest
+	docker push akaspin/soil:latest
 
 dist: \
 	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \

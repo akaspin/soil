@@ -1,7 +1,7 @@
 ---
 title: Configuration
 layout: default
-weight: 0
+weight: 10
 ---
 
 # Agent configuration

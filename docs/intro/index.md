@@ -1,7 +1,7 @@
 ---
 title: Intro
 layout: default
-weight: -1000
+weight: 0
 ---
 
 # Introduction

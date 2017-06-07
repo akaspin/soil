@@ -1,5 +1,6 @@
 <ul class="sections">
-{% for p in site.pages | sort:"weight" %}
+  {% assign pages = site.pages | sort: "weight" %}
+{% for p in pages | sort:"weight" %}
   {% assign url_chunks = p.url | split:"/" %}
   {% assign url_len = url_chunks | size %}
   {% if url_len == 2 %}

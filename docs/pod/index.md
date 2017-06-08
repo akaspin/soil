@@ -46,7 +46,7 @@ pod "my-pod" {
 runtime `/run/systemd/system` or local `/etc/systemd/system`. This setting also 
 tells where to activate each unit in pod.
  
-`target` (`default.target`) [Pod unit](/soil/pod/internals) target.
+`target` (`multi-user.target`) [Pod unit](/soil/pod/internals) target.
 
 `constraint` Defines pod constraints.
  
@@ -85,7 +85,7 @@ unit "my-unit-1.service" {
  
 Available commands for `create`, `update` and `destroy` are: `start`, `stop`, `restart`, `reload`, `try-restart`, `reload-or-restart`, `reload-or-try-restart`.
 
-`permanent` (`false`) Soil agent will enable unit in SystemD.
+`permanent` (`false`) Soil agent will enable unit in SystemD. Enabling this setting assumes what `[Install]` section is present in unit source.
 
 ## BLOBs
 

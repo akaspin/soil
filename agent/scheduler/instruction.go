@@ -8,8 +8,8 @@ import (
 
 const (
 	phaseDestroyCommand = iota // execute unit commands on destroy
-	phaseDestroyFS  // Destroy units and blobs
-	phaseDeployFS   // Write units and blobs
+	phaseDestroyFS             // Destroy units and blobs
+	phaseDeployFS              // Write units and blobs
 	phaseDeployPerm
 	phaseDeployCommand
 )
@@ -164,7 +164,7 @@ func (i *CommandInstruction) String() (res string) {
 
 type baseBlobInstruction struct {
 	phase int
-	blob *AllocationBlob
+	blob  *AllocationBlob
 }
 
 func (i *baseBlobInstruction) Phase() int {
@@ -179,7 +179,7 @@ func NewWriteBlobInstruction(phase int, blob *AllocationBlob) (i *WriteBlobInstr
 	i = &WriteBlobInstruction{
 		&baseBlobInstruction{
 			phase: phase,
-			blob: blob,
+			blob:  blob,
 		},
 	}
 	return
@@ -190,11 +190,10 @@ func (i *WriteBlobInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *WriteBlobInstruction) String() (res string)  {
+func (i *WriteBlobInstruction) String() (res string) {
 	res = fmt.Sprintf("%d:blob-write:%s", i.phase, i.blob.Name)
 	return
 }
-
 
 type DestroyBlobInstruction struct {
 	*baseBlobInstruction
@@ -204,7 +203,7 @@ func NewDestroyBlobInstruction(phase int, blob *AllocationBlob) (i *DestroyBlobI
 	i = &DestroyBlobInstruction{
 		&baseBlobInstruction{
 			phase: phase,
-			blob: blob,
+			blob:  blob,
 		},
 	}
 	return

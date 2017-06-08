@@ -25,11 +25,11 @@ func TestArbiter(t *testing.T) {
 	assert.NoError(t, sv.Open())
 
 	a1.Configure(map[string]string{
-		"first": "1",
+		"first":  "1",
 		"second": "1",
 	})
 	a2.Configure(map[string]string{
-		"first": "1",
+		"first":  "1",
 		"second": "1",
 	})
 
@@ -43,7 +43,6 @@ func TestArbiter(t *testing.T) {
 		defer mu.Unlock()
 		res[n] = reason
 	}
-
 
 	t.Run("register first", func(t *testing.T) {
 		man.Register("first", privatePods[0], func(reason error, env map[string]string, mark uint64) {
@@ -71,6 +70,5 @@ func TestArbiter(t *testing.T) {
 
 	assert.NoError(t, sv.Close())
 	assert.NoError(t, sv.Wait())
-
 
 }

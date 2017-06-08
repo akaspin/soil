@@ -21,4 +21,3 @@ func (c *Version) Run(args ...string) (err error) {
 	fmt.Fprint(c.Stderr, V)
 	return
 }
-

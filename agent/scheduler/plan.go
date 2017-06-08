@@ -4,8 +4,6 @@ import (
 	"sort"
 )
 
-
-
 func Plan(left, right *Allocation) (res []Instruction) {
 	phases1 := map[int][]Instruction{}
 	var phaseIds []int
@@ -141,7 +139,7 @@ func planUnitPerm(what *AllocationFile, permanent bool) (res Instruction) {
 }
 
 func PlanBlob(left, right *AllocationBlob) (res []Instruction) {
-	if left == nil && right ==nil {
+	if left == nil && right == nil {
 		return
 	}
 	if left == nil {

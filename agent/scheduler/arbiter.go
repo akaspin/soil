@@ -32,7 +32,7 @@ func NewArbiter(ctx context.Context, log *logx.Log, sources ...agent.Source) (a 
 	for _, s := range sources {
 		a.sources[s.Name()] = &Source{
 			source: s,
-			cache: map[string]string{},
+			cache:  map[string]string{},
 		}
 	}
 	return
@@ -57,12 +57,11 @@ func (a *Arbiter) Register(name string, pod *manifest.Pod, fn managerCallback) {
 	go a.addPod(name, pod, fn)
 }
 
-
-func (a *Arbiter) addPod(name string, pod *manifest.Pod, fn managerCallback)  {
+func (a *Arbiter) addPod(name string, pod *manifest.Pod, fn managerCallback) {
 	a.mu.Lock()
 	a.managed[name] = &ManagedPod{
 		Pod: pod,
-		Fn: fn,
+		Fn:  fn,
 	}
 	a.mu.Unlock()
 	for _, source := range a.sources {
@@ -125,7 +124,7 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 	for n, managed := range a.managed {
 		if _, ok := inactive[managed.Pod.Namespace]; !ok {
 			var checkErr error
-			CONSTRAINT:
+		CONSTRAINT:
 			for _, constraint := range append(required[managed.Pod.Namespace], managed.Pod.Constraint) {
 				if checkErr = constraint.Check(all); checkErr != nil {
 					break CONSTRAINT
@@ -138,12 +137,12 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 }
 
 type ManagedPod struct {
-	Pod       *manifest.Pod
-	Fn        func(reason error, environment map[string]string, mark uint64)
+	Pod *manifest.Pod
+	Fn  func(reason error, environment map[string]string, mark uint64)
 }
 
 type Source struct {
 	source agent.Source
 	active bool
-	cache map[string]string
+	cache  map[string]string
 }

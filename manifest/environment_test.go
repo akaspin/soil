@@ -1,9 +1,9 @@
 package manifest_test
 
 import (
-	"testing"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestExtractEnv(t *testing.T) {

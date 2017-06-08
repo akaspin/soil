@@ -27,6 +27,7 @@ pod "first" {
     EOF
   }
   unit "first-2.service" {
+    create = ""
     update ="start"
     destroy = ""
 

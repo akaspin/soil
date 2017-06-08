@@ -12,4 +12,3 @@ func main() {
 		logx.Critical(err)
 	}
 }
-

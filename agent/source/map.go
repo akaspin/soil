@@ -15,11 +15,11 @@ type MapSource struct {
 	name       string
 	namespaces []string
 	mark       bool
-	required manifest.Constraint
+	required   manifest.Constraint
 
 	callback func(bool, map[string]string)
 	fields   map[string]string
-	active bool
+	active   bool
 	mu       *sync.Mutex
 }
 
@@ -30,7 +30,7 @@ func NewMapSource(ctx context.Context, log *logx.Log, name string, mark bool, re
 		name:       name,
 		namespaces: []string{"private", "public"},
 		mark:       mark,
-		required: required,
+		required:   required,
 		callback:   func(bool, map[string]string) {},
 		fields:     map[string]string{},
 		mu:         &sync.Mutex{},

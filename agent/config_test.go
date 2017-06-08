@@ -24,8 +24,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			"field":         "all,consul",
 			"override":      "true",
 			"from_json":     "true",
-			"from-line1":"true",
-			"from-line2":"true",
+			"from-line1":    "true",
+			"from-line2":    "true",
 		},
 	}, config)
 }

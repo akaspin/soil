@@ -8,25 +8,24 @@ import (
 	"sync"
 )
 
-
 type Sink struct {
 	*supervisor.Control
 	log *logx.Log
 
-	executor  *Executor
-	manager *Arbiter
-	state *SinkState
+	executor *Executor
+	manager  *Arbiter
+	state    *SinkState
 
 	mu *sync.Mutex
 }
 
 func NewSink(ctx context.Context, log *logx.Log, executor *Executor, manager *Arbiter) (r *Sink) {
 	r = &Sink{
-		Control:   supervisor.NewControl(ctx),
-		log:       log.GetLog("scheduler"),
-		executor:  executor,
-		manager: manager,
-		mu:        &sync.Mutex{},
+		Control:  supervisor.NewControl(ctx),
+		log:      log.GetLog("scheduler"),
+		executor: executor,
+		manager:  manager,
+		mu:       &sync.Mutex{},
 	}
 	return
 }
@@ -85,4 +84,3 @@ func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 	})
 	return
 }
-

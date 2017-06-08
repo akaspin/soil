@@ -26,6 +26,11 @@ endif
 ### Test
 ###
 
+sources: $(SRC) $(SRC_TEST)
+	go vet $(PACKAGES)
+	go fmt $(PACKAGES)
+
+
 test:
 	docker -H 127.0.0.1:2375 run --rm \
 		-v /run/soil:/run/soil \
@@ -45,6 +50,7 @@ test-debug:
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.8 go test -v -run=$(TESTS) -p=1 -tags="debug" $(PACKAGES)
+
 
 ###
 ### Dist

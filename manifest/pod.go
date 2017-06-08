@@ -11,15 +11,13 @@ import (
 )
 
 const (
-	defaultPodTarget = "default.target"
+	defaultPodTarget = "multi-user.target"
 
-	opEqual = "="
-	opLess = "<"
+	opEqual   = "="
+	opLess    = "<"
 	opGreater = ">"
-	opIn = "~"
+	opIn      = "~"
 )
-
-
 
 type Pod struct {
 	Namespace  string
@@ -34,8 +32,8 @@ type Pod struct {
 func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
 	p = &Pod{
 		Namespace: namespace,
-		Target: defaultPodTarget,
-		Runtime: true,
+		Target:    defaultPodTarget,
+		Runtime:   true,
 	}
 	err = hcl.DecodeObject(p, raw)
 	p.Name = raw.Keys[0].Token.Value().(string)
@@ -71,7 +69,7 @@ func (c Constraint) ExtractFields() (res map[string][]string) {
 	res = map[string][]string{}
 	collected := map[string]struct{}{}
 	for k, v := range c {
-		for _, f := range ExtractEnv(k+v) {
+		for _, f := range ExtractEnv(k + v) {
 			collected[f] = struct{}{}
 		}
 	}
@@ -109,6 +107,8 @@ type Unit struct {
 func newUnitFromHCL(raw *ast.ObjectItem) (res *Unit, err error) {
 	res = &Unit{
 		Transition: Transition{
+			Create:  "start",
+			Update:  "restart",
 			Destroy: "stop",
 		},
 	}
@@ -127,10 +127,10 @@ type Transition struct {
 
 // Pod file
 type Blob struct {
-	Name string
+	Name        string
 	Permissions int
-	Leave bool
-	Source string
+	Leave       bool
+	Source      string
 }
 
 func newBlobFromHCL(raw *ast.ObjectItem) (res *Blob, err error) {
@@ -189,7 +189,7 @@ func checkPair(left, right string) (res bool) {
 		case opIn:
 			// inside
 			rightSplit := strings.Split(split[1], ",")
-			LEFT:
+		LEFT:
 			for _, leftChunk := range strings.Split(left, ",") {
 				for _, rightChunk := range rightSplit {
 					if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {

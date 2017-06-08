@@ -46,10 +46,10 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 	fileHashes := map[string]string{}
 	for _, b := range m.Blobs {
 		ab := &AllocationBlob{
-			Name: b.Name,
+			Name:        b.Name,
 			Permissions: b.Permissions,
-			Leave: b.Leave,
-			Source: manifest.Interpolate(b.Source, env),
+			Leave:       b.Leave,
+			Source:      manifest.Interpolate(b.Source, env),
 		}
 		p.Blobs = append(p.Blobs, ab)
 		fileHash, _ := hashstructure.Hash(ab.Source, nil)
@@ -71,10 +71,10 @@ func NewAllocationFromManifest(m *manifest.Pod, env map[string]string, mark uint
 
 	p.Source, err = p.AllocationHeader.Marshal(p.Name, p.Units, p.Blobs)
 	p.Source += manifest.Interpolate(podUnitTemplate, map[string]string{
-			"pod.units":    strings.Join(unitNames, " "),
-			"pod.name":   m.Name,
-			"pod.target": m.Target,
-		}, env)
+		"pod.units":  strings.Join(unitNames, " "),
+		"pod.name":   m.Name,
+		"pod.target": m.Target,
+	}, env)
 
 	return
 }
@@ -128,7 +128,6 @@ type AllocationHeader struct {
 	Namespace string
 }
 
-
 func (h *AllocationHeader) Mark() (res uint64) {
 	res, _ = hashstructure.Hash(h, nil)
 	return
@@ -159,8 +158,7 @@ func (h *AllocationHeader) Unmarshal(src string) (units []*AllocationUnit, blobs
 			units = append(units, u)
 		}
 		if strings.HasPrefix(line, "### BLOB") {
-			b := &AllocationBlob{
-			}
+			b := &AllocationBlob{}
 			if _, err = fmt.Sscanf(line, "### BLOB %s %s", &b.Name, &jsonSrc); err != nil {
 				return
 			}
@@ -193,7 +191,7 @@ func (h *AllocationHeader) Marshal(name string, units []*AllocationUnit, blobs [
 	for _, b := range blobs {
 		if jsonRes, err = json.Marshal(map[string]interface{}{
 			"Permissions": b.Permissions,
-			"Leave": b.Leave,
+			"Leave":       b.Leave,
 		}); err != nil {
 			return
 		}
@@ -263,10 +261,10 @@ func AllocationToString(p *Allocation) (res string) {
 }
 
 type AllocationBlob struct {
-	Name string
+	Name        string
 	Permissions int
-	Leave bool
-	Source string
+	Leave       bool
+	Source      string
 }
 
 func (b *AllocationBlob) Read() (err error) {

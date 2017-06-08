@@ -17,8 +17,8 @@ type Private struct {
 
 func NewPrivate(ctx context.Context, log *logx.Log, scheduler agent.Scheduler) (p *Private) {
 	p = &Private{
-		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("registry", "private"),
+		Control:   supervisor.NewControl(ctx),
+		log:       log.GetLog("registry", "private"),
 		scheduler: scheduler,
 	}
 	return

@@ -40,5 +40,4 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 		}, changes)
 	})
 
-
 }

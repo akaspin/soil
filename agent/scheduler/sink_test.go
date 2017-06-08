@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -18,9 +18,9 @@ func TestScheduler(t *testing.T) {
 	pods := []*manifest.Pod{
 		{
 			Namespace: "private",
-			Name: "pod-2",
-			Runtime: true,
-			Target: "default.target",
+			Name:      "pod-2",
+			Runtime:   true,
+			Target:    "default.target",
 			Constraint: map[string]string{
 				"${meta.consul}": "true",
 			},
@@ -28,8 +28,8 @@ func TestScheduler(t *testing.T) {
 				{
 					Name: "pod-2-unit-1.service",
 					Transition: manifest.Transition{
-						Create: "start",
-						Update: "restart",
+						Create:  "start",
+						Update:  "restart",
 						Destroy: "stop",
 					},
 					Source: `[Unit]
@@ -44,9 +44,9 @@ WantedBy=default.target
 		},
 		{
 			Namespace: "private",
-			Name: "pod-3",
-			Runtime: true,
-			Target: "default.target",
+			Name:      "pod-3",
+			Runtime:   true,
+			Target:    "default.target",
 			Constraint: map[string]string{
 				"${meta.undefined}": "true",
 			},
@@ -54,8 +54,8 @@ WantedBy=default.target
 				{
 					Name: "pod-3-unit-1.service",
 					Transition: manifest.Transition{
-						Create: "start",
-						Update: "restart",
+						Create:  "start",
+						Update:  "restart",
 						Destroy: "stop",
 					},
 					Source: `[Unit]
@@ -92,10 +92,10 @@ WantedBy=default.target
 	// Both map arbiters must be pre initialised
 	arbiter1.Configure(map[string]string{
 		"consul": "true",
-		"test": "true",
+		"test":   "true",
 	})
 	arbiter2.Configure(map[string]string{
-		"id": "one",
+		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
@@ -115,15 +115,14 @@ WantedBy=default.target
 	)
 	assert.NoError(t, sv.Open())
 
-
 	t.Run("first sync", func(t *testing.T) {
 		sink.Sync("private", pods)
 		time.Sleep(time.Second)
 
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-2": {
-				Name: "pod-2",
-				PodMark: 11007710424567484036,
+				Name:      "pod-2",
+				PodMark:   11007710424567484036,
 				AgentMark: 17231133757460468042,
 				Namespace: "private",
 			},
@@ -132,28 +131,27 @@ WantedBy=default.target
 	})
 	t.Run("enable pod-3", func(t *testing.T) {
 		arbiter1.Configure(map[string]string{
-			"consul": "true",
-			"test": "true",
+			"consul":    "true",
+			"test":      "true",
 			"undefined": "true",
 		})
 
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-2": {
-				Name: "pod-2",
-				PodMark: 11007710424567484036,
+				Name:      "pod-2",
+				PodMark:   11007710424567484036,
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
 			"pod-3": {
-				Name: "pod-3",
-				PodMark: 3001543335992272175,
+				Name:      "pod-3",
+				PodMark:   3001543335992272175,
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
 		}, executor.List())
 		time.Sleep(time.Second)
 	})
-
 
 	assert.NoError(t, sv.Close())
 	assert.NoError(t, sv.Wait())

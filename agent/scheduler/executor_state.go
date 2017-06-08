@@ -15,7 +15,7 @@ type ExecutorState struct {
 	active  map[string]*Allocation
 	pending map[string]*Allocation
 
-	mu      *sync.Mutex
+	mu *sync.Mutex
 }
 
 func NewExecutorState(initial []*Allocation) (s *ExecutorState) {

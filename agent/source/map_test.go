@@ -20,7 +20,7 @@ func TestMapMetadata(t *testing.T) {
 	}
 
 	a.Configure(map[string]string{
-		"first": "1",
+		"first":  "1",
 		"second": "2",
 	})
 	a.Register(callback)
@@ -34,7 +34,7 @@ func TestMapMetadata(t *testing.T) {
 	assert.Equal(t, int32(1), atomic.LoadInt32(&changes))
 
 	a.Configure(map[string]string{
-		"first": "2",
+		"first":  "2",
 		"second": "2",
 	})
 	time.Sleep(time.Millisecond * 300)

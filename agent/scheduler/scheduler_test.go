@@ -28,14 +28,14 @@ func TestNew(t *testing.T) {
 
 		// premature init arbiters
 		metaArbiter.Configure(map[string]string{
-			"first_private": "1",
+			"first_private":  "1",
 			"second_private": "1",
-			"third_public": "1",
+			"third_public":   "1",
 		})
 		agentArbiter.Configure(map[string]string{
-			"id": "one",
+			"id":       "one",
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
-			"drain": "false",
+			"drain":    "false",
 		})
 		assert.NoError(t, sv.Open())
 		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
@@ -50,9 +50,9 @@ func TestNew(t *testing.T) {
 		res, err := sd.ListPods()
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"first": "/run/systemd/system/pod-private-first.service",
+			"first":  "/run/systemd/system/pod-private-first.service",
 			"second": "/run/systemd/system/pod-private-second.service",
-			"third": "/run/systemd/system/pod-public-third.service",
+			"third":  "/run/systemd/system/pod-public-third.service",
 		}, res)
 
 		assert.NoError(t, sv.Close())
@@ -66,11 +66,11 @@ func TestNew(t *testing.T) {
 	sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 	// premature init arbiters
 	metaArbiter.Configure(map[string]string{
-		"first_private": "1",
+		"first_private":  "1",
 		"second_private": "1",
 	})
 	agentArbiter.Configure(map[string]string{
-		"id": "one",
+		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 	assert.NoError(t, sv.Open())
@@ -80,9 +80,9 @@ func TestNew(t *testing.T) {
 		res, err := sd.ListPods()
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"first": "/run/systemd/system/pod-private-first.service",
+			"first":  "/run/systemd/system/pod-private-first.service",
 			"second": "/run/systemd/system/pod-private-second.service",
-			"third": "/run/systemd/system/pod-public-third.service",
+			"third":  "/run/systemd/system/pod-public-third.service",
 		}, res)
 	})
 	t.Run("2", func(t *testing.T) {
@@ -103,7 +103,7 @@ func TestNew(t *testing.T) {
 		res, err := sd.ListPods()
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"first": "/run/systemd/system/pod-private-first.service",
+			"first":  "/run/systemd/system/pod-private-first.service",
 			"second": "/run/systemd/system/pod-private-second.service",
 		}, res)
 	})
@@ -124,8 +124,8 @@ func TestNew(t *testing.T) {
 	t.Run("4", func(t *testing.T) {
 		// modify meta
 		metaArbiter.Configure(map[string]string{
-			"first_private": "1",
-			"first_public": "1",
+			"first_private":  "1",
+			"first_public":   "1",
 			"second_private": "1",
 		})
 		time.Sleep(time.Second)
@@ -134,7 +134,7 @@ func TestNew(t *testing.T) {
 		res, err := sd.ListPods()
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"first": "/run/systemd/system/pod-public-first.service",
+			"first":  "/run/systemd/system/pod-public-first.service",
 			"second": "/run/systemd/system/pod-private-second.service",
 		}, res)
 	})
@@ -149,7 +149,7 @@ func TestNew(t *testing.T) {
 		res, err := sd.ListPods()
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"first": "/run/systemd/system/pod-private-first.service",
+			"first":  "/run/systemd/system/pod-private-first.service",
 			"second": "/run/systemd/system/pod-private-second.service",
 		}, res)
 	})
@@ -164,7 +164,7 @@ func TestNew(t *testing.T) {
 		res, err := sd.ListPods()
 		assert.NoError(t, err)
 		assert.Equal(t, map[string]string{
-			"first": "/run/systemd/system/pod-public-first.service",
+			"first":  "/run/systemd/system/pod-public-first.service",
 			"second": "/run/systemd/system/pod-private-second.service",
 		}, res)
 	})
@@ -175,8 +175,8 @@ func TestNew(t *testing.T) {
 		sink.Sync("private", private)
 
 		metaArbiter.Configure(map[string]string{
-			"first_private": "2",
-			"first_public": "1",
+			"first_private":  "2",
+			"first_public":   "1",
 			"second_private": "1",
 		})
 		time.Sleep(time.Second)

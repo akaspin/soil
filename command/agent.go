@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
@@ -14,13 +15,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"fmt"
 )
 
 type AgentOptions struct {
 	ConfigPath []string
 	PoolSize   int
-	Id string
+	Id         string
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
@@ -34,12 +34,12 @@ type Agent struct {
 	*AgentOptions
 
 	// reconfigurable
-	config *agent.Config
+	config      *agent.Config
 	privatePods []*manifest.Pod
 
-	log *logx.Log
-	agentArbiter *source.MapSource
-	metaArbiter *source.MapSource
+	log             *logx.Log
+	agentArbiter    *source.MapSource
+	metaArbiter     *source.MapSource
 	privateRegistry *registry.Private
 }
 
@@ -82,7 +82,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	signalCh := make(chan os.Signal)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	LOOP:
+LOOP:
 	for {
 		select {
 		case sig := <-signalCh:
@@ -124,8 +124,8 @@ func (c *Agent) readPrivatePods() {
 
 func (c *Agent) configureArbiters() {
 	c.agentArbiter.Configure(map[string]string{
-		"id": c.Id,
-		"drain": fmt.Sprintf("%t", c.config.Drain),
+		"id":       c.Id,
+		"drain":    fmt.Sprintf("%t", c.config.Drain),
 		"pod_exec": c.config.Exec,
 	})
 	c.metaArbiter.Configure(c.config.Meta)

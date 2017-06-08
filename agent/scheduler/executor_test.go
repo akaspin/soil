@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-func assertUnits(names []string, states map[string]string) (err error)  {
+func assertUnits(names []string, states map[string]string) (err error) {
 	conn, err := dbus.New()
 	if err != nil {
 		return
@@ -119,7 +119,7 @@ func TestNewRuntime(t *testing.T) {
 	wp := concurrency.NewWorkerPool(ctx, concurrency.Config{
 		Capacity: 2,
 	})
-	ex := scheduler.NewExecutor(ctx, logx.GetLog("test"), wp,)
+	ex := scheduler.NewExecutor(ctx, logx.GetLog("test"), wp)
 
 	sv := supervisor.NewChain(ctx, wp, ex)
 	assert.NoError(t, sv.Open())
@@ -197,13 +197,13 @@ WantedBy=default.target
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
-				"unit-1.service": "active",
+				"unit-1.service":            "active",
 			}))
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-1": {
-				Name: "pod-1",
+				Name:      "pod-1",
 				Namespace: "private",
-				PodMark: 1,
+				PodMark:   1,
 				AgentMark: 0,
 			},
 		}, ex.List())
@@ -215,13 +215,13 @@ WantedBy=default.target
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
-				"unit-1.service": "active",
+				"unit-1.service":            "active",
 			}))
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-1": {
-				Name: "pod-1",
+				Name:      "pod-1",
 				Namespace: "private",
-				PodMark: 1,
+				PodMark:   1,
 				AgentMark: 0,
 			},
 		}, ex.List())

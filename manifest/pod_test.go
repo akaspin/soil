@@ -95,7 +95,6 @@ func TestConstraint_Check(t *testing.T) {
 	return
 }
 
-
 func TestManifest(t *testing.T) {
 	r, err := os.Open("testdata/example-multi.hcl")
 	require.NoError(t, err)
@@ -108,13 +107,14 @@ func TestManifest(t *testing.T) {
 		assert.Equal(t, []*manifest.Pod{
 			{
 				Namespace: "private",
-				Name:    "first",
-				Runtime: true,
-				Target:  "multi-user.target",
+				Name:      "first",
+				Runtime:   true,
+				Target:    "multi-user.target",
 				Units: []*manifest.Unit{
 					{
 						Transition: manifest.Transition{
 							Create:  "start",
+							Update:  "",
 							Destroy: "stop",
 						},
 						Name:      "first-1.service",
@@ -123,7 +123,9 @@ func TestManifest(t *testing.T) {
 					},
 					{
 						Transition: manifest.Transition{
-							Update: "start",
+							Create:  "",
+							Update:  "start",
+							Destroy: "",
 						},
 						Name:   "first-2.service",
 						Source: "[Service]\n# ${NONEXISTENT}\nExecStart=/usr/bin/sleep inf\n",
@@ -131,23 +133,24 @@ func TestManifest(t *testing.T) {
 				},
 				Blobs: []*manifest.Blob{
 					{
-						Name: "/etc/vpn/users/env",
+						Name:        "/etc/vpn/users/env",
 						Permissions: 0644,
-						Source: "My file\n",
+						Source:      "My file\n",
 					},
 				},
 			},
 			{
 				Namespace: "private",
-				Name:   "second",
-				Target: "default.target",
+				Name:      "second",
+				Target:    "multi-user.target",
 				Constraint: map[string]string{
 					"${meta.consul}": "true",
 				},
 				Units: []*manifest.Unit{
 					{
 						Transition: manifest.Transition{
-							Create:  "",
+							Create:  "start",
+							Update:  "restart",
 							Destroy: "stop",
 						},
 						Name:   "second-1.service",
@@ -163,13 +166,13 @@ func TestManifest(t *testing.T) {
 			{
 				Constraint: map[string]string{
 					"${counter.test-1}": "< 4",
-					"${meta.consul}": "true",
-					"${meta.a}": "true",
+					"${meta.consul}":    "true",
+					"${meta.a}":         "true",
 				},
 			},
 		} {
 			assert.Equal(t, map[string][]string{
-				"meta": {"a", "consul"},
+				"meta":    {"a", "consul"},
 				"counter": {"test-1"}},
 				pod.Constraint.ExtractFields())
 		}
@@ -181,7 +184,7 @@ func TestManifest(t *testing.T) {
 		})
 		assert.NoError(t, cns.Check(map[string]string{
 			"meta.consul": "true",
-			"agent.id": "localhost",
+			"agent.id":    "localhost",
 		}))
 	})
 	t.Run("constraint fail", func(t *testing.T) {
@@ -196,7 +199,7 @@ func TestManifest(t *testing.T) {
 
 	t.Run("mark", func(t *testing.T) {
 		for i, mark := range []uint64{
-			0x929c7bc2b806e194, 0xf816b6607f484aa3,
+			0x929c7bc2b806e194, 0xa28a0e338d4eb333,
 		} {
 			assert.Equal(t, mark, res[i].Mark())
 		}

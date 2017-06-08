@@ -14,7 +14,7 @@ type Executor struct {
 	log *logx.Log
 
 	// bounded worker pool
-	pool  *concurrency.WorkerPool
+	pool *concurrency.WorkerPool
 
 	// bounded state
 	state *ExecutorState

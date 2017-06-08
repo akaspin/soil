@@ -12,16 +12,16 @@ import (
 // Agent - specific config
 type Config struct {
 	//Id string
-	Meta map[string]string `hcl:"meta" json:"meta"`
+	Meta  map[string]string `hcl:"meta" json:"meta"`
 	Drain bool
-	Exec string
+	Exec  string
 }
 
-func DefaultConfig() (c *Config)  {
+func DefaultConfig() (c *Config) {
 	c = &Config{
-		Meta: map[string]string{},
+		Meta:  map[string]string{},
 		Drain: false,
-		Exec: "ExecStart=/usr/bin/sleep inf",
+		Exec:  "ExecStart=/usr/bin/sleep inf",
 	}
 	return
 }

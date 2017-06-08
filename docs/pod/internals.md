@@ -18,7 +18,7 @@ Before=my-unit.service
 [Service]
 ExecStart=/usr/bin/sleep inf
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target
 ```
 
 Name of this unit is depends on unit name and namespace like `pod-private-my-pod.service`.

@@ -6,7 +6,6 @@ import (
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"testing"
-
 )
 
 func TestPlanUnit(t *testing.T) {
@@ -69,25 +68,25 @@ func TestPlanUnit(t *testing.T) {
 
 func TestPlanBlob(t *testing.T) {
 	left1 := &scheduler.AllocationBlob{
-		Name: "/etc/test",
+		Name:        "/etc/test",
 		Permissions: 0644,
-		Source: "left1",
+		Source:      "left1",
 	}
 	left2 := &scheduler.AllocationBlob{
-		Name: "/etc/test",
+		Name:        "/etc/test",
 		Permissions: 0644,
-		Leave: true,
-		Source: "left2",
+		Leave:       true,
+		Source:      "left2",
 	}
 	right1 := &scheduler.AllocationBlob{
-		Name: "/etc/test",
+		Name:        "/etc/test",
 		Permissions: 0644,
-		Source: "right1",
+		Source:      "right1",
 	}
 	right2 := &scheduler.AllocationBlob{
-		Name: "/etc/test",
+		Name:        "/etc/test",
 		Permissions: 0755,
-		Source: "left1",
+		Source:      "left1",
 	}
 	t.Run("destroy left 1", func(t *testing.T) {
 		res := scheduler.PlanBlob(left1, nil)
@@ -155,9 +154,9 @@ func TestPlan(t *testing.T) {
 		},
 		Blobs: []*scheduler.AllocationBlob{
 			{
-				Name: "/etc/test1",
+				Name:        "/etc/test1",
 				Permissions: 0644,
-				Source: "test",
+				Source:      "test",
 			},
 		},
 	}
@@ -206,9 +205,9 @@ func TestPlan(t *testing.T) {
 			},
 			Blobs: []*scheduler.AllocationBlob{
 				{
-					Name: "/etc/test1",
+					Name:        "/etc/test1",
 					Permissions: 0644,
-					Source: "test",
+					Source:      "test",
 				},
 			},
 		}
@@ -303,9 +302,9 @@ func TestPlan(t *testing.T) {
 			},
 			Blobs: []*scheduler.AllocationBlob{
 				{
-					Name: "/etc/test1",
+					Name:        "/etc/test1",
 					Permissions: 0644,
-					Source: "test1",
+					Source:      "test1",
 				},
 			},
 		}
@@ -361,9 +360,9 @@ func TestPlan(t *testing.T) {
 			},
 			Blobs: []*scheduler.AllocationBlob{
 				{
-					Name: "/etc/test1",
+					Name:        "/etc/test1",
 					Permissions: 0644,
-					Source: "test",
+					Source:      "test",
 				},
 			},
 		}
@@ -413,9 +412,9 @@ func TestPlan(t *testing.T) {
 			},
 			Blobs: []*scheduler.AllocationBlob{
 				{
-					Name: "/etc/test1",
+					Name:        "/etc/test1",
 					Permissions: 0644,
-					Source: "test",
+					Source:      "test",
 				},
 			},
 		}

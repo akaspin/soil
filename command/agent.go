@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -21,12 +22,14 @@ type AgentOptions struct {
 	ConfigPath []string
 	PoolSize   int
 	Id         string
+	Meta       []string
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "", []string{"/etc/soil/config.hcl"}, "configuration file")
 	cc.Flags().IntVarP(&o.PoolSize, "pool", "", 4, "worker pool size")
 	cc.Flags().StringVarP(&o.Id, "id", "", "localhost", "agent id")
+	cc.Flags().StringArrayVarP(&o.Meta, "meta", "", nil, "node metadata")
 }
 
 type Agent struct {
@@ -109,6 +112,14 @@ LOOP:
 
 func (c *Agent) readConfig() {
 	c.config = agent.DefaultConfig()
+	for _, meta := range c.Meta {
+		split := strings.SplitN(meta, "=", 2)
+		if len(split) != 2 {
+			c.log.Warningf("bad --meta=%s", meta)
+			continue
+		}
+		c.config.Meta[split[0]] = split[1]
+	}
 	if err := c.config.Read(c.ConfigPath...); err != nil {
 		c.log.Warningf("error reading config %s", err)
 	}

@@ -24,6 +24,8 @@ Also right value of constraint can be prefixed with operation:
 
 `~` Subset operation. This constraint assumes what all values from left subset are present in right subset. Subsets are delimited by comma.
 
+`!~` Not subset operation. This constraint assumes what none of values from left subset are present in right subset. Subsets are delimited by comma.
+
 ## Default constraints
 
 Default constraints are defined for each pod:

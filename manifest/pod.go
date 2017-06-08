@@ -17,6 +17,7 @@ const (
 	opLess    = "<"
 	opGreater = ">"
 	opIn      = "~"
+	opNotIn   = "!~"
 )
 
 type Pod struct {
@@ -189,15 +190,28 @@ func checkPair(left, right string) (res bool) {
 		case opIn:
 			// inside
 			rightSplit := strings.Split(split[1], ",")
-		LEFT:
+		LEFT_IN:
 			for _, leftChunk := range strings.Split(left, ",") {
 				for _, rightChunk := range rightSplit {
 					if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {
-						continue LEFT
+						continue LEFT_IN
 					}
 				}
 				// nothing found
 				return
+			}
+			// found all
+			res = true
+		case opNotIn:
+			// inside
+			rightSplit := strings.Split(split[1], ",")
+			for _, leftChunk := range strings.Split(left, ",") {
+				for _, rightChunk := range rightSplit {
+					if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {
+						// found one. assume false
+						return
+					}
+				}
 			}
 			// found all
 			res = true

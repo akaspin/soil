@@ -53,6 +53,22 @@ func TestConstraint_Check(t *testing.T) {
 			"meta.field": "one,three",
 		}))
 	})
+	t.Run("not in ok", func(t *testing.T) {
+		constraint := manifest.Constraint{
+			"none": "!~ ${meta.field}",
+		}
+		assert.NoError(t, constraint.Check(map[string]string{
+			"meta.field": "one,two,three",
+		}))
+	})
+	t.Run("not in fail", func(t *testing.T) {
+		constraint := manifest.Constraint{
+			"one,two": "!~ ${meta.field}",
+		}
+		assert.Error(t, constraint.Check(map[string]string{
+			"meta.field": "one,two,three",
+		}))
+	})
 	t.Run("less ok", func(t *testing.T) {
 		constraint := manifest.Constraint{
 			"2": "< ${meta.num}",

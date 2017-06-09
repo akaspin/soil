@@ -41,26 +41,21 @@ test:
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.8 go test -run=$(TESTS) -p=1 $(PACKAGES)
 
-test-debug:
-	docker -H 127.0.0.1:2375 run --rm \
-		-v /run/soil:/run/soil \
-		-v /var/lib/soil:/var/lib/soil \
-		-v /run/systemd/system:/run/systemd/system \
-		-v /etc/systemd/system:/etc/systemd/system \
-		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
-		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.8 go test -v -run=$(TESTS) -p=1 -tags="debug" $(PACKAGES)
-
-
 ###
 ### Dist
 ###
 
+release: dist-check dist dist-docker dist-docker-push
+
+dist-check: $(SRC) $(SRC_TEST)
+	echo $(V) | grep -Eo '^(\d+\.)+\d+$$'
+	go vet $(PACKAGES)
+	[[ -z `gofmt -d -s -e $^` ]]
+
 dist-docker: dist/$(BIN)-$(V)-linux-amd64.tar.gz
 	docker build --build-arg V=$(V) -t akaspin/soil:$(V) .
 
-dist-docker-push: dist-docker
-	echo $(V) | grep dirty && exit 2 || true
+dist-docker-push: dist-check dist-docker
 	docker push akaspin/soil:$(V)
 	docker tag akaspin/soil:$(V) akaspin/soil:latest
 	docker push akaspin/soil:latest
@@ -68,8 +63,6 @@ dist-docker-push: dist-docker
 dist: \
 	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \
 	dist/$(BIN)-$(V)-linux-amd64.tar.gz
-
-dist-bin-linux: dist/linux/$(BIN) dist/linux/$(BIN)-debug
 
 dist/$(BIN)-$(V)-%-amd64.tar.gz: dist/%/$(BIN) dist/%/$(BIN)-debug
 	tar -czf $@ -C ${<D} $(notdir $^)
@@ -110,6 +103,9 @@ uninstall:
 clean-dist:
 	rm -rf dist
 
+clean-docs:
+	rm -rf docs/_site
+
 ###
 ### docs
 ###
@@ -117,7 +113,5 @@ clean-dist:
 docs:
 	docker run --rm -v $(CWD)/docs:/site -p 4000:4000 andredumas/github-pages serve --watch
 
-clean-docs:
-	rm -rf docs/_site
 
 .PHONY: docs test clean

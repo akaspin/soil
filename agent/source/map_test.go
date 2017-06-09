@@ -19,10 +19,10 @@ func TestMapMetadata(t *testing.T) {
 		atomic.AddInt32(&changes, 1)
 	}
 
-	a.Configure(map[string]string{
+	a.Set(map[string]string{
 		"first":  "1",
 		"second": "2",
-	})
+	}, true)
 	a.Register(callback)
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(0), atomic.LoadInt32(&changes))
@@ -33,10 +33,9 @@ func TestMapMetadata(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(1), atomic.LoadInt32(&changes))
 
-	a.Configure(map[string]string{
-		"first":  "2",
-		"second": "2",
-	})
+	a.Set(map[string]string{
+		"first": "2",
+	}, false)
 	time.Sleep(time.Millisecond * 300)
 	assert.Equal(t, int32(2), atomic.LoadInt32(&changes))
 

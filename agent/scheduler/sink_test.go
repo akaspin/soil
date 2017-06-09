@@ -90,14 +90,14 @@ WantedBy=default.target
 	arbiter2 := source.NewMapSource(ctx, log, "agent", true, manifest.Constraint{})
 
 	// Both map arbiters must be pre initialised
-	arbiter1.Configure(map[string]string{
+	arbiter1.Set(map[string]string{
 		"consul": "true",
 		"test":   "true",
-	})
-	arbiter2.Configure(map[string]string{
+	}, true)
+	arbiter2.Set(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
-	})
+	}, true)
 
 	manager := scheduler.NewArbiter(ctx, log, arbiter1, arbiter2)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), executor, manager)
@@ -130,11 +130,11 @@ WantedBy=default.target
 		time.Sleep(time.Second)
 	})
 	t.Run("enable pod-3", func(t *testing.T) {
-		arbiter1.Configure(map[string]string{
+		arbiter1.Set(map[string]string{
 			"consul":    "true",
 			"test":      "true",
 			"undefined": "true",
-		})
+		}, true)
 
 		assert.Equal(t, map[string]*scheduler.AllocationHeader{
 			"pod-2": {

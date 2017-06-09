@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/akaspin/soil/manifest"
+	"net/http"
 )
 
 type Scheduler interface {
@@ -30,4 +31,18 @@ type Source interface {
 	SubmitPod(name string, constraints manifest.Constraint)
 
 	RemovePod(name string)
+
+	Get() (v map[string]string, active bool)
+}
+
+type Configurable interface {
+	Set(v map[string]string, replace bool) (err error)
+	Delete(keys ...string) (err error)
+}
+
+// HTTP endpoint
+type Endpoint interface {
+
+	// handle request and return result
+	Handle(resp http.ResponseWriter, req *http.Request) (res interface{}, err error)
 }

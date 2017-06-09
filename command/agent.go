@@ -97,8 +97,8 @@ LOOP:
 				c.log.Infof("SIGHUP received")
 				c.readConfig()
 				c.readPrivatePods()
-				c.configurePrivateRegistry()
 				c.configureArbiters()
+				c.configurePrivateRegistry()
 			}
 		case <-ctx.Done():
 			break LOOP
@@ -134,12 +134,12 @@ func (c *Agent) readPrivatePods() {
 }
 
 func (c *Agent) configureArbiters() {
-	c.agentArbiter.Configure(map[string]string{
+	c.agentArbiter.Set(map[string]string{
 		"id":       c.Id,
 		"drain":    fmt.Sprintf("%t", c.config.Drain),
 		"pod_exec": c.config.Exec,
-	})
-	c.metaArbiter.Configure(c.config.Meta)
+	}, true)
+	c.metaArbiter.Set(c.config.Meta, true)
 }
 
 func (c *Agent) configurePrivateRegistry() (err error) {

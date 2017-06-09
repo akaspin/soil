@@ -79,3 +79,39 @@ func (s *MapSource) Configure(v map[string]string) {
 	s.log.Debugf("sync %v", v)
 	s.callback(s.active, s.fields)
 }
+
+func (s *MapSource) Set(v map[string]string, replace bool) (err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.active = true
+	if replace {
+		s.fields = v
+		s.log.Infof("replace %v", v)
+	} else {
+		for k, v1 := range v {
+			s.fields[k] = v1
+		}
+		s.log.Infof("merge %v : %v", v, s.fields)
+	}
+	s.callback(s.active, s.fields)
+	return
+}
+
+func (s *MapSource) Delete(keys ...string) (err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.active = true
+	for _, k := range keys {
+		delete(s.fields, k)
+	}
+	s.log.Infof("delete %v : %v", keys, s.fields)
+	return
+}
+
+func (s *MapSource) Get() (v map[string]string, active bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	v = s.fields
+	active = s.active
+	return
+}

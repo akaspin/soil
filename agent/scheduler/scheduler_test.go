@@ -27,16 +27,16 @@ func TestNew(t *testing.T) {
 		sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 
 		// premature init arbiters
-		metaArbiter.Configure(map[string]string{
+		metaArbiter.Set(map[string]string{
 			"first_private":  "1",
 			"second_private": "1",
 			"third_public":   "1",
-		})
-		agentArbiter.Configure(map[string]string{
+		}, true)
+		agentArbiter.Set(map[string]string{
 			"id":       "one",
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			"drain":    "false",
-		})
+		}, true)
 		assert.NoError(t, sv.Open())
 		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
 		assert.NoError(t, err)
@@ -65,14 +65,14 @@ func TestNew(t *testing.T) {
 	metaArbiter := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
 	sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
 	// premature init arbiters
-	metaArbiter.Configure(map[string]string{
+	metaArbiter.Set(map[string]string{
 		"first_private":  "1",
 		"second_private": "1",
-	})
-	agentArbiter.Configure(map[string]string{
+	}, true)
+	agentArbiter.Set(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
-	})
+	}, true)
 	assert.NoError(t, sv.Open())
 
 	t.Run("1", func(t *testing.T) {
@@ -123,11 +123,11 @@ func TestNew(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		// modify meta
-		metaArbiter.Configure(map[string]string{
+		metaArbiter.Set(map[string]string{
 			"first_private":  "1",
 			"first_public":   "1",
 			"second_private": "1",
-		})
+		}, true)
 		time.Sleep(time.Second)
 
 		// ensure first public is deployed
@@ -174,11 +174,11 @@ func TestNew(t *testing.T) {
 		assert.NoError(t, err)
 		sink.Sync("private", private)
 
-		metaArbiter.Configure(map[string]string{
+		metaArbiter.Set(map[string]string{
 			"first_private":  "2",
 			"first_public":   "1",
 			"second_private": "1",
-		})
+		}, true)
 		time.Sleep(time.Second)
 
 		// ensure first is public

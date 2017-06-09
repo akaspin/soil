@@ -1,0 +1,182 @@
+package manifest
+
+import (
+	"fmt"
+	"math/big"
+	"sort"
+	"strconv"
+	"strings"
+)
+
+const (
+	opEqual          = "="
+	opNotEqual       = "!="
+	opLess           = "<"
+	opLessOrEqual    = "<="
+	opGreater        = ">"
+	opGreaterOrEqual = ">="
+	opIn             = "~"
+	opNotIn          = "!~"
+)
+
+// Constraint can contain interpolations in form ${ns.key}.
+// Right field can also begins with compare operation: "<", ">" or "~" (in).
+type Constraint map[string]string
+
+// Extract constraint fields by namespaces
+func (c Constraint) ExtractFields() (res map[string][]string) {
+	res = map[string][]string{}
+	collected := map[string]struct{}{}
+	for k, v := range c {
+		for _, f := range ExtractEnv(k + v) {
+			collected[f] = struct{}{}
+		}
+	}
+	for k := range collected {
+		split := strings.SplitN(k, ".", 2)
+		if len(split) == 2 {
+			res[split[0]] = append(res[split[0]], split[1])
+		}
+	}
+	for _, v := range res {
+		sort.Strings(v)
+	}
+	return
+}
+
+func (c Constraint) Check(env map[string]string) (err error) {
+	for left, right := range c {
+		leftV := Interpolate(left, env)
+		rightV := Interpolate(right, env)
+		if !check(leftV, rightV) {
+			err = fmt.Errorf("constraint failed %s != %s (%s:%s)", leftV, rightV, left, right)
+			return
+		}
+	}
+	return
+}
+
+func check(left, right string) (res bool) {
+	// try to get op
+	split := strings.SplitN(right, " ", 2)
+	if len(split) != 2 {
+		// just compare and return
+		res = left == right
+		return
+	}
+	op := split[0]
+	switch op {
+	case opEqual:
+		res = left == split[1]
+	case opNotEqual:
+		res = left != split[1]
+	case opLess, opLessOrEqual, opGreater, opGreaterOrEqual:
+		right = split[1]
+		var cmpRes int
+		leftN, leftErr := strconv.ParseFloat(left, 64)
+		rightN, rightErr := strconv.ParseFloat(right, 64)
+		if leftErr == nil && rightErr == nil {
+			// ok, we have numbers
+			cmpRes = big.NewFloat(leftN).Cmp(big.NewFloat(rightN))
+		} else {
+			cmpRes = strings.Compare(left, right)
+		}
+		switch op {
+		case opLess:
+			res = cmpRes == -1
+		case opLessOrEqual:
+			res = cmpRes <= 0
+		case opGreater:
+			res = cmpRes == 1
+		case opGreaterOrEqual:
+			res = cmpRes >= 0
+		}
+	case opIn, opNotIn:
+		leftSplit := strings.Split(left, ",")
+		rightSplit := strings.Split(split[1], ",")
+		var found int
+	LOOP:
+		for _, rightChunk := range rightSplit {
+			for _, leftChunk := range leftSplit {
+				if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {
+					found++
+					continue LOOP
+				}
+			}
+		}
+		switch op {
+		case opIn:
+			res = found == len(leftSplit)
+		case opNotIn:
+			res = found == 0
+		}
+	default:
+		// ordinary string
+		res = left == right
+	}
+	return
+}
+
+func checkPair(left, right string) (res bool) {
+	// check for operation
+	op := opEqual
+	split := strings.SplitN(right, " ", 2)
+	if len(split) == 2 {
+		// have op
+		switch split[0] {
+		case opLess, opGreater:
+			op = split[0]
+			right = split[1]
+			leftN, leftErr := strconv.ParseFloat(left, 64)
+			rightN, rightErr := strconv.ParseFloat(split[1], 64)
+			if leftErr != nil || rightErr != nil {
+				switch op {
+				case opLess:
+					res = left < right
+				case opGreater:
+					res = left > right
+				}
+			} else {
+				switch op {
+				case opLess:
+					res = leftN < rightN
+				case opGreater:
+					res = leftN > rightN
+				}
+			}
+			return
+		case opIn:
+			// inside
+			rightSplit := strings.Split(split[1], ",")
+		LEFT_IN:
+			for _, leftChunk := range strings.Split(left, ",") {
+				for _, rightChunk := range rightSplit {
+					if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {
+						continue LEFT_IN
+					}
+				}
+				// nothing found
+				return
+			}
+			// found all
+			res = true
+		case opNotIn:
+			// inside
+			rightSplit := strings.Split(split[1], ",")
+			for _, leftChunk := range strings.Split(left, ",") {
+				for _, rightChunk := range rightSplit {
+					if strings.TrimSpace(leftChunk) == strings.TrimSpace(rightChunk) {
+						// found one. assume false
+						return
+					}
+				}
+			}
+			// found all
+			res = true
+		}
+		return
+	}
+	// ordinal string comparison
+	res = left == right
+	return
+}

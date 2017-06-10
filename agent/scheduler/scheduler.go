@@ -8,27 +8,23 @@ import (
 	"github.com/akaspin/supervisor"
 )
 
-func New(ctx context.Context, log *logx.Log, workers int, arbiter ...agent.Source) (sink *Sink, sv supervisor.Component) {
+// Returns new scheduler with supervisor chain
+func New(ctx context.Context, log *logx.Log, workers int, sources []agent.Source, reporters []agent.AllocationReporter) (sink *Sink, sv supervisor.Component) {
 	pool := concurrency.NewWorkerPool(ctx, concurrency.Config{
 		Capacity: workers,
 	})
-	executor := NewExecutor(ctx, log, pool)
-	manager := NewArbiter(ctx, log, arbiter...)
-	var arbiterComponents []supervisor.Component
-	for _, a := range arbiter {
-		arbiterComponents = append(arbiterComponents, a.(supervisor.Component))
-	}
-	sink = NewSink(ctx, log, executor, manager)
+	executor := NewExecutor(ctx, log, pool, reporters...)
+	arbiter := NewArbiter(ctx, log, sources...)
+	sink = NewSink(ctx, log, executor, arbiter)
+
 	sv = supervisor.NewChain(ctx,
 		supervisor.NewGroup(ctx,
 			supervisor.NewChain(ctx,
 				pool,
 				executor,
 			),
-			supervisor.NewChain(ctx,
-				supervisor.NewGroup(ctx, arbiterComponents...),
-				manager,
-			)),
+			arbiter,
+		),
 		sink,
 	)
 	return

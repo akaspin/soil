@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
@@ -15,17 +16,19 @@ type Executor struct {
 	log *logx.Log
 
 	// bounded worker pool
-	pool *concurrency.WorkerPool
+	pool      *concurrency.WorkerPool
+	reporters []agent.AllocationReporter
 
 	// bounded state
 	state *ExecutorState
 }
 
-func NewExecutor(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool) (r *Executor) {
+func NewExecutor(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool, reporters ...agent.AllocationReporter) (r *Executor) {
 	r = &Executor{
-		Control: supervisor.NewControl(ctx),
-		log:     log.GetLog("executor"),
-		pool:    pool,
+		Control:   supervisor.NewControl(ctx),
+		log:       log.GetLog("executor"),
+		pool:      pool,
+		reporters: reporters,
 	}
 	return
 }
@@ -37,6 +40,9 @@ func (r *Executor) Open() (err error) {
 		return
 	}
 	r.state = NewExecutorState(restored)
+	for _, reporter := range r.reporters {
+		reporter.Sync(restored)
+	}
 	err = r.Control.Open()
 	return
 }
@@ -79,6 +85,9 @@ func (r *Executor) deploy(name string) {
 			log.Errorf("can't commit %s", err)
 		}
 		log.Infof("done %s->%s %v", allocation.ToString(ready), allocation.ToString(active), failures)
+		for _, reporter := range r.reporters {
+			reporter.Report(name, active, failures)
+		}
 	})
 }
 

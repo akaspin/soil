@@ -3,16 +3,18 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
+	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func TestNew(t *testing.T) {
+func TestNewScheduler(t *testing.T) {
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 
@@ -20,24 +22,27 @@ func TestNew(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentArbiter := source.NewMapSource(ctx, log, "agent", true, manifest.Constraint{
+		agentSource := source.NewMap(ctx, log, "agent", true, manifest.Constraint{
 			"${agent.drain}": "false",
 		})
-		metaArbiter := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
-		sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
+		metaSource := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
+		sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
+		sink, schedulerSV := scheduler.New(ctx, log, 4, []agent.Source{agentSource, metaSource}, nil)
+		sv := supervisor.NewChain(ctx, sourceSV, schedulerSV)
+
+		assert.NoError(t, sv.Open())
 		// premature init arbiters
-		metaArbiter.Set(map[string]string{
+		metaSource.Set(map[string]string{
 			"first_private":  "1",
 			"second_private": "1",
 			"third_public":   "1",
 		}, true)
-		agentArbiter.Set(map[string]string{
+		agentSource.Set(map[string]string{
 			"id":       "one",
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			"drain":    "false",
 		}, true)
-		assert.NoError(t, sv.Open())
 		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
 		assert.NoError(t, err)
 		sink.Sync("private", private)
@@ -61,19 +66,21 @@ func TestNew(t *testing.T) {
 
 	// create new arbiter
 
-	agentArbiter := source.NewMapSource(ctx, log, "agent", true, manifest.Constraint{})
-	metaArbiter := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
-	sink, sv := scheduler.New(ctx, log, 4, agentArbiter, metaArbiter)
+	agentSource := source.NewMap(ctx, log, "agent", true, manifest.Constraint{})
+	metaSource := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
+	sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
+	sink, schedulerSv := scheduler.New(ctx, log, 4, []agent.Source{agentSource, metaSource}, nil)
+	sv := supervisor.NewChain(ctx, sourceSV, schedulerSv)
 	// premature init arbiters
-	metaArbiter.Set(map[string]string{
+	assert.NoError(t, sv.Open())
+	metaSource.Set(map[string]string{
 		"first_private":  "1",
 		"second_private": "1",
 	}, true)
-	agentArbiter.Set(map[string]string{
+	agentSource.Set(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	}, true)
-	assert.NoError(t, sv.Open())
 
 	t.Run("1", func(t *testing.T) {
 		// assert all pods are still running
@@ -123,7 +130,7 @@ func TestNew(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		// modify meta
-		metaArbiter.Set(map[string]string{
+		metaSource.Set(map[string]string{
 			"first_private":  "1",
 			"first_public":   "1",
 			"second_private": "1",
@@ -174,7 +181,7 @@ func TestNew(t *testing.T) {
 		assert.NoError(t, err)
 		sink.Sync("private", private)
 
-		metaArbiter.Set(map[string]string{
+		metaSource.Set(map[string]string{
 			"first_private":  "2",
 			"first_public":   "1",
 			"second_private": "1",

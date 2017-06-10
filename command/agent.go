@@ -41,8 +41,8 @@ type Agent struct {
 	privatePods []*manifest.Pod
 
 	log             *logx.Log
-	agentArbiter    *source.MapSource
-	metaArbiter     *source.MapSource
+	agentSource     *source.Map
+	metaSource      *source.Map
 	privateRegistry *registry.Private
 }
 
@@ -59,18 +59,29 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	ctx := context.Background()
 
-	// Arbiters (premature initialize)
-	c.agentArbiter = source.NewMapSource(ctx, c.log, "agent", true, manifest.Constraint{
+	// sources
+	c.agentSource = source.NewMap(ctx, c.log, "agent", true, manifest.Constraint{
 		"${agent.drain}": "false",
 	})
-	c.metaArbiter = source.NewMapSource(ctx, c.log, "meta", true, manifest.Constraint{})
+	c.metaSource = source.NewMap(ctx, c.log, "meta", true, manifest.Constraint{})
+	statusSource := source.NewStatus(ctx, c.log)
+	sourceSv := supervisor.NewGroup(ctx,
+		c.agentSource,
+		c.metaSource,
+		statusSource,
+	)
 
-	sink, schedulerSV := scheduler.New(ctx, c.log, c.PoolSize, c.agentArbiter, c.metaArbiter)
+	sink, schedulerSv := scheduler.New(
+		ctx, c.log, c.PoolSize,
+		[]agent.Source{c.agentSource, c.metaSource, statusSource},
+		[]agent.AllocationReporter{statusSource},
+	)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
 
 	// agent
 	agentSV := supervisor.NewChain(ctx,
-		schedulerSV,
+		sourceSv,
+		schedulerSv,
 		c.privateRegistry,
 	)
 
@@ -134,12 +145,12 @@ func (c *Agent) readPrivatePods() {
 }
 
 func (c *Agent) configureArbiters() {
-	c.agentArbiter.Set(map[string]string{
+	c.agentSource.Set(map[string]string{
 		"id":       c.Id,
 		"drain":    fmt.Sprintf("%t", c.config.Drain),
 		"pod_exec": c.config.Exec,
 	}, true)
-	c.metaArbiter.Set(c.config.Meta, true)
+	c.metaSource.Set(c.config.Meta, true)
 }
 
 func (c *Agent) configurePrivateRegistry() (err error) {

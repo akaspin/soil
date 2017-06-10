@@ -17,8 +17,8 @@ func TestArbiter(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := source.NewMapSource(ctx, log, "meta", true, manifest.Constraint{})
-	a2 := source.NewMapSource(ctx, log, "agent", false, manifest.Constraint{})
+	a1 := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
+	a2 := source.NewMap(ctx, log, "agent", false, manifest.Constraint{})
 
 	man := scheduler.NewArbiter(ctx, log, a1, a2)
 	sv := supervisor.NewChain(ctx, a1, man)

@@ -4,57 +4,30 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/manifest"
-	"github.com/akaspin/supervisor"
-	"sync"
 )
 
-// MapSource arbiter dynamically evaluates map of parameters
-type MapSource struct {
-	*supervisor.Control
-	log        *logx.Log
-	name       string
-	namespaces []string
-	mark       bool
-	required   manifest.Constraint
-
-	callback func(bool, map[string]string)
+// Map arbiter dynamically evaluates map of parameters
+type Map struct {
+	*baseSource
+	required manifest.Constraint
 	fields   map[string]string
 	active   bool
-	mu       *sync.Mutex
 }
 
-func NewMapSource(ctx context.Context, log *logx.Log, name string, mark bool, required manifest.Constraint) (s *MapSource) {
-	s = &MapSource{
-		Control:    supervisor.NewControl(ctx),
-		log:        log.GetLog("metadata", "map", name),
-		name:       name,
-		namespaces: []string{"private", "public"},
-		mark:       mark,
+func NewMap(ctx context.Context, log *logx.Log, name string, mark bool, required manifest.Constraint) (s *Map) {
+	s = &Map{
+		baseSource: newBaseSource(ctx, log, name, []string{"private", "public"}, mark),
 		required:   required,
-		callback:   func(bool, map[string]string) {},
 		fields:     map[string]string{},
-		mu:         &sync.Mutex{},
 	}
 	return
 }
 
-func (s *MapSource) Name() string {
-	return s.name
-}
-
-func (s *MapSource) Namespaces() []string {
-	return s.namespaces
-}
-
-func (s *MapSource) Mark() bool {
-	return s.mark
-}
-
-func (s *MapSource) Required() manifest.Constraint {
+func (s *Map) Required() manifest.Constraint {
 	return s.required
 }
 
-func (s *MapSource) Register(callback func(active bool, env map[string]string)) {
+func (s *Map) Register(callback func(active bool, env map[string]string)) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.callback = callback
@@ -62,16 +35,19 @@ func (s *MapSource) Register(callback func(active bool, env map[string]string)) 
 	return
 }
 
-func (s *MapSource) SubmitPod(name string, constraints manifest.Constraint) {
+func (s *Map) SubmitPod(name string, constraints manifest.Constraint) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.callback(s.active, s.fields)
 }
 
-func (s *MapSource) RemovePod(name string) {
+func (s *Map) RemovePod(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.callback(s.active, s.fields)
 }
 
-func (s *MapSource) Configure(v map[string]string) {
+func (s *Map) Configure(v map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.active = true
@@ -80,7 +56,7 @@ func (s *MapSource) Configure(v map[string]string) {
 	s.callback(s.active, s.fields)
 }
 
-func (s *MapSource) Set(v map[string]string, replace bool) (err error) {
+func (s *Map) Set(v map[string]string, replace bool) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.active = true
@@ -97,7 +73,7 @@ func (s *MapSource) Set(v map[string]string, replace bool) (err error) {
 	return
 }
 
-func (s *MapSource) Delete(keys ...string) (err error) {
+func (s *Map) Delete(keys ...string) (err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.active = true
@@ -105,13 +81,5 @@ func (s *MapSource) Delete(keys ...string) (err error) {
 		delete(s.fields, k)
 	}
 	s.log.Infof("delete %v : %v", keys, s.fields)
-	return
-}
-
-func (s *MapSource) Get() (v map[string]string, active bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	v = s.fields
-	active = s.active
 	return
 }

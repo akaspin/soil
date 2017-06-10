@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/manifest"
 )
 
@@ -10,17 +11,12 @@ type Scheduler interface {
 }
 
 type Source interface {
-
-	// Name returns arbiter name
 	Name() string
 
-	// Source namespaces
 	Namespaces() []string
 
-	// Mark state
 	Mark() bool
 
-	// Required constraints
 	Required() manifest.Constraint
 
 	// Bind consumer. Source source will call callback on
@@ -30,11 +26,18 @@ type Source interface {
 	SubmitPod(name string, constraints manifest.Constraint)
 
 	RemovePod(name string)
-
-	Get() (v map[string]string, active bool)
 }
 
 type Configurable interface {
 	Set(v map[string]string, replace bool) (err error)
 	Delete(keys ...string) (err error)
+}
+
+type AllocationReporter interface {
+
+	// sync
+	Sync(pods []*allocation.Pod)
+
+	// report about allocation
+	Report(name string, pod *allocation.Pod, failures []error)
 }

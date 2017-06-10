@@ -3,6 +3,7 @@ BIN		= soil
 
 BENCH	= .
 TESTS	= .
+TEST_TAGS = ""
 
 CWD 		= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VENDOR 		= $(CWD)/vendor
@@ -39,7 +40,17 @@ test:
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.8 go test -run=$(TESTS) -p=1 $(PACKAGES)
+		golang:1.8 go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
+
+test-verbose:
+	docker -H 127.0.0.1:2375 run --rm \
+		-v /run/soil:/run/soil \
+		-v /var/lib/soil:/var/lib/soil \
+		-v /run/systemd/system:/run/systemd/system \
+		-v /etc/systemd/system:/etc/systemd/system \
+		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
+		-v /vagrant:/go/src/github.com/akaspin/soil \
+		golang:1.8 go test -run=$(TESTS) -p=1 -v -tags="$(TEST_TAGS)" $(PACKAGES)
 
 ###
 ### Dist

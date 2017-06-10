@@ -20,3 +20,7 @@ Soil Agent needs RW access to next system paths:
 `/etc/systemd/system` Systemd Local path
 
 Also Soil Agent needs RO access to own configuration files and RW access to directories where agent manages BLOBs.
+
+## Mark
+
+Each deployed pod is supplied with agent mark. Value of agent mark depends on agent configuration.

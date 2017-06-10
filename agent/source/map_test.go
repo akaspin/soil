@@ -12,7 +12,7 @@ import (
 )
 
 func TestMapMetadata(t *testing.T) {
-	a := source.NewMapSource(context.Background(), logx.GetLog("test"), "meta", true, manifest.Constraint{})
+	a := source.NewMap(context.Background(), logx.GetLog("test"), "meta", true, manifest.Constraint{})
 	a.Open()
 	var changes int32
 	callback := func(active bool, v map[string]string) {

@@ -106,3 +106,7 @@ blob "/etc/my-pod/sample" {
 `permissions` (`0644`) BLOB permissions.
 
 `leave` (`false`) Leave BLOB on disk after destroy.
+
+## Mark
+
+Each pod has calculated mark which depends on pod definition.

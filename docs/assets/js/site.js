@@ -17,3 +17,14 @@ $(document).ready(function(){
             }
         });
 });
+
+$(document).ready(function() {
+    console.info(hljs.getLanguage('javascript'));
+    hljs.registerLanguage('hcl', function (hljs) {
+        lang = jQuery.extend({}, hljs.getLanguage('javascript'));
+        return lang;
+    });
+    $('pre code').each(function(i, block) {
+        hljs.highlightBlock(block);
+    });
+});

@@ -57,13 +57,13 @@ All deployed pods are registered in `status` source. All values for pod are pref
 
 `<pod-name>` Pod presence. Can be only `present`. If pod is not deployed value will be absent.
  
-`<pod-name>.units` List of pod [units]({{site.baseurl}}/pod#Units) delimited by comma.
+`<pod-name>.units` List of pod [units]({{site.baseurl}}/pod/#units) delimited by comma.
 
 `<pod-name>.namespace` Pod [namespace]({{site.baseurl}}/agent/namespaces).
 
-`<pod-name>.mark` Pod [mark]({{site.baseurl}}/pod#Mark).
+`<pod-name>.mark` Pod [mark]({{site.baseurl}}/pod/#mark).
 
-`<pod-name>.agent_mark` Agent [mark]({{site.baseurl}}/agent#Mark).
+`<pod-name>.agent_mark` Agent [mark]({{site.baseurl}}/agent/#mark).
 
 `<pod-name>.failures` Failures what happened on pod deployment.
 

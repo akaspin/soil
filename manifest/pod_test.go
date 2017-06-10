@@ -26,13 +26,13 @@ func TestManifest(t *testing.T) {
 				Units: []*manifest.Unit{
 					{
 						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "",
-							Destroy: "stop",
+							Create:    "start",
+							Update:    "",
+							Destroy:   "stop",
+							Permanent: true,
 						},
-						Name:      "first-1.service",
-						Permanent: true,
-						Source:    "[Service]\n# ${meta.consul}\nExecStart=/usr/bin/sleep inf\nExecStopPost=/usr/bin/systemctl stop first-2.service\n",
+						Name:   "first-1.service",
+						Source: "[Service]\n# ${meta.consul}\nExecStart=/usr/bin/sleep inf\nExecStopPost=/usr/bin/systemctl stop first-2.service\n",
 					},
 					{
 						Transition: manifest.Transition{
@@ -112,7 +112,7 @@ func TestManifest(t *testing.T) {
 
 	t.Run("mark", func(t *testing.T) {
 		for i, mark := range []uint64{
-			0x929c7bc2b806e194, 0xa28a0e338d4eb333,
+			0x1c18aee4a1c89fd0, 0x6de66aa74d55be62,
 		} {
 			assert.Equal(t, mark, res[i].Mark())
 		}

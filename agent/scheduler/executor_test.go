@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -41,16 +42,16 @@ func TestRestoreAllocation(t *testing.T) {
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 2))
 
-	alloc, err := scheduler.NewAllocationFromSystemD("/run/systemd/system/pod-test-1.service")
+	alloc, err := allocation.NewFromSystemD("/run/systemd/system/pod-test-1.service")
 	assert.NoError(t, err)
-	assert.Equal(t, &scheduler.Allocation{
-		AllocationHeader: &scheduler.AllocationHeader{
+	assert.Equal(t, &allocation.Pod{
+		Header: &allocation.Header{
 			Name:      "test-1",
 			PodMark:   123,
 			AgentMark: 456,
 			Namespace: "private",
 		},
-		AllocationFile: &scheduler.AllocationFile{
+		UnitFile: &allocation.UnitFile{
 			Path: "/run/systemd/system/pod-test-1.service",
 			Source: `### POD test-1 {"AgentMark":456,"Namespace":"private","PodMark":123}
 ### UNIT /run/systemd/system/test-1-0.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
@@ -64,9 +65,9 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 		},
-		Units: []*scheduler.AllocationUnit{
+		Units: []*allocation.Unit{
 			{
-				AllocationFile: &scheduler.AllocationFile{
+				UnitFile: &allocation.UnitFile{
 					Path: "/run/systemd/system/test-1-0.service",
 					Source: `[Unit]
 Description=Unit test-1-0.service
@@ -76,17 +77,15 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 				},
-				AllocationUnitHeader: &scheduler.AllocationUnitHeader{
-					Transition: manifest.Transition{
-						Create:  "start",
-						Update:  "restart",
-						Destroy: "stop",
-					},
+				Transition: &manifest.Transition{
+					Create:    "start",
+					Update:    "restart",
+					Destroy:   "stop",
 					Permanent: true,
 				},
 			},
 			{
-				AllocationFile: &scheduler.AllocationFile{
+				UnitFile: &allocation.UnitFile{
 					Path: "/run/systemd/system/test-1-1.service",
 					Source: `[Unit]
 Description=Unit test-1-1.service
@@ -96,12 +95,10 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 				},
-				AllocationUnitHeader: &scheduler.AllocationUnitHeader{
-					Transition: manifest.Transition{
-						Create:  "start",
-						Update:  "restart",
-						Destroy: "stop",
-					},
+				Transition: &manifest.Transition{
+					Create:    "start",
+					Update:    "restart",
+					Destroy:   "stop",
 					Permanent: true,
 				},
 			},
@@ -146,14 +143,14 @@ func TestRuntime_Submit(t *testing.T) {
 	assert.NoError(t, sv.Open())
 
 	t.Run("create pod-1", func(t *testing.T) {
-		alloc := &scheduler.Allocation{
-			AllocationHeader: &scheduler.AllocationHeader{
+		alloc := &allocation.Pod{
+			Header: &allocation.Header{
 				Name:      "pod-1",
 				PodMark:   1,
 				AgentMark: 0,
 				Namespace: "private",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path: "/run/systemd/system/pod-private-pod-1.service",
 				Source: `### POD pod-1 {"AgentMark":0,"PodMark":1,"Namespace":"private"}
 ### UNIT unit-1.service {"Permanent":false,"Create":"start","Update":"restart","Destroy":"stop"}
@@ -166,9 +163,9 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=default.target
 `,
 			},
-			Units: []*scheduler.AllocationUnit{
+			Units: []*allocation.Unit{
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path: "/run/systemd/system/unit-1.service",
 						Source: `
 [Unit]
@@ -179,13 +176,11 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=default.target
 `,
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: false,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 			},
@@ -199,7 +194,7 @@ WantedBy=default.target
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		assert.Equal(t, map[string]*scheduler.AllocationHeader{
+		assert.Equal(t, map[string]*allocation.Header{
 			"pod-1": {
 				Name:      "pod-1",
 				Namespace: "private",
@@ -217,7 +212,7 @@ WantedBy=default.target
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		assert.Equal(t, map[string]*scheduler.AllocationHeader{
+		assert.Equal(t, map[string]*allocation.Header{
 			"pod-1": {
 				Name:      "pod-1",
 				Namespace: "private",
@@ -232,7 +227,7 @@ WantedBy=default.target
 		assert.NoError(t, assertUnits(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{}))
-		assert.Equal(t, map[string]*scheduler.AllocationHeader{}, ex.List())
+		assert.Equal(t, map[string]*allocation.Header{}, ex.List())
 	})
 
 	//

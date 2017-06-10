@@ -1,10 +1,11 @@
 package scheduler
 
 import (
+	"github.com/akaspin/soil/agent/allocation"
 	"sort"
 )
 
-func Plan(left, right *Allocation) (res []Instruction) {
+func Plan(left, right *allocation.Pod) (res []Instruction) {
 	phases1 := map[int][]Instruction{}
 	var phaseIds []int
 	for _, i := range planPhases(left, right) {
@@ -21,9 +22,9 @@ func Plan(left, right *Allocation) (res []Instruction) {
 	return
 }
 
-func planPhases(left, right *Allocation) (res []Instruction) {
+func planPhases(left, right *allocation.Pod) (res []Instruction) {
 	if right == nil {
-		res = append(res, planUnitDestroy(left.PodUnit())...)
+		res = append(res, planUnitDestroy(left.GetPodUnit())...)
 		for _, u := range left.Units {
 			res = append(res, planUnitDestroy(u)...)
 		}
@@ -34,7 +35,7 @@ func planPhases(left, right *Allocation) (res []Instruction) {
 	}
 
 	if left == nil {
-		res = append(res, PlanUnit(nil, right.PodUnit())...)
+		res = append(res, PlanUnit(nil, right.GetPodUnit())...)
 		for _, u := range right.Units {
 			res = append(res, PlanUnit(nil, u)...)
 		}
@@ -45,27 +46,27 @@ func planPhases(left, right *Allocation) (res []Instruction) {
 	}
 
 	// ok. hard case
-	res = append(res, PlanUnit(left.PodUnit(), right.PodUnit())...)
+	res = append(res, PlanUnit(left.GetPodUnit(), right.GetPodUnit())...)
 
 	unitsDone := map[string]bool{}
-	unitsCandidates := map[string]*AllocationUnit{}
+	unitsCandidates := map[string]*allocation.Unit{}
 
 	for _, u := range right.Units {
-		unitsCandidates[u.AllocationFile.UnitName()] = u
+		unitsCandidates[u.UnitFile.UnitName()] = u
 	}
 	for _, u := range left.Units {
 		res = append(res, PlanUnit(u, unitsCandidates[u.UnitName()])...)
 		unitsDone[u.UnitName()] = true
 	}
 	for _, u := range right.Units {
-		if _, ok := unitsDone[u.AllocationFile.UnitName()]; ok {
+		if _, ok := unitsDone[u.UnitFile.UnitName()]; ok {
 			continue
 		}
 		res = append(res, PlanUnit(nil, u)...)
 	}
 
 	blobsDone := map[string]bool{}
-	blobCandidates := map[string]*AllocationBlob{}
+	blobCandidates := map[string]*allocation.Blob{}
 	for _, b := range right.Blobs {
 		blobCandidates[b.Name] = b
 	}
@@ -83,45 +84,45 @@ func planPhases(left, right *Allocation) (res []Instruction) {
 	return
 }
 
-func PlanUnit(left, right *AllocationUnit) (res []Instruction) {
+func PlanUnit(left, right *allocation.Unit) (res []Instruction) {
 	if right == nil {
 		res = planUnitDestroy(left)
 		return
 	}
 
 	if left == nil {
-		res = planUnitDeploy(right.AllocationFile, right.Permanent, right.Transition.Create)
+		res = planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Create)
 		return
 	}
-	if left.AllocationFile.Path != right.AllocationFile.Path {
+	if left.UnitFile.Path != right.UnitFile.Path {
 		// unit path changed: generate destroy/create
 		res = append(res, planUnitDestroy(left)...)
-		res = append(res, planUnitDeploy(right.AllocationFile, right.Permanent, right.Transition.Create)...)
+		res = append(res, planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Create)...)
 		return
 	}
-	if left.AllocationFile.Source != right.AllocationFile.Source {
-		res = planUnitDeploy(right.AllocationFile, right.Permanent, right.Transition.Update)
+	if left.UnitFile.Source != right.UnitFile.Source {
+		res = planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Update)
 		return
 	}
 	// just permanency check
 	if left.Permanent != right.Permanent {
-		res = append(res, planUnitPerm(right.AllocationFile, right.Permanent))
+		res = append(res, planUnitPerm(right.UnitFile, right.Permanent))
 	}
 
 	return
 }
 
-func planUnitDestroy(what *AllocationUnit) (res []Instruction) {
+func planUnitDestroy(what *allocation.Unit) (res []Instruction) {
 	res = []Instruction{
-		NewDeleteUnitInstruction(what.AllocationFile),
+		NewDeleteUnitInstruction(what.UnitFile),
 	}
 	if what.Transition.Destroy != "" {
-		res = append(res, NewCommandInstruction(phaseDestroyCommand, what.AllocationFile, what.Transition.Destroy))
+		res = append(res, NewCommandInstruction(phaseDestroyCommand, what.UnitFile, what.Transition.Destroy))
 	}
 	return
 }
 
-func planUnitDeploy(what *AllocationFile, permanent bool, command string) (res []Instruction) {
+func planUnitDeploy(what *allocation.UnitFile, permanent bool, command string) (res []Instruction) {
 	res = append(res, NewWriteUnitInstruction(what), planUnitPerm(what, permanent))
 	if command != "" {
 		res = append(res, NewCommandInstruction(phaseDeployCommand, what, command))
@@ -129,7 +130,7 @@ func planUnitDeploy(what *AllocationFile, permanent bool, command string) (res [
 	return
 }
 
-func planUnitPerm(what *AllocationFile, permanent bool) (res Instruction) {
+func planUnitPerm(what *allocation.UnitFile, permanent bool) (res Instruction) {
 	if permanent {
 		res = NewEnableUnitInstruction(what)
 		return
@@ -138,7 +139,7 @@ func planUnitPerm(what *AllocationFile, permanent bool) (res Instruction) {
 	return
 }
 
-func PlanBlob(left, right *AllocationBlob) (res []Instruction) {
+func PlanBlob(left, right *allocation.Blob) (res []Instruction) {
 	if left == nil && right == nil {
 		return
 	}

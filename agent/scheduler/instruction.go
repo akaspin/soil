@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"fmt"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/coreos/go-systemd/dbus"
 	"os"
 )
@@ -21,10 +22,10 @@ type Instruction interface {
 
 type baseInstruction struct {
 	phase    int
-	unitFile *AllocationFile
+	unitFile *allocation.UnitFile
 }
 
-func newBaseInstruction(phase int, unitFile *AllocationFile) *baseInstruction {
+func newBaseInstruction(phase int, unitFile *allocation.UnitFile) *baseInstruction {
 	return &baseInstruction{
 		phase:    phase,
 		unitFile: unitFile,
@@ -40,7 +41,7 @@ type WriteUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewWriteUnitInstruction(unitFile *AllocationFile) *WriteUnitInstruction {
+func NewWriteUnitInstruction(unitFile *allocation.UnitFile) *WriteUnitInstruction {
 	return &WriteUnitInstruction{
 		newBaseInstruction(phaseDeployFS, unitFile),
 	}
@@ -64,7 +65,7 @@ type DeleteUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewDeleteUnitInstruction(unitFile *AllocationFile) *DeleteUnitInstruction {
+func NewDeleteUnitInstruction(unitFile *allocation.UnitFile) *DeleteUnitInstruction {
 	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyFS, unitFile)}
 }
 
@@ -86,7 +87,7 @@ type EnableUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewEnableUnitInstruction(unitFile *AllocationFile) *EnableUnitInstruction {
+func NewEnableUnitInstruction(unitFile *allocation.UnitFile) *EnableUnitInstruction {
 	return &EnableUnitInstruction{newBaseInstruction(phaseDeployPerm, unitFile)}
 }
 
@@ -104,7 +105,7 @@ type DisableUnitInstruction struct {
 	*baseInstruction
 }
 
-func NewDisableUnitInstruction(unitFile *AllocationFile) *DisableUnitInstruction {
+func NewDisableUnitInstruction(unitFile *allocation.UnitFile) *DisableUnitInstruction {
 	return &DisableUnitInstruction{newBaseInstruction(phaseDeployPerm, unitFile)}
 }
 
@@ -123,7 +124,7 @@ type CommandInstruction struct {
 	command string
 }
 
-func NewCommandInstruction(phase int, unitFile *AllocationFile, command string) *CommandInstruction {
+func NewCommandInstruction(phase int, unitFile *allocation.UnitFile, command string) *CommandInstruction {
 	return &CommandInstruction{
 		baseInstruction: newBaseInstruction(phase, unitFile),
 		command:         command,
@@ -164,7 +165,7 @@ func (i *CommandInstruction) String() (res string) {
 
 type baseBlobInstruction struct {
 	phase int
-	blob  *AllocationBlob
+	blob  *allocation.Blob
 }
 
 func (i *baseBlobInstruction) Phase() int {
@@ -175,7 +176,7 @@ type WriteBlobInstruction struct {
 	*baseBlobInstruction
 }
 
-func NewWriteBlobInstruction(phase int, blob *AllocationBlob) (i *WriteBlobInstruction) {
+func NewWriteBlobInstruction(phase int, blob *allocation.Blob) (i *WriteBlobInstruction) {
 	i = &WriteBlobInstruction{
 		&baseBlobInstruction{
 			phase: phase,
@@ -199,7 +200,7 @@ type DestroyBlobInstruction struct {
 	*baseBlobInstruction
 }
 
-func NewDestroyBlobInstruction(phase int, blob *AllocationBlob) (i *DestroyBlobInstruction) {
+func NewDestroyBlobInstruction(phase int, blob *allocation.Blob) (i *DestroyBlobInstruction) {
 	i = &DestroyBlobInstruction{
 		&baseBlobInstruction{
 			phase: phase,

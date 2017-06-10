@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/akaspin/soil/manifest"
-	"net/http"
 )
 
 type Scheduler interface {
@@ -38,11 +37,4 @@ type Source interface {
 type Configurable interface {
 	Set(v map[string]string, replace bool) (err error)
 	Delete(keys ...string) (err error)
-}
-
-// HTTP endpoint
-type Endpoint interface {
-
-	// handle request and return result
-	Handle(resp http.ResponseWriter, req *http.Request) (res interface{}, err error)
 }

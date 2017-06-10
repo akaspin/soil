@@ -3,6 +3,7 @@ package scheduler
 import (
 	"context"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"sync"
@@ -33,8 +34,8 @@ func NewSink(ctx context.Context, log *logx.Log, executor *Executor, manager *Ar
 func (s *Sink) Open() (err error) {
 	s.log.Debugf("open")
 	dirty := map[string]string{}
-	for _, allocation := range s.executor.List() {
-		dirty[allocation.Name] = allocation.Namespace
+	for _, recovered := range s.executor.List() {
+		dirty[recovered.Name] = recovered.Namespace
 	}
 	s.state = NewSinkState([]string{"private", "public"}, dirty)
 	err = s.Control.Open()
@@ -74,9 +75,9 @@ func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 	}
 	s.manager.Register(name, pod, func(reason error, env map[string]string, mark uint64) {
 		s.log.Debugf("received %v from manager for %s", reason, name)
-		var alloc *Allocation
+		var alloc *allocation.Pod
 		if pod != nil && reason == nil {
-			if alloc, err = NewAllocationFromManifest(pod, env, mark); err != nil {
+			if alloc, err = allocation.NewFromManifest(pod, env, mark); err != nil {
 				return
 			}
 		}

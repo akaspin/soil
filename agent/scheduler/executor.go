@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ func NewExecutor(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPoo
 
 func (r *Executor) Open() (err error) {
 	r.log.Debug("open")
-	var restored []*Allocation
+	var restored []*allocation.Pod
 	if restored, err = r.restoreState(); err != nil {
 		return
 	}
@@ -46,16 +47,16 @@ func (r *Executor) Close() (err error) {
 	return
 }
 
-func (r *Executor) Submit(name string, candidate *Allocation) {
+func (r *Executor) Submit(name string, candidate *allocation.Pod) {
 	if r.state.Submit(name, candidate) {
 		defer r.deploy(name)
 		return
 	}
-	r.log.Debugf("skip submit %s %s", name, AllocationToString(candidate))
+	r.log.Debugf("skip submit %s %s", name, allocation.ToString(candidate))
 }
 
 // ListActual latest allocations
-func (r *Executor) List() (res map[string]*AllocationHeader) {
+func (r *Executor) List() (res map[string]*allocation.Header) {
 	res = r.state.ListActual()
 	return
 }
@@ -69,7 +70,7 @@ func (r *Executor) deploy(name string) {
 		log.Debugf("skip promote : %s", err)
 		return
 	}
-	log.Debugf("begin %s->%s", AllocationToString(ready), AllocationToString(active))
+	log.Debugf("begin %s->%s", allocation.ToString(ready), allocation.ToString(active))
 	go r.pool.Execute(r.Control.Ctx(), func() {
 		defer r.deploy(name)
 		failures := r.execute(log, ready, active)
@@ -77,11 +78,11 @@ func (r *Executor) deploy(name string) {
 		if _, commitErr = r.state.Commit(name, failures); commitErr != nil {
 			log.Errorf("can't commit %s", err)
 		}
-		log.Infof("done %s->%s %v", AllocationToString(ready), AllocationToString(active), failures)
+		log.Infof("done %s->%s %v", allocation.ToString(ready), allocation.ToString(active), failures)
 	})
 }
 
-func (r *Executor) execute(log *logx.Log, ready, active *Allocation) (failures []error) {
+func (r *Executor) execute(log *logx.Log, ready, active *allocation.Pod) (failures []error) {
 
 	plan := Plan(ready, active)
 	log.Debugf("begin plan %v", plan)
@@ -107,7 +108,7 @@ func (r *Executor) execute(log *logx.Log, ready, active *Allocation) (failures [
 	return
 }
 
-func (r *Executor) restoreState() (res []*Allocation, err error) {
+func (r *Executor) restoreState() (res []*allocation.Pod, err error) {
 	log := r.log.GetLog(r.log.Prefix(), "restoreState")
 	log.Debug("begin")
 	conn, err := dbus.New()
@@ -122,14 +123,14 @@ func (r *Executor) restoreState() (res []*Allocation, err error) {
 	}
 	for _, record := range files {
 		log.Debugf("begin %s", record.Path)
-		var alloc *Allocation
+		var alloc *allocation.Pod
 		var allocErr error
-		if alloc, allocErr = NewAllocationFromSystemD(record.Path); allocErr != nil {
+		if alloc, allocErr = allocation.NewFromSystemD(record.Path); allocErr != nil {
 			log.Warningf("can't restoreState allocation from %s", record.Path)
 			continue
 		}
 		res = append(res, alloc)
-		log.Debugf("done %v", alloc.AllocationHeader)
+		log.Debugf("done %v", alloc.Header)
 	}
 	r.log.Debug("done")
 	return

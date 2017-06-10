@@ -54,7 +54,6 @@ func (p *Pod) Mark() (res uint64) {
 type Unit struct {
 	Transition `hcl:",squash"`
 	Name       string
-	Permanent  bool
 	Source     string
 }
 
@@ -74,9 +73,10 @@ func newUnitFromHCL(raw *ast.ObjectItem) (res *Unit, err error) {
 
 // Unit transition
 type Transition struct {
-	Create  string
-	Update  string
-	Destroy string
+	Create    string
+	Update    string
+	Destroy   string
+	Permanent bool
 }
 
 // Pod file

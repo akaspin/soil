@@ -2,6 +2,7 @@ package scheduler_test
 
 import (
 	"fmt"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/coreos/go-systemd/dbus"
@@ -20,7 +21,7 @@ func TestWantsInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &scheduler.AllocationFile{
+	unitFile := &allocation.UnitFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
@@ -47,7 +48,7 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &scheduler.AllocationFile{
+	unitFile := &allocation.UnitFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
@@ -99,7 +100,7 @@ func TestFSInstruction_Execute(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 
-	unitFile := &scheduler.AllocationFile{
+	unitFile := &allocation.UnitFile{
 		Path: "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())

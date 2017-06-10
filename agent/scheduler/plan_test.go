@@ -2,6 +2,7 @@ package scheduler_test
 
 import (
 	"fmt"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
@@ -9,15 +10,13 @@ import (
 )
 
 func TestPlanUnit(t *testing.T) {
-	left := &scheduler.AllocationUnit{
-		AllocationUnitHeader: &scheduler.AllocationUnitHeader{
-			Transition: manifest.Transition{
-				Create:  "start",
-				Update:  "restart",
-				Destroy: "stop",
-			},
+	left := &allocation.Unit{
+		Transition: &manifest.Transition{
+			Create:  "start",
+			Update:  "restart",
+			Destroy: "stop",
 		},
-		AllocationFile: &scheduler.AllocationFile{
+		UnitFile: &allocation.UnitFile{
 			Path:   "/run/systemd/system/unit-1.service",
 			Source: "unit-1-0",
 		},
@@ -31,15 +30,13 @@ func TestPlanUnit(t *testing.T) {
 		assert.Equal(t, "[2:write:/run/systemd/system/unit-1.service 3:disable:/run/systemd/system/unit-1.service 4:start:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
 	})
 	t.Run("update", func(t *testing.T) {
-		right := &scheduler.AllocationUnit{
-			AllocationUnitHeader: &scheduler.AllocationUnitHeader{
-				Transition: manifest.Transition{
-					Create:  "start",
-					Update:  "restart",
-					Destroy: "stop",
-				},
+		right := &allocation.Unit{
+			Transition: &manifest.Transition{
+				Create:  "start",
+				Update:  "restart",
+				Destroy: "stop",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/run/systemd/system/unit-1.service",
 				Source: "unit-1-1",
 			},
@@ -48,15 +45,13 @@ func TestPlanUnit(t *testing.T) {
 		assert.Equal(t, "[2:write:/run/systemd/system/unit-1.service 3:disable:/run/systemd/system/unit-1.service 4:restart:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
 	})
 	t.Run("runtime to local", func(t *testing.T) {
-		right := &scheduler.AllocationUnit{
-			AllocationUnitHeader: &scheduler.AllocationUnitHeader{
-				Transition: manifest.Transition{
-					Create:  "start",
-					Update:  "restart",
-					Destroy: "stop",
-				},
+		right := &allocation.Unit{
+			Transition: &manifest.Transition{
+				Create:  "start",
+				Update:  "restart",
+				Destroy: "stop",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/etc/systemd/system/unit-1.service",
 				Source: "unit-1-0",
 			},
@@ -67,23 +62,23 @@ func TestPlanUnit(t *testing.T) {
 }
 
 func TestPlanBlob(t *testing.T) {
-	left1 := &scheduler.AllocationBlob{
+	left1 := &allocation.Blob{
 		Name:        "/etc/test",
 		Permissions: 0644,
 		Source:      "left1",
 	}
-	left2 := &scheduler.AllocationBlob{
+	left2 := &allocation.Blob{
 		Name:        "/etc/test",
 		Permissions: 0644,
 		Leave:       true,
 		Source:      "left2",
 	}
-	right1 := &scheduler.AllocationBlob{
+	right1 := &allocation.Blob{
 		Name:        "/etc/test",
 		Permissions: 0644,
 		Source:      "right1",
 	}
-	right2 := &scheduler.AllocationBlob{
+	right2 := &allocation.Blob{
 		Name:        "/etc/test",
 		Permissions: 0755,
 		Source:      "left1",
@@ -111,48 +106,44 @@ func TestPlanBlob(t *testing.T) {
 }
 
 func TestPlan(t *testing.T) {
-	left := &scheduler.Allocation{
-		AllocationHeader: &scheduler.AllocationHeader{
+	left := &allocation.Pod{
+		Header: &allocation.Header{
 			Name:      "pod-1",
 			AgentMark: 123,
 			PodMark:   456,
 			Namespace: "private",
 		},
-		AllocationFile: &scheduler.AllocationFile{
+		UnitFile: &allocation.UnitFile{
 			Path:   "/etc/systemd/system/pod-pod-1.service",
 			Source: "fake",
 		},
-		Units: []*scheduler.AllocationUnit{
+		Units: []*allocation.Unit{
 			{
-				AllocationFile: &scheduler.AllocationFile{
+				UnitFile: &allocation.UnitFile{
 					Path:   "/etc/systemd/system/unit-1.service",
 					Source: "fake",
 				},
-				AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+				Transition: &manifest.Transition{
+					Create:    "start",
+					Update:    "restart",
+					Destroy:   "stop",
 					Permanent: true,
-					Transition: manifest.Transition{
-						Create:  "start",
-						Update:  "restart",
-						Destroy: "stop",
-					},
 				},
 			},
 			{
-				AllocationFile: &scheduler.AllocationFile{
+				UnitFile: &allocation.UnitFile{
 					Path:   "/etc/systemd/system/unit-2.service",
 					Source: "fake",
 				},
-				AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+				Transition: &manifest.Transition{
+					Create:    "start",
+					Update:    "restart",
+					Destroy:   "stop",
 					Permanent: true,
-					Transition: manifest.Transition{
-						Create:  "start",
-						Update:  "restart",
-						Destroy: "stop",
-					},
 				},
 			},
 		},
-		Blobs: []*scheduler.AllocationBlob{
+		Blobs: []*allocation.Blob{
 			{
 				Name:        "/etc/test1",
 				Permissions: 0644,
@@ -162,48 +153,44 @@ func TestPlan(t *testing.T) {
 	}
 
 	t.Run("noop pod", func(t *testing.T) {
-		right := &scheduler.Allocation{
-			AllocationHeader: &scheduler.AllocationHeader{
+		right := &allocation.Pod{
+			Header: &allocation.Header{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/etc/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*scheduler.AllocationUnit{
+			Units: []*allocation.Unit{
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 			},
-			Blobs: []*scheduler.AllocationBlob{
+			Blobs: []*allocation.Blob{
 				{
 					Name:        "/etc/test1",
 					Permissions: 0644,
@@ -214,44 +201,40 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[]", fmt.Sprint(scheduler.Plan(left, right)))
 	})
 	t.Run("unit-1 perm to disabled", func(t *testing.T) {
-		right := &scheduler.Allocation{
-			AllocationHeader: &scheduler.AllocationHeader{
+		right := &allocation.Pod{
+			Header: &allocation.Header{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/etc/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*scheduler.AllocationUnit{
+			Units: []*allocation.Unit{
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: false,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 			},
@@ -259,48 +242,44 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[2:blob-destroy:/etc/test1 3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
 	})
 	t.Run("update unit-1 and file", func(t *testing.T) {
-		right := &scheduler.Allocation{
-			AllocationHeader: &scheduler.AllocationHeader{
+		right := &allocation.Pod{
+			Header: &allocation.Header{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/etc/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*scheduler.AllocationUnit{
+			Units: []*allocation.Unit{
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake1",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 			},
-			Blobs: []*scheduler.AllocationBlob{
+			Blobs: []*allocation.Blob{
 				{
 					Name:        "/etc/test1",
 					Permissions: 0644,
@@ -317,48 +296,44 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:blob-destroy:/etc/test1]", fmt.Sprint(scheduler.Plan(left, nil)))
 	})
 	t.Run("change prefix", func(t *testing.T) {
-		right := &scheduler.Allocation{
-			AllocationHeader: &scheduler.AllocationHeader{
+		right := &allocation.Pod{
+			Header: &allocation.Header{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/etc/systemd/system/pod-local-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*scheduler.AllocationUnit{
+			Units: []*allocation.Unit{
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/etc/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 					},
 				},
 			},
-			Blobs: []*scheduler.AllocationBlob{
+			Blobs: []*allocation.Blob{
 				{
 					Name:        "/etc/test1",
 					Permissions: 0644,
@@ -369,48 +344,44 @@ func TestPlan(t *testing.T) {
 		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/pod-local-pod-1.service 3:enable:/etc/systemd/system/pod-local-pod-1.service 4:start:/etc/systemd/system/pod-local-pod-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
 	})
 	t.Run("local to runtime", func(t *testing.T) {
-		right := &scheduler.Allocation{
-			AllocationHeader: &scheduler.AllocationHeader{
+		right := &allocation.Pod{
+			Header: &allocation.Header{
 				Name:      "pod-1",
 				AgentMark: 123,
 				PodMark:   456,
 				Namespace: "private",
 			},
-			AllocationFile: &scheduler.AllocationFile{
+			UnitFile: &allocation.UnitFile{
 				Path:   "/run/systemd/system/pod-pod-1.service",
 				Source: "fake",
 			},
-			Units: []*scheduler.AllocationUnit{
+			Units: []*allocation.Unit{
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/run/systemd/system/unit-1.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
 					},
 				},
 				{
-					AllocationFile: &scheduler.AllocationFile{
+					UnitFile: &allocation.UnitFile{
 						Path:   "/run/systemd/system/unit-2.service",
 						Source: "fake",
 					},
-					AllocationUnitHeader: &scheduler.AllocationUnitHeader{
+					Transition: &manifest.Transition{
+						Create:    "start",
+						Update:    "restart",
+						Destroy:   "stop",
 						Permanent: true,
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
 					},
 				},
 			},
-			Blobs: []*scheduler.AllocationBlob{
+			Blobs: []*allocation.Blob{
 				{
 					Name:        "/etc/test1",
 					Permissions: 0644,

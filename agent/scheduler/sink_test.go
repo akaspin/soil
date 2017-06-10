@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/source"
 	"github.com/akaspin/soil/fixture"
@@ -14,7 +15,7 @@ import (
 	"time"
 )
 
-func TestScheduler(t *testing.T) {
+func TestSink(t *testing.T) {
 	pods := []*manifest.Pod{
 		{
 			Namespace: "private",
@@ -119,10 +120,10 @@ WantedBy=default.target
 		sink.Sync("private", pods)
 		time.Sleep(time.Second)
 
-		assert.Equal(t, map[string]*scheduler.AllocationHeader{
+		assert.Equal(t, map[string]*allocation.Header{
 			"pod-2": {
 				Name:      "pod-2",
-				PodMark:   11007710424567484036,
+				PodMark:   11887013412892795164,
 				AgentMark: 17231133757460468042,
 				Namespace: "private",
 			},
@@ -136,16 +137,16 @@ WantedBy=default.target
 			"undefined": "true",
 		}, true)
 
-		assert.Equal(t, map[string]*scheduler.AllocationHeader{
+		assert.Equal(t, map[string]*allocation.Header{
 			"pod-2": {
 				Name:      "pod-2",
-				PodMark:   11007710424567484036,
+				PodMark:   11887013412892795164,
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
 			"pod-3": {
 				Name:      "pod-3",
-				PodMark:   3001543335992272175,
+				PodMark:   7050032075987695032,
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},

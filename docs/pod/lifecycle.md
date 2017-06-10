@@ -2,6 +2,7 @@
 title: Lifecycle
 layout: default
 weight: 30
+
 ---
 
 # Pod lifecycle

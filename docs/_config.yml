@@ -13,7 +13,9 @@ kramdown:
   input: GFM
   syntax_highlighter: rouge
   auto_ids: true
+
 permalink: pretty
 
-gems:
-  - jekyll-redirect-from
+#gems:
+#- jekyll-redirect-from
+#- rouge

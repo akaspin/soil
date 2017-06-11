@@ -82,7 +82,7 @@ func (a *Arbiter) removePod(name string, fn managerCallback) {
 }
 
 func (a *Arbiter) onCallback(source string, active bool, env map[string]string) {
-	a.log.Debugf("got callback from source %s (active:%t) %v", source, active, env)
+	a.log.Debugf("got callback from source %s (inProgress:%t) %v", source, active, env)
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
@@ -102,7 +102,7 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 
 	for _, s := range a.sources {
 		if s.active {
-			// add fields if active
+			// add fields if inProgress
 			for k, v := range s.cache {
 				key := s.source.Name() + "." + k
 				all[key] = v

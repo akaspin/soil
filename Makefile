@@ -122,7 +122,8 @@ clean-docs:
 ###
 
 docs:
-	docker run -v $(CWD)/docs:/usr/src/app -p 4000:4000 starefossen/github-pages jekyll serve -d /_site --watch --force_polling -H 0.0.0.0 -P 4000
+	docker run --rm -v $(CWD)/docs:/site -p 4000:4000 andredumas/github-pages serve --watch
+#	docker run -v $(CWD)/docs:/usr/src/app -p 4000:4000 starefossen/github-pages jekyll serve -d /_site --watch --force_polling -H 0.0.0.0 -P 4000
 
 
 .PHONY: docs test clean

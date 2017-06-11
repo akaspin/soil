@@ -12,19 +12,19 @@ var (
 )
 
 type ExecutorState struct {
-	ready   map[string]*allocation.Pod
-	active  map[string]*allocation.Pod
-	pending map[string]*allocation.Pod
+	ready      map[string]*allocation.Pod // finished evaluations
+	inProgress map[string]*allocation.Pod //
+	pending    map[string]*allocation.Pod
 
 	mu *sync.Mutex
 }
 
 func NewExecutorState(initial []*allocation.Pod) (s *ExecutorState) {
 	s = &ExecutorState{
-		ready:   map[string]*allocation.Pod{},
-		active:  map[string]*allocation.Pod{},
-		pending: map[string]*allocation.Pod{},
-		mu:      &sync.Mutex{},
+		ready:      map[string]*allocation.Pod{},
+		inProgress: map[string]*allocation.Pod{},
+		pending:    map[string]*allocation.Pod{},
+		mu:         &sync.Mutex{},
 	}
 	for _, a := range initial {
 		s.ready[a.Header.Name] = a
@@ -38,21 +38,21 @@ func (s *ExecutorState) Submit(name string, pending *allocation.Pod) (ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	latest := s.getLatest(name)
-	if !allocation.Compare(latest, pending) {
+	if !allocation.IsEqual(latest, pending) {
 		s.pending[name] = pending
 		ok = true
 	}
 	return
 }
 
-// Promote allocation from pending to active and return ready and active pair.
+// Promote allocation from pending to inProgress and return ready and inProgress pair.
 // or error if evaluation is not possible at this time.
 func (s *ExecutorState) Promote(name string) (ready, active *allocation.Pod, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	var ok bool
-	if _, ok = s.active[name]; ok {
+	if _, ok = s.inProgress[name]; ok {
 		err = errors.Wrapf(AllocationNotUnique, "can't promote pending %s", name)
 		return
 	}
@@ -62,18 +62,18 @@ func (s *ExecutorState) Promote(name string) (ready, active *allocation.Pod, err
 	}
 
 	ready = s.ready[name]
-	s.active[name] = active
+	s.inProgress[name] = active
 	delete(s.pending, name)
 
 	return
 }
 
-// Commit active to ready
+// Commit inProgress to ready
 func (s *ExecutorState) Commit(name string, failures []error) (destroyed bool, err error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	active, ok := s.active[name]
+	active, ok := s.inProgress[name]
 	if !ok {
 		err = errors.Wrapf(AllocationNotFoundError, "can't commit %s", name)
 		return
@@ -84,7 +84,7 @@ func (s *ExecutorState) Commit(name string, failures []error) (destroyed bool, e
 	} else {
 		s.ready[name] = active
 	}
-	delete(s.active, name)
+	delete(s.inProgress, name)
 	return
 }
 
@@ -95,7 +95,7 @@ func (s *ExecutorState) ListActual() (res map[string]*allocation.Header) {
 	res = map[string]*allocation.Header{}
 
 	for _, what := range []map[string]*allocation.Pod{
-		s.pending, s.active, s.ready,
+		s.pending, s.inProgress, s.ready,
 	} {
 		for k, v := range what {
 			if _, ok := res[k]; !ok {
@@ -115,13 +115,13 @@ func (s *ExecutorState) ListActual() (res map[string]*allocation.Header) {
 	return
 }
 
-// returns latest (done/active/pending) pod
+// returns latest (done/inProgress/pending) pod
 func (s *ExecutorState) getLatest(name string) (res *allocation.Pod) {
 	var ok bool
 	if res, ok = s.pending[name]; ok {
 		return
 	}
-	if res, ok = s.active[name]; ok {
+	if res, ok = s.inProgress[name]; ok {
 		return
 	}
 	if res, ok = s.ready[name]; ok {

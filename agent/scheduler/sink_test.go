@@ -85,7 +85,7 @@ WantedBy=default.target
 	workerPool := concurrency.NewWorkerPool(ctx, concurrency.Config{
 		Capacity: 2,
 	})
-	executor := scheduler.NewExecutor(ctx, log, workerPool)
+	executor := scheduler.NewEvaluator(ctx, log, workerPool)
 
 	arbiter1 := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
 	arbiter2 := source.NewMap(ctx, log, "agent", true, manifest.Constraint{})

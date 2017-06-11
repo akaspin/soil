@@ -13,7 +13,7 @@ func New(ctx context.Context, log *logx.Log, workers int, sources []agent.Source
 	pool := concurrency.NewWorkerPool(ctx, concurrency.Config{
 		Capacity: workers,
 	})
-	executor := NewExecutor(ctx, log, pool, reporters...)
+	executor := NewEvaluator(ctx, log, pool, reporters...)
 	arbiter := NewArbiter(ctx, log, sources...)
 	sink = NewSink(ctx, log, executor, arbiter)
 

@@ -13,18 +13,19 @@ type Sink struct {
 	*supervisor.Control
 	log *logx.Log
 
-	executor *Executor
+	evaluator *Evaluator
+	//executor *Executor
 	manager  *Arbiter
 	state    *SinkState
 
 	mu *sync.Mutex
 }
 
-func NewSink(ctx context.Context, log *logx.Log, executor *Executor, manager *Arbiter) (r *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Arbiter) (r *Sink) {
 	r = &Sink{
 		Control:  supervisor.NewControl(ctx),
 		log:      log.GetLog("scheduler"),
-		executor: executor,
+		evaluator: evaluator,
 		manager:  manager,
 		mu:       &sync.Mutex{},
 	}
@@ -34,7 +35,7 @@ func NewSink(ctx context.Context, log *logx.Log, executor *Executor, manager *Ar
 func (s *Sink) Open() (err error) {
 	s.log.Debugf("open")
 	dirty := map[string]string{}
-	for _, recovered := range s.executor.List() {
+	for _, recovered := range s.evaluator.List() {
 		dirty[recovered.Name] = recovered.Namespace
 	}
 	s.state = NewSinkState([]string{"private", "public"}, dirty)
@@ -62,14 +63,14 @@ func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
 	for name, pod := range changes {
 		s.submitToExecutor(name, pod)
 	}
-	s.log.Infof("sync %s done", namespace)
+	s.log.Infof("sync %s finished", namespace)
 	return
 }
 
 func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 	if pod == nil {
 		go s.manager.Register(name, nil, func(res error, env map[string]string, mark uint64) {
-			s.executor.Submit(name, nil)
+			s.evaluator.Submit(name, nil)
 		})
 		return
 	}
@@ -81,7 +82,7 @@ func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 				return
 			}
 		}
-		s.executor.Submit(name, alloc)
+		s.evaluator.Submit(name, alloc)
 	})
 	return
 }

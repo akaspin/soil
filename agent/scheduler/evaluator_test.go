@@ -1,22 +1,22 @@
 package scheduler_test
 
 import (
-	"testing"
-	"github.com/akaspin/soil/agent/source"
-	"github.com/akaspin/logx"
-	"sync"
-	"github.com/akaspin/supervisor"
-	"github.com/akaspin/soil/fixture"
-	"github.com/stretchr/testify/assert"
 	"context"
-	"github.com/akaspin/concurrency"
-	"github.com/akaspin/soil/agent/scheduler"
-	"time"
-	"github.com/akaspin/soil/agent/allocation"
-	"github.com/coreos/go-systemd/dbus"
-	"github.com/akaspin/soil/manifest"
-	"reflect"
 	"fmt"
+	"github.com/akaspin/concurrency"
+	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/fixture"
+	"github.com/akaspin/soil/manifest"
+	"github.com/akaspin/supervisor"
+	"github.com/coreos/go-systemd/dbus"
+	"github.com/stretchr/testify/assert"
+	"reflect"
+	"sync"
+	"testing"
+	"time"
 )
 
 func assertUnits(names []string, states map[string]string) (err error) {

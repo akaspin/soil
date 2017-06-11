@@ -15,19 +15,19 @@ type Sink struct {
 
 	evaluator *Evaluator
 	//executor *Executor
-	manager  *Arbiter
-	state    *SinkState
+	manager *Arbiter
+	state   *SinkState
 
 	mu *sync.Mutex
 }
 
 func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Arbiter) (r *Sink) {
 	r = &Sink{
-		Control:  supervisor.NewControl(ctx),
-		log:      log.GetLog("scheduler"),
+		Control:   supervisor.NewControl(ctx),
+		log:       log.GetLog("scheduler"),
 		evaluator: evaluator,
-		manager:  manager,
-		mu:       &sync.Mutex{},
+		manager:   manager,
+		mu:        &sync.Mutex{},
 	}
 	return
 }

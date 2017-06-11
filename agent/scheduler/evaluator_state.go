@@ -20,10 +20,10 @@ type EvaluatorState struct {
 
 func NewEvaluatorState(recovered []*allocation.Pod) (s *EvaluatorState) {
 	s = &EvaluatorState{
-		finished: map[string]*allocation.Pod{},
+		finished:   map[string]*allocation.Pod{},
 		inProgress: map[string]*allocation.Pod{},
-		pending: map[string]*allocation.Pod{},
-		mu: &sync.Mutex{},
+		pending:    map[string]*allocation.Pod{},
+		mu:         &sync.Mutex{},
 	}
 	for _, pod := range recovered {
 		s.finished[pod.Name] = pod
@@ -82,7 +82,7 @@ func (s *EvaluatorState) List() (res map[string]*allocation.Header) {
 }
 
 func (s *EvaluatorState) next() (next []*Evaluation) {
-	LOOP:
+LOOP:
 	for pendingName, pending := range s.pending {
 		if inProgress, exists := s.inProgress[pendingName]; exists {
 			// blocked by inProgress
@@ -106,7 +106,7 @@ func (s *EvaluatorState) next() (next []*Evaluation) {
 		s.inProgress[pendingName] = pending
 		delete(s.pending, pendingName)
 		next = append(next, &Evaluation{
-			Left: s.finished[pendingName],
+			Left:  s.finished[pendingName],
 			Right: pending,
 		})
 	}

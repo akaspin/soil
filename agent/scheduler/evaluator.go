@@ -1,33 +1,33 @@
 package scheduler
 
 import (
-	"github.com/akaspin/supervisor"
-	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/concurrency"
-	"github.com/coreos/go-systemd/dbus"
-	"fmt"
 	"context"
+	"fmt"
+	"github.com/akaspin/concurrency"
+	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
+	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/supervisor"
+	"github.com/coreos/go-systemd/dbus"
 )
 
 type Evaluator struct {
 	*supervisor.Control
-	log *logx.Log
-	pool *concurrency.WorkerPool
+	log       *logx.Log
+	pool      *concurrency.WorkerPool
 	reporters []agent.AllocationReporter
 
-	state *EvaluatorState
+	state  *EvaluatorState
 	nextCh chan *Evaluation
 }
 
 func NewEvaluator(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool, reporters ...agent.AllocationReporter) (e *Evaluator) {
 	e = &Evaluator{
-		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("scheduler", "evaluator"),
-		pool: pool,
+		Control:   supervisor.NewControl(ctx),
+		log:       log.GetLog("scheduler", "evaluator"),
+		pool:      pool,
 		reporters: reporters,
-		nextCh: make(chan *Evaluation),
+		nextCh:    make(chan *Evaluation),
 	}
 	return
 }
@@ -88,7 +88,7 @@ func (e *Evaluator) List() (res map[string]*allocation.Header) {
 func (e *Evaluator) loop() {
 	e.Acquire()
 	defer e.Release()
-	LOOP:
+LOOP:
 	for {
 		select {
 		case <-e.Control.Ctx().Done():
@@ -138,7 +138,7 @@ func (e *Evaluator) fanOut(next []*Evaluation) {
 		go func() {
 			defer e.Control.Release()
 			for _, evaluation := range next {
-				e.nextCh<- evaluation
+				e.nextCh <- evaluation
 			}
 		}()
 	}

@@ -1,12 +1,12 @@
 package scheduler_test
 
 import (
-	"testing"
-	"github.com/akaspin/soil/agent/allocation"
 	"fmt"
-	"github.com/akaspin/soil/manifest"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestEvaluation_Plan(t *testing.T) {

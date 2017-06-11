@@ -6,7 +6,7 @@ import (
 )
 
 type Evaluation struct {
-	Left *allocation.Pod
+	Left  *allocation.Pod
 	Right *allocation.Pod
 }
 

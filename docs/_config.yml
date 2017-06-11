@@ -17,5 +17,4 @@ kramdown:
 permalink: pretty
 
 #gems:
-#- jekyll-redirect-from
-#- rouge
+#  - jekyll-redirect-from

@@ -5,10 +5,27 @@ import (
 	"sort"
 )
 
-func Plan(left, right *allocation.Pod) (res []Instruction) {
+type Evaluation struct {
+	Left *allocation.Pod
+	Right *allocation.Pod
+}
+
+func (e *Evaluation) Name() (res string) {
+	if e.Right != nil {
+		res = e.Right.Name
+		return
+	}
+	if e.Left != nil {
+		res = e.Left.Name
+	}
+	return
+}
+
+func (e *Evaluation) Plan() (res []Instruction) {
 	phases1 := map[int][]Instruction{}
 	var phaseIds []int
-	for _, i := range planPhases(left, right) {
+
+	for _, i := range e.planPhases() {
 		phase := i.Phase()
 		phases1[phase] = append(phases1[phase], i)
 	}
@@ -22,43 +39,43 @@ func Plan(left, right *allocation.Pod) (res []Instruction) {
 	return
 }
 
-func planPhases(left, right *allocation.Pod) (res []Instruction) {
-	if right == nil {
-		res = append(res, planUnitDestroy(left.GetPodUnit())...)
-		for _, u := range left.Units {
+func (e *Evaluation) planPhases() (res []Instruction) {
+	if e.Right == nil {
+		res = append(res, planUnitDestroy(e.Left.GetPodUnit())...)
+		for _, u := range e.Left.Units {
 			res = append(res, planUnitDestroy(u)...)
 		}
-		for _, b := range left.Blobs {
+		for _, b := range e.Left.Blobs {
 			res = append(res, PlanBlob(b, nil)...)
 		}
 		return
 	}
 
-	if left == nil {
-		res = append(res, PlanUnit(nil, right.GetPodUnit())...)
-		for _, u := range right.Units {
+	if e.Left == nil {
+		res = append(res, PlanUnit(nil, e.Right.GetPodUnit())...)
+		for _, u := range e.Right.Units {
 			res = append(res, PlanUnit(nil, u)...)
 		}
-		for _, b := range right.Blobs {
+		for _, b := range e.Right.Blobs {
 			res = append(res, PlanBlob(nil, b)...)
 		}
 		return
 	}
 
 	// ok. hard case
-	res = append(res, PlanUnit(left.GetPodUnit(), right.GetPodUnit())...)
+	res = append(res, PlanUnit(e.Left.GetPodUnit(), e.Right.GetPodUnit())...)
 
 	unitsDone := map[string]bool{}
 	unitsCandidates := map[string]*allocation.Unit{}
 
-	for _, u := range right.Units {
+	for _, u := range e.Right.Units {
 		unitsCandidates[u.UnitFile.UnitName()] = u
 	}
-	for _, u := range left.Units {
+	for _, u := range e.Left.Units {
 		res = append(res, PlanUnit(u, unitsCandidates[u.UnitName()])...)
 		unitsDone[u.UnitName()] = true
 	}
-	for _, u := range right.Units {
+	for _, u := range e.Right.Units {
 		if _, ok := unitsDone[u.UnitFile.UnitName()]; ok {
 			continue
 		}
@@ -67,20 +84,19 @@ func planPhases(left, right *allocation.Pod) (res []Instruction) {
 
 	blobsDone := map[string]bool{}
 	blobCandidates := map[string]*allocation.Blob{}
-	for _, b := range right.Blobs {
+	for _, b := range e.Right.Blobs {
 		blobCandidates[b.Name] = b
 	}
-	for _, b := range left.Blobs {
+	for _, b := range e.Left.Blobs {
 		res = append(res, PlanBlob(b, blobCandidates[b.Name])...)
 		blobsDone[b.Name] = true
 	}
-	for _, b := range right.Blobs {
+	for _, b := range e.Right.Blobs {
 		if _, ok := blobsDone[b.Name]; ok {
 			continue
 		}
 		res = append(res, PlanBlob(nil, b)...)
 	}
-
 	return
 }
 

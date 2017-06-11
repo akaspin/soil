@@ -1,22 +1,22 @@
 package scheduler_test
 
 import (
-	"context"
-	"fmt"
-	"github.com/akaspin/concurrency"
-	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/source"
-	"github.com/akaspin/soil/fixture"
-	"github.com/akaspin/soil/manifest"
-	"github.com/akaspin/supervisor"
-	"github.com/coreos/go-systemd/dbus"
-	"github.com/stretchr/testify/assert"
-	"reflect"
-	"sync"
 	"testing"
+	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/logx"
+	"sync"
+	"github.com/akaspin/supervisor"
+	"github.com/akaspin/soil/fixture"
+	"github.com/stretchr/testify/assert"
+	"context"
+	"github.com/akaspin/concurrency"
+	"github.com/akaspin/soil/agent/scheduler"
 	"time"
+	"github.com/akaspin/soil/agent/allocation"
+	"github.com/coreos/go-systemd/dbus"
+	"github.com/akaspin/soil/manifest"
+	"reflect"
+	"fmt"
 )
 
 func assertUnits(names []string, states map[string]string) (err error) {
@@ -39,7 +39,7 @@ func assertUnits(names []string, states map[string]string) (err error) {
 	return
 }
 
-func TestNewExecutor(t *testing.T) {
+func TestNewEvaluator(t *testing.T) {
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 3))
@@ -50,7 +50,7 @@ func TestNewExecutor(t *testing.T) {
 		Capacity: 2,
 	})
 	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
-	ex := scheduler.NewExecutor(ctx, logx.GetLog("test"), wp, statusReporter)
+	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), wp, statusReporter)
 
 	res := map[string]string{}
 	var count int
@@ -63,7 +63,6 @@ func TestNewExecutor(t *testing.T) {
 		}
 		res = v
 	}
-
 	sv := supervisor.NewChain(ctx, statusReporter, wp, ex)
 	assert.NoError(t, sv.Open())
 	time.Sleep(time.Second)
@@ -88,12 +87,13 @@ func TestNewExecutor(t *testing.T) {
 	})
 }
 
-func TestExecutor_Submit(t *testing.T) {
+func TestEvaluator_Submit(t *testing.T) {
 	conn, err := dbus.New()
 	assert.NoError(t, err)
 	defer conn.Close()
 
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
+	sd.Cleanup()
 	defer sd.Cleanup()
 
 	ctx := context.Background()
@@ -101,7 +101,7 @@ func TestExecutor_Submit(t *testing.T) {
 		Capacity: 2,
 	})
 	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
-	ex := scheduler.NewExecutor(ctx, logx.GetLog("test"), wp, statusReporter)
+	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), wp, statusReporter)
 	res := map[string]string{}
 	var count int
 	mu := &sync.Mutex{}

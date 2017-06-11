@@ -1,111 +1,15 @@
 package scheduler_test
 
 import (
-	"fmt"
-	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/manifest"
-	"github.com/stretchr/testify/assert"
 	"testing"
+	"github.com/akaspin/soil/agent/allocation"
+	"fmt"
+	"github.com/akaspin/soil/manifest"
+	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestPlanUnit(t *testing.T) {
-	left := &allocation.Unit{
-		Transition: &manifest.Transition{
-			Create:  "start",
-			Update:  "restart",
-			Destroy: "stop",
-		},
-		UnitFile: &allocation.UnitFile{
-			Path:   "/run/systemd/system/unit-1.service",
-			Source: "unit-1-0",
-		},
-	}
-	t.Run("destroy", func(t *testing.T) {
-		res := scheduler.PlanUnit(left, nil)
-		assert.Equal(t, "[1:remove:/run/systemd/system/unit-1.service 0:stop:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
-	})
-	t.Run("create", func(t *testing.T) {
-		res := scheduler.PlanUnit(nil, left)
-		assert.Equal(t, "[2:write:/run/systemd/system/unit-1.service 3:disable:/run/systemd/system/unit-1.service 4:start:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
-	})
-	t.Run("update", func(t *testing.T) {
-		right := &allocation.Unit{
-			Transition: &manifest.Transition{
-				Create:  "start",
-				Update:  "restart",
-				Destroy: "stop",
-			},
-			UnitFile: &allocation.UnitFile{
-				Path:   "/run/systemd/system/unit-1.service",
-				Source: "unit-1-1",
-			},
-		}
-		res := scheduler.PlanUnit(left, right)
-		assert.Equal(t, "[2:write:/run/systemd/system/unit-1.service 3:disable:/run/systemd/system/unit-1.service 4:restart:/run/systemd/system/unit-1.service]", fmt.Sprint(res))
-	})
-	t.Run("runtime to local", func(t *testing.T) {
-		right := &allocation.Unit{
-			Transition: &manifest.Transition{
-				Create:  "start",
-				Update:  "restart",
-				Destroy: "stop",
-			},
-			UnitFile: &allocation.UnitFile{
-				Path:   "/etc/systemd/system/unit-1.service",
-				Source: "unit-1-0",
-			},
-		}
-		res := scheduler.PlanUnit(left, right)
-		assert.Equal(t, "[1:remove:/run/systemd/system/unit-1.service 0:stop:/run/systemd/system/unit-1.service 2:write:/etc/systemd/system/unit-1.service 3:disable:/etc/systemd/system/unit-1.service 4:start:/etc/systemd/system/unit-1.service]", fmt.Sprint(res))
-	})
-}
-
-func TestPlanBlob(t *testing.T) {
-	left1 := &allocation.Blob{
-		Name:        "/etc/test",
-		Permissions: 0644,
-		Source:      "left1",
-	}
-	left2 := &allocation.Blob{
-		Name:        "/etc/test",
-		Permissions: 0644,
-		Leave:       true,
-		Source:      "left2",
-	}
-	right1 := &allocation.Blob{
-		Name:        "/etc/test",
-		Permissions: 0644,
-		Source:      "right1",
-	}
-	right2 := &allocation.Blob{
-		Name:        "/etc/test",
-		Permissions: 0755,
-		Source:      "left1",
-	}
-	t.Run("destroy left 1", func(t *testing.T) {
-		res := scheduler.PlanBlob(left1, nil)
-		assert.Equal(t, "[2:blob-destroy:/etc/test]", fmt.Sprint(res))
-	})
-	t.Run("destroy left 2", func(t *testing.T) {
-		res := scheduler.PlanBlob(left2, nil)
-		assert.Equal(t, "[]", fmt.Sprint(res))
-	})
-	t.Run("write right 1", func(t *testing.T) {
-		res := scheduler.PlanBlob(nil, right1)
-		assert.Equal(t, "[2:blob-write:/etc/test]", fmt.Sprint(res))
-	})
-	t.Run("write right 1 over left 1", func(t *testing.T) {
-		res := scheduler.PlanBlob(left1, right1)
-		assert.Equal(t, "[2:blob-write:/etc/test]", fmt.Sprint(res))
-	})
-	t.Run("write right 2 over left 1", func(t *testing.T) {
-		res := scheduler.PlanBlob(left1, right2)
-		assert.Equal(t, "[2:blob-write:/etc/test]", fmt.Sprint(res))
-	})
-}
-
-func TestPlan(t *testing.T) {
+func TestEvaluation_Plan(t *testing.T) {
 	left := &allocation.Pod{
 		Header: &allocation.Header{
 			Name:      "pod-1",
@@ -198,7 +102,8 @@ func TestPlan(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "[]", fmt.Sprint(scheduler.Plan(left, right)))
+		evaluation := &scheduler.Evaluation{Left: left, Right: right}
+		assert.Equal(t, "[]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("unit-1 perm to disabled", func(t *testing.T) {
 		right := &allocation.Pod{
@@ -239,7 +144,8 @@ func TestPlan(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "[2:blob-destroy:/etc/test1 3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
+		evaluation := &scheduler.Evaluation{Left: left, Right: right}
+		assert.Equal(t, "[2:blob-destroy:/etc/test1 3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("update unit-1 and file", func(t *testing.T) {
 		right := &allocation.Pod{
@@ -287,13 +193,16 @@ func TestPlan(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "[2:write:/etc/systemd/system/unit-1.service 2:blob-write:/etc/test1 3:enable:/etc/systemd/system/unit-1.service 4:restart:/etc/systemd/system/unit-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
+		evaluation := &scheduler.Evaluation{Left: left, Right: right}
+		assert.Equal(t, "[2:write:/etc/systemd/system/unit-1.service 2:blob-write:/etc/test1 3:enable:/etc/systemd/system/unit-1.service 4:restart:/etc/systemd/system/unit-1.service]", fmt.Sprint(evaluation.Plan()))
 	})
-	t.Run("create pod", func(t *testing.T) {
-		assert.Equal(t, "[2:write:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/unit-1.service 2:write:/etc/systemd/system/unit-2.service 2:blob-write:/etc/test1 3:enable:/etc/systemd/system/pod-pod-1.service 3:enable:/etc/systemd/system/unit-1.service 3:enable:/etc/systemd/system/unit-2.service 4:start:/etc/systemd/system/pod-pod-1.service 4:start:/etc/systemd/system/unit-1.service 4:start:/etc/systemd/system/unit-2.service]", fmt.Sprint(scheduler.Plan(nil, left)))
+	t.Run("create pod form left", func(t *testing.T) {
+		evaluation := &scheduler.Evaluation{Left: nil, Right: left}
+		assert.Equal(t, "[2:write:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/unit-1.service 2:write:/etc/systemd/system/unit-2.service 2:blob-write:/etc/test1 3:enable:/etc/systemd/system/pod-pod-1.service 3:enable:/etc/systemd/system/unit-1.service 3:enable:/etc/systemd/system/unit-2.service 4:start:/etc/systemd/system/pod-pod-1.service 4:start:/etc/systemd/system/unit-1.service 4:start:/etc/systemd/system/unit-2.service]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("destroy pod", func(t *testing.T) {
-		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:blob-destroy:/etc/test1]", fmt.Sprint(scheduler.Plan(left, nil)))
+		evaluation := &scheduler.Evaluation{Left: left, Right: nil}
+		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:blob-destroy:/etc/test1]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("change prefix", func(t *testing.T) {
 		right := &allocation.Pod{
@@ -341,7 +250,8 @@ func TestPlan(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/pod-local-pod-1.service 3:enable:/etc/systemd/system/pod-local-pod-1.service 4:start:/etc/systemd/system/pod-local-pod-1.service]", fmt.Sprint(scheduler.Plan(left, right)))
+		evaluation := &scheduler.Evaluation{Left: left, Right: right}
+		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/pod-pod-1.service 2:write:/etc/systemd/system/pod-local-pod-1.service 3:enable:/etc/systemd/system/pod-local-pod-1.service 4:start:/etc/systemd/system/pod-local-pod-1.service]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("local to runtime", func(t *testing.T) {
 		right := &allocation.Pod{
@@ -389,6 +299,7 @@ func TestPlan(t *testing.T) {
 				},
 			},
 		}
-		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:write:/run/systemd/system/pod-pod-1.service 2:write:/run/systemd/system/unit-1.service 2:write:/run/systemd/system/unit-2.service 3:enable:/run/systemd/system/pod-pod-1.service 3:enable:/run/systemd/system/unit-1.service 3:enable:/run/systemd/system/unit-2.service 4:start:/run/systemd/system/pod-pod-1.service 4:start:/run/systemd/system/unit-1.service 4:start:/run/systemd/system/unit-2.service]", fmt.Sprint(scheduler.Plan(left, right)))
+		evaluation := &scheduler.Evaluation{Left: left, Right: right}
+		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:write:/run/systemd/system/pod-pod-1.service 2:write:/run/systemd/system/unit-1.service 2:write:/run/systemd/system/unit-2.service 3:enable:/run/systemd/system/pod-pod-1.service 3:enable:/run/systemd/system/unit-1.service 3:enable:/run/systemd/system/unit-2.service 4:start:/run/systemd/system/pod-pod-1.service 4:start:/run/systemd/system/unit-1.service 4:start:/run/systemd/system/unit-2.service]", fmt.Sprint(evaluation.Plan()))
 	})
 }

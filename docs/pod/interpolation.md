@@ -53,7 +53,7 @@ Agent variables are accessible as `${agent.*}`:
 
 ## `status` source
 
-All deployed pods are registered in `status` source. All values for pod are prefixed with pod name.
+All deployed pods are registered in `status` source. All values for pod are prefixed with pod name. `status` source is available only for constraints.
 
 `<pod-name>` Pod presence. Can be only `present`. If pod is not deployed value will be absent.
  

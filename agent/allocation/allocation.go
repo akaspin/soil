@@ -33,12 +33,13 @@ type Pod struct {
 	Blobs []*Blob
 }
 
-func NewFromManifest(m *manifest.Pod, env map[string]string, mark uint64) (p *Pod, err error) {
+func NewFromManifest(m *manifest.Pod, env map[string]string) (p *Pod, err error) {
+	agentMark, _ := hashstructure.Hash(env, nil)
 	p = &Pod{
 		Header: &Header{
 			Name:      m.Name,
 			PodMark:   m.Mark(),
-			AgentMark: mark,
+			AgentMark: agentMark,
 			Namespace: m.Namespace,
 		},
 		UnitFile: NewFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), m.Runtime),

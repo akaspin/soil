@@ -78,7 +78,7 @@ func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 		s.log.Debugf("received %v from manager for %s", reason, name)
 		var alloc *allocation.Pod
 		if pod != nil && reason == nil {
-			if alloc, err = allocation.NewFromManifest(pod, env, mark); err != nil {
+			if alloc, err = allocation.NewFromManifest(pod, env); err != nil {
 				return
 			}
 		}

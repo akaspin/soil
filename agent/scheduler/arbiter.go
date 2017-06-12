@@ -131,7 +131,7 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 				}
 			}
 			a.log.Debugf("notify %s %v %v", n, checkErr, all)
-			managed.Fn(checkErr, all, mark)
+			managed.Fn(checkErr, marked, mark)
 		}
 	}
 }

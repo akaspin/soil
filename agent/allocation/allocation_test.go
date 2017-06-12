@@ -4,7 +4,6 @@ import (
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
-	"github.com/mitchellh/hashstructure"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -114,9 +113,7 @@ func TestNewFromManifest(t *testing.T) {
 		"meta.consul":    "true",
 		"agent.pod_exec": "ExecStart=/usr/bin/sleep inf",
 	}
-	mark, _ := hashstructure.Hash(env, nil)
-
-	res, err := allocation.NewFromManifest(m, env, mark)
+	res, err := allocation.NewFromManifest(m, env)
 	assert.NoError(t, err)
 	assert.Equal(t, &allocation.Pod{
 		Header: &allocation.Header{

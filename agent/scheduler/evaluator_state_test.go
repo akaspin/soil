@@ -11,7 +11,7 @@ import (
 func makeAllocations(path string) (recovered []*allocation.Pod) {
 	pods, _ := manifest.ParseFromFiles("private", path)
 	for _, pod := range pods {
-		alloc, _ := allocation.NewFromManifest(pod, map[string]string{}, 0)
+		alloc, _ := allocation.NewFromManifest(pod, map[string]string{})
 		recovered = append(recovered, alloc)
 	}
 	return

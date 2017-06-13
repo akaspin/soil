@@ -11,7 +11,6 @@ func TestConstraint_Check(t *testing.T) {
 		constraint := manifest.Constraint{
 			"one,two": "${meta.field}",
 		}
-		t.Log()
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.field": "one,two",
 		}))
@@ -20,18 +19,32 @@ func TestConstraint_Check(t *testing.T) {
 		constraint := manifest.Constraint{
 			"one,two": "= ${meta.field}",
 		}
-		t.Log()
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.field": "one,two",
+		}))
+	})
+	t.Run("equal strict empty", func(t *testing.T) {
+		constraint := manifest.Constraint{
+			"": "= ${meta.field}",
+		}
+		assert.NoError(t, constraint.Check(map[string]string{
+			"meta.field": "",
 		}))
 	})
 	t.Run("not equal", func(t *testing.T) {
 		constraint := manifest.Constraint{
 			"one,two": "${meta.field}",
 		}
-		t.Log()
 		assert.NoError(t, constraint.Check(map[string]string{
 			"meta.field": "!= two",
+		}))
+	})
+	t.Run("not equal empty", func(t *testing.T) {
+		constraint := manifest.Constraint{
+			"one,two": "${meta.field}",
+		}
+		assert.NoError(t, constraint.Check(map[string]string{
+			"meta.field": "!= ",
 		}))
 	})
 	t.Run("in ok", func(t *testing.T) {

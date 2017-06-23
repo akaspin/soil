@@ -118,6 +118,20 @@ func (p *WorkerPool) Wait() (err error) {
 	return
 }
 
+// Take worker from pool
+func (p *WorkerPool) Get(ctx context.Context) (w *Worker, err error) {
+	r, err := p.resourcePool.Get(ctx)
+	if err != nil {
+		return
+	}
+	w = r.(*Worker)
+	return
+}
+
+func (p *WorkerPool) Put(w *Worker) (err error) {
+	err = p.resourcePool.Put(w)
+	return
+}
 
 func (p *WorkerPool) Execute(ctx context.Context, fn func()) (err error) {
 	r, err := p.resourcePool.Get(ctx)
@@ -125,9 +139,6 @@ func (p *WorkerPool) Execute(ctx context.Context, fn func()) (err error) {
 		return
 	}
 	w := r.(*Worker)
-	if err != nil {
-		return
-	}
 	w.Execute(ctx, func() {
 		p.control.Acquire()
 		defer p.control.Release()

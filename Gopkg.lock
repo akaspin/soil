@@ -2,52 +2,52 @@
 
 
 [[projects]]
-  branch = "master"
   name = "github.com/akaspin/concurrency"
   packages = ["."]
-  revision = "ff1de03f2988207218e59f0f2b4242f1fd9a707e"
+  revision = "c89b85c3bd96976046565f604ebeab1d302e4dcb"
+  version = "2.2.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/akaspin/cut"
   packages = ["."]
   revision = "85cd551c8eacfa274e0559da220c0ed217b2fb97"
+  version = "1.1.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/akaspin/logx"
   packages = ["."]
   revision = "6d32b95caad844420e2f12c8509d61ed1504d279"
+  version = "1.1.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/akaspin/supervisor"
   packages = ["."]
   revision = "6c5c7954cee18b32168ee057ecd42664bcf85cb9"
+  version = "1.1.2"
 
 [[projects]]
   branch = "master"
   name = "github.com/armon/go-metrics"
   packages = ["."]
-  revision = "93f237eba9b0602f3e73710416558854a81d9337"
+  revision = "f036747b9d0e8590f175a5d654a2194a7d9df4b5"
 
 [[projects]]
   branch = "master"
   name = "github.com/coreos/go-systemd"
   packages = ["dbus","unit"]
-  revision = "a63dfec412dc3675ec36888f359f8a1e5c3f740d"
+  revision = "24036eb3df68550d24a2736c5d013f4e83366866"
 
 [[projects]]
-  branch = "master"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
-  revision = "6d212800a42e8ab5c146b8ace3490ee17e5225f9"
+  revision = "346938d642f2ec3594ed81d874461961cd0faa76"
+  version = "v1.1.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/godbus/dbus"
   packages = ["."]
-  revision = "b038411ec341afd52c6d36d8baae92a29e6e8a9e"
+  revision = "5f6efc7ef2759c81b7ba876593971bfce311eab3"
+  version = "v4.0.0"
 
 [[projects]]
   branch = "master"
@@ -65,7 +65,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-memdb"
   packages = ["."]
-  revision = "6b158e314030abfb0dbbbc24d0ac71b132259ebf"
+  revision = "23b6e3df882a20711c06aa8fe4d9dd05acf5199d"
 
 [[projects]]
   branch = "master"
@@ -77,13 +77,13 @@
   branch = "master"
   name = "github.com/hashicorp/go-multierror"
   packages = ["."]
-  revision = "8c5f0ad9360406a3807ce7de6bc73269a91a6e51"
+  revision = "83588e72410abfbe4df460eeb6f30841ae47d4c4"
 
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-sockaddr"
   packages = ["."]
-  revision = "acd314c5781ea706c710d9ea70069fd2e110d61d"
+  revision = "e12d9401a74f025fe672cd1a84b2081c773990d3"
 
 [[projects]]
   branch = "master"
@@ -101,7 +101,7 @@
   branch = "master"
   name = "github.com/hashicorp/memberlist"
   packages = ["."]
-  revision = "679583836ce521ac7a4cd6e6806bab9dba8fbdb8"
+  revision = "0a136466d82a7e6f1b7866dde3578ac28ed675ad"
 
 [[projects]]
   branch = "master"
@@ -113,19 +113,13 @@
   branch = "master"
   name = "github.com/miekg/dns"
   packages = ["."]
-  revision = "f282f80e243cc2bf8f6410c30d821b93b794e168"
+  revision = "e78414ef75607394ad7d917824f07f381df2eafa"
 
 [[projects]]
   branch = "master"
   name = "github.com/mitchellh/hashstructure"
   packages = ["."]
-  revision = "ab25296c0f51f1022f01cd99dfb45f1775de8799"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/pkg/errors"
-  packages = ["."]
-  revision = "a887431f7f6ef7687b556dbf718d9f351d4858a0"
+  revision = "2bca23e0e452137f789efbc8610126fd8b94f73b"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -143,23 +137,23 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "9495bc009a56819bdb0ddbc1a373e29c140bc674"
+  revision = "d638dcb7c7c1c9b62f3a6297a17834980d245dc7"
 
 [[projects]]
   branch = "master"
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "5ccb023bc27df288a957c5e994cd44fd19619465"
+  revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
 
 [[projects]]
   branch = "master"
   name = "github.com/stretchr/testify"
   packages = ["assert","require"]
-  revision = "976c720a22c8eb4eb6a0b4348ad85ad12491a506"
+  revision = "f6abca593680b2315d2075e0f5e2a9751e3f431a"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f5e0a85f342224e1bfc3d009d954a2b9e2713e180229c40b38d992f24898e7b7"
+  inputs-digest = "d185ecb3e6823868550504e0cce0b312af23ae3d67308e188664503e40ff44fd"
   solver-name = "gps-cdcl"
   solver-version = 1

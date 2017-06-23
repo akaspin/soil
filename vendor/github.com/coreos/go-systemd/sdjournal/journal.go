@@ -47,6 +47,15 @@ package sdjournal
 //   return sd_journal_open_directory(ret, path, flags);
 // }
 //
+// int
+// my_sd_journal_open_files(void *f, sd_journal **ret, const char **paths, int flags)
+// {
+//   int (*sd_journal_open_files)(sd_journal **, const char **, int);
+//
+//   sd_journal_open_files = f;
+//   return sd_journal_open_files(ret, paths, flags);
+// }
+//
 // void
 // my_sd_journal_close(void *f, sd_journal *j)
 // {
@@ -255,6 +264,42 @@ package sdjournal
 //   return sd_journal_enumerate_data(j, data, length);
 // }
 //
+// int
+// my_sd_journal_query_unique(void *f, sd_journal *j, const char *field)
+// {
+//   int(*sd_journal_query_unique)(sd_journal *, const char *);
+//
+//   sd_journal_query_unique = f;
+//   return sd_journal_query_unique(j, field);
+// }
+//
+// int
+// my_sd_journal_enumerate_unique(void *f, sd_journal *j, const void **data, size_t *length)
+// {
+//   int(*sd_journal_enumerate_unique)(sd_journal *, const void **, size_t *);
+//
+//   sd_journal_enumerate_unique = f;
+//   return sd_journal_enumerate_unique(j, data, length);
+// }
+//
+// void
+// my_sd_journal_restart_unique(void *f, sd_journal *j)
+// {
+//   void(*sd_journal_restart_unique)(sd_journal *);
+//
+//   sd_journal_restart_unique = f;
+//   sd_journal_restart_unique(j);
+// }
+//
+// int
+// my_sd_journal_get_catalog(void *f, sd_journal *j, char **ret)
+// {
+//   int(*sd_journal_get_catalog)(sd_journal *, char **);
+//
+//   sd_journal_get_catalog = f;
+//   return sd_journal_get_catalog(j, ret);
+// }
+//
 import "C"
 import (
 	"bytes"
@@ -369,8 +414,7 @@ func NewJournal() (j *Journal, err error) {
 }
 
 // NewJournalFromDir returns a new Journal instance pointing to a journal residing
-// in a given directory. The supplied path may be relative or absolute; if
-// relative, it will be converted to an absolute path before being opened.
+// in a given directory.
 func NewJournalFromDir(path string) (j *Journal, err error) {
 	j = &Journal{}
 
@@ -385,6 +429,32 @@ func NewJournalFromDir(path string) (j *Journal, err error) {
 	r := C.my_sd_journal_open_directory(sd_journal_open_directory, &j.cjournal, p, 0)
 	if r < 0 {
 		return nil, fmt.Errorf("failed to open journal in directory %q: %d", path, syscall.Errno(-r))
+	}
+
+	return j, nil
+}
+
+// NewJournalFromFiles returns a new Journal instance pointing to a journals residing
+// in a given files.
+func NewJournalFromFiles(paths ...string) (j *Journal, err error) {
+	j = &Journal{}
+
+	sd_journal_open_files, err := getFunction("sd_journal_open_files")
+	if err != nil {
+		return nil, err
+	}
+
+	// by making the slice 1 elem too long, we guarantee it'll be null-terminated
+	cPaths := make([]*C.char, len(paths)+1)
+	for idx, path := range paths {
+		p := C.CString(path)
+		cPaths[idx] = p
+		defer C.free(unsafe.Pointer(p))
+	}
+
+	r := C.my_sd_journal_open_files(sd_journal_open_files, &j.cjournal, &cPaths[0], 0)
+	if r < 0 {
+		return nil, fmt.Errorf("failed to open journals in paths %q: %d", paths, syscall.Errno(-r))
 	}
 
 	return j, nil
@@ -474,10 +544,10 @@ func (j *Journal) FlushMatches() {
 }
 
 // Next advances the read pointer into the journal by one entry.
-func (j *Journal) Next() (int, error) {
+func (j *Journal) Next() (uint64, error) {
 	sd_journal_next, err := getFunction("sd_journal_next")
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	j.mu.Lock()
@@ -485,10 +555,10 @@ func (j *Journal) Next() (int, error) {
 	j.mu.Unlock()
 
 	if r < 0 {
-		return int(r), fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
+		return 0, fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
 	}
 
-	return int(r), nil
+	return uint64(r), nil
 }
 
 // NextSkip advances the read pointer by multiple entries at once,
@@ -504,7 +574,7 @@ func (j *Journal) NextSkip(skip uint64) (uint64, error) {
 	j.mu.Unlock()
 
 	if r < 0 {
-		return uint64(r), fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
+		return 0, fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
 	}
 
 	return uint64(r), nil
@@ -522,7 +592,7 @@ func (j *Journal) Previous() (uint64, error) {
 	j.mu.Unlock()
 
 	if r < 0 {
-		return uint64(r), fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
+		return 0, fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
 	}
 
 	return uint64(r), nil
@@ -541,7 +611,7 @@ func (j *Journal) PreviousSkip(skip uint64) (uint64, error) {
 	j.mu.Unlock()
 
 	if r < 0 {
-		return uint64(r), fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
+		return 0, fmt.Errorf("failed to iterate journal: %d", syscall.Errno(-r))
 	}
 
 	return uint64(r), nil
@@ -910,7 +980,7 @@ func (j *Journal) Wait(timeout time.Duration) int {
 		// equivalent hex value.
 		to = 0xffffffffffffffff
 	} else {
-		to = uint64(time.Now().Add(timeout).Unix() / 1000)
+		to = uint64(timeout / time.Microsecond)
 	}
 	j.mu.Lock()
 	r := C.my_sd_journal_wait(sd_journal_wait, j.cjournal, C.uint64_t(to))
@@ -937,4 +1007,84 @@ func (j *Journal) GetUsage() (uint64, error) {
 	}
 
 	return uint64(out), nil
+}
+
+// GetUniqueValues returns all unique values for a given field.
+func (j *Journal) GetUniqueValues(field string) ([]string, error) {
+	var result []string
+
+	sd_journal_query_unique, err := getFunction("sd_journal_query_unique")
+	if err != nil {
+		return nil, err
+	}
+
+	sd_journal_enumerate_unique, err := getFunction("sd_journal_enumerate_unique")
+	if err != nil {
+		return nil, err
+	}
+
+	sd_journal_restart_unique, err := getFunction("sd_journal_restart_unique")
+	if err != nil {
+		return nil, err
+	}
+
+	j.mu.Lock()
+	defer j.mu.Unlock()
+
+	f := C.CString(field)
+	defer C.free(unsafe.Pointer(f))
+
+	r := C.my_sd_journal_query_unique(sd_journal_query_unique, j.cjournal, f)
+
+	if r < 0 {
+		return nil, fmt.Errorf("failed to query journal: %d", syscall.Errno(-r))
+	}
+
+	// Implements the SD_JOURNAL_FOREACH_UNIQUE macro from sd-journal.h
+	var d unsafe.Pointer
+	var l C.size_t
+	C.my_sd_journal_restart_unique(sd_journal_restart_unique, j.cjournal)
+	for {
+		r = C.my_sd_journal_enumerate_unique(sd_journal_enumerate_unique, j.cjournal, &d, &l)
+		if r == 0 {
+			break
+		}
+
+		if r < 0 {
+			return nil, fmt.Errorf("failed to read message field: %d", syscall.Errno(-r))
+		}
+
+		msg := C.GoStringN((*C.char)(d), C.int(l))
+		kv := strings.SplitN(msg, "=", 2)
+		if len(kv) < 2 {
+			return nil, fmt.Errorf("failed to parse field")
+		}
+
+		result = append(result, kv[1])
+	}
+
+	return result, nil
+}
+
+// GetCatalog retrieves a message catalog entry for the current journal entry.
+func (j *Journal) GetCatalog() (string, error) {
+	sd_journal_get_catalog, err := getFunction("sd_journal_get_catalog")
+	if err != nil {
+		return "", err
+	}
+
+	var c *C.char
+
+	j.mu.Lock()
+	r := C.my_sd_journal_get_catalog(sd_journal_get_catalog, j.cjournal, &c)
+	j.mu.Unlock()
+	defer C.free(unsafe.Pointer(c))
+
+	if r < 0 {
+		return "", fmt.Errorf("failed to retrieve catalog entry for current journal entry: %d", syscall.Errno(-r))
+	}
+
+	catalog := C.GoString(c)
+
+	return catalog, nil
 }

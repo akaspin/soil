@@ -41,3 +41,4 @@ type AllocationReporter interface {
 	// report about allocation
 	Report(name string, pod *allocation.Pod, failures []error)
 }
+

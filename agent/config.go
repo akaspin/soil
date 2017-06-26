@@ -44,11 +44,9 @@ func (c *Config) Unmarshal(r io.Reader) (err error) {
 		return
 	}
 	var failures []error
-	//for _, chunk := range list.Filter("agent").Items {
 	if err = hcl.DecodeObject(c, list); err != nil {
 		failures = append(failures, err)
 	}
-	//}
 	if len(failures) > 0 {
 		err = fmt.Errorf("%v", failures)
 	}
@@ -58,7 +56,7 @@ func (c *Config) Unmarshal(r io.Reader) (err error) {
 func (c *Config) Read(path ...string) (err error) {
 	var failures []error
 	for _, p := range path {
-		failures = append(failures, func(configPath string) (err error) {
+		readErr := func(configPath string) (err error) {
 			f, err := os.Open(configPath)
 			if err != nil {
 				return
@@ -66,7 +64,10 @@ func (c *Config) Read(path ...string) (err error) {
 			defer f.Close()
 			err = c.Unmarshal(f)
 			return
-		}(p))
+		}(p)
+		if readErr != nil {
+			failures = append(failures, readErr)
+		}
 	}
 	if len(failures) > 0 {
 		err = fmt.Errorf("%v", failures)

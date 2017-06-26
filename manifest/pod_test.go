@@ -117,5 +117,10 @@ func TestManifest(t *testing.T) {
 			assert.Equal(t, mark, res[i].Mark())
 		}
 	})
+}
 
+func TestParseFromFiles(t *testing.T) {
+	pods, err := manifest.ParseFromFiles("private", "testdata/files_1.hcl", "testdata/files_2.hcl")
+	assert.NoError(t, err)
+	t.Log(pods)
 }

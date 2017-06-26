@@ -18,7 +18,7 @@ func TestArbiter(t *testing.T) {
 	log := logx.GetLog("test")
 
 	a1 := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
-	a2 := source.NewMap(ctx, log, "agent", false, manifest.Constraint{})
+	a2 := source.NewMap(ctx, log, "with.dot", false, manifest.Constraint{})
 
 	man := scheduler.NewArbiter(ctx, log, a1, a2)
 	sv := supervisor.NewChain(ctx, a1, man)
@@ -33,7 +33,7 @@ func TestArbiter(t *testing.T) {
 		"second": "1",
 	}, true)
 
-	privatePods, err := manifest.ParseFromFiles("private", "testdata/manager_test.hcl")
+	privatePods, err := manifest.ParseFromFiles("private", "testdata/arbiter_test.hcl")
 	assert.NoError(t, err)
 
 	res := map[string]error{}

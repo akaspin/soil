@@ -21,6 +21,7 @@ pod "first" {
 pod "second" {
   constraint {
     "${meta.second}" = "1"
+    "${with.dot.first}" = "1"
   }
   unit "second-1.service" {
     create = "start"

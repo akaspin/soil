@@ -7,25 +7,48 @@ import (
 )
 
 func TestConfig_Unmarshal(t *testing.T) {
-	config := agent.DefaultConfig()
-	assert.Error(t, config.Read(
-		"testdata/config1.hcl",
-		"testdata/config2.hcl",
-		"testdata/config3.hcl",
-		"testdata/config3.json",
-		"testdata/non-exists.hcl",
-	))
+	t.Run("no-error", func(t *testing.T) {
+		config := agent.DefaultConfig()
+		assert.NoError(t, config.Read(
+			"testdata/config1.hcl",
+			"testdata/config2.hcl",
+			"testdata/config3.hcl",
+			"testdata/config3.json",
+		))
+		assert.Equal(t, &agent.Config{
+			Exec: "ExecStart=/usr/bin/sleep inf",
+			Meta: map[string]string{
+				"consul":        "true",
+				"consul-client": "true",
+				"field":         "all,consul",
+				"override":      "true",
+				"from_json":     "true",
+				"from-line1":    "true",
+				"from-line2":    "true",
+			},
+		}, config)
 
-	assert.Equal(t, &agent.Config{
-		Exec: "ExecStart=/usr/bin/sleep inf",
-		Meta: map[string]string{
-			"consul":        "true",
-			"consul-client": "true",
-			"field":         "all,consul",
-			"override":      "true",
-			"from_json":     "true",
-			"from-line1":    "true",
-			"from-line2":    "true",
-		},
-	}, config)
+	})
+	t.Run("non-exists", func(t *testing.T) {
+		config := agent.DefaultConfig()
+		assert.Error(t, config.Read(
+			"testdata/config1.hcl",
+			"testdata/config2.hcl",
+			"testdata/config3.hcl",
+			"testdata/config3.json",
+			"testdata/non-exists.hcl",
+		))
+		assert.Equal(t, &agent.Config{
+			Exec: "ExecStart=/usr/bin/sleep inf",
+			Meta: map[string]string{
+				"consul":        "true",
+				"consul-client": "true",
+				"field":         "all,consul",
+				"override":      "true",
+				"from_json":     "true",
+				"from-line1":    "true",
+				"from-line2":    "true",
+			},
+		}, config)
+	})
 }

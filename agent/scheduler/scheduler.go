@@ -9,7 +9,7 @@ import (
 )
 
 // Returns new scheduler with supervisor chain
-func New(ctx context.Context, log *logx.Log, workers int, sources []agent.Source, reporters []agent.AllocationReporter) (sink *Sink, sv supervisor.Component) {
+func New(ctx context.Context, log *logx.Log, workers int, sources []agent.Source, reporters []agent.EvaluationReporter) (sink *Sink, sv supervisor.Component) {
 	pool := concurrency.NewWorkerPool(ctx, concurrency.Config{
 		Capacity: workers,
 	})

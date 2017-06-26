@@ -74,7 +74,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	sink, schedulerSv := scheduler.New(
 		ctx, c.log, c.PoolSize,
 		[]agent.Source{c.agentSource, c.metaSource, statusSource},
-		[]agent.AllocationReporter{statusSource},
+		[]agent.EvaluationReporter{statusSource},
 	)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
 

@@ -15,13 +15,13 @@ type Evaluator struct {
 	*supervisor.Control
 	log       *logx.Log
 	pool      *concurrency.WorkerPool
-	reporters []agent.AllocationReporter
+	reporters []agent.EvaluationReporter
 
 	state  *EvaluatorState
 	nextCh chan *Evaluation
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool, reporters ...agent.AllocationReporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool, reporters ...agent.EvaluationReporter) (e *Evaluator) {
 	e = &Evaluator{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler", "evaluator"),

@@ -33,12 +33,8 @@ type Configurable interface {
 	Delete(keys ...string) (err error)
 }
 
-type AllocationReporter interface {
-
-	// sync
+type EvaluationReporter interface {
 	Sync(pods []*allocation.Pod)
-
-	// report about allocation
 	Report(name string, pod *allocation.Pod, failures []error)
 }
 

@@ -15,7 +15,7 @@ systemctl restart docker.service
 sudo usermod -aG docker vagrant
 SCRIPT
 
-$num_instances = 3
+$num_instances = 1
 $instance_name = "node-%02d"
 
 Vagrant.configure("2") do |config|

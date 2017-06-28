@@ -141,16 +141,6 @@ type Config struct {
 	GossipNodes         int
 	GossipToTheDeadTime time.Duration
 
-	// GossipVerifyIncoming controls whether to enforce encryption for incoming
-	// gossip. It is used for upshifting from unencrypted to encrypted gossip on
-	// a running cluster.
-	GossipVerifyIncoming bool
-
-	// GossipVerifyOutgoing controls whether to enforce encryption for outgoing
-	// gossip. It is used for upshifting from unencrypted to encrypted gossip on
-	// a running cluster.
-	GossipVerifyOutgoing bool
-
 	// EnableCompression is used to control message compression. This can
 	// be used to reduce bandwidth usage at the cost of slightly more CPU
 	// utilization. This is only available starting at protocol version 1.
@@ -243,11 +233,9 @@ func DefaultLANConfig() *Config {
 		DisableTcpPings:         false,                  // TCP pings are safe, even with mixed versions
 		AwarenessMaxMultiplier:  8,                      // Probe interval backs off to 8 seconds
 
-		GossipNodes:          3,                      // Gossip to 3 nodes
-		GossipInterval:       200 * time.Millisecond, // Gossip more rapidly
-		GossipToTheDeadTime:  30 * time.Second,       // Same as push/pull
-		GossipVerifyIncoming: true,
-		GossipVerifyOutgoing: true,
+		GossipNodes:         3,                      // Gossip to 3 nodes
+		GossipInterval:      200 * time.Millisecond, // Gossip more rapidly
+		GossipToTheDeadTime: 30 * time.Second,       // Same as push/pull
 
 		EnableCompression: true, // Enable compression by default
 

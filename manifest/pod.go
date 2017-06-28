@@ -20,12 +20,16 @@ type Pod struct {
 	Blobs      []*Blob
 }
 
-func newPodFromItem(namespace string, raw *ast.ObjectItem) (p *Pod, err error) {
+func DefaultPod(namespace string) (p *Pod) {
 	p = &Pod{
 		Namespace: namespace,
 		Target:    defaultPodTarget,
 		Runtime:   true,
 	}
+	return
+}
+
+func (p *Pod) UnmarshalAST(raw *ast.ObjectItem) (err error) {
 	err = hcl.DecodeObject(p, raw)
 	p.Name = raw.Keys[0].Token.Value().(string)
 

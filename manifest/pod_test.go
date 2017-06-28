@@ -3,17 +3,13 @@ package manifest_test
 import (
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"os"
 	"testing"
+	"encoding/json"
 )
 
 func TestManifest(t *testing.T) {
-	r, err := os.Open("testdata/example-multi.hcl")
-	require.NoError(t, err)
-	defer r.Close()
 
-	res, err := manifest.ParseFromReader("private", r)
+	res, err := manifest.ParseFromFiles("private", "testdata/example-multi.hcl")
 	assert.NoError(t, err)
 
 	t.Run("parse", func(t *testing.T) {
@@ -122,5 +118,18 @@ func TestManifest(t *testing.T) {
 func TestParseFromFiles(t *testing.T) {
 	pods, err := manifest.ParseFromFiles("private", "testdata/files_1.hcl", "testdata/files_2.hcl")
 	assert.NoError(t, err)
-	t.Log(pods)
+	assert.Len(t, pods, 3)
+}
+
+func TestManifest_JSON(t *testing.T)  {
+	pods, err := manifest.ParseFromFiles("private", "testdata/json.hcl")
+	assert.NoError(t, err)
+	data, err := json.Marshal(pods[0])
+	assert.Equal(t, "{\"Namespace\":\"private\",\"Name\":\"first\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"${meta.one}\":\"one\",\"${meta.two}\":\"two\"},\"Units\":[{\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":true,\"Name\":\"first-1.service\",\"Source\":\"[Service]\\n# ${meta.consul}\\nExecStart=/usr/bin/sleep inf\\nExecStopPost=/usr/bin/systemctl stop first-2.service\\n\"},{\"Create\":\"\",\"Update\":\"start\",\"Destroy\":\"\",\"Permanent\":false,\"Name\":\"first-2.service\",\"Source\":\"[Service]\\n# ${NONEXISTENT}\\nExecStart=/usr/bin/sleep inf\\n\"}],\"Blobs\":[{\"Name\":\"/etc/vpn/users/env\",\"Permissions\":420,\"Leave\":false,\"Source\":\"My file\\n\"}]}", string(data))
+
+	// unmarshal
+	pod := manifest.DefaultPod("private")
+	err = json.Unmarshal(data, &pod)
+	data1, err := json.Marshal(pod)
+	assert.Equal(t, string(data), string(data1))
 }

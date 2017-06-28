@@ -37,7 +37,7 @@ func ParseFromFiles(namespace string, paths ...string) (res []*Pod, err error) {
 				return
 			}
 
-			pods, err := ParseFromList(namespace, list)
+			pods, err := parseFromAST(namespace, list)
 			res = append(res, pods...)
 			return
 		}(path))
@@ -54,30 +54,7 @@ func ParseFromFiles(namespace string, paths ...string) (res []*Pod, err error) {
 	return
 }
 
-// Parse manifests from root
-func ParseFromReader(namespace string, r io.Reader) (res []*Pod, err error) {
-	var buf bytes.Buffer
-	if _, err = io.Copy(&buf, r); err != nil {
-		return
-	}
-
-	root, err := hcl.Parse(buf.String())
-	if err != nil {
-		err = fmt.Errorf("error parsing: %s", err)
-		return
-	}
-	buf.Reset()
-
-	list, ok := root.Node.(*ast.ObjectList)
-	if !ok {
-		err = fmt.Errorf("error parsing: root should be an object")
-		return
-	}
-	res, err = ParseFromList(namespace, list)
-	return
-}
-
-func ParseFromList(namespace string, list *ast.ObjectList) (res []*Pod, err error) {
+func parseFromAST(namespace string, list *ast.ObjectList) (res []*Pod, err error) {
 	matches := list.Filter("pod")
 	if len(matches.Items) == 0 {
 		return
@@ -85,9 +62,9 @@ func ParseFromList(namespace string, list *ast.ObjectList) (res []*Pod, err erro
 
 	var failures []error
 	for _, m := range matches.Items {
-		var p *Pod
+		p := DefaultPod(namespace)
 		var pErr error
-		if p, pErr = newPodFromItem(namespace, m); pErr != nil {
+		if pErr = p.UnmarshalAST(m); pErr != nil {
 			failures = append(failures, pErr)
 		}
 		res = append(res, p)

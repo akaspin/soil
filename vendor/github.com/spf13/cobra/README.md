@@ -325,10 +325,10 @@ func init() {
 }
 
 func Execute() {
-	rootCmd.Execute()
+	RootCmd.Execute()
 }
 
-func main() {
+func initConfig() {
   // Don't forget to read config either from cfgFile or from home directory!
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -337,7 +337,7 @@ func main() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Println(home)
+			fmt.Println(err)
 			os.Exit(1)
 		}
 

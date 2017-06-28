@@ -27,14 +27,13 @@ if [ -z "$GOPATH" ]; then
 	go get -u github.com/coreos/pkg/dlopen
 fi
 
-TESTABLE="activation daemon journal login1 unit"
-FORMATTABLE="$TESTABLE sdjournal dbus machine1"
+TESTABLE="activation daemon journal login1 machine1 unit"
+FORMATTABLE="$TESTABLE sdjournal dbus"
 if [ -e "/run/systemd/system/" ]; then
-	# if we're on a systemd-system, we can test sdjournal
 	TESTABLE="${TESTABLE} sdjournal"
 	if [ "$EUID" == "0" ]; then
-		# testing actual systemd/machined behaviour requires root
-		TESTABLE="${TESTABLE} dbus machine1"
+		# testing actual systemd behaviour requires root
+		TESTABLE="${TESTABLE} dbus"
 	fi
 fi
 

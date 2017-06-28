@@ -1,23 +1,23 @@
 
 [[constraint]]
-  version = "2.2.0"
   name = "github.com/akaspin/concurrency"
+  version = "2.2.0"
 
 [[constraint]]
   branch = "master"
   name = "github.com/akaspin/cut"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/akaspin/logx"
+  version = "1.1.0"
 
 [[constraint]]
   branch = "master"
   name = "github.com/akaspin/supervisor"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/coreos/go-systemd"
+  version = "v14"
 
 [[constraint]]
   branch = "master"
@@ -28,8 +28,8 @@
   name = "github.com/hashicorp/hcl"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/hashicorp/memberlist"
+  version = "v0.1.0"
 
 [[constraint]]
   branch = "master"
@@ -48,5 +48,5 @@
   name = "github.com/spf13/cobra"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/stretchr/testify"
+  version = "v1.1.4"

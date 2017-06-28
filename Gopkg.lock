@@ -32,10 +32,10 @@
   revision = "f036747b9d0e8590f175a5d654a2194a7d9df4b5"
 
 [[projects]]
-  branch = "master"
   name = "github.com/coreos/go-systemd"
   packages = ["dbus","unit"]
-  revision = "24036eb3df68550d24a2736c5d013f4e83366866"
+  revision = "48702e0da86bd25e76cfef347e2adeb434a0d0a6"
+  version = "v14"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -83,7 +83,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-sockaddr"
   packages = ["."]
-  revision = "e12d9401a74f025fe672cd1a84b2081c773990d3"
+  revision = "41949a141473f6340abc6ba0fcd0f89da6f6f837"
 
 [[projects]]
   branch = "master"
@@ -98,10 +98,10 @@
   revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
 
 [[projects]]
-  branch = "master"
   name = "github.com/hashicorp/memberlist"
   packages = ["."]
-  revision = "0a136466d82a7e6f1b7866dde3578ac28ed675ad"
+  revision = "ce8abaa0c60c2d6bee7219f5ddf500e0a1457b28"
+  version = "v0.1.0"
 
 [[projects]]
   branch = "master"
@@ -113,7 +113,7 @@
   branch = "master"
   name = "github.com/miekg/dns"
   packages = ["."]
-  revision = "e78414ef75607394ad7d917824f07f381df2eafa"
+  revision = "e46719b2fef404d2e531c0dd9055b1c95ff01e2e"
 
 [[projects]]
   branch = "master"
@@ -137,7 +137,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "d638dcb7c7c1c9b62f3a6297a17834980d245dc7"
+  revision = "8c6fa02d2225de0f9bdcb7ca912556f68d172d8c"
 
 [[projects]]
   branch = "master"
@@ -146,14 +146,14 @@
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
 
 [[projects]]
-  branch = "master"
   name = "github.com/stretchr/testify"
   packages = ["assert","require"]
-  revision = "f6abca593680b2315d2075e0f5e2a9751e3f431a"
+  revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
+  version = "v1.1.4"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d185ecb3e6823868550504e0cce0b312af23ae3d67308e188664503e40ff44fd"
+  inputs-digest = "4fd80155ca21141afec698e36a983789d6731c2af27dbee58fa97f0f34bdde1a"
   solver-name = "gps-cdcl"
   solver-version = 1

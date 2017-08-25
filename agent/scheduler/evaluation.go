@@ -165,7 +165,7 @@ func PlanBlob(left, right *allocation.Blob) (res []Instruction) {
 	}
 	if right == nil {
 		if !left.Leave {
-			res = append(res, NewDestroyBlobInstruction(phaseDeployFS, left))
+			res = append(res, NewDestroyBlobInstruction(phaseDestroyBlobs, left))
 		}
 		return
 	}

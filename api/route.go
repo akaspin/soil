@@ -1,10 +1,10 @@
 package api
 
 import (
-	"net/http"
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"github.com/akaspin/logx"
+	"net/http"
 )
 
 type Router struct {
@@ -42,18 +42,18 @@ func (r *Router) Bind(ctx context.Context, log *logx.Log, mux *http.ServeMux) {
 
 func (r *Router) add(method, path string, endpoint Endpoint) {
 	r.routes = append(r.routes, &routeRecord{
-		path: path,
-		method: method,
+		path:     path,
+		method:   method,
 		endpoint: endpoint,
 	})
 }
 
-func newMethodHandleFunc(ctx context.Context, log *logx.Log, na func(w http.ResponseWriter, req *http.Request), records []*routeRecord) (fn func (w http.ResponseWriter, req *http.Request)) {
+func newMethodHandleFunc(ctx context.Context, log *logx.Log, na func(w http.ResponseWriter, req *http.Request), records []*routeRecord) (fn func(w http.ResponseWriter, req *http.Request)) {
 	get := na
 	put := na
 	del := na
 	for _, record := range records {
-		switch record.method{
+		switch record.method {
 		case "GET":
 			get = record.getHandleFunc(ctx, log)
 		case "PUT":
@@ -63,7 +63,7 @@ func newMethodHandleFunc(ctx context.Context, log *logx.Log, na func(w http.Resp
 		}
 	}
 	fn = func(w http.ResponseWriter, req *http.Request) {
-		switch req.Method{
+		switch req.Method {
 		case "GET":
 			get(w, req)
 		case "PUT":
@@ -78,8 +78,8 @@ func newMethodHandleFunc(ctx context.Context, log *logx.Log, na func(w http.Resp
 }
 
 type routeRecord struct {
-	path string
-	method string
+	path     string
+	method   string
 	endpoint Endpoint
 }
 
@@ -111,4 +111,3 @@ func (r *routeRecord) getHandleFunc(ctx context.Context, log *logx.Log) (h func(
 	}
 	return
 }
-

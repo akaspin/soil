@@ -1,16 +1,16 @@
 package api
 
 import (
-	"net/http"
-	"github.com/akaspin/supervisor"
-	"github.com/akaspin/logx"
 	"context"
+	"github.com/akaspin/logx"
+	"github.com/akaspin/supervisor"
+	"net/http"
 )
 
 type Server struct {
 	*supervisor.Control
 	trap *supervisor.Trap
-	log *logx.Log
+	log  *logx.Log
 
 	server *http.Server
 }
@@ -19,9 +19,9 @@ func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) 
 	mux := http.NewServeMux()
 	s = &Server{
 		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("api"),
+		log:     log.GetLog("api"),
 		server: &http.Server{
-			Addr: addr,
+			Addr:    addr,
 			Handler: mux,
 		},
 	}
@@ -51,6 +51,3 @@ func (s *Server) Open() (err error) {
 	s.log.Infof("listening on %s", s.server.Addr)
 	return
 }
-
-
-

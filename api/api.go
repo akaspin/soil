@@ -1,10 +1,9 @@
 package api
 
 import (
-	"net/url"
 	"context"
+	"net/url"
 )
-
 
 // Endpoint handles RPC path-method
 type Endpoint interface {
@@ -17,5 +16,4 @@ type Endpoint interface {
 }
 
 type Request interface {
-
 }

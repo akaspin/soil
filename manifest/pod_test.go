@@ -1,10 +1,10 @@
 package manifest_test
 
 import (
+	"encoding/json"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"encoding/json"
 )
 
 func TestManifest(t *testing.T) {
@@ -121,7 +121,7 @@ func TestParseFromFiles(t *testing.T) {
 	assert.Len(t, pods, 3)
 }
 
-func TestManifest_JSON(t *testing.T)  {
+func TestManifest_JSON(t *testing.T) {
 	pods, err := manifest.ParseFromFiles("private", "testdata/json.hcl")
 	assert.NoError(t, err)
 	data, err := json.Marshal(pods[0])

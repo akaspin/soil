@@ -6,13 +6,13 @@ import (
 )
 
 type Error struct {
-	Code int
+	Code   int
 	Reason string
 }
 
 func NewError(code int, reason string) (e *Error) {
 	e = &Error{
-		Code: code,
+		Code:   code,
 		Reason: reason,
 	}
 	return

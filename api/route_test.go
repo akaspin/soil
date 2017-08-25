@@ -1,18 +1,18 @@
 package api_test
 
 import (
-	"testing"
-	"net/url"
 	"context"
 	"github.com/akaspin/logx"
-	"net/http"
-	"time"
-	"github.com/stretchr/testify/assert"
-	"net/http/httputil"
 	"github.com/akaspin/soil/api"
+	"github.com/stretchr/testify/assert"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"testing"
+	"time"
 )
 
-type route1 struct {}
+type route1 struct{}
 
 func (r *route1) Empty() interface{} {
 	return nil
@@ -41,7 +41,7 @@ func TestRouter_Bind(t *testing.T) {
 
 	resp, err := http.Get("http://127.0.0.1:3000/v1/route/1")
 	assert.NoError(t, err)
-	raw, err :=  httputil.DumpResponse(resp, true)
+	raw, err := httputil.DumpResponse(resp, true)
 	assert.NoError(t, err)
 	t.Log(string(raw))
 }

@@ -145,7 +145,7 @@ func TestEvaluation_Plan(t *testing.T) {
 			},
 		}
 		evaluation := &scheduler.Evaluation{Left: left, Right: right}
-		assert.Equal(t, "[2:blob-destroy:/etc/test1 3:disable:/etc/systemd/system/unit-1.service]", fmt.Sprint(evaluation.Plan()))
+		assert.Equal(t, "[3:disable:/etc/systemd/system/unit-1.service 5:blob-destroy:/etc/test1]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("update unit-1 and file", func(t *testing.T) {
 		right := &allocation.Pod{
@@ -202,7 +202,7 @@ func TestEvaluation_Plan(t *testing.T) {
 	})
 	t.Run("destroy pod", func(t *testing.T) {
 		evaluation := &scheduler.Evaluation{Left: left, Right: nil}
-		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 2:blob-destroy:/etc/test1]", fmt.Sprint(evaluation.Plan()))
+		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:remove:/etc/systemd/system/pod-pod-1.service 1:remove:/etc/systemd/system/unit-1.service 1:remove:/etc/systemd/system/unit-2.service 5:blob-destroy:/etc/test1]", fmt.Sprint(evaluation.Plan()))
 	})
 	t.Run("change prefix", func(t *testing.T) {
 		right := &allocation.Pod{

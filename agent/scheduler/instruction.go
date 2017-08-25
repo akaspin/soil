@@ -9,10 +9,11 @@ import (
 
 const (
 	phaseDestroyCommand = iota // execute unit commands on destroy
-	phaseDestroyFS             // Destroy units and blobs
-	phaseDeployFS              // Write units and blobs
-	phaseDeployPerm
-	phaseDeployCommand
+	phaseDestroyUnits          // Destroy units from filesystem
+	phaseDeployFS              // Write units to filesystem
+	phaseDeployPerm            // Enable or disable units
+	phaseDeployCommand         // Execute create/modify unit commands
+	phaseDestroyBlobs          // Destroy blobs from filesystem
 )
 
 type Instruction interface {
@@ -66,7 +67,7 @@ type DeleteUnitInstruction struct {
 }
 
 func NewDeleteUnitInstruction(unitFile *allocation.UnitFile) *DeleteUnitInstruction {
-	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyFS, unitFile)}
+	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyUnits, unitFile)}
 }
 
 func (i *DeleteUnitInstruction) Execute(conn *dbus.Conn) (err error) {

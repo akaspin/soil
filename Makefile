@@ -16,11 +16,7 @@ V=$(shell git describe --always --tags --dirty)
 GOOPTS=-installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
 
 
-ifdef GOBIN
-	INSTALL_DIR=$(GOBIN)
-else
-    INSTALL_DIR=$(GOPATH)/bin
-endif
+GOBIN ?= $(GOPATH)/bin
 
 
 ###
@@ -40,7 +36,7 @@ test:
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.8 go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
+		golang:1.9 go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
 
 test-verbose:
 	docker -H 127.0.0.1:2375 run --rm \
@@ -50,7 +46,7 @@ test-verbose:
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.8 go test -run=$(TESTS) -p=1 -v -tags="$(TEST_TAGS)" $(PACKAGES)
+		golang:1.9 go test -run=$(TESTS) -p=1 -v -tags="$(TEST_TAGS)" $(PACKAGES)
 
 ###
 ### Dist
@@ -91,13 +87,13 @@ dist/%/$(BIN)-debug: $(SRC) $(SRC_VENDOR)
 ###	Install
 ###
 
-install: $(INSTALL_DIR)/$(BIN)
-install-debug: $(INSTALL_DIR)/$(BIN)-debug
+install: $(GOBIN)/$(BIN)
+install-debug: $(GOBIN)/$(BIN)-debug
 
-$(INSTALL_DIR)/$(BIN): $(SRC)
+$(GOBIN)/$(BIN): $(SRC)
 	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -o $@ $(REPO)/command/$(BIN)
 
-$(INSTALL_DIR)/$(BIN)-debug: $(SRC)
+$(GOBIN)/$(BIN)-debug: $(SRC)
 	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
 
 

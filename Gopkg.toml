@@ -1,9 +1,5 @@
 
 [[constraint]]
-  name = "github.com/akaspin/concurrency"
-  version = "2.2.0"
-
-[[constraint]]
   branch = "master"
   name = "github.com/akaspin/cut"
 

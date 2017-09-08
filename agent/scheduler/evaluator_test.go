@@ -3,7 +3,6 @@ package scheduler_test
 import (
 	"context"
 	"fmt"
-	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
@@ -46,11 +45,8 @@ func TestNewEvaluator(t *testing.T) {
 	assert.NoError(t, sd.DeployPod("test-2", 3))
 
 	ctx := context.Background()
-	wp := concurrency.NewWorkerPool(ctx, concurrency.Config{
-		Capacity: 2,
-	})
 	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
-	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), wp, statusReporter)
+	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 
 	res := map[string]string{}
 	var count int
@@ -63,7 +59,7 @@ func TestNewEvaluator(t *testing.T) {
 		}
 		res = v
 	}
-	sv := supervisor.NewChain(ctx, statusReporter, wp, ex)
+	sv := supervisor.NewChain(ctx, statusReporter, ex)
 	assert.NoError(t, sv.Open())
 	time.Sleep(time.Second)
 	statusReporter.Register(callback)
@@ -97,11 +93,8 @@ func TestEvaluator_Submit(t *testing.T) {
 	defer sd.Cleanup()
 
 	ctx := context.Background()
-	wp := concurrency.NewWorkerPool(ctx, concurrency.Config{
-		Capacity: 2,
-	})
 	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
-	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), wp, statusReporter)
+	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 	res := map[string]string{}
 	var count int
 	mu := &sync.Mutex{}
@@ -114,7 +107,7 @@ func TestEvaluator_Submit(t *testing.T) {
 		res = v
 	}
 
-	sv := supervisor.NewChain(ctx, statusReporter, wp, ex)
+	sv := supervisor.NewChain(ctx, statusReporter, ex)
 	assert.NoError(t, sv.Open())
 	statusReporter.Register(callback)
 

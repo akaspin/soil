@@ -20,14 +20,12 @@ import (
 
 type AgentOptions struct {
 	ConfigPath []string
-	PoolSize   int
 	Id         string
 	Meta       []string
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "", []string{"/etc/soil/config.hcl"}, "configuration file")
-	cc.Flags().IntVarP(&o.PoolSize, "pool", "", 4, "worker pool size")
 	cc.Flags().StringVarP(&o.Id, "id", "", "localhost", "agent id")
 	cc.Flags().StringArrayVarP(&o.Meta, "meta", "", nil, "node metadata")
 }
@@ -72,7 +70,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	)
 
 	sink, schedulerSv := scheduler.New(
-		ctx, c.log, c.PoolSize,
+		ctx, c.log,
 		[]agent.Source{c.agentSource, c.metaSource, statusSource},
 		[]agent.EvaluationReporter{statusSource},
 	)

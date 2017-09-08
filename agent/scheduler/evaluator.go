@@ -2,30 +2,27 @@ package scheduler
 
 import (
 	"context"
-	"fmt"
-	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
+	"sync"
 )
 
 type Evaluator struct {
 	*supervisor.Control
 	log       *logx.Log
-	pool      *concurrency.WorkerPool
 	reporters []agent.EvaluationReporter
 
 	state  *EvaluatorState
 	nextCh chan *Evaluation
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, pool *concurrency.WorkerPool, reporters ...agent.EvaluationReporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, reporters ...agent.EvaluationReporter) (e *Evaluator) {
 	e = &Evaluator{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler", "evaluator"),
-		pool:      pool,
 		reporters: reporters,
 		nextCh:    make(chan *Evaluation),
 	}
@@ -101,11 +98,8 @@ LOOP:
 }
 
 func (e *Evaluator) execute(evaluation *Evaluation) {
-	e.log.Debugf("executing evaluation %v", evaluation)
 	var failures []error
-
-	plan := evaluation.Plan()
-	e.log.Debugf("begin plan %v", plan)
+	e.log.Debugf("begin %s", evaluation)
 	conn, err := dbus.New()
 	if err != nil {
 		e.log.Error(err)
@@ -113,22 +107,57 @@ func (e *Evaluator) execute(evaluation *Evaluation) {
 	}
 	defer conn.Close()
 
-	for _, instruction := range plan {
-		e.log.Debugf("begin %v", instruction)
-		if iErr := instruction.Execute(conn); iErr != nil {
-			iErr = fmt.Errorf("error while execute instruction %v: %s", instruction, iErr)
-			e.log.Error(iErr)
-			failures = append(failures, iErr)
-			continue
+	currentPhase := -1
+	var phase []Instruction
+	for _, instruction := range evaluation.Plan() {
+		if currentPhase < instruction.Phase() {
+			currentPhase = instruction.Phase()
+			failures = append(failures, e.executePhase(phase, conn)...)
+			phase = []Instruction{}
 		}
-		e.log.Debugf("finished %v", instruction)
+		phase = append(phase, instruction)
 	}
-	e.log.Debugf("plan finished %v (failures:%v)", plan, failures)
+	failures = append(failures, e.executePhase(phase, conn)...)
+
+	e.log.Infof("evaluation done %s (failures:%v)", evaluation, failures)
 	next := e.state.Commit(evaluation.Name())
 	for _, reporter := range e.reporters {
 		reporter.Report(evaluation.Name(), evaluation.Right, failures)
 	}
 	e.fanOut(next)
+	return
+}
+
+func (e *Evaluator) executePhase(phase []Instruction, conn *dbus.Conn) (failures []error) {
+	if len(phase) == 0 {
+		return
+	}
+	e.log.Debugf("begin phase %v", phase)
+	ch := make(chan error, len(phase))
+	wg := &sync.WaitGroup{}
+	wg.Add(len(phase))
+	for _, instruction := range phase {
+		go func(instruction Instruction) {
+			defer wg.Done()
+			e.log.Debugf("begin instruction %v", instruction)
+			var iErr error
+			if iErr = instruction.Execute(conn); iErr != nil {
+				e.log.Errorf("error while execute instruction %v: %s", instruction, iErr)
+			}
+			e.log.Debugf("finish instruction %s", instruction)
+			ch <- iErr
+		}(instruction)
+	}
+	go func() {
+		for res := range ch {
+			if res != nil {
+				failures = append(failures, res)
+			}
+		}
+	}()
+	wg.Wait()
+	e.log.Debugf("finish phase %v", phase)
+
 	return
 }
 

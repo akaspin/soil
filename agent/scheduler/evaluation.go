@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"github.com/akaspin/soil/agent/allocation"
 	"sort"
 )
@@ -8,35 +9,41 @@ import (
 type Evaluation struct {
 	Left  *allocation.Pod
 	Right *allocation.Pod
+
+	name string
+	plan []Instruction
+}
+
+func NewEvaluation(left, right *allocation.Pod) (e *Evaluation) {
+	e = &Evaluation{
+		Left:  left,
+		Right: right,
+		name:  "unknown",
+	}
+	if right != nil {
+		e.name = right.Name
+	} else if left != nil {
+		e.name = left.Name
+	}
+	e.plan = e.planPhases()
+	sort.Slice(e.plan, func(i, j int) bool {
+		return e.plan[i].String() < e.plan[j].String()
+	})
+	return
 }
 
 func (e *Evaluation) Name() (res string) {
-	if e.Right != nil {
-		res = e.Right.Name
-		return
-	}
-	if e.Left != nil {
-		res = e.Left.Name
-	}
+	res = e.name
 	return
 }
 
 func (e *Evaluation) Plan() (res []Instruction) {
-	phases1 := map[int][]Instruction{}
-	var phaseIds []int
-
-	for _, i := range e.planPhases() {
-		phase := i.Phase()
-		phases1[phase] = append(phases1[phase], i)
-	}
-	for i := range phases1 {
-		phaseIds = append(phaseIds, i)
-	}
-	sort.Ints(phaseIds)
-	for _, i := range phaseIds {
-		res = append(res, phases1[i]...)
-	}
+	res = e.plan
 	return
+}
+
+func (e *Evaluation) String() string {
+	return fmt.Sprintf("%s:%s", e.name, e.plan)
 }
 
 func (e *Evaluation) planPhases() (res []Instruction) {
@@ -52,9 +59,9 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 	}
 
 	if e.Left == nil {
-		res = append(res, PlanUnit(nil, e.Right.GetPodUnit())...)
+		res = append(res, planUnit(nil, e.Right.GetPodUnit())...)
 		for _, u := range e.Right.Units {
-			res = append(res, PlanUnit(nil, u)...)
+			res = append(res, planUnit(nil, u)...)
 		}
 		for _, b := range e.Right.Blobs {
 			res = append(res, PlanBlob(nil, b)...)
@@ -63,7 +70,7 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 	}
 
 	// ok. hard case
-	res = append(res, PlanUnit(e.Left.GetPodUnit(), e.Right.GetPodUnit())...)
+	res = append(res, planUnit(e.Left.GetPodUnit(), e.Right.GetPodUnit())...)
 
 	unitsDone := map[string]bool{}
 	unitsCandidates := map[string]*allocation.Unit{}
@@ -72,14 +79,14 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 		unitsCandidates[u.UnitFile.UnitName()] = u
 	}
 	for _, u := range e.Left.Units {
-		res = append(res, PlanUnit(u, unitsCandidates[u.UnitName()])...)
+		res = append(res, planUnit(u, unitsCandidates[u.UnitName()])...)
 		unitsDone[u.UnitName()] = true
 	}
 	for _, u := range e.Right.Units {
 		if _, ok := unitsDone[u.UnitFile.UnitName()]; ok {
 			continue
 		}
-		res = append(res, PlanUnit(nil, u)...)
+		res = append(res, planUnit(nil, u)...)
 	}
 
 	blobsDone := map[string]bool{}
@@ -100,7 +107,7 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 	return
 }
 
-func PlanUnit(left, right *allocation.Unit) (res []Instruction) {
+func planUnit(left, right *allocation.Unit) (res []Instruction) {
 	if right == nil {
 		res = planUnitDestroy(left)
 		return

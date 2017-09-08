@@ -105,10 +105,7 @@ LOOP:
 		}
 		s.inProgress[pendingName] = pending
 		delete(s.pending, pendingName)
-		next = append(next, &Evaluation{
-			Left:  s.finished[pendingName],
-			Right: pending,
-		})
+		next = append(next, NewEvaluation(s.finished[pendingName], pending))
 	}
 	return
 }

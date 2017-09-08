@@ -2,7 +2,6 @@ package scheduler_test
 
 import (
 	"context"
-	"github.com/akaspin/concurrency"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
@@ -82,10 +81,7 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	workerPool := concurrency.NewWorkerPool(ctx, concurrency.Config{
-		Capacity: 2,
-	})
-	executor := scheduler.NewEvaluator(ctx, log, workerPool)
+	executor := scheduler.NewEvaluator(ctx, log)
 
 	arbiter1 := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
 	arbiter2 := source.NewMap(ctx, log, "agent", true, manifest.Constraint{})
@@ -108,10 +104,7 @@ WantedBy=default.target
 			supervisor.NewGroup(ctx, arbiter1, arbiter2),
 			manager,
 		),
-		supervisor.NewChain(ctx,
-			workerPool,
-			executor,
-		),
+		executor,
 		sink,
 	)
 	assert.NoError(t, sv.Open())

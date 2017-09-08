@@ -16,35 +16,43 @@ const (
 	phaseDestroyBlobs          // Destroy blobs from filesystem
 )
 
+// Instruction represents one atomic instruction bounded to specific phase
 type Instruction interface {
 	Phase() int
 	Execute(conn *dbus.Conn) (err error)
+	String() string
 }
 
-type baseInstruction struct {
+type baseUnitInstruction struct {
 	phase    int
+	explain  string
 	unitFile *allocation.UnitFile
 }
 
-func newBaseInstruction(phase int, unitFile *allocation.UnitFile) *baseInstruction {
-	return &baseInstruction{
+func newBaseInstruction(phase int, explain string, unitFile *allocation.UnitFile) *baseUnitInstruction {
+	return &baseUnitInstruction{
 		phase:    phase,
+		explain:  explain,
 		unitFile: unitFile,
 	}
 }
 
-func (i *baseInstruction) Phase() int {
+func (i *baseUnitInstruction) Phase() int {
 	return i.phase
+}
+
+func (i *baseUnitInstruction) String() string {
+	return fmt.Sprintf("%d:%s:%s", i.phase, i.explain, i.unitFile.Path)
 }
 
 // WriteUnitInstruction writes unitFile to filesystem and runs daemon reload.
 type WriteUnitInstruction struct {
-	*baseInstruction
+	*baseUnitInstruction
 }
 
 func NewWriteUnitInstruction(unitFile *allocation.UnitFile) *WriteUnitInstruction {
 	return &WriteUnitInstruction{
-		newBaseInstruction(phaseDeployFS, unitFile),
+		newBaseInstruction(phaseDeployFS, "write-unit", unitFile),
 	}
 }
 
@@ -56,18 +64,13 @@ func (i *WriteUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *WriteUnitInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:write:%s", i.phase, i.unitFile.Path)
-	return
-}
-
 // DeleteUnitInstruction disables and removes unit from systemd
 type DeleteUnitInstruction struct {
-	*baseInstruction
+	*baseUnitInstruction
 }
 
 func NewDeleteUnitInstruction(unitFile *allocation.UnitFile) *DeleteUnitInstruction {
-	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyUnits, unitFile)}
+	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyUnits, "delete-unit", unitFile)}
 }
 
 func (i *DeleteUnitInstruction) Execute(conn *dbus.Conn) (err error) {
@@ -79,17 +82,12 @@ func (i *DeleteUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *DeleteUnitInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:remove:%s", i.phase, i.unitFile.Path)
-	return
-}
-
 type EnableUnitInstruction struct {
-	*baseInstruction
+	*baseUnitInstruction
 }
 
 func NewEnableUnitInstruction(unitFile *allocation.UnitFile) *EnableUnitInstruction {
-	return &EnableUnitInstruction{newBaseInstruction(phaseDeployPerm, unitFile)}
+	return &EnableUnitInstruction{newBaseInstruction(phaseDeployPerm, "enable-unit", unitFile)}
 }
 
 func (i *EnableUnitInstruction) Execute(conn *dbus.Conn) (err error) {
@@ -97,17 +95,12 @@ func (i *EnableUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *EnableUnitInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:enable:%s", i.phase, i.unitFile.Path)
-	return
-}
-
 type DisableUnitInstruction struct {
-	*baseInstruction
+	*baseUnitInstruction
 }
 
 func NewDisableUnitInstruction(unitFile *allocation.UnitFile) *DisableUnitInstruction {
-	return &DisableUnitInstruction{newBaseInstruction(phaseDeployPerm, unitFile)}
+	return &DisableUnitInstruction{newBaseInstruction(phaseDeployPerm, "disable-unit", unitFile)}
 }
 
 func (i *DisableUnitInstruction) Execute(conn *dbus.Conn) (err error) {
@@ -115,20 +108,15 @@ func (i *DisableUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *DisableUnitInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:disable:%s", i.phase, i.unitFile.Path)
-	return
-}
-
 type CommandInstruction struct {
-	*baseInstruction
+	*baseUnitInstruction
 	command string
 }
 
 func NewCommandInstruction(phase int, unitFile *allocation.UnitFile, command string) *CommandInstruction {
 	return &CommandInstruction{
-		baseInstruction: newBaseInstruction(phase, unitFile),
-		command:         command,
+		baseUnitInstruction: newBaseInstruction(phase, command, unitFile),
+		command:             command,
 	}
 }
 
@@ -159,18 +147,18 @@ func (i *CommandInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *CommandInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:%s:%s", i.phase, i.command, i.unitFile.Path)
-	return
-}
-
 type baseBlobInstruction struct {
-	phase int
-	blob  *allocation.Blob
+	phase   int
+	explain string
+	blob    *allocation.Blob
 }
 
 func (i *baseBlobInstruction) Phase() int {
 	return i.phase
+}
+
+func (i *baseBlobInstruction) String() string {
+	return fmt.Sprintf("%d:%s:%s", i.phase, i.explain, i.blob.Name)
 }
 
 type WriteBlobInstruction struct {
@@ -180,8 +168,9 @@ type WriteBlobInstruction struct {
 func NewWriteBlobInstruction(phase int, blob *allocation.Blob) (i *WriteBlobInstruction) {
 	i = &WriteBlobInstruction{
 		&baseBlobInstruction{
-			phase: phase,
-			blob:  blob,
+			phase:   phase,
+			explain: "write-blob",
+			blob:    blob,
 		},
 	}
 	return
@@ -192,11 +181,6 @@ func (i *WriteBlobInstruction) Execute(conn *dbus.Conn) (err error) {
 	return
 }
 
-func (i *WriteBlobInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:blob-write:%s", i.phase, i.blob.Name)
-	return
-}
-
 type DestroyBlobInstruction struct {
 	*baseBlobInstruction
 }
@@ -204,8 +188,9 @@ type DestroyBlobInstruction struct {
 func NewDestroyBlobInstruction(phase int, blob *allocation.Blob) (i *DestroyBlobInstruction) {
 	i = &DestroyBlobInstruction{
 		&baseBlobInstruction{
-			phase: phase,
-			blob:  blob,
+			phase:   phase,
+			explain: "delete-blob",
+			blob:    blob,
 		},
 	}
 	return
@@ -213,10 +198,5 @@ func NewDestroyBlobInstruction(phase int, blob *allocation.Blob) (i *DestroyBlob
 
 func (i *DestroyBlobInstruction) Execute(conn *dbus.Conn) (err error) {
 	err = os.Remove(i.blob.Name)
-	return
-}
-
-func (i *DestroyBlobInstruction) String() (res string) {
-	res = fmt.Sprintf("%d:blob-destroy:%s", i.phase, i.blob.Name)
 	return
 }

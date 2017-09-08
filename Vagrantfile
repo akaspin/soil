@@ -1,8 +1,8 @@
 $script = <<SCRIPT
 dnf -y install dnf-plugins-core
 dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
-dnf config-manager --enable docker-ce-edge
-dnf makecache fast
+dnf config-manager --set-enabled docker-ce-edge
+dnf makecache
 dnf -y install docker-ce
 mkdir -p /etc/systemd/system/docker.service.d
 cat > /etc/systemd/system/docker.service.d/host.conf <<-EOF
@@ -19,7 +19,7 @@ $num_instances = 1
 $instance_name = "node-%02d"
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "bento/fedora-25"
+  config.vm.box = 'bento/fedora-26'
   config.vbguest.auto_update = false
   config.ssh.insert_key = false
   config.ssh.forward_agent = true

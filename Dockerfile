@@ -1,7 +1,17 @@
-FROM alpine:3.5
+FROM golang:1.9 as builder
 
-ARG V=bad
+ENV REPO github.com/akaspin/soil
+ENV BIN soil
 
-ADD dist/soil-$V-linux-amd64.tar.gz /usr/bin/
+ENV CGO_ENABLED 0
 
-ENTRYPOINT ["/usr/bin/soil"]
+WORKDIR /go/src/${REPO}
+
+COPY . ./
+
+RUN go build -installsuffix cgo -ldflags "-s -w -X ${REPO}/command.V=$(git describe --always --tags --dirty)" -o /${BIN} ${REPO}/command/${BIN}
+RUN go build -installsuffix cgo -ldflags "-s -w -X ${REPO}/command.V=$(git describe --always --tags --dirty)" -tags debug -o /${BIN}-debug ${REPO}/command/${BIN}
+
+FROM alpine:3.6
+
+COPY --from=builder /soil /soil-debug /usr/bin/

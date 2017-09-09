@@ -54,8 +54,10 @@ test-verbose:
 
 release: dist-check dist dist-docker dist-docker-push
 
-dist-check: $(SRC) $(SRC_TEST)
+dist-check: check-src
 	echo $(V) | grep -Eo '^(\d+\.)+\d+$$'
+
+check-src: $(SRC) $(SRC_TEST)
 	go vet $(PACKAGES)
 	[[ -z `gofmt -d -s -e $^` ]]
 

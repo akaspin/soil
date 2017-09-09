@@ -15,7 +15,6 @@ PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./... | grep -v /vendo
 V=$(shell git describe --always --tags --dirty)
 GOOPTS=-installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
 
-
 GOBIN ?= $(GOPATH)/bin
 
 
@@ -52,22 +51,12 @@ test-verbose:
 ### Dist
 ###
 
-release: dist-check dist dist-docker dist-docker-push
-
-dist-check: check-src
-	echo $(V) | grep -Eo '^(\d+\.)+\d+$$'
-
 check-src: $(SRC) $(SRC_TEST)
 	go vet $(PACKAGES)
 	[[ -z `gofmt -d -s -e $^` ]]
 
-dist-docker: dist/$(BIN)-$(V)-linux-amd64.tar.gz
-	docker build --build-arg V=$(V) -t akaspin/soil:$(V) .
-
-dist-docker-push: dist-check dist-docker
-	docker push akaspin/soil:$(V)
-	docker tag akaspin/soil:$(V) akaspin/soil:latest
-	docker push akaspin/soil:latest
+docker-image: dist/$(BIN)-$(V)-linux-amd64.tar.gz
+	docker build --build-arg V=$(V) -t soil-local:$(V) -f Dockerfile.local .
 
 dist: \
 	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \
@@ -106,8 +95,8 @@ $(GOBIN)/$(BIN)-debug: $(SRC)
 clean: clean-dist uninstall
 
 uninstall:
-	rm -rf $(INSTALL_DIR)/$(BIN)
-	rm -rf $(INSTALL_DIR)/$(BIN)-debug
+	rm -rf $(GOBIN)/$(BIN)
+	rm -rf $(GOBIN)/$(BIN)-debug
 
 clean-dist:
 	rm -rf dist
@@ -121,7 +110,6 @@ clean-docs:
 
 docs:
 	docker run --rm -v $(CWD)/docs:/site -p 4000:4000 andredumas/github-pages serve --watch
-#	docker run -v $(CWD)/docs:/usr/src/app -p 4000:4000 starefossen/github-pages jekyll serve -d /_site --watch --force_polling -H 0.0.0.0 -P 4000
 
 
 .PHONY: docs test clean

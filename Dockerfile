@@ -15,3 +15,5 @@ RUN go build -installsuffix cgo -ldflags "-s -w -X ${REPO}/command.V=$(git descr
 FROM alpine:3.6
 
 COPY --from=builder /soil /soil-debug /usr/bin/
+
+ENTRYPOINT ["/usr/bin/soil"]

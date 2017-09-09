@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/akaspin/concurrency"
-  packages = ["."]
-  revision = "c89b85c3bd96976046565f604ebeab1d302e4dcb"
-  version = "2.2.0"
-
-[[projects]]
   name = "github.com/akaspin/cut"
   packages = ["."]
   revision = "85cd551c8eacfa274e0559da220c0ed217b2fb97"
@@ -24,12 +18,6 @@
   packages = ["."]
   revision = "6c5c7954cee18b32168ee057ecd42664bcf85cb9"
   version = "1.1.2"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/armon/go-metrics"
-  packages = ["."]
-  revision = "f036747b9d0e8590f175a5d654a2194a7d9df4b5"
 
 [[projects]]
   name = "github.com/coreos/go-systemd"
@@ -51,39 +39,15 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/hashicorp/errwrap"
-  packages = ["."]
-  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
-
-[[projects]]
-  branch = "master"
   name = "github.com/hashicorp/go-immutable-radix"
   packages = ["."]
-  revision = "30664b879c9a771d8d50b137ab80ee0748cb2fcc"
+  revision = "8aac2701530899b64bdea735a1de8da899815220"
 
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/go-memdb"
   packages = ["."]
-  revision = "23b6e3df882a20711c06aa8fe4d9dd05acf5199d"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-msgpack"
-  packages = ["codec"]
-  revision = "fa3f63826f7c23912c15263591e65d54d080b458"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-multierror"
-  packages = ["."]
-  revision = "83588e72410abfbe4df460eeb6f30841ae47d4c4"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/hashicorp/go-sockaddr"
-  packages = ["."]
-  revision = "41949a141473f6340abc6ba0fcd0f89da6f6f837"
+  revision = "ec43fcf8f202880feb35d2abb40a570c1f4172e9"
 
 [[projects]]
   branch = "master"
@@ -95,25 +59,13 @@
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
-  revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
+  revision = "8f6b1344a92ff8877cf24a5de9177bf7d0a2a187"
 
 [[projects]]
-  name = "github.com/hashicorp/memberlist"
-  packages = ["."]
-  revision = "ce8abaa0c60c2d6bee7219f5ddf500e0a1457b28"
-  version = "v0.1.0"
-
-[[projects]]
-  branch = "master"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/miekg/dns"
-  packages = ["."]
-  revision = "e46719b2fef404d2e531c0dd9055b1c95ff01e2e"
+  version = "v1.0"
 
 [[projects]]
   branch = "master"
@@ -129,21 +81,15 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/sean-/seed"
-  packages = ["."]
-  revision = "e2103e2c35297fb7e17febb81e49b312087a2372"
-
-[[projects]]
-  branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "8c6fa02d2225de0f9bdcb7ca912556f68d172d8c"
+  revision = "b78744579491c1ceeaaa3b40205e56b0591b93a3"
 
 [[projects]]
-  branch = "master"
   name = "github.com/spf13/pflag"
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/stretchr/testify"
@@ -154,6 +100,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4fd80155ca21141afec698e36a983789d6731c2af27dbee58fa97f0f34bdde1a"
+  inputs-digest = "03a8728a22696193b5871e89fed03b58da3bf061bb929da39e92e78b7605484a"
   solver-name = "gps-cdcl"
   solver-version = 1

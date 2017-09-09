@@ -15,5 +15,3 @@ type Endpoint interface {
 	Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error)
 }
 
-type Request interface {
-}

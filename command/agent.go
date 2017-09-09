@@ -22,6 +22,7 @@ type AgentOptions struct {
 	ConfigPath []string
 	Id         string
 	Meta       []string
+	Address string
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {

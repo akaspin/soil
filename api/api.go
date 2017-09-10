@@ -14,4 +14,3 @@ type Endpoint interface {
 	// Process handles URL and ingest structure and returns data or error
 	Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error)
 }
-

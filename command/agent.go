@@ -6,9 +6,11 @@ import (
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
+	"github.com/akaspin/soil/agent/api-v1"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/spf13/cobra"
@@ -22,13 +24,14 @@ type AgentOptions struct {
 	ConfigPath []string
 	Id         string
 	Meta       []string
-	Address string
+	Address    string
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().StringArrayVarP(&o.ConfigPath, "config", "", []string{"/etc/soil/config.hcl"}, "configuration file")
 	cc.Flags().StringVarP(&o.Id, "id", "", "localhost", "agent id")
 	cc.Flags().StringArrayVarP(&o.Meta, "meta", "", nil, "node metadata")
+	cc.Flags().StringVarP(&o.Address, "address", "", ":7654", "listen address")
 }
 
 type Agent struct {
@@ -77,11 +80,28 @@ func (c *Agent) Run(args ...string) (err error) {
 	)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
 
+	// bind signals
+	signalCh := make(chan os.Signal)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
+	apiRouter := api.NewRouter()
+	apiRouter.Get("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
+		signalCh <- syscall.SIGHUP
+		return
+	}))
+	apiRouter.Get("/v1/agent/stop", api_v1.NewWrapper(func() (err error) {
+		signalCh <- syscall.SIGTERM
+		return
+	}))
+
+	apiServer := api.NewServer(ctx, c.log, c.Address, apiRouter)
+
 	// agent
 	agentSV := supervisor.NewChain(ctx,
 		sourceSv,
 		schedulerSv,
 		c.privateRegistry,
+		apiServer,
 	)
 
 	if err = agentSV.Open(); err != nil {
@@ -91,24 +111,18 @@ func (c *Agent) Run(args ...string) (err error) {
 	c.configureArbiters()
 	c.configurePrivateRegistry()
 
-	// bind signals
-	signalCh := make(chan os.Signal)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
 LOOP:
 	for {
 		select {
 		case sig := <-signalCh:
 			switch sig {
 			case syscall.SIGINT, syscall.SIGTERM:
+				c.log.Infof("stop received")
 				agentSV.Close()
 				break LOOP
 			case syscall.SIGHUP:
-				c.log.Infof("SIGHUP received")
-				c.readConfig()
-				c.readPrivatePods()
-				c.configureArbiters()
-				c.configurePrivateRegistry()
+				c.log.Infof("reload received")
+				c.reload()
 			}
 		case <-ctx.Done():
 			break LOOP
@@ -154,5 +168,13 @@ func (c *Agent) configureArbiters() {
 
 func (c *Agent) configurePrivateRegistry() (err error) {
 	c.privateRegistry.Sync(c.privatePods)
+	return
+}
+
+func (c *Agent) reload() (err error) {
+	c.readConfig()
+	c.readPrivatePods()
+	c.configureArbiters()
+	c.configurePrivateRegistry()
 	return
 }

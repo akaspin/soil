@@ -6,7 +6,6 @@ import (
 	"github.com/akaspin/soil/api"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"net/http/httputil"
 	"testing"
 	"time"
 )
@@ -26,9 +25,7 @@ func TestNewServer(t *testing.T) {
 
 	resp, err := http.Get("http://127.0.0.1:3333/v1/route/1")
 	assert.NoError(t, err)
-	raw, err := httputil.DumpResponse(resp, true)
-	assert.NoError(t, err)
-	t.Log(string(raw))
+	assert.Equal(t, resp.StatusCode, 200)
 
 	server.Close()
 	server.Wait()

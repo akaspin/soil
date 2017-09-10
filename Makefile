@@ -28,7 +28,7 @@ sources: $(SRC) $(SRC_TEST)
 
 
 test:
-	docker -H 127.0.0.1:2375 run --rm \
+	docker -H 127.0.0.1:2375 run --rm --name=test \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
@@ -38,7 +38,7 @@ test:
 		golang:1.9 go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
 
 test-verbose:
-	docker -H 127.0.0.1:2375 run --rm \
+	docker -H 127.0.0.1:2375 run --rm --name=test \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \

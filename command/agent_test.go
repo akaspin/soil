@@ -34,6 +34,11 @@ func TestAgent_Run_Stop(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
 
+	// ping
+	resp, err = http.Get("http://127.0.0.1:7654/v1/status/ping")
+	assert.NoError(t, err)
+	assert.Equal(t, resp.StatusCode, 200)
+
 	resp, err = http.Get("http://127.0.0.1:7654/v1/agent/stop")
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)

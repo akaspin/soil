@@ -21,6 +21,8 @@ $ soil agent --id=agent-1 --config=... --meta=rack=left
 
 `meta` Initial `meta` values. This option can be repeated many times.
 
+`address` (`:7654`) Address to listen for API calls.  
+
 
 ## Configuration files
 

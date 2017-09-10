@@ -84,6 +84,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	signalCh := make(chan os.Signal)
 	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
+	// API
 	apiRouter := api.NewRouter()
 	apiRouter.Get("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
 		signalCh <- syscall.SIGHUP
@@ -91,6 +92,9 @@ func (c *Agent) Run(args ...string) (err error) {
 	}))
 	apiRouter.Get("/v1/agent/stop", api_v1.NewWrapper(func() (err error) {
 		signalCh <- syscall.SIGTERM
+		return
+	}))
+	apiRouter.Get("/v1/status/ping", api_v1.NewWrapper(func() (err error) {
 		return
 	}))
 

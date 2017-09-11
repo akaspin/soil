@@ -3,7 +3,7 @@ BIN		= soil
 
 BENCH	= .
 TESTS	= .
-TEST_TAGS = ""
+TEST_TAGS =
 
 CWD 		= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VENDOR 		= $(CWD)/vendor
@@ -57,6 +57,33 @@ clean-test:
 	rm -rf testdata/.vagrant
 
 ###
+### Integration
+###
+
+integration: \
+	integration-env-up-1 \
+	integration-env-up-2 \
+	integration-env-up-3
+	TEST_INTEGRATION=true go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
+
+integration-env-up-%: \
+		integration/testdata/.vagrant/machines/soil-integration-01/virtualbox/id \
+		dist/$(BIN)-$(V)-linux-amd64.tar.gz
+	HOST=172.17.8.10$* V=$(V) docker-compose -H 127.0.0.1:257$* -f integration/testdata/compose.yaml up -d --build
+
+integration/testdata/.vagrant/machines/soil-integration-01/virtualbox/id: testdata/Vagrantfile
+	cd integration/testdata && vagrant up
+
+integration-env-down:
+	docker-compose -H 127.0.0.1:2571 -f integration/testdata/compose.yaml down --rmi all
+	docker-compose -H 127.0.0.1:2572 -f integration/testdata/compose.yaml down --rmi all
+	docker-compose -H 127.0.0.1:2573 -f integration/testdata/compose.yaml down --rmi all
+
+clean-integration:
+	cd integration/testdata && vagrant destroy -f
+	rm -rf integration/testdata/.vagrant
+
+###
 ### Dist
 ###
 
@@ -106,7 +133,7 @@ uninstall:
 ### clean
 ###
 
-clean: clean-dist uninstall clean-test clean-docs
+clean: clean-dist uninstall clean-test clean-integration clean-docs
 
 ###
 ### docs
@@ -119,4 +146,8 @@ clean-docs:
 	rm -rf docs/_site
 
 
-.PHONY: docs test clean
+.PHONY: \
+	docs \
+	test test-verbose \
+	integration integration-verbose \
+	clean

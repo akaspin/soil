@@ -3,18 +3,31 @@ services:
   consul:
     image: "consul:0.9.3"
     network_mode: "host"
-    command:
-    - agent
-    - -dev
-    - -client
-    - 0.0.0.0
-    - -advertise
-    - ${HOST}
-#    - 172.17.8.101
+    command: [
+      "agent",
+      "-server",
+      "-client", "0.0.0.0",
+      "-advertise", "${HOST}",
+      "-bootstrap-expect", "3",
+      "-retry-join", "172.17.8.101",
+      "-retry-join", "172.17.8.102",
+      "-retry-join", "172.17.8.103",
+    ]
 
   soil:
     build:
       context: ../../
       dockerfile: integration/testdata/Dockerfile
       args:
-        V: ${V}
+        - V=${V}
+    volumes:
+      - /run/systemd/system:/run/systemd/system
+      - /etc/systemd/system:/etc/systemd/system
+      - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket
+    ports:
+      - "7654:7654"
+    command: [
+      "agent",
+      "--id", "${HOST}",
+    ]
+

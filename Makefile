@@ -4,6 +4,7 @@ BIN		= soil
 BENCH	= .
 TESTS	= .
 TEST_TAGS =
+TEST_ARGS =
 
 CWD 		= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 VENDOR 		= $(CWD)/vendor
@@ -18,16 +19,29 @@ GOOPTS=-installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
 GOBIN ?= $(GOPATH)/bin
 
 
-###
-### Test
-###
 
 sources: $(SRC) $(SRC_TEST)
 	go vet $(PACKAGES)
 	go fmt $(PACKAGES)
 
+###
+### Test
+###
 
-test: testdata/.vagrant/machines/soil-test/virtualbox/id
+test: test-unit test-systemd test-integration
+
+###
+### Test Unit
+###
+
+test-unit: $(SRC) $(SRC_TEST)
+	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)
+
+###
+### Test SystemD
+###
+
+test-systemd: testdata/systemd/.vagrant/machines/soil-test/virtualbox/id
 	docker -H 127.0.0.1:2475 run --rm --name=test \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
@@ -35,51 +49,41 @@ test: testdata/.vagrant/machines/soil-test/virtualbox/id
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.9 go test -run=$(TESTS) -p=1 -tags="test_unit test_systemd $(TEST_TAGS)" $(PACKAGES)
+		golang:1.9 go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
 
-test-verbose: testdata/.vagrant/machines/soil-test/virtualbox/id
-	docker -H 127.0.0.1:2475 run --rm --name=test \
-		-v /run/soil:/run/soil \
-		-v /var/lib/soil:/var/lib/soil \
-		-v /run/systemd/system:/run/systemd/system \
-		-v /etc/systemd/system:/etc/systemd/system \
-		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
-		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.9 go test -run=$(TESTS) -p=1 -v -tags="test_unit test_systemd $(TEST_TAGS)" $(PACKAGES)
+testdata/systemd/.vagrant/machines/soil-test/virtualbox/id: testdata/systemd/Vagrantfile
+	cd testdata/systemd && vagrant up
 
-testdata/.vagrant/machines/soil-test/virtualbox/id: testdata/Vagrantfile
-	cd testdata && vagrant up
-
-clean-test:
-	cd testdata && vagrant destroy -f
-	rm -rf testdata/.vagrant
+clean-test-systemd:
+	cd testdata/systemd && vagrant destroy -f
+	rm -rf testdata/systemd/.vagrant
 
 ###
-### Integration
+### Test Integration
 ###
 
-integration: \
-	integration-env-up-1 \
-	integration-env-up-2 \
-	integration-env-up-3
-	go test -run=$(TESTS) -p=1 -v -tags="test_integration $(TEST_TAGS)" $(PACKAGES)
+test-integration: \
+	test-integration-env-up-1 \
+	test-integration-env-up-2 \
+	test-integration-env-up-3
+	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_integration $(TEST_TAGS)" $(PACKAGES)
 
-integration-env-up-%: \
-		integration/testdata/.vagrant/machines/soil-integration-01/virtualbox/id \
+test-integration-env-up-%: \
+		testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id \
 		dist/$(BIN)-$(V)-linux-amd64.tar.gz
-	HOST=172.17.8.10$* V=$(V) docker-compose -H 127.0.0.1:257$* -f integration/testdata/compose.yaml up -d --build
+	HOST=172.17.8.10$* V=$(V) docker-compose -H 127.0.0.1:257$* -f testdata/integration/compose.yaml up -d --build
 
-integration/testdata/.vagrant/machines/soil-integration-01/virtualbox/id: testdata/Vagrantfile
-	cd integration/testdata && vagrant up
+testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id: testdata/integration/Vagrantfile
+	cd testdata/integration && vagrant up
 
 integration-env-down:
-	docker-compose -H 127.0.0.1:2571 -f integration/testdata/compose.yaml down --rmi all
-	docker-compose -H 127.0.0.1:2572 -f integration/testdata/compose.yaml down --rmi all
-	docker-compose -H 127.0.0.1:2573 -f integration/testdata/compose.yaml down --rmi all
+	docker-compose -H 127.0.0.1:2571 -f testdata/integration/compose.yaml down --rmi all
+	docker-compose -H 127.0.0.1:2572 -f testdata/integration/compose.yaml down --rmi all
+	docker-compose -H 127.0.0.1:2573 -f testdata/integration/compose.yaml down --rmi all
 
-clean-integration:
-	cd integration/testdata && vagrant destroy -f
-	rm -rf integration/testdata/.vagrant
+clean-test-integration:
+	cd testdata/integration && vagrant destroy -f
+	rm -rf testdata/integration/.vagrant
 
 ###
 ### Dist
@@ -131,7 +135,7 @@ uninstall:
 ### clean
 ###
 
-clean: clean-dist uninstall clean-test clean-integration clean-docs
+clean: clean-dist uninstall clean-test-systemd clean-test-integration clean-docs
 
 ###
 ### docs
@@ -146,6 +150,8 @@ clean-docs:
 
 .PHONY: \
 	docs \
-	test test-verbose \
-	integration integration-verbose \
+	test \
+	test-unit \
+	test-systemd \
+	test-integration \
 	clean

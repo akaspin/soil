@@ -17,7 +17,7 @@ services:
   soil:
     build:
       context: ../../
-      dockerfile: integration/testdata/Dockerfile
+      dockerfile: testdata/integration/Dockerfile
       args:
         - V=${V}
     volumes:

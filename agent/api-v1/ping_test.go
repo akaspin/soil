@@ -1,6 +1,6 @@
 // +build ide test_integration
 
-package integration_test
+package api_v1_test
 
 import (
 	"testing"

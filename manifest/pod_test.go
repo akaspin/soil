@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package manifest_test
 
 import (
@@ -8,7 +10,6 @@ import (
 )
 
 func TestManifest(t *testing.T) {
-
 	res, err := manifest.ParseFromFiles("private", "testdata/example-multi.hcl")
 	assert.NoError(t, err)
 

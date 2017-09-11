@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package source_test
 
 import (
@@ -12,6 +14,7 @@ import (
 )
 
 func TestMapMetadata(t *testing.T) {
+
 	a := source.NewMap(context.Background(), logx.GetLog("test"), "meta", true, manifest.Constraint{})
 	a.Open()
 	var changes int32

@@ -1,3 +1,5 @@
+// +build ide test_systemd
+
 package command_test
 
 import (
@@ -13,8 +15,6 @@ import (
 )
 
 func TestAgent_Run_Stop(t *testing.T) {
-	fixture.RunTestUnless(t, "TEST_INTEGRATION")
-	fixture.RunTestIf(t, "TEST_SYSTEMD")
 
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()

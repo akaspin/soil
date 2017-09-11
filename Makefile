@@ -29,25 +29,23 @@ sources: $(SRC) $(SRC_TEST)
 
 test: testdata/.vagrant/machines/soil-test/virtualbox/id
 	docker -H 127.0.0.1:2475 run --rm --name=test \
-		-e TEST_SYSTEMD=true \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.9 go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
+		golang:1.9 go test -run=$(TESTS) -p=1 -tags="test_unit test_systemd $(TEST_TAGS)" $(PACKAGES)
 
 test-verbose: testdata/.vagrant/machines/soil-test/virtualbox/id
 	docker -H 127.0.0.1:2475 run --rm --name=test \
-		-e TEST_SYSTEMD=true \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.9 go test -run=$(TESTS) -p=1 -v -tags="$(TEST_TAGS)" $(PACKAGES)
+		golang:1.9 go test -run=$(TESTS) -p=1 -v -tags="test_unit test_systemd $(TEST_TAGS)" $(PACKAGES)
 
 testdata/.vagrant/machines/soil-test/virtualbox/id: testdata/Vagrantfile
 	cd testdata && vagrant up
@@ -64,7 +62,7 @@ integration: \
 	integration-env-up-1 \
 	integration-env-up-2 \
 	integration-env-up-3
-	TEST_INTEGRATION=true go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
+	go test -run=$(TESTS) -p=1 -v -tags="test_integration $(TEST_TAGS)" $(PACKAGES)
 
 integration-env-up-%: \
 		integration/testdata/.vagrant/machines/soil-integration-01/virtualbox/id \

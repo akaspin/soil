@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package agent_test
 
 import (

@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package api_test
 
 import (
@@ -11,6 +13,7 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
+
 	log := logx.GetLog("test")
 	ctx := context.Background()
 

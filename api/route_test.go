@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package api_test
 
 import (
@@ -26,6 +28,7 @@ func (*route1) Process(ctx context.Context, u *url.URL, v interface{}) (res inte
 }
 
 func TestRouter_Bind(t *testing.T) {
+
 	log := logx.GetLog("test")
 	ctx := context.Background()
 

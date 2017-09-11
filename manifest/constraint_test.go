@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package manifest_test
 
 import (
@@ -7,6 +9,7 @@ import (
 )
 
 func TestConstraint_Check(t *testing.T) {
+
 	t.Run("equal", func(t *testing.T) {
 		constraint := manifest.Constraint{
 			"one,two": "${meta.field}",

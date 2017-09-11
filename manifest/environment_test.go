@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package manifest_test
 
 import (
@@ -7,6 +9,7 @@ import (
 )
 
 func TestExtractEnv(t *testing.T) {
+
 	t.Run("single", func(t *testing.T) {
 		res := manifest.ExtractEnv("${one.two}")
 		assert.Equal(t, []string{"one.two"}, res)

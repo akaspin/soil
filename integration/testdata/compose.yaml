@@ -1,0 +1,20 @@
+version: '3'
+services:
+  consul:
+    image: "consul:0.9.3"
+    network_mode: "host"
+    command:
+    - agent
+    - -dev
+    - -client
+    - 0.0.0.0
+    - -advertise
+    - ${HOST}
+#    - 172.17.8.101
+
+  soil:
+    build:
+      context: ../../
+      dockerfile: integration/testdata/Dockerfile
+      args:
+        V: ${V}

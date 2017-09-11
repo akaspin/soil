@@ -1,0 +1,36 @@
+$script = <<SCRIPT
+dnf -y install dnf-plugins-core
+dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
+dnf config-manager --set-enabled docker-ce-edge
+dnf makecache
+dnf -y install docker-ce
+mkdir -p /etc/systemd/system/docker.service.d
+cat > /etc/systemd/system/docker.service.d/host.conf <<-EOF
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H 0.0.0.0:2375 -H unix:///var/run/docker.sock
+EOF
+systemctl enable docker.service
+systemctl restart docker.service
+sudo usermod -aG docker vagrant
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = 'bento/fedora-26'
+  config.vbguest.auto_update = false
+  config.ssh.insert_key = false
+  config.ssh.forward_agent = true
+
+  config.vm.define node_name = 'soil-test' do |node|
+    node.vm.hostname = node_name
+    node.vm.provider :virtualbox do |vb, override|
+      vb.name = node_name
+      vb.gui = false
+      vb.memory = 1024
+      vb.cpus = 1
+      override.vm.synced_folder "../", "/vagrant"
+      override.vm.network "forwarded_port", guest: 2375, host: 2475, auto_correct: true
+      override.vm.provision "shell", inline: $script
+    end
+  end
+end

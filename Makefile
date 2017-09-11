@@ -27,8 +27,8 @@ sources: $(SRC) $(SRC_TEST)
 	go fmt $(PACKAGES)
 
 
-test:
-	docker -H 127.0.0.1:2375 run --rm --name=test \
+test: testdata/.vagrant/machines/soil-test/virtualbox/id
+	docker -H 127.0.0.1:2475 run --rm --name=test \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
@@ -37,8 +37,8 @@ test:
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.9 go test -run=$(TESTS) -p=1 -tags="$(TEST_TAGS)" $(PACKAGES)
 
-test-verbose:
-	docker -H 127.0.0.1:2375 run --rm --name=test \
+test-verbose: testdata/.vagrant/machines/soil-test/virtualbox/id
+	docker -H 127.0.0.1:2475 run --rm --name=test \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
@@ -46,6 +46,13 @@ test-verbose:
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.9 go test -run=$(TESTS) -p=1 -v -tags="$(TEST_TAGS)" $(PACKAGES)
+
+testdata/.vagrant/machines/soil-test/virtualbox/id: testdata/Vagrantfile
+	cd testdata && vagrant up
+
+clean-test:
+	cd testdata && vagrant destroy -f
+	rm -rf testdata/.vagrant
 
 ###
 ### Dist
@@ -73,6 +80,8 @@ dist/%/$(BIN)-debug: $(SRC) $(SRC_VENDOR)
 	@mkdir -p $(@D)
 	GOPATH=$(GOPATH) CGO_ENABLED=0 GOOS=$* go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
 
+clean-dist:
+	rm -rf dist
 
 ###
 ###	Install
@@ -92,17 +101,13 @@ $(GOBIN)/$(BIN)-debug: $(SRC)
 ### clean
 ###
 
-clean: clean-dist uninstall
+clean: clean-dist uninstall clean-test clean-docs
 
 uninstall:
 	rm -rf $(GOBIN)/$(BIN)
 	rm -rf $(GOBIN)/$(BIN)-debug
 
-clean-dist:
-	rm -rf dist
 
-clean-docs:
-	rm -rf docs/_site
 
 ###
 ### docs
@@ -110,6 +115,9 @@ clean-docs:
 
 docs:
 	docker run --rm -v $(CWD)/docs:/site -p 4000:4000 andredumas/github-pages serve --watch
+
+clean-docs:
+	rm -rf docs/_site
 
 
 .PHONY: docs test clean

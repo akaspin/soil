@@ -9,6 +9,9 @@ import (
 )
 
 func TestNewFromSystemD(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 2))

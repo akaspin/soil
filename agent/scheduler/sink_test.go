@@ -15,6 +15,9 @@ import (
 )
 
 func TestSink(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	pods := []*manifest.Pod{
 		{
 			Namespace: "private",

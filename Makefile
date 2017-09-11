@@ -29,6 +29,7 @@ sources: $(SRC) $(SRC_TEST)
 
 test: testdata/.vagrant/machines/soil-test/virtualbox/id
 	docker -H 127.0.0.1:2475 run --rm --name=test \
+		-e TEST_SYSTEMD=true \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
@@ -39,6 +40,7 @@ test: testdata/.vagrant/machines/soil-test/virtualbox/id
 
 test-verbose: testdata/.vagrant/machines/soil-test/virtualbox/id
 	docker -H 127.0.0.1:2475 run --rm --name=test \
+		-e TEST_SYSTEMD=true \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
 		-v /run/systemd/system:/run/systemd/system \
@@ -62,9 +64,6 @@ check-src: $(SRC) $(SRC_TEST)
 	go vet $(PACKAGES)
 	[[ -z `gofmt -d -s -e $^` ]]
 
-docker-image: dist/$(BIN)-$(V)-linux-amd64.tar.gz
-	docker build --build-arg V=$(V) -t soil-local:$(V) -f Dockerfile.local .
-
 dist: \
 	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \
 	dist/$(BIN)-$(V)-linux-amd64.tar.gz
@@ -79,6 +78,9 @@ dist/%/$(BIN): $(SRC) $(SRC_VENDOR)
 dist/%/$(BIN)-debug: $(SRC) $(SRC_VENDOR)
 	@mkdir -p $(@D)
 	GOPATH=$(GOPATH) CGO_ENABLED=0 GOOS=$* go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
+
+docker-image: dist/$(BIN)-$(V)-linux-amd64.tar.gz
+	docker build --build-arg V=$(V) -t soil-local:$(V) -f Dockerfile.local .
 
 clean-dist:
 	rm -rf dist
@@ -96,18 +98,15 @@ $(GOBIN)/$(BIN): $(SRC)
 $(GOBIN)/$(BIN)-debug: $(SRC)
 	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
 
+uninstall:
+	rm -rf $(GOBIN)/$(BIN)
+	rm -rf $(GOBIN)/$(BIN)-debug
 
 ###
 ### clean
 ###
 
 clean: clean-dist uninstall clean-test clean-docs
-
-uninstall:
-	rm -rf $(GOBIN)/$(BIN)
-	rm -rf $(GOBIN)/$(BIN)-debug
-
-
 
 ###
 ### docs

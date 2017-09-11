@@ -12,6 +12,9 @@ import (
 )
 
 func TestWantsInstruction_Execute(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 3))
@@ -39,6 +42,9 @@ func TestWantsInstruction_Execute(t *testing.T) {
 }
 
 func TestExecuteCommandInstruction_Execute(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 3))
@@ -91,6 +97,9 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 }
 
 func TestFSInstruction_Execute(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 3))

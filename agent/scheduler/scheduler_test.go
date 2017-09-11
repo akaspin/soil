@@ -15,6 +15,9 @@ import (
 )
 
 func TestNewScheduler(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 

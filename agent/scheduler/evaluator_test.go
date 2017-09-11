@@ -39,6 +39,9 @@ func assertUnits(names []string, states map[string]string) (err error) {
 }
 
 func TestNewEvaluator(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
 	assert.NoError(t, sd.DeployPod("test-1", 3))
@@ -84,6 +87,9 @@ func TestNewEvaluator(t *testing.T) {
 }
 
 func TestEvaluator_Submit(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	conn, err := dbus.New()
 	assert.NoError(t, err)
 	defer conn.Close()

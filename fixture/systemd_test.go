@@ -8,6 +8,9 @@ import (
 )
 
 func TestNewSystemd(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/var/run/systemd/system", "pod")
 	assert.NoError(t, sd.DeployPod("test-1", 1))
 	defer sd.Cleanup()
@@ -31,6 +34,9 @@ func TestNewSystemd(t *testing.T) {
 }
 
 func TestSystemd_Cleanup(t *testing.T) {
+	fixture.RunTestUnless(t, "TEST_INTEGRATION")
+	fixture.RunTestIf(t, "TEST_SYSTEMD")
+
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	assert.NoError(t, sd.DeployPod("test-1", 1))
 	assert.NoError(t, sd.DeployPod("test-2", 1))

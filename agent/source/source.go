@@ -14,8 +14,8 @@ type baseSource struct {
 func newBaseSource(ctx context.Context, log *logx.Log, prefix string, namespaces []string, mark bool) (s *baseSource) {
 	s = &baseSource{
 		BaseProducer: NewBaseProducer(ctx, log, prefix),
-		namespaces:  namespaces,
-		mark:        mark,
+		namespaces:   namespaces,
+		mark:         mark,
 	}
 	return
 }

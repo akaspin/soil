@@ -1,11 +1,11 @@
 package source
 
 import (
-	"github.com/akaspin/supervisor"
+	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
+	"github.com/akaspin/supervisor"
 	"sync"
-	"context"
 )
 
 type BaseProducer struct {
@@ -14,19 +14,19 @@ type BaseProducer struct {
 
 	prefix string
 
-	mu *sync.Mutex
+	mu        *sync.Mutex
 	consumers []agent.SourceConsumer
-	data map[string]string
-	active bool
+	data      map[string]string
+	active    bool
 }
 
 func NewBaseProducer(ctx context.Context, log *logx.Log, prefix string) (p *BaseProducer) {
 	p = &BaseProducer{
 		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("producer", prefix),
-		prefix: prefix,
-		mu: &sync.Mutex{},
-		data: map[string]string{},
+		log:     log.GetLog("producer", prefix),
+		prefix:  prefix,
+		mu:      &sync.Mutex{},
+		data:    map[string]string{},
 	}
 	return
 }
@@ -72,6 +72,7 @@ func (p *BaseProducer) Delete(active bool, keys ...string) {
 }
 
 func (p *BaseProducer) notify() {
+	p.log.Debugf("syncing with %d consumers", len(p.consumers))
 	for _, consumer := range p.consumers {
 		consumer.Sync(p.prefix, p.active, p.data)
 	}

@@ -11,7 +11,7 @@ import (
 
 func TestNewSystemd(t *testing.T) {
 
-	sd := fixture.NewSystemd("/var/run/systemd/system", "pod")
+	sd := fixture.NewSystemd("/var/run/systemd/system", "pod-unknown")
 	assert.NoError(t, sd.DeployPod("test-1", 1))
 	defer sd.Cleanup()
 
@@ -35,15 +35,15 @@ func TestNewSystemd(t *testing.T) {
 
 func TestSystemd_Cleanup(t *testing.T) {
 
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
+	sd := fixture.NewSystemd("/run/systemd/system", "pod-cleanup")
 	assert.NoError(t, sd.DeployPod("test-1", 1))
 	assert.NoError(t, sd.DeployPod("test-2", 1))
 
 	pods, err := sd.ListPods()
 	assert.NoError(t, err)
 	assert.Equal(t, map[string]string{
-		"test-1": "/run/systemd/system/pod-test-1.service",
-		"test-2": "/run/systemd/system/pod-test-2.service",
+		"test-1": "/run/systemd/system/pod-cleanup-test-1.service",
+		"test-2": "/run/systemd/system/pod-cleanup-test-2.service",
 	}, pods)
 
 	assert.NoError(t, sd.Cleanup())

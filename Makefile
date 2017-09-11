@@ -32,10 +32,14 @@ test: test-unit test-systemd test-integration
 
 ###
 ### Test Unit
+### use TEST_TAGS=test_cluster to run cluster tests
 ###
 
 test-unit: $(SRC) $(SRC_TEST)
 	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)
+
+clean-test-unit:
+	find . -name .consul_data_* -type d -exec rm -rf {} +
 
 ###
 ### Test SystemD
@@ -71,7 +75,7 @@ test-integration: \
 test-integration-env-up-%: \
 		testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id \
 		dist/$(BIN)-$(V)-linux-amd64.tar.gz
-	HOST=172.17.8.10$* V=$(V) docker-compose -H 127.0.0.1:257$* -f testdata/integration/compose.yaml up -d --build
+	HOST=172.17.8.10$* AGENT_ID=node-$* V=$(V) docker-compose -H 127.0.0.1:257$* -f testdata/integration/compose.yaml up -d --build
 
 testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id: testdata/integration/Vagrantfile
 	cd testdata/integration && vagrant up
@@ -135,7 +139,7 @@ uninstall:
 ### clean
 ###
 
-clean: clean-dist uninstall clean-test-systemd clean-test-integration clean-docs
+clean: clean-dist uninstall clean-test-unit clean-test-systemd clean-test-integration clean-docs
 
 ###
 ### docs

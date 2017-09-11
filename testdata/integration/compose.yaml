@@ -28,6 +28,6 @@ services:
       - "7654:7654"
     command: [
       "agent",
-      "--id", "${HOST}",
+      "--id", "${AGENT_ID}",
     ]
 

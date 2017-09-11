@@ -10,7 +10,6 @@ type Scheduler interface {
 	Sync(namespace string, pods []*manifest.Pod) (err error)
 }
 
-
 type Configurable interface {
 	Set(v map[string]string, replace bool) (err error)
 	Delete(keys ...string) (err error)

@@ -85,8 +85,8 @@ func TestNewEvaluator(t *testing.T) {
 	assert.Equal(t, cons.count, 1)
 	assert.Equal(t, cons.res, map[string]string{
 		"test-2.failures":  "[]",
-		"test-1.present":           "true",
-		"test-2.present":           "true",
+		"test-1.present":   "true",
+		"test-2.present":   "true",
 		"test-2.namespace": "private",
 		"test-1.namespace": "private",
 		"test-1.failures":  "[]",
@@ -182,7 +182,7 @@ WantedBy=default.target
 		assert.Equal(t, cons.res, map[string]string{
 			"pod-1.namespace": "private",
 			"pod-1.failures":  "[]",
-			"pod-1.present":           "true",
+			"pod-1.present":   "true",
 			"pod-1.units":     "unit-1.service",
 		})
 	})
@@ -207,7 +207,7 @@ WantedBy=default.target
 		assert.Equal(t, cons.res, map[string]string{
 			"pod-1.namespace": "private",
 			"pod-1.failures":  "[]",
-			"pod-1.present":           "true",
+			"pod-1.present":   "true",
 			"pod-1.units":     "unit-1.service",
 		})
 	})

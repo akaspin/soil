@@ -1,6 +1,5 @@
 package agent
 
-
 type Source interface {
 	SourceProducer
 

@@ -10,6 +10,10 @@
 * status -> allocation
 * status.<pod> = present -> allocation.<prod>.present = true
 
+### Clustering
+
+* Initial implementation
+
 ## 0.2.3 (13.09.2017)
 
 ### Agent

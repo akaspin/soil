@@ -20,4 +20,3 @@ func NewPlain(ctx context.Context, log *logx.Log, name string, mark bool) (s *Pl
 func (s *Plain) Configure(v map[string]string) {
 	s.Store(true, v)
 }
-

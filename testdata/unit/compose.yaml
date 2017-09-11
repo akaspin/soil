@@ -1,0 +1,9 @@
+version: '3'
+services:
+  soil_unit:
+    build:
+      context: ../../
+      dockerfile: testdata/unit/Dockerfile
+    command: go test -run=${TESTS} -p=1 ${TEST_ARGS} -tags="test_cluster ${TEST_TAGS}" ${PACKAGES}
+    volumes:
+      - '../../:/go/src/github.com/akaspin/soil'

@@ -83,10 +83,12 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	evaluator := scheduler.NewEvaluator(ctx, log)
 
 	source1 := source.NewPlain(ctx, log, "meta", true)
 	source2 := source.NewPlain(ctx, log, "agent", true)
+	allocSrc := source.NewAllocation(ctx, log)
+
+	evaluator := scheduler.NewEvaluator(ctx, log, allocSrc)
 
 	// Both map arbiters must be pre initialised
 	source1.Configure(map[string]string{
@@ -98,7 +100,7 @@ WantedBy=default.target
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
-	manager := scheduler.NewArbiter(ctx, log, source1, source2)
+	manager := scheduler.NewArbiter(ctx, log, source1, source2, allocSrc)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
 
 	sv := supervisor.NewChain(ctx,

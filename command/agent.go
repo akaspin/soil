@@ -63,7 +63,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	// sources
 	c.agentSource = source.NewPlain(ctx, c.log, "agent", true)
 	c.metaSource = source.NewPlain(ctx, c.log, "meta", true)
-	statusSource := source.NewStatus(ctx, c.log)
+	statusSource := source.NewAllocation(ctx, c.log)
 	sourceSv := supervisor.NewGroup(ctx,
 		c.agentSource,
 		c.metaSource,

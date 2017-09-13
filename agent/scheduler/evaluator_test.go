@@ -70,7 +70,7 @@ func TestNewEvaluator(t *testing.T) {
 	assert.NoError(t, sd.DeployPod("test-2", 3))
 
 	ctx := context.Background()
-	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
+	statusReporter := source.NewAllocation(ctx, logx.GetLog("test"))
 	evaluator := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 
 	cons := newDummyConsumer()
@@ -105,7 +105,7 @@ func TestEvaluator_Submit(t *testing.T) {
 	defer sd.Cleanup()
 
 	ctx := context.Background()
-	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
+	statusReporter := source.NewAllocation(ctx, logx.GetLog("test"))
 	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 
 	cons := newDummyConsumer()

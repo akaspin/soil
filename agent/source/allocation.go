@@ -9,19 +9,14 @@ import (
 	"sync"
 )
 
-// Allocations accepts reports from executor and provides
-//
-//     <pod> = present
-//     <pod>.failures = [<failure>,failure..]
-//     <pod>.namespace = private | public
-//
+// Allocations accepts reports from executor
 type Allocations struct {
 	*baseSource
 	dataMu   *sync.Mutex
 	podsData map[string]string
 }
 
-func NewStatus(ctx context.Context, log *logx.Log) (s *Allocations) {
+func NewAllocation(ctx context.Context, log *logx.Log) (s *Allocations) {
 	s = &Allocations{
 		baseSource: newBaseSource(ctx, log, "allocation", []string{"private", "public"}, false),
 		dataMu:     &sync.Mutex{},

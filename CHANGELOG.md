@@ -1,9 +1,14 @@
 ## 0.2.4
 
-## API
+### API
 
 * /v1/agent/drain (PUT, DELETE)
-* /v1/status/drain (PUT, DELETE)
+* /v1/status/drain (GET)
+
+### Agent
+
+* status -> allocation
+* status.<pod> = present -> allocation.<prod>.present = true
 
 ## 0.2.3 (13.09.2017)
 

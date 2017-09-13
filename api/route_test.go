@@ -14,13 +14,13 @@ import (
 	"time"
 )
 
-type route1 struct{}
+type jsonEndpoint struct{}
 
-func (r *route1) Empty() interface{} {
+func (r *jsonEndpoint) Empty() interface{} {
 	return nil
 }
 
-func (*route1) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
+func (*jsonEndpoint) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	res = map[string]interface{}{
 		"url":    u.Path,
 		"params": u.Query(),
@@ -34,8 +34,8 @@ func TestRouter_Bind(t *testing.T) {
 	ctx := context.Background()
 
 	router := api.NewRouter()
-	router.Get("/v1/route", &route1{})
-	router.Get("/v1/route/", &route1{})
+	router.Get("/v1/route", &jsonEndpoint{})
+	router.Get("/v1/route/", &jsonEndpoint{})
 
 	mux := http.NewServeMux()
 	router.Bind(ctx, log, mux)

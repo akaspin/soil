@@ -19,3 +19,13 @@ Equivalent to `SIGHUP` signal. Reloads Agent.
 #### `GET /v1/agent/stop`
 
 Equivalent to `SIGTERM` signal. Stops Agent.
+
+## Drain
+
+#### `PUT /v1/agent/drain`
+
+Puts Agent in drain state.
+
+#### `DELETE /v1/agent/drain`
+
+Removes drain state from Agent.

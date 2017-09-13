@@ -70,7 +70,7 @@ func (c *Agent) Run(args ...string) (err error) {
 		statusSource,
 	)
 
-	sink, schedulerSv := scheduler.New(
+	sink, arbiter, schedulerSv := scheduler.New(
 		ctx, c.log,
 		[]agent.Source{c.agentSource, c.metaSource, statusSource},
 		[]agent.EvaluationReporter{statusSource},
@@ -94,6 +94,11 @@ func (c *Agent) Run(args ...string) (err error) {
 	apiRouter.Get("/v1/status/ping", api_v1.NewWrapper(func() (err error) {
 		return
 	}))
+
+	// drain
+	apiRouter.Get("/v1/status/drain", api_v1.NewDrainGetEndpoint(c.Id, arbiter.DrainState))
+	apiRouter.Put("/v1/agent/drain", api_v1.NewDrainPutEndpoint(arbiter.Drain))
+	apiRouter.Delete("/v1/agent/drain", api_v1.NewDrainDeleteEndpoint(arbiter.Drain))
 
 	apiServer := api.NewServer(ctx, c.log, c.Address, apiRouter)
 

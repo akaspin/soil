@@ -92,6 +92,12 @@ func (a *Arbiter) Drain(state bool) {
 	a.evaluate()
 }
 
+func (a *Arbiter) DrainState() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.drain
+}
+
 // Sync takes data from one of producers and evaluates all cached data
 func (a *Arbiter) Sync(source string, active bool, data map[string]string) {
 	a.log.Debugf("got callback from source %s (active:%t) %v", source, active, data)

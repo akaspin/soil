@@ -18,8 +18,8 @@ func TestNewServer(t *testing.T) {
 	ctx := context.Background()
 
 	router := api.NewRouter()
-	router.Get("/v1/route", &route1{})
-	router.Get("/v1/route/", &route1{})
+	router.Get("/v1/route", &jsonEndpoint{})
+	router.Get("/v1/route/", &jsonEndpoint{})
 
 	server := api.NewServer(ctx, log, ":3333", router)
 	assert.NoError(t, server.Open())

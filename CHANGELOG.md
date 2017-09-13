@@ -1,3 +1,10 @@
+## 0.2.4
+
+## API
+
+* /v1/agent/drain (PUT, DELETE)
+* /v1/status/drain (PUT, DELETE)
+
 ## 0.2.3 (13.09.2017)
 
 ### Agent

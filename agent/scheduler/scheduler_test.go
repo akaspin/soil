@@ -28,7 +28,7 @@ func TestNewScheduler(t *testing.T) {
 		metaSource := source.NewPlain(ctx, log, "meta", true)
 		sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
-		sink, schedulerSV := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
+		sink, _, schedulerSV := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
 		sv := supervisor.NewChain(ctx, sourceSV, schedulerSV)
 
 		assert.NoError(t, sv.Open())
@@ -69,7 +69,7 @@ func TestNewScheduler(t *testing.T) {
 	agentSource := source.NewPlain(ctx, log, "agent", true)
 	metaSource := source.NewPlain(ctx, log, "meta", true)
 	sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
-	sink, schedulerSv := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
+	sink, _, schedulerSv := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
 	sv := supervisor.NewChain(ctx, sourceSV, schedulerSv)
 	// premature init arbiters
 	assert.NoError(t, sv.Open())

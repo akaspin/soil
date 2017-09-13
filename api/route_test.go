@@ -4,6 +4,7 @@ package api_test
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/api"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,6 @@ import (
 	"net/url"
 	"testing"
 	"time"
-	"encoding/json"
 )
 
 type route1 struct{}
@@ -22,7 +22,7 @@ func (r *route1) Empty() interface{} {
 
 func (*route1) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	res = map[string]interface{}{
-		"url": u.Path,
+		"url":    u.Path,
 		"params": u.Query(),
 	}
 	return
@@ -52,8 +52,8 @@ func TestRouter_Bind(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, jsonResp, map[string]interface{}{
 		"url": "/v1/route/1",
-		"params": map[string]interface {}{
-			"param":[]interface {}{"test"},
+		"params": map[string]interface{}{
+			"param": []interface{}{"test"},
 		},
 	})
 }

@@ -41,7 +41,6 @@ func (s *Status) Notify() {
 	s.callback(s.name, s.active, s.data)
 }
 
-
 func (s *Status) Sync(pods []*allocation.Pod) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

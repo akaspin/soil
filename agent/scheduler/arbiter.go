@@ -115,7 +115,6 @@ func (a *Arbiter) evaluate() {
 	// inactive namespaces
 	inactive := map[string]struct{}{}
 
-
 	marked := map[string]string{}
 	all := map[string]string{}
 

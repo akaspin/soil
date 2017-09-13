@@ -1,3 +1,10 @@
+## 0.2.3 (13.09.2017)
+
+### Agent
+
+* Use strict drain state
+* Remove loud fields from pod status 
+
 ## 0.2.2 (11.09.2017)
 
 ### Test

@@ -6,26 +6,19 @@ import (
 )
 
 type Scheduler interface {
-	// SyncNamespace internal state with given manifests
+	// Sync specific namespace with given manifests
 	Sync(namespace string, pods []*manifest.Pod) (err error)
 }
 
 type Source interface {
-	Name() string
+	SourceProducer
 
+	// pod namespaces managed by source
 	Namespaces() []string
 
+	// Is data used only in constraint or
+	// available for interpolation
 	Mark() bool
-
-	Required() manifest.Constraint
-
-	// Bind consumer. Source source will call callback on
-	// change states.
-	Register(callback func(active bool, env map[string]string))
-
-	SubmitPod(name string, constraints manifest.Constraint)
-
-	RemovePod(name string)
 }
 
 type Configurable interface {

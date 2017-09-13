@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
@@ -43,8 +42,8 @@ type Agent struct {
 	privatePods []*manifest.Pod
 
 	log             *logx.Log
-	agentSource     *source.Map
-	metaSource      *source.Map
+	agentSource     *source.Plain
+	metaSource      *source.Plain
 	privateRegistry *registry.Private
 }
 
@@ -62,10 +61,8 @@ func (c *Agent) Run(args ...string) (err error) {
 	ctx := context.Background()
 
 	// sources
-	c.agentSource = source.NewMap(ctx, c.log, "agent", true, manifest.Constraint{
-		"${agent.drain}": "false",
-	})
-	c.metaSource = source.NewMap(ctx, c.log, "meta", true, manifest.Constraint{})
+	c.agentSource = source.NewPlain(ctx, c.log, "agent", true)
+	c.metaSource = source.NewPlain(ctx, c.log, "meta", true)
 	statusSource := source.NewStatus(ctx, c.log)
 	sourceSv := supervisor.NewGroup(ctx,
 		c.agentSource,
@@ -164,7 +161,6 @@ func (c *Agent) readPrivatePods() {
 func (c *Agent) configureArbiters() {
 	c.agentSource.Set(map[string]string{
 		"id":       c.Id,
-		"drain":    fmt.Sprintf("%t", c.config.Drain),
 		"pod_exec": c.config.Exec,
 	}, true)
 	c.metaSource.Set(c.config.Meta, true)

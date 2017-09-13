@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/manifest"
@@ -17,6 +18,7 @@ type Arbiter struct {
 	log *logx.Log
 
 	mu      *sync.Mutex
+	drain   bool
 	sources map[string]*Source
 	managed map[string]*ManagedPod
 }
@@ -24,13 +26,14 @@ type Arbiter struct {
 func NewArbiter(ctx context.Context, log *logx.Log, sources ...agent.Source) (a *Arbiter) {
 	a = &Arbiter{
 		Control: supervisor.NewControl(ctx),
-		log:     log.GetLog("manager"),
+		log:     log.GetLog("arbiter"),
 		mu:      &sync.Mutex{},
+		drain:   false,
 		sources: map[string]*Source{},
 		managed: map[string]*ManagedPod{},
 	}
 	for _, s := range sources {
-		a.sources[s.Name()] = &Source{
+		a.sources[s.Prefix()] = &Source{
 			source: s,
 			cache:  map[string]string{},
 		}
@@ -40,10 +43,7 @@ func NewArbiter(ctx context.Context, log *logx.Log, sources ...agent.Source) (a 
 
 func (a *Arbiter) Open() (err error) {
 	for _, s := range a.sources {
-		n := s.source.Name()
-		s.source.Register(func(active bool, env map[string]string) {
-			a.onCallback(n, active, env)
-		})
+		s.source.RegisterConsumer("arbiter", a)
 	}
 	err = a.Control.Open()
 	return
@@ -63,10 +63,12 @@ func (a *Arbiter) addPod(name string, pod *manifest.Pod, fn managerCallback) {
 		Pod: pod,
 		Fn:  fn,
 	}
+	a.evaluate()
 	a.mu.Unlock()
+
 	for _, source := range a.sources {
-		source.source.SubmitPod(name, pod.Constraint)
-		a.log.Debugf("%s is registered on %s with %v", name, source.source.Name(), pod.Constraint)
+		source.source.Notify()
+		a.log.Debugf("%s is registered on %s with %v", name, source.source.Prefix(), pod.Constraint)
 	}
 }
 
@@ -75,43 +77,67 @@ func (a *Arbiter) removePod(name string, fn managerCallback) {
 	delete(a.managed, name)
 	a.mu.Unlock()
 	for _, a := range a.sources {
-		a.source.RemovePod(name)
+		a.source.Notify()
 	}
 	fn(nil, nil, 0)
-	a.log.Debugf("remove %s", name)
+	a.log.Debugf("removed %s", name)
 }
 
-func (a *Arbiter) onCallback(source string, active bool, env map[string]string) {
-	a.log.Debugf("got callback from source %s (inProgress:%t) %v", source, active, env)
+// Drain modifies arbiter drain constraint
+func (a *Arbiter) Drain(state bool) {
+	a.log.Infof("received drain request %v", state)
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.drain = state
+	a.evaluate()
+}
+
+// Sync takes data from one of producers and evaluates all cached data
+func (a *Arbiter) Sync(source string, active bool, data map[string]string) {
+	a.log.Debugf("got callback from source %s (active:%t) %v", source, active, data)
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
-	a.sources[source].cache = env
+	// update data in cache
+	a.sources[source].cache = data
 	a.sources[source].active = active
 
+	// not active - do nothing
 	if !active {
 		return
 	}
+	a.evaluate()
+}
 
-	// get data
-	required := map[string][]manifest.Constraint{}
+func (a *Arbiter) evaluate() {
+
+	// inactive namespaces
 	inactive := map[string]struct{}{}
+
+
 	marked := map[string]string{}
 	all := map[string]string{}
 
-	for _, s := range a.sources {
+	if a.drain {
+		// disable all pods if agent in drain state
+		drainErr := errors.New("agent in drain state")
+		for n, managed := range a.managed {
+			a.log.Debugf("notify %s about agent in drain state", n)
+			managed.Fn(drainErr, marked, 0)
+		}
+		return
+	}
+
+	for sourcePrefix, s := range a.sources {
 		if s.active {
-			// add fields if inProgress
+			// add fields if active
 			for k, v := range s.cache {
-				key := s.source.Name() + "." + k
+				key := sourcePrefix + "." + k
 				all[key] = v
 				if s.source.Mark() {
 					marked[key] = v
 				}
-			}
-			for _, ns := range s.source.Namespaces() {
-				required[ns] = append(required[ns], s.source.Required())
 			}
 			continue
 		}
@@ -123,13 +149,7 @@ func (a *Arbiter) onCallback(source string, active bool, env map[string]string) 
 	mark, _ := hashstructure.Hash(marked, nil)
 	for n, managed := range a.managed {
 		if _, ok := inactive[managed.Pod.Namespace]; !ok {
-			var checkErr error
-		CONSTRAINT:
-			for _, constraint := range append(required[managed.Pod.Namespace], managed.Pod.Constraint) {
-				if checkErr = constraint.Check(all); checkErr != nil {
-					break CONSTRAINT
-				}
-			}
+			var checkErr error = managed.Pod.Constraint.Check(all)
 			a.log.Debugf("notify %s %v %v", n, checkErr, all)
 			managed.Fn(checkErr, marked, mark)
 		}

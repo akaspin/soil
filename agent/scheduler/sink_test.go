@@ -83,10 +83,10 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	executor := scheduler.NewEvaluator(ctx, log)
+	evaluator := scheduler.NewEvaluator(ctx, log)
 
-	arbiter1 := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
-	arbiter2 := source.NewMap(ctx, log, "agent", true, manifest.Constraint{})
+	arbiter1 := source.NewPlain(ctx, log, "meta", true)
+	arbiter2 := source.NewPlain(ctx, log, "agent", true)
 
 	// Both map arbiters must be pre initialised
 	arbiter1.Set(map[string]string{
@@ -99,14 +99,14 @@ WantedBy=default.target
 	}, true)
 
 	manager := scheduler.NewArbiter(ctx, log, arbiter1, arbiter2)
-	sink := scheduler.NewSink(ctx, logx.GetLog("test"), executor, manager)
+	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
 
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,
 			supervisor.NewGroup(ctx, arbiter1, arbiter2),
 			manager,
 		),
-		executor,
+		evaluator,
 		sink,
 	)
 	assert.NoError(t, sv.Open())
@@ -122,7 +122,7 @@ WantedBy=default.target
 				AgentMark: 17231133757460468042,
 				Namespace: "private",
 			},
-		}, executor.List())
+		}, evaluator.List())
 		time.Sleep(time.Second)
 	})
 	t.Run("enable pod-3", func(t *testing.T) {
@@ -145,7 +145,7 @@ WantedBy=default.target
 				AgentMark: 14562539397153910086,
 				Namespace: "private",
 			},
-		}, executor.List())
+		}, evaluator.List())
 		time.Sleep(time.Second)
 	})
 

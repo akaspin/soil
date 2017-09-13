@@ -3,11 +3,11 @@
 package allocation_test
 
 import (
+	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/fixture"
+	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"github.com/akaspin/soil/fixture"
-	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/manifest"
 )
 
 func TestNewFromSystemD(t *testing.T) {
@@ -78,4 +78,3 @@ WantedBy=multi-user.target
 		},
 	}, alloc)
 }
-

@@ -19,8 +19,8 @@ func TestArbiter(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
-	a2 := source.NewMap(ctx, log, "with.dot", false, manifest.Constraint{})
+	a1 := source.NewPlain(ctx, log, "meta", true)
+	a2 := source.NewPlain(ctx, log, "with.dot", false)
 
 	man := scheduler.NewArbiter(ctx, log, a1, a2)
 	sv := supervisor.NewChain(ctx, a1, man)
@@ -57,6 +57,18 @@ func TestArbiter(t *testing.T) {
 		man.Register("second", privatePods[1], func(reason error, env map[string]string, mark uint64) {
 			handler("second", reason, env)
 		})
+		time.Sleep(time.Millisecond * 100)
+		assert.NoError(t, res["first"])
+		assert.NoError(t, res["second"])
+	})
+	t.Run("drain on", func(t *testing.T) {
+		man.Drain(true)
+		time.Sleep(time.Millisecond * 100)
+		assert.Error(t, res["first"])
+		assert.Error(t, res["second"])
+	})
+	t.Run("drain off", func(t *testing.T) {
+		man.Drain(false)
 		time.Sleep(time.Millisecond * 100)
 		assert.NoError(t, res["first"])
 		assert.NoError(t, res["second"])

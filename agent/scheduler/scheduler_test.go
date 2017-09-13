@@ -24,10 +24,8 @@ func TestNewScheduler(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentSource := source.NewMap(ctx, log, "agent", true, manifest.Constraint{
-			"${agent.drain}": "false",
-		})
-		metaSource := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
+		agentSource := source.NewPlain(ctx, log, "agent", true)
+		metaSource := source.NewPlain(ctx, log, "meta", true)
 		sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
 		sink, schedulerSV := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
@@ -68,8 +66,8 @@ func TestNewScheduler(t *testing.T) {
 
 	// create new arbiter
 
-	agentSource := source.NewMap(ctx, log, "agent", true, manifest.Constraint{})
-	metaSource := source.NewMap(ctx, log, "meta", true, manifest.Constraint{})
+	agentSource := source.NewPlain(ctx, log, "agent", true)
+	metaSource := source.NewPlain(ctx, log, "meta", true)
 	sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 	sink, schedulerSv := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
 	sv := supervisor.NewChain(ctx, sourceSV, schedulerSv)

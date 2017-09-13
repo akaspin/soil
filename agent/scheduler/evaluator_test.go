@@ -40,6 +40,29 @@ func assertUnits(names []string, states map[string]string) (err error) {
 	return
 }
 
+type dummyConsumer struct {
+	mu    *sync.Mutex
+	count int
+	res   map[string]string
+}
+
+func newDummyConsumer() (c *dummyConsumer) {
+	c = &dummyConsumer{
+		mu:  &sync.Mutex{},
+		res: map[string]string{},
+	}
+	return
+}
+
+func (c *dummyConsumer) Sync(producer string, active bool, data map[string]string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if active {
+		c.count++
+	}
+	c.res = data
+}
+
 func TestNewEvaluator(t *testing.T) {
 	sd := fixture.NewSystemd("/run/systemd/system", "pod")
 	defer sd.Cleanup()
@@ -48,40 +71,27 @@ func TestNewEvaluator(t *testing.T) {
 
 	ctx := context.Background()
 	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
-	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
+	evaluator := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 
-	res := map[string]string{}
-	var count int
-	mu := &sync.Mutex{}
-	callback := func(active bool, v map[string]string) {
-		mu.Lock()
-		defer mu.Unlock()
-		if active {
-			count++
-		}
-		res = v
-	}
-	sv := supervisor.NewChain(ctx, statusReporter, ex)
+	cons := newDummyConsumer()
+
+	sv := supervisor.NewChain(ctx, statusReporter, evaluator)
 	assert.NoError(t, sv.Open())
 	time.Sleep(time.Second)
-	statusReporter.Register(callback)
+	statusReporter.RegisterConsumer("test", cons)
 	time.Sleep(time.Second)
 	assert.NoError(t, sv.Close())
 	assert.NoError(t, sv.Wait())
-	assert.Equal(t, count, 1)
-	assert.Equal(t, res, map[string]string{
-		"test-2.mark":       "123",
-		"test-2.agent_mark": "456",
-		"test-2.failures":   "[]",
-		"test-1":            "present",
-		"test-2":            "present",
-		"test-2.namespace":  "private",
-		"test-1.namespace":  "private",
-		"test-1.mark":       "123",
-		"test-1.agent_mark": "456",
-		"test-1.failures":   "[]",
-		"test-2.units":      "test-2-0.service,test-2-1.service,test-2-2.service",
-		"test-1.units":      "test-1-0.service,test-1-1.service,test-1-2.service",
+	assert.Equal(t, cons.count, 1)
+	assert.Equal(t, cons.res, map[string]string{
+		"test-2.failures":  "[]",
+		"test-1":           "present",
+		"test-2":           "present",
+		"test-2.namespace": "private",
+		"test-1.namespace": "private",
+		"test-1.failures":  "[]",
+		"test-2.units":     "test-2-0.service,test-2-1.service,test-2-2.service",
+		"test-1.units":     "test-1-0.service,test-1-1.service,test-1-2.service",
 	})
 }
 
@@ -97,25 +107,16 @@ func TestEvaluator_Submit(t *testing.T) {
 	ctx := context.Background()
 	statusReporter := source.NewStatus(ctx, logx.GetLog("test"))
 	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
-	res := map[string]string{}
-	var count int
-	mu := &sync.Mutex{}
-	callback := func(active bool, v map[string]string) {
-		mu.Lock()
-		defer mu.Unlock()
-		if active {
-			count++
-		}
-		res = v
-	}
+
+	cons := newDummyConsumer()
 
 	sv := supervisor.NewChain(ctx, statusReporter, ex)
 	assert.NoError(t, sv.Open())
-	statusReporter.Register(callback)
+	statusReporter.RegisterConsumer("test", cons)
 
 	time.Sleep(time.Second)
-	assert.Equal(t, count, 1)
-	assert.Equal(t, res, map[string]string{})
+	assert.Equal(t, cons.count, 1)
+	assert.Equal(t, cons.res, map[string]string{})
 
 	t.Run("create pod-1", func(t *testing.T) {
 		alloc := &allocation.Pod{
@@ -177,14 +178,12 @@ WantedBy=default.target
 				AgentMark: 0,
 			},
 		}, ex.List())
-		assert.Equal(t, count, 2)
-		assert.Equal(t, res, map[string]string{
-			"pod-1.namespace":  "private",
-			"pod-1.mark":       "1",
-			"pod-1.agent_mark": "0",
-			"pod-1.failures":   "[]",
-			"pod-1":            "present",
-			"pod-1.units":      "unit-1.service",
+		assert.Equal(t, cons.count, 2)
+		assert.Equal(t, cons.res, map[string]string{
+			"pod-1.namespace": "private",
+			"pod-1.failures":  "[]",
+			"pod-1":           "present",
+			"pod-1.units":     "unit-1.service",
 		})
 	})
 	t.Run("destroy non-existent", func(t *testing.T) {
@@ -204,14 +203,12 @@ WantedBy=default.target
 				AgentMark: 0,
 			},
 		}, ex.List())
-		assert.Equal(t, count, 2)
-		assert.Equal(t, res, map[string]string{
-			"pod-1.namespace":  "private",
-			"pod-1.mark":       "1",
-			"pod-1.agent_mark": "0",
-			"pod-1.failures":   "[]",
-			"pod-1":            "present",
-			"pod-1.units":      "unit-1.service",
+		assert.Equal(t, cons.count, 2)
+		assert.Equal(t, cons.res, map[string]string{
+			"pod-1.namespace": "private",
+			"pod-1.failures":  "[]",
+			"pod-1":           "present",
+			"pod-1.units":     "unit-1.service",
 		})
 	})
 	t.Run("destroy pod-1", func(t *testing.T) {
@@ -221,8 +218,8 @@ WantedBy=default.target
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{}))
 		assert.Equal(t, map[string]*allocation.Header{}, ex.List())
-		assert.Equal(t, count, 3)
-		assert.Equal(t, res, map[string]string{})
+		assert.Equal(t, cons.count, 3)
+		assert.Equal(t, cons.res, map[string]string{})
 	})
 
 	//

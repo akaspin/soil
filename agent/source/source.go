@@ -14,7 +14,7 @@ type baseSource struct {
 	namespaces []string
 	mark       bool
 
-	callback func(bool, map[string]string)
+	callback func(string, bool, map[string]string)
 	active   bool
 	mu       *sync.Mutex
 }
@@ -26,13 +26,13 @@ func newBaseSource(ctx context.Context, log *logx.Log, name string, namespaces [
 		name:       name,
 		namespaces: namespaces,
 		mark:       mark,
-		callback:   func(bool, map[string]string) {},
+		callback:   func(string, bool, map[string]string) {},
 		mu:         &sync.Mutex{},
 	}
 	return
 }
 
-func (s *baseSource) Name() string {
+func (s *baseSource) Prefix() string {
 	return s.name
 }
 

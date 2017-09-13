@@ -14,9 +14,8 @@ type Sink struct {
 	log *logx.Log
 
 	evaluator *Evaluator
-	//executor *Executor
-	manager *Arbiter
-	state   *SinkState
+	arbiter   *Arbiter
+	state     *SinkState
 
 	mu *sync.Mutex
 }
@@ -26,7 +25,7 @@ func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler"),
 		evaluator: evaluator,
-		manager:   manager,
+		arbiter:   manager,
 		mu:        &sync.Mutex{},
 	}
 	return
@@ -69,13 +68,13 @@ func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
 
 func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 	if pod == nil {
-		go s.manager.Register(name, nil, func(res error, env map[string]string, mark uint64) {
+		go s.arbiter.Register(name, nil, func(res error, env map[string]string, mark uint64) {
 			s.evaluator.Submit(name, nil)
 		})
 		return
 	}
-	s.manager.Register(name, pod, func(reason error, env map[string]string, mark uint64) {
-		s.log.Debugf("received %v from manager for %s", reason, name)
+	s.arbiter.Register(name, pod, func(reason error, env map[string]string, mark uint64) {
+		s.log.Debugf("received %v from arbiter for %s", reason, name)
 		var alloc *allocation.Pod
 		if pod != nil && reason == nil {
 			if alloc, err = allocation.NewFromManifest(pod, env); err != nil {

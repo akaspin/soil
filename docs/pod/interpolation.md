@@ -47,8 +47,6 @@ Agent variables are accessible as `${agent.*}`:
 
 `id` Agent ID.
 
-`drain` Agent drain state.
-
 `pod_exec` Pod unit "Exec*".
 
 ## `status` source
@@ -60,10 +58,6 @@ All deployed pods are registered in `status` source. All values for pod are pref
 `<pod-name>.units` List of pod [units]({{site.baseurl}}/pod/#units) delimited by comma.
 
 `<pod-name>.namespace` Pod [namespace]({{site.baseurl}}/agent/namespaces).
-
-`<pod-name>.mark` Pod [mark]({{site.baseurl}}/pod/#mark).
-
-`<pod-name>.agent_mark` Agent [mark]({{site.baseurl}}/agent/#mark).
 
 `<pod-name>.failures` Failures what happened on pod deployment.
 

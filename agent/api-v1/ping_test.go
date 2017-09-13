@@ -3,9 +3,9 @@
 package api_v1_test
 
 import (
-	"testing"
-	"net/http"
 	"github.com/stretchr/testify/assert"
+	"net/http"
+	"testing"
 )
 
 func TestPing(t *testing.T) {

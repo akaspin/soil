@@ -3,37 +3,21 @@ package source
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/supervisor"
-	"sync"
 )
 
 type baseSource struct {
-	*supervisor.Control
-	log        *logx.Log
-	name       string
+	*BaseProducer
 	namespaces []string
 	mark       bool
-
-	callback func(string, bool, map[string]string)
-	active   bool
-	mu       *sync.Mutex
 }
 
-func newBaseSource(ctx context.Context, log *logx.Log, name string, namespaces []string, mark bool) (s *baseSource) {
+func newBaseSource(ctx context.Context, log *logx.Log, prefix string, namespaces []string, mark bool) (s *baseSource) {
 	s = &baseSource{
-		Control:    supervisor.NewControl(ctx),
-		log:        log.GetLog("source", name),
-		name:       name,
-		namespaces: namespaces,
-		mark:       mark,
-		callback:   func(string, bool, map[string]string) {},
-		mu:         &sync.Mutex{},
+		BaseProducer: NewBaseProducer(ctx, log, prefix),
+		namespaces:  namespaces,
+		mark:        mark,
 	}
 	return
-}
-
-func (s *baseSource) Prefix() string {
-	return s.name
 }
 
 func (s *baseSource) Namespaces() []string {

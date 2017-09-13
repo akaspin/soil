@@ -17,7 +17,9 @@ type dummyConsumer struct {
 }
 
 func (c *dummyConsumer) Sync(producer string, active bool, data map[string]string) {
-	atomic.AddInt32(&c.changes, 1)
+	if active {
+		atomic.AddInt32(&c.changes, 1)
+	}
 }
 
 func TestMapMetadata(t *testing.T) {
@@ -26,28 +28,21 @@ func TestMapMetadata(t *testing.T) {
 	a.Open()
 	cons := &dummyConsumer{}
 
-	a.Set(map[string]string{
-		"first":  "1",
-		"second": "2",
-	}, true)
 	a.RegisterConsumer("test", cons)
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(0), atomic.LoadInt32(&cons.changes))
 
-	a.Set(map[string]string{
+	a.Configure(map[string]string{
 		"first":  "1",
 		"second": "3",
-	}, true)
+	})
 
-	//a.Notify("test", map[string]string{
-	//	"${meta.first}": "1",
-	//})
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(1), atomic.LoadInt32(&cons.changes))
 
-	a.Set(map[string]string{
+	a.Configure(map[string]string{
 		"first": "2",
-	}, false)
+	})
 	time.Sleep(time.Millisecond * 300)
 	assert.Equal(t, int32(2), atomic.LoadInt32(&cons.changes))
 

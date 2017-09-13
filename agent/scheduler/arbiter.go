@@ -65,20 +65,12 @@ func (a *Arbiter) addPod(name string, pod *manifest.Pod, fn managerCallback) {
 	}
 	a.evaluate()
 	a.mu.Unlock()
-
-	for _, source := range a.sources {
-		source.source.Notify()
-		a.log.Debugf("%s is registered on %s with %v", name, source.source.Prefix(), pod.Constraint)
-	}
 }
 
 func (a *Arbiter) removePod(name string, fn managerCallback) {
 	a.mu.Lock()
 	delete(a.managed, name)
 	a.mu.Unlock()
-	for _, a := range a.sources {
-		a.source.Notify()
-	}
 	fn(nil, nil, 0)
 	a.log.Debugf("removed %s", name)
 }

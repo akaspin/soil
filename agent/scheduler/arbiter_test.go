@@ -26,14 +26,14 @@ func TestArbiter(t *testing.T) {
 	sv := supervisor.NewChain(ctx, a1, man)
 	assert.NoError(t, sv.Open())
 
-	a1.Set(map[string]string{
+	a1.Configure(map[string]string{
 		"first":  "1",
 		"second": "1",
-	}, true)
-	a2.Set(map[string]string{
+	})
+	a2.Configure(map[string]string{
 		"first":  "1",
 		"second": "1",
-	}, true)
+	})
 
 	privatePods, err := manifest.ParseFromFiles("private", "testdata/arbiter_test.hcl")
 	assert.NoError(t, err)
@@ -74,9 +74,9 @@ func TestArbiter(t *testing.T) {
 		assert.NoError(t, res["second"])
 	})
 	t.Run("off second", func(t *testing.T) {
-		a1.Set(map[string]string{
+		a1.Configure(map[string]string{
 			"first": "1",
-		}, true)
+		})
 		time.Sleep(time.Millisecond * 100)
 		assert.NoError(t, res["first"])
 		assert.Error(t, res["second"])

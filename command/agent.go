@@ -164,11 +164,11 @@ func (c *Agent) readPrivatePods() {
 }
 
 func (c *Agent) configureArbiters() {
-	c.agentSource.Set(map[string]string{
+	c.agentSource.Configure(map[string]string{
 		"id":       c.Id,
 		"pod_exec": c.config.Exec,
-	}, true)
-	c.metaSource.Set(c.config.Meta, true)
+	})
+	c.metaSource.Configure(c.config.Meta)
 }
 
 func (c *Agent) configurePrivateRegistry() (err error) {

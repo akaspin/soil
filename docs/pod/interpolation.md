@@ -49,15 +49,15 @@ Agent variables are accessible as `${agent.*}`:
 
 `pod_exec` Pod unit "Exec*".
 
-## `status` source
+## `allocation` source
 
-All deployed pods are registered in `status` source. All values for pod are prefixed with pod name. `status` source is available only for constraints.
+All deployed pods are registered in `allocation` source and accessible as `${allocation.<pod>.*}`. `allocation` source is available only for constraints.
 
-`<pod-name>` Pod presence. Can be only `present`. If pod is not deployed value will be absent.
+`present` Pod presence. Can be only `true`. If pod is not deployed value will be absent.
  
-`<pod-name>.units` List of pod [units]({{site.baseurl}}/pod/#units) delimited by comma.
+`units` List of pod [units]({{site.baseurl}}/pod/#units) delimited by comma.
 
-`<pod-name>.namespace` Pod [namespace]({{site.baseurl}}/agent/namespaces).
+`namespace` Pod [namespace]({{site.baseurl}}/agent/namespaces).
 
-`<pod-name>.failures` Failures what happened on pod deployment.
+`failures` Failures what happened on pod deployment.
 

@@ -85,25 +85,25 @@ WantedBy=default.target
 
 	evaluator := scheduler.NewEvaluator(ctx, log)
 
-	arbiter1 := source.NewPlain(ctx, log, "meta", true)
-	arbiter2 := source.NewPlain(ctx, log, "agent", true)
+	source1 := source.NewPlain(ctx, log, "meta", true)
+	source2 := source.NewPlain(ctx, log, "agent", true)
 
 	// Both map arbiters must be pre initialised
-	arbiter1.Set(map[string]string{
+	source1.Configure(map[string]string{
 		"consul": "true",
 		"test":   "true",
-	}, true)
-	arbiter2.Set(map[string]string{
+	})
+	source2.Configure(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
-	}, true)
+	})
 
-	manager := scheduler.NewArbiter(ctx, log, arbiter1, arbiter2)
+	manager := scheduler.NewArbiter(ctx, log, source1, source2)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
 
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,
-			supervisor.NewGroup(ctx, arbiter1, arbiter2),
+			supervisor.NewGroup(ctx, source1, source2),
 			manager,
 		),
 		evaluator,
@@ -126,11 +126,11 @@ WantedBy=default.target
 		time.Sleep(time.Second)
 	})
 	t.Run("enable pod-3", func(t *testing.T) {
-		arbiter1.Set(map[string]string{
+		source1.Configure(map[string]string{
 			"consul":    "true",
 			"test":      "true",
 			"undefined": "true",
-		}, true)
+		})
 
 		assert.Equal(t, map[string]*allocation.Header{
 			"pod-2": {

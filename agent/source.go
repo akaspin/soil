@@ -1,5 +1,17 @@
 package agent
 
+
+type Source interface {
+	SourceProducer
+
+	// pod namespaces managed by source
+	Namespaces() []string
+
+	// Is data used only in constraint or
+	// available for interpolation
+	Mark() bool
+}
+
 // SourceProducer syncs changed data to consumers
 type SourceProducer interface {
 
@@ -8,9 +20,6 @@ type SourceProducer interface {
 
 	// Register consumer in source
 	RegisterConsumer(name string, consumer SourceConsumer)
-
-	// Notify registered consumers
-	Notify()
 }
 
 type SourceConsumer interface {

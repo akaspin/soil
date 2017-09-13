@@ -33,16 +33,16 @@ func TestNewScheduler(t *testing.T) {
 
 		assert.NoError(t, sv.Open())
 		// premature init arbiters
-		metaSource.Set(map[string]string{
+		metaSource.Configure(map[string]string{
 			"first_private":  "1",
 			"second_private": "1",
 			"third_public":   "1",
-		}, true)
-		agentSource.Set(map[string]string{
+		})
+		agentSource.Configure(map[string]string{
 			"id":       "one",
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			"drain":    "false",
-		}, true)
+		})
 		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
 		assert.NoError(t, err)
 		sink.Sync("private", private)
@@ -73,14 +73,14 @@ func TestNewScheduler(t *testing.T) {
 	sv := supervisor.NewChain(ctx, sourceSV, schedulerSv)
 	// premature init arbiters
 	assert.NoError(t, sv.Open())
-	metaSource.Set(map[string]string{
+	metaSource.Configure(map[string]string{
 		"first_private":  "1",
 		"second_private": "1",
-	}, true)
-	agentSource.Set(map[string]string{
+	})
+	agentSource.Configure(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
-	}, true)
+	})
 
 	t.Run("1", func(t *testing.T) {
 		// assert all pods are still running
@@ -130,11 +130,11 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		// modify meta
-		metaSource.Set(map[string]string{
+		metaSource.Configure(map[string]string{
 			"first_private":  "1",
 			"first_public":   "1",
 			"second_private": "1",
-		}, true)
+		})
 		time.Sleep(time.Second)
 
 		// ensure first public is deployed
@@ -181,11 +181,11 @@ func TestNewScheduler(t *testing.T) {
 		assert.NoError(t, err)
 		sink.Sync("private", private)
 
-		metaSource.Set(map[string]string{
+		metaSource.Configure(map[string]string{
 			"first_private":  "2",
 			"first_public":   "1",
 			"second_private": "1",
-		}, true)
+		})
 		time.Sleep(time.Second)
 
 		// ensure first is public

@@ -8,10 +8,10 @@ import (
 	"github.com/akaspin/soil/api"
 	"github.com/stretchr/testify/assert"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"testing"
 	"time"
+	"encoding/json"
 )
 
 type route1 struct{}
@@ -21,8 +21,9 @@ func (r *route1) Empty() interface{} {
 }
 
 func (*route1) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	res = map[string]string{
-		"url": u.String(),
+	res = map[string]interface{}{
+		"url": u.Path,
+		"params": u.Query(),
 	}
 	return
 }
@@ -42,9 +43,17 @@ func TestRouter_Bind(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	resp, err := http.Get("http://127.0.0.1:3000/v1/route/1")
+	resp, err := http.Get("http://127.0.0.1:3000/v1/route/1?param=test")
 	assert.NoError(t, err)
-	raw, err := httputil.DumpResponse(resp, true)
+	assert.Equal(t, resp.StatusCode, 200)
+
+	var jsonResp map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&jsonResp)
 	assert.NoError(t, err)
-	t.Log(string(raw))
+	assert.Equal(t, jsonResp, map[string]interface{}{
+		"url": "/v1/route/1",
+		"params": map[string]interface {}{
+			"param":[]interface {}{"test"},
+		},
+	})
 }

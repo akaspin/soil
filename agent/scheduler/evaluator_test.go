@@ -8,7 +8,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -54,13 +54,13 @@ func newDummyConsumer() (c *dummyConsumer) {
 	return
 }
 
-func (c *dummyConsumer) Sync(producer string, active bool, data map[string]string) {
+func (c *dummyConsumer) Sync(message metadata.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if active {
+	if message.Clean {
 		c.count++
 	}
-	c.res = data
+	c.res = message.Data
 }
 
 func TestNewEvaluator(t *testing.T) {
@@ -70,7 +70,7 @@ func TestNewEvaluator(t *testing.T) {
 	assert.NoError(t, sd.DeployPod("test-2", 3))
 
 	ctx := context.Background()
-	statusReporter := source.NewAllocation(ctx, logx.GetLog("test"))
+	statusReporter := metadata.NewAllocation(ctx, logx.GetLog("test"))
 	evaluator := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 
 	cons := newDummyConsumer()
@@ -105,7 +105,7 @@ func TestEvaluator_Submit(t *testing.T) {
 	defer sd.Cleanup()
 
 	ctx := context.Background()
-	statusReporter := source.NewAllocation(ctx, logx.GetLog("test"))
+	statusReporter := metadata.NewAllocation(ctx, logx.GetLog("test"))
 	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
 
 	cons := newDummyConsumer()

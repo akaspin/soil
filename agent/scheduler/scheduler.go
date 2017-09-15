@@ -8,9 +8,9 @@ import (
 )
 
 // Returns new scheduler with supervisor chain
-func New(ctx context.Context, log *logx.Log, sources []agent.Source, reporters []agent.EvaluationReporter) (sink *Sink, arbiter *Arbiter, sv supervisor.Component) {
+func New(ctx context.Context, log *logx.Log, reporters []agent.EvaluationReporter) (sink *Sink, arbiter *Manager, sv supervisor.Component) {
 	executor := NewEvaluator(ctx, log, reporters...)
-	arbiter = NewArbiter(ctx, log, sources...)
+	arbiter = NewManager(ctx, log)
 	sink = NewSink(ctx, log, executor, arbiter)
 
 	sv = supervisor.NewChain(ctx,

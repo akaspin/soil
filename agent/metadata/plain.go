@@ -1,4 +1,4 @@
-package source
+package metadata
 
 import (
 	"context"
@@ -7,12 +7,12 @@ import (
 
 // Plain arbiter dynamically evaluates map of parameters
 type Plain struct {
-	*baseSource
+	*BaseProducer
 }
 
-func NewPlain(ctx context.Context, log *logx.Log, name string, mark bool) (s *Plain) {
+func NewPlain(ctx context.Context, log *logx.Log, name string, constraintOnly bool) (s *Plain) {
 	s = &Plain{
-		baseSource: newBaseSource(ctx, log, name, []string{"private", "public"}, mark),
+		BaseProducer: NewBaseProducer(ctx, log, name),
 	}
 	return
 }

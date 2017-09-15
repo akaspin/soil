@@ -5,6 +5,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"context"
+	"github.com/akaspin/soil/agent/metadata"
 )
 
 const publicRegistryPods  = "registry/pod"
@@ -13,11 +14,11 @@ type Public struct {
 	*supervisor.Control
 	log *logx.Log
 
-	producer agent.SourceProducer
+	producer  metadata.Producer
 	scheduler agent.Scheduler
 }
 
-func NewPublic(ctx context.Context, log *logx.Log, producer agent.SourceProducer) (r *Public)  {
+func NewPublic(ctx context.Context, log *logx.Log, producer metadata.Producer) (r *Public)  {
 	r = &Public{
 		Control: supervisor.NewControl(ctx),
 		log: log.GetLog("registry", "public"),
@@ -26,13 +27,10 @@ func NewPublic(ctx context.Context, log *logx.Log, producer agent.SourceProducer
 	return
 }
 
-func (r *Public) Open() (err error) {
-	r.producer.RegisterConsumer(publicRegistryPods, r)
-	err = r.Control.Open()
-	return
-}
+//func (r *Public) Open() (err error) {
+//	r.producer.RegisterConsumer(publicRegistryPods, r)
+//	err = r.Control.Open()
+//	return
+//}
 
-func (r *Public) Sync(producer string, active bool, data map[string]string) {
-
-}
 

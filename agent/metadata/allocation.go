@@ -1,4 +1,4 @@
-package source
+package metadata
 
 import (
 	"context"
@@ -11,14 +11,14 @@ import (
 
 // Allocations accepts reports from executor
 type Allocations struct {
-	*baseSource
+	*BaseProducer
 	dataMu   *sync.Mutex
 	podsData map[string]string
 }
 
 func NewAllocation(ctx context.Context, log *logx.Log) (s *Allocations) {
 	s = &Allocations{
-		baseSource: newBaseSource(ctx, log, "allocation", []string{"private", "public"}, false),
+		BaseProducer: NewBaseProducer(ctx, log, "allocation"),
 		dataMu:     &sync.Mutex{},
 		podsData:   map[string]string{},
 	}

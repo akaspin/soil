@@ -12,6 +12,7 @@ import (
 )
 
 func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
+	t.SkipNow()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 

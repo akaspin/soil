@@ -1,11 +1,11 @@
 // +build ide test_unit
 
-package source_test
+package metadata_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
@@ -16,15 +16,15 @@ type dummyConsumer struct {
 	changes int32
 }
 
-func (c *dummyConsumer) Sync(producer string, active bool, data map[string]string) {
-	if active {
+func (c *dummyConsumer) Sync(message metadata.Message) {
+	if message.Clean {
 		atomic.AddInt32(&c.changes, 1)
 	}
 }
 
 func TestMapMetadata(t *testing.T) {
 
-	a := source.NewPlain(context.Background(), logx.GetLog("test"), "meta", true)
+	a := metadata.NewPlain(context.Background(), logx.GetLog("test"), "meta", false)
 	a.Open()
 	cons1 := &dummyConsumer{}
 	cons2 := &dummyConsumer{}

@@ -6,7 +6,7 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -19,10 +19,13 @@ func TestArbiter(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := source.NewPlain(ctx, log, "meta", true)
-	a2 := source.NewPlain(ctx, log, "with.dot", false)
+	a1 := metadata.NewPlain(ctx, log, "meta", false)
+	a2 := metadata.NewPlain(ctx, log, "with.dot", true)
 
-	man := scheduler.NewArbiter(ctx, log, a1, a2)
+	man := scheduler.NewManager(ctx, log)
+	man.AddProducer(a1, false, "private", "public")
+	man.AddProducer(a2, true, "private", "public")
+
 	sv := supervisor.NewChain(ctx, a1, man)
 	assert.NoError(t, sv.Open())
 

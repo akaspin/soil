@@ -4,44 +4,31 @@ import (
 	"net/url"
 	"context"
 	"github.com/akaspin/supervisor"
-	"github.com/akaspin/soil/agent"
 	"sync"
+	"github.com/akaspin/soil/agent/metadata"
 )
 
-type StatusInfoResponse map[string]*StatusInfoProducerData
-
-type StatusInfoProducerData struct {
-	Namespaces []string
-	Active bool
-	Data map[string]string
-}
+type StatusInfoResponse map[string]metadata.Message
 
 type statusInfoGetEndpoint struct {
 	*supervisor.Control
-	mu *sync.Mutex
-	data StatusInfoResponse
-	sources []agent.Source
+	mu        *sync.Mutex
+	data      StatusInfoResponse
+	producers []metadata.Producer
 }
 
-func NewStatusInfoGetEndpoint(ctx context.Context, producers ...agent.Source) (e *statusInfoGetEndpoint)  {
+func NewStatusInfoGetEndpoint(ctx context.Context, producers ...metadata.Producer) (e *statusInfoGetEndpoint)  {
 	e = &statusInfoGetEndpoint{
-		Control: supervisor.NewControl(ctx),
-		mu: &sync.Mutex{},
-		data: StatusInfoResponse{},
-		sources: producers,
-	}
-	for _, producer := range producers {
-		e.data[producer.Prefix()] = &StatusInfoProducerData{
-			Active: false,
-			Namespaces: producer.Namespaces(),
-			Data: map[string]string{},
-		}
+		Control:   supervisor.NewControl(ctx),
+		mu:        &sync.Mutex{},
+		data:      StatusInfoResponse{},
+		producers: producers,
 	}
 	return
 }
 
 func (e *statusInfoGetEndpoint) Open() (err error) {
-	for _, producer := range e.sources {
+	for _, producer := range e.producers {
 		producer.RegisterConsumer("api-status-info", e)
 	}
 	err = e.Control.Open()
@@ -59,13 +46,9 @@ func (e *statusInfoGetEndpoint) Process(ctx context.Context, u *url.URL, v inter
 	return
 }
 
-func (e *statusInfoGetEndpoint) Sync(producer string, active bool, data map[string]string) {
+func (e *statusInfoGetEndpoint) Sync(message metadata.Message) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	if producer, ok := e.data[producer]; ok {
-		producer.Data = data
-		producer.Active = active
-	}
-	return
+	e.data[message.Prefix] = message
 }
 

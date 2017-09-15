@@ -7,7 +7,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -84,9 +84,9 @@ WantedBy=default.target
 	// Build supervisor chain
 
 
-	source1 := source.NewPlain(ctx, log, "meta", true)
-	source2 := source.NewPlain(ctx, log, "agent", true)
-	allocSrc := source.NewAllocation(ctx, log)
+	source1 := metadata.NewPlain(ctx, log, "meta", false)
+	source2 := metadata.NewPlain(ctx, log, "agent", false)
+	allocSrc := metadata.NewAllocation(ctx, log)
 
 	evaluator := scheduler.NewEvaluator(ctx, log, allocSrc)
 
@@ -100,7 +100,11 @@ WantedBy=default.target
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
-	manager := scheduler.NewArbiter(ctx, log, source1, source2, allocSrc)
+	manager := scheduler.NewManager(ctx, log)
+	manager.AddProducer(source1, false, "private", "public")
+	manager.AddProducer(source2, false, "private", "public")
+	manager.AddProducer(allocSrc, true, "private", "public")
+
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
 
 	sv := supervisor.NewChain(ctx,

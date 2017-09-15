@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/supervisor"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
@@ -16,7 +15,10 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"github.com/akaspin/soil/agent/metadata"
 )
+
+var disabledError = errors.New("public namespace is disabled")
 
 type BackendOptions struct {
 	Enabled       bool
@@ -25,12 +27,12 @@ type BackendOptions struct {
 	Timeout       time.Duration
 	Retry         int
 	RetryInterval time.Duration
-	TTl           time.Duration
+	TTL           time.Duration
 }
 
 func (o BackendOptions) ParseUrl() (kind store.Backend, chroot string, addr []string, err error) {
 	if !o.Enabled {
-		err = errors.New("public namespace is disabled")
+		err = disabledError
 		return
 	}
 	u, err := url.Parse(o.URL)
@@ -87,42 +89,8 @@ func (b *KVBackend) Open() (err error) {
 	return
 }
 
-func (b *KVBackend) connect() {
-	b.Acquire()
-	defer b.Release()
-	defer b.dirtyCancel()
-
-	if b.failure != nil {
-		b.log.Warning(b.failure)
-		return
-	}
-
-	var retry int
-	for {
-		retry++
-		b.log.Infof("connecting to %s (retry %d)", b.options.URL, retry)
-		b.kv, b.failure = libkv.NewStore(b.kind, b.addr, &store.Config{
-			ConnectionTimeout: b.options.Timeout,
-		})
-		if b.failure != nil {
-			b.log.Errorf("failed to connect to %s: %v", b.options.URL, b.failure)
-			if b.options.Retry > 0 && retry >= b.options.Retry {
-				b.failure = fmt.Errorf("exceed %d retries to connect to %s", b.options.Retry, b.options.URL)
-				b.log.Error(b.failure)
-				return
-			}
-			b.log.Infof("sleeping %s before reconnect to %s", b.options.RetryInterval, b.options.URL)
-			time.Sleep(b.options.RetryInterval)
-			continue
-		} else {
-			b.log.Infof("connected to %s", b.options.URL)
-			return
-		}
-	}
-}
-
 // Registers Consumer with specific prefix
-func (b *KVBackend) RegisterConsumer(prefix string, consumer agent.SourceConsumer) {
+func (b *KVBackend) RegisterConsumer(prefix string, consumer metadata.Consumer) {
 
 	chroot := b.chroot + "/" + prefix
 	log := b.log.GetLog(b.log.Prefix(), append(b.log.Tags(), []string{"watch", prefix}...)...)
@@ -186,10 +154,14 @@ func (b *KVBackend) RegisterConsumer(prefix string, consumer agent.SourceConsume
 				if h, _ := hashstructure.Hash(data, nil); h != lastHash {
 					lastHash = h
 					cache = data
-					consumer.Sync(prefix, true, data)
+					consumer.Sync(metadata.Message{
+						Prefix: prefix,
+						Clean: true,
+						Data: data,
+					})
 					log.Debugf("consumer updated with %v", data)
 				} else {
-					log.Debugf("skipping update")
+					log.Debugf("skipping update: data is equal")
 				}
 			case <-sleepChan:
 				log.Debug("sleep request received")
@@ -245,15 +217,56 @@ func (b *KVBackend) RegisterConsumer(prefix string, consumer agent.SourceConsume
 	}()
 }
 
-func (b *KVBackend) disableConsumer(prefix string, consumer agent.SourceConsumer) {
-	consumer.Sync(prefix, true, map[string]string{})
+func (b *KVBackend) connect() {
+	b.Acquire()
+	defer b.Release()
+	defer b.dirtyCancel()
+
+	if b.failure != nil {
+		b.log.Warning(b.failure)
+		return
+	}
+
+	var retry int
+	for {
+		retry++
+		b.log.Infof("connecting to %s (retry %d)", b.options.URL, retry)
+		b.kv, b.failure = libkv.NewStore(b.kind, b.addr, &store.Config{
+			ConnectionTimeout: b.options.Timeout,
+		})
+		if b.failure != nil {
+			b.log.Errorf("failed to connect to %s: %v", b.options.URL, b.failure)
+			if b.options.Retry > 0 && retry >= b.options.Retry {
+				b.failure = fmt.Errorf("exceed %d retries to connect to %s", b.options.Retry, b.options.URL)
+				b.log.Error(b.failure)
+				return
+			}
+			b.log.Infof("sleeping %s before reconnect to %s", b.options.RetryInterval, b.options.URL)
+			time.Sleep(b.options.RetryInterval)
+			continue
+		} else {
+			b.log.Infof("connected to %s", b.options.URL)
+			return
+		}
+	}
 }
 
-func (b *KVBackend) deactivateConsumer(prefix string, consumer agent.SourceConsumer) {
-	consumer.Sync(prefix, false, map[string]string{})
+
+
+func (b *KVBackend) disableConsumer(prefix string, consumer metadata.Consumer) {
+	consumer.Sync(metadata.Message{
+		Prefix: prefix,
+		Clean: true,
+		Data: map[string]string{},
+	})
 }
 
-func (b *KVBackend) Put(key, value string, withTTL bool) {
-
-
+func (b *KVBackend) deactivateConsumer(prefix string, consumer metadata.Consumer) {
+	consumer.Sync(metadata.Message{
+		Prefix: prefix,
+		Clean: false,
+		Data: map[string]string{},
+	})
 }
+
+

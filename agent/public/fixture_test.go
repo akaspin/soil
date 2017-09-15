@@ -13,6 +13,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"github.com/akaspin/soil/agent/metadata"
 )
 
 type consulFixture struct {
@@ -116,9 +117,9 @@ func newDummyConsumer() (c *dummyConsumer) {
 	return
 }
 
-func (c *dummyConsumer) Sync(producer string, active bool, data map[string]string) {
+func (c *dummyConsumer) Sync(message metadata.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.states = append(c.states, active)
-	c.res = append(c.res, data)
+	c.states = append(c.states, message.Clean)
+	c.res = append(c.res, message.Data)
 }

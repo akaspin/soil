@@ -1,9 +1,8 @@
-package source
+package metadata
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/supervisor"
 	"sync"
 )
@@ -15,7 +14,7 @@ type BaseProducer struct {
 	prefix string
 
 	mu        *sync.Mutex
-	consumers []agent.SourceConsumer
+	consumers []Consumer
 	data      map[string]string
 	active    bool
 }
@@ -35,7 +34,7 @@ func (p *BaseProducer) Prefix() string {
 	return p.prefix
 }
 
-func (p *BaseProducer) RegisterConsumer(name string, consumer agent.SourceConsumer) {
+func (p *BaseProducer) RegisterConsumer(name string, consumer Consumer) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.consumers = append(p.consumers, consumer)
@@ -74,6 +73,10 @@ func (p *BaseProducer) Delete(active bool, keys ...string) {
 func (p *BaseProducer) notify() {
 	p.log.Debugf("syncing with %d consumers", len(p.consumers))
 	for _, consumer := range p.consumers {
-		consumer.Sync(p.prefix, p.active, p.data)
+		consumer.Sync(Message{
+			Prefix: p.prefix,
+			Clean: p.active,
+			Data: p.data,
+		})
 	}
 }

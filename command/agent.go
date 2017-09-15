@@ -9,7 +9,7 @@ import (
 	"github.com/akaspin/soil/agent/public"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -44,7 +44,7 @@ func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().DurationVarP(&o.Public.Timeout, "public-timeout", "", time.Second*30, "connect timeout for public namespace backend")
 	cc.Flags().IntVarP(&o.Public.Retry, "public-retry", "", 0, "connection retry count for public namespace backend (0 to infinite)")
 	cc.Flags().DurationVarP(&o.Public.RetryInterval, "public-retry-interval", "", time.Second*30, "public namespace backend connect retry interval")
-	cc.Flags().DurationVarP(&o.Public.TTl, "public-ttl", "", time.Minute*5, "TTL for agent entries in public namespace backend")
+	cc.Flags().DurationVarP(&o.Public.TTL, "public-ttl", "", time.Minute*5, "TTL for agent entries in public namespace backend")
 }
 
 type Agent struct {
@@ -56,8 +56,8 @@ type Agent struct {
 	privatePods []*manifest.Pod
 
 	log             *logx.Log
-	agentSource     *source.Plain
-	metaSource      *source.Plain
+	agentSource     *metadata.Plain
+	metaSource      *metadata.Plain
 	privateRegistry *registry.Private
 }
 
@@ -75,20 +75,32 @@ func (c *Agent) Run(args ...string) (err error) {
 	ctx := context.Background()
 
 	// sources
-	c.agentSource = source.NewPlain(ctx, c.log, "agent", true)
-	c.metaSource = source.NewPlain(ctx, c.log, "meta", true)
-	statusSource := source.NewAllocation(ctx, c.log)
-	sourceSv := supervisor.NewGroup(ctx,
+	c.agentSource = metadata.NewPlain(ctx, c.log, "agent", false)
+	c.metaSource = metadata.NewPlain(ctx, c.log, "meta", false)
+	statusSource := metadata.NewAllocation(ctx, c.log)
+	sourceSV := supervisor.NewGroup(ctx,
 		c.agentSource,
 		c.metaSource,
 		statusSource,
 	)
 
-	sink, arbiter, schedulerSv := scheduler.New(
-		ctx, c.log,
-		[]agent.Source{c.agentSource, c.metaSource, statusSource},
-		[]agent.EvaluationReporter{statusSource},
+	//sink, manager, schedulerSv := scheduler.New(
+	//	ctx, c.log,
+	//	[]agent.EvaluationReporter{statusSource},
+	//)
+	manager := scheduler.NewManager(ctx, c.log)
+	manager.AddProducer(c.agentSource, false, "private", "public")
+	manager.AddProducer(c.metaSource, false, "private", "public")
+	manager.AddProducer(statusSource, true, "private", "public")
+
+	executor := scheduler.NewEvaluator(ctx, c.log)
+	sink := scheduler.NewSink(ctx, c.log, executor, manager)
+
+	schedulerSV := supervisor.NewChain(ctx,
+		supervisor.NewGroup(ctx, executor, manager),
+		sink,
 	)
+
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
 
 	// bind signals
@@ -112,17 +124,17 @@ func (c *Agent) Run(args ...string) (err error) {
 	apiRouter.Get("/v1/status/info", statusInfoGetEndpoint)
 
 	// drain
-	apiRouter.Get("/v1/status/drain", api_v1.NewDrainGetEndpoint(c.Id, arbiter.DrainState))
-	apiRouter.Put("/v1/agent/drain", api_v1.NewDrainPutEndpoint(arbiter.Drain))
-	apiRouter.Delete("/v1/agent/drain", api_v1.NewDrainDeleteEndpoint(arbiter.Drain))
+	apiRouter.Get("/v1/status/drain", api_v1.NewDrainGetEndpoint(c.Id, manager.DrainState))
+	apiRouter.Put("/v1/agent/drain", api_v1.NewDrainPutEndpoint(manager.Drain))
+	apiRouter.Delete("/v1/agent/drain", api_v1.NewDrainDeleteEndpoint(manager.Drain))
 
 	apiServer := api.NewServer(ctx, c.log, c.Address, apiRouter)
 	apiServerSV := supervisor.NewChain(ctx, statusInfoGetEndpoint, apiServer)
 
 	// agent
 	agentSV := supervisor.NewChain(ctx,
-		sourceSv,
-		schedulerSv,
+		sourceSV,
+		schedulerSV,
 		c.privateRegistry,
 		apiServerSV,
 	)

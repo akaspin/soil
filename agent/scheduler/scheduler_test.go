@@ -5,9 +5,8 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/agent/source"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -24,11 +23,24 @@ func TestNewScheduler(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentSource := source.NewPlain(ctx, log, "agent", true)
-		metaSource := source.NewPlain(ctx, log, "meta", true)
+		agentSource := metadata.NewPlain(ctx, log, "agent", false)
+		metaSource := metadata.NewPlain(ctx, log, "meta", false)
 		sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
-		sink, _, schedulerSV := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
+		//sink, manager, schedulerSV := scheduler.New(ctx, log, nil)
+
+		manager := scheduler.NewManager(ctx, log)
+		manager.AddProducer(agentSource, false, "private", "public")
+		manager.AddProducer(metaSource, false, "private", "public")
+
+		executor := scheduler.NewEvaluator(ctx, log)
+		sink := scheduler.NewSink(ctx, log, executor, manager)
+
+		schedulerSV := supervisor.NewChain(ctx,
+			supervisor.NewGroup(ctx, executor, manager),
+			sink,
+		)
+
 		sv := supervisor.NewChain(ctx, sourceSV, schedulerSV)
 
 		assert.NoError(t, sv.Open())
@@ -66,11 +78,24 @@ func TestNewScheduler(t *testing.T) {
 
 	// create new arbiter
 
-	agentSource := source.NewPlain(ctx, log, "agent", true)
-	metaSource := source.NewPlain(ctx, log, "meta", true)
+	agentSource := metadata.NewPlain(ctx, log, "agent", false)
+	metaSource := metadata.NewPlain(ctx, log, "meta", false)
 	sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
-	sink, _, schedulerSv := scheduler.New(ctx, log, []agent.Source{agentSource, metaSource}, nil)
-	sv := supervisor.NewChain(ctx, sourceSV, schedulerSv)
+
+	manager := scheduler.NewManager(ctx, log)
+	manager.AddProducer(agentSource, false, "private", "public")
+	manager.AddProducer(metaSource, false, "private", "public")
+
+	executor := scheduler.NewEvaluator(ctx, log)
+	sink := scheduler.NewSink(ctx, log, executor, manager)
+
+	schedulerSV := supervisor.NewChain(ctx,
+		supervisor.NewGroup(ctx, executor, manager),
+		sink,
+	)
+
+	sv := supervisor.NewChain(ctx, sourceSV, schedulerSV)
+
 	// premature init arbiters
 	assert.NoError(t, sv.Open())
 	metaSource.Configure(map[string]string{

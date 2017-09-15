@@ -32,11 +32,16 @@ test: test-unit test-systemd test-integration
 
 ###
 ### Test Unit
-### use TEST_TAGS=test_cluster to run cluster tests
 ###
 
-test-unit: $(SRC) $(SRC_TEST)
-	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)
+test-unit: test-unit-simple test-unit-cluster
+
+test-unit-simple: $(SRC) $(SRC_TEST)
+	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)
+
+test-unit-cluster: $(SRC) $(SRC_TEST)
+	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(PACKAGES)
+
 
 clean-test-unit:
 	find . -name .consul_data_* -type d -exec rm -rf {} +
@@ -56,7 +61,7 @@ test-systemd: testdata/systemd/.vagrant/machines/soil-test/virtualbox/id
 		golang:1.9 go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
 
 testdata/systemd/.vagrant/machines/soil-test/virtualbox/id: testdata/systemd/Vagrantfile
-	cd testdata/systemd && vagrant up
+	cd testdata/systemd && vagrant up --parallel
 
 clean-test-systemd:
 	cd testdata/systemd && vagrant destroy -f
@@ -78,7 +83,7 @@ test-integration-env-up-%: \
 	HOST=172.17.8.10$* AGENT_ID=node-$* V=$(V) docker-compose -H 127.0.0.1:257$* -f testdata/integration/compose.yaml up -d --build
 
 testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id: testdata/integration/Vagrantfile
-	cd testdata/integration && vagrant up
+	cd testdata/integration && vagrant up --parallel
 
 integration-env-down:
 	docker-compose -H 127.0.0.1:2571 -f testdata/integration/compose.yaml down --rmi all

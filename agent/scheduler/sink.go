@@ -14,13 +14,13 @@ type Sink struct {
 	log *logx.Log
 
 	evaluator *Evaluator
-	arbiter   *Arbiter
+	arbiter   *Manager
 	state     *SinkState
 
 	mu *sync.Mutex
 }
 
-func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Arbiter) (r *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Manager) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler"),
@@ -68,7 +68,7 @@ func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
 
 func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 	if pod == nil {
-		go s.arbiter.Register(name, nil, func(res error, env map[string]string, mark uint64) {
+		go s.arbiter.Deregister(name, func(res error, env map[string]string, mark uint64) {
 			s.evaluator.Submit(name, nil)
 		})
 		return

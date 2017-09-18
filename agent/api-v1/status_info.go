@@ -1,11 +1,11 @@
 package api_v1
 
 import (
-	"net/url"
 	"context"
-	"github.com/akaspin/supervisor"
-	"sync"
 	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/supervisor"
+	"net/url"
+	"sync"
 )
 
 type StatusInfoResponse map[string]metadata.Message
@@ -17,7 +17,7 @@ type statusInfoGetEndpoint struct {
 	producers []metadata.Producer
 }
 
-func NewStatusInfoGetEndpoint(ctx context.Context, producers ...metadata.Producer) (e *statusInfoGetEndpoint)  {
+func NewStatusInfoGetEndpoint(ctx context.Context, producers ...metadata.Producer) (e *statusInfoGetEndpoint) {
 	e = &statusInfoGetEndpoint{
 		Control:   supervisor.NewControl(ctx),
 		mu:        &sync.Mutex{},
@@ -51,4 +51,3 @@ func (e *statusInfoGetEndpoint) Sync(message metadata.Message) {
 	defer e.mu.Unlock()
 	e.data[message.Prefix] = message
 }
-

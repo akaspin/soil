@@ -1,14 +1,14 @@
 package registry
 
 import (
-	"github.com/akaspin/supervisor"
+	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
-	"context"
 	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/supervisor"
 )
 
-const publicRegistryPods  = "registry/pod"
+const publicRegistryPods = "registry/pod"
 
 type Public struct {
 	*supervisor.Control
@@ -18,10 +18,10 @@ type Public struct {
 	scheduler agent.Scheduler
 }
 
-func NewPublic(ctx context.Context, log *logx.Log, producer metadata.Producer) (r *Public)  {
+func NewPublic(ctx context.Context, log *logx.Log, producer metadata.Producer) (r *Public) {
 	r = &Public{
-		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("registry", "public"),
+		Control:  supervisor.NewControl(ctx),
+		log:      log.GetLog("registry", "public"),
 		producer: producer,
 	}
 	return
@@ -32,5 +32,3 @@ func NewPublic(ctx context.Context, log *logx.Log, producer metadata.Producer) (
 //	err = r.Control.Open()
 //	return
 //}
-
-

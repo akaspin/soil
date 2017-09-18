@@ -5,8 +5,8 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"

@@ -4,6 +4,7 @@ package public_test
 
 import (
 	"fmt"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/hashicorp/consul/testutil"
 	"github.com/nu7hatch/gouuid"
 	"io/ioutil"
@@ -13,7 +14,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-	"github.com/akaspin/soil/agent/metadata"
 )
 
 type consulFixture struct {

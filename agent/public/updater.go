@@ -1,11 +1,11 @@
 package public
 
 import (
-	"github.com/akaspin/supervisor"
-	"github.com/akaspin/logx"
 	"context"
-	"time"
+	"github.com/akaspin/logx"
+	"github.com/akaspin/supervisor"
 	"github.com/docker/libkv/store"
+	"time"
 )
 
 type Updater struct {
@@ -13,19 +13,19 @@ type Updater struct {
 	log *logx.Log
 
 	backend *KVBackend
-	prefix string
+	prefix  string
 
-	declared map[string]string
+	declared    map[string]string
 	declareChan chan map[string]string
 }
 
 func NewUpdater(ctx context.Context, backend *KVBackend, prefix string) (u *Updater) {
 	u = &Updater{
-		Control: supervisor.NewControl(ctx),
-		log: backend.log.GetLog(backend.log.Prefix(), append(backend.log.Tags(), []string{"updater", prefix}...)...),
-		prefix: prefix,
-		backend: backend,
-		declared: map[string]string{},
+		Control:     supervisor.NewControl(ctx),
+		log:         backend.log.GetLog(backend.log.Prefix(), append(backend.log.Tags(), []string{"updater", prefix}...)...),
+		prefix:      prefix,
+		backend:     backend,
+		declared:    map[string]string{},
 		declareChan: make(chan map[string]string, 1),
 	}
 	return
@@ -44,7 +44,7 @@ func (u *Updater) Declare(data map[string]string) {
 		return
 	default:
 	}
-	u.declareChan<- data
+	u.declareChan <- data
 }
 
 func (u *Updater) declareLoop() {
@@ -57,7 +57,6 @@ func (u *Updater) declareLoop() {
 		u.log.Infof("connection is not established: %v", u.backend.failure)
 		return
 	}
-
 
 	u.log.Infof("updating")
 	chroot := u.backend.chroot + "/" + u.prefix
@@ -84,7 +83,7 @@ LOOP:
 		case keys := <-actualiseChan:
 			u.log.Debugf("storing (restrict %v)", keys)
 			for k, v := range u.declared {
-				putErr = u.backend.kv.Put(chroot + "/" + k, []byte(v), &store.WriteOptions{
+				putErr = u.backend.kv.Put(chroot+"/"+k, []byte(v), &store.WriteOptions{
 					TTL: u.backend.options.TTL,
 				})
 				if putErr != nil {

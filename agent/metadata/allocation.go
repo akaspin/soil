@@ -19,8 +19,8 @@ type Allocations struct {
 func NewAllocation(ctx context.Context, log *logx.Log) (s *Allocations) {
 	s = &Allocations{
 		BaseProducer: NewBaseProducer(ctx, log, "allocation"),
-		dataMu:     &sync.Mutex{},
-		podsData:   map[string]string{},
+		dataMu:       &sync.Mutex{},
+		podsData:     map[string]string{},
 	}
 	return
 }

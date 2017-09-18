@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/public"
+	"github.com/akaspin/supervisor"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/akaspin/supervisor"
-	"github.com/davecgh/go-spew/spew"
 )
 
 func TestUpdater_Declare_TTL5s(t *testing.T) {
@@ -42,7 +42,7 @@ func TestUpdater_Declare_TTL5s(t *testing.T) {
 		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
 		Advertise:     "127.0.0.1:7654",
 		Retry:         5,
-		TTL: time.Second * 3,
+		TTL:           time.Second * 3,
 	})
 	updater := public.NewUpdater(ctx, src, "1")
 	sv := supervisor.NewChain(ctx, src, updater)

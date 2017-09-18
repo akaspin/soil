@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/supervisor"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
@@ -15,7 +16,6 @@ import (
 	"net/url"
 	"strings"
 	"time"
-	"github.com/akaspin/soil/agent/metadata"
 )
 
 var disabledError = errors.New("public namespace is disabled")
@@ -156,8 +156,8 @@ func (b *KVBackend) RegisterConsumer(prefix string, consumer metadata.Consumer) 
 					cache = data
 					consumer.Sync(metadata.Message{
 						Prefix: prefix,
-						Clean: true,
-						Data: data,
+						Clean:  true,
+						Data:   data,
 					})
 					log.Debugf("consumer updated with %v", data)
 				} else {
@@ -251,22 +251,18 @@ func (b *KVBackend) connect() {
 	}
 }
 
-
-
 func (b *KVBackend) disableConsumer(prefix string, consumer metadata.Consumer) {
 	consumer.Sync(metadata.Message{
 		Prefix: prefix,
-		Clean: true,
-		Data: map[string]string{},
+		Clean:  true,
+		Data:   map[string]string{},
 	})
 }
 
 func (b *KVBackend) deactivateConsumer(prefix string, consumer metadata.Consumer) {
 	consumer.Sync(metadata.Message{
 		Prefix: prefix,
-		Clean: false,
-		Data: map[string]string{},
+		Clean:  false,
+		Data:   map[string]string{},
 	})
 }
-
-

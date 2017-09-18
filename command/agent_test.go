@@ -3,8 +3,11 @@
 package command_test
 
 import (
+	"encoding/json"
+	"github.com/akaspin/soil/agent/api-v1"
 	"github.com/akaspin/soil/command"
 	"github.com/akaspin/soil/fixture"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -12,9 +15,6 @@ import (
 	"sync"
 	"testing"
 	"time"
-	"github.com/akaspin/soil/agent/api-v1"
-	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
 )
 
 func TestAgent_Run_Stop(t *testing.T) {

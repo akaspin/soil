@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
 	"sync"
-	"github.com/akaspin/soil/agent/metadata"
 )
 
 type managerCallback func(reason error, environment map[string]string, mark uint64)
@@ -36,11 +36,11 @@ func NewManager(ctx context.Context, log *logx.Log) (m *Manager) {
 }
 
 // AddProducer should be called before Open
-func (m *Manager) AddProducer(producer metadata.Producer, constraintOnly bool, namespaces ...string)  {
+func (m *Manager) AddProducer(producer metadata.Producer, constraintOnly bool, namespaces ...string) {
 	m.producers[producer.Prefix()] = &managerSource{
-		producer: producer,
+		producer:       producer,
 		constraintOnly: constraintOnly,
-		namespaces: namespaces,
+		namespaces:     namespaces,
 	}
 }
 
@@ -163,9 +163,8 @@ type managerResource struct {
 }
 
 type managerSource struct {
-	producer metadata.Producer
+	producer       metadata.Producer
 	constraintOnly bool
-	namespaces []string
-	message metadata.Message
+	namespaces     []string
+	message        metadata.Message
 }
-

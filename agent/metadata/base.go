@@ -75,8 +75,8 @@ func (p *BaseProducer) notify() {
 	for _, consumer := range p.consumers {
 		consumer.Sync(Message{
 			Prefix: p.prefix,
-			Clean: p.active,
-			Data: p.data,
+			Clean:  p.active,
+			Data:   p.data,
 		})
 	}
 }

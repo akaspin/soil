@@ -27,4 +27,3 @@ type Consumer interface {
 	// Sync called by Source producer on data change
 	Sync(message Message)
 }
-

@@ -18,7 +18,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 )
 
 type AgentOptions struct {
@@ -38,13 +37,13 @@ func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().StringArrayVarP(&o.Meta, "meta", "", nil, "node metadata in form field=value")
 	cc.Flags().StringVarP(&o.Address, "address", "", ":7654", "listen address")
 
-	cc.Flags().BoolVarP(&o.Public.Enabled, "public-enable", "", false, "enable public namespace clustering")
-	cc.Flags().StringVarP(&o.Public.Advertise, "public-advertise", "", "127.0.0.1:7654", "advertise address public namespace")
-	cc.Flags().StringVarP(&o.Public.URL, "public-backend", "", "consul://127.0.0.1:8500/soil", "backend url for public namespace")
-	cc.Flags().DurationVarP(&o.Public.Timeout, "public-timeout", "", time.Second*30, "connect timeout for public namespace backend")
-	cc.Flags().IntVarP(&o.Public.Retry, "public-retry", "", 0, "connection retry count for public namespace backend (0 to infinite)")
-	cc.Flags().DurationVarP(&o.Public.RetryInterval, "public-retry-interval", "", time.Second*30, "public namespace backend connect retry interval")
-	cc.Flags().DurationVarP(&o.Public.TTL, "public-ttl", "", time.Minute*5, "TTL for agent entries in public namespace backend")
+	//cc.Flags().BoolVarP(&o.Public.Enabled, "public-enable", "", false, "enable public namespace clustering")
+	//cc.Flags().StringVarP(&o.Public.Advertise, "public-advertise", "", "127.0.0.1:7654", "advertise address public namespace")
+	//cc.Flags().StringVarP(&o.Public.URL, "public-backend", "", "consul://127.0.0.1:8500/soil", "backend url for public namespace")
+	//cc.Flags().DurationVarP(&o.Public.Timeout, "public-timeout", "", time.Second*30, "connect timeout for public namespace backend")
+	//cc.Flags().IntVarP(&o.Public.Retry, "public-retry", "", 0, "connection retry count for public namespace backend (0 to infinite)")
+	//cc.Flags().DurationVarP(&o.Public.RetryInterval, "public-retry-interval", "", time.Second*30, "public namespace backend connect retry interval")
+	//cc.Flags().DurationVarP(&o.Public.TTL, "public-ttl", "", time.Minute*5, "TTL for agent entries in public namespace backend")
 }
 
 type Agent struct {

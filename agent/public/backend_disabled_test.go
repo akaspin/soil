@@ -16,7 +16,7 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewKVBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
 		RetryInterval: time.Millisecond * 300,
 		Enabled:       false,
 		Timeout:       time.Second,
@@ -32,7 +32,7 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	src.RegisterConsumer("1", cons1)
 	src.RegisterConsumer("2", cons2)
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 200)
 
 	src.Close()
 	src.Wait()

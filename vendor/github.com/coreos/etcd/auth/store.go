@@ -16,6 +16,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"errors"
 	"sort"
@@ -26,9 +27,9 @@ import (
 	"github.com/coreos/etcd/auth/authpb"
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/backend"
+
 	"github.com/coreos/pkg/capnslog"
 	"golang.org/x/crypto/bcrypt"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
@@ -162,6 +163,12 @@ type AuthStore interface {
 
 	// AuthInfoFromTLS gets AuthInfo from TLS info of gRPC's context
 	AuthInfoFromTLS(ctx context.Context) *AuthInfo
+
+	// WithRoot generates and installs a token that can be used as a root credential
+	WithRoot(ctx context.Context) context.Context
+
+	// HasRole checks that user has role
+	HasRole(user, role string) bool
 }
 
 type TokenProvider interface {
@@ -992,13 +999,17 @@ func (as *authStore) AuthInfoFromTLS(ctx context.Context) *AuthInfo {
 }
 
 func (as *authStore) AuthInfoFromCtx(ctx context.Context) (*AuthInfo, error) {
-	md, ok := metadata.FromContext(ctx)
+	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, nil
 	}
 
-	ts, tok := md["token"]
-	if !tok {
+	//TODO(mitake|hexfusion) review unifying key names
+	ts, ok := md["token"]
+	if !ok {
+		ts, ok = md["authorization"]
+	}
+	if !ok {
 		return nil, nil
 	}
 
@@ -1008,6 +1019,7 @@ func (as *authStore) AuthInfoFromCtx(ctx context.Context) (*AuthInfo, error) {
 		plog.Warningf("invalid auth token: %s", token)
 		return nil, ErrInvalidAuthToken
 	}
+
 	return authInfo, nil
 }
 
@@ -1056,4 +1068,56 @@ func NewTokenProvider(tokenOpts string, indexWaiter func(uint64) <-chan struct{}
 		plog.Errorf("unknown token type: %s", tokenType)
 		return nil, ErrInvalidAuthOpts
 	}
+}
+
+func (as *authStore) WithRoot(ctx context.Context) context.Context {
+	if !as.isAuthEnabled() {
+		return ctx
+	}
+
+	var ctxForAssign context.Context
+	if ts := as.tokenProvider.(*tokenSimple); ts != nil {
+		ctx1 := context.WithValue(ctx, "index", uint64(0))
+		prefix, err := ts.genTokenPrefix()
+		if err != nil {
+			plog.Errorf("failed to generate prefix of internally used token")
+			return ctx
+		}
+		ctxForAssign = context.WithValue(ctx1, "simpleToken", prefix)
+	} else {
+		ctxForAssign = ctx
+	}
+
+	token, err := as.tokenProvider.assign(ctxForAssign, "root", as.Revision())
+	if err != nil {
+		// this must not happen
+		plog.Errorf("failed to assign token for lease revoking: %s", err)
+		return ctx
+	}
+
+	mdMap := map[string]string{
+		"token": token,
+	}
+	tokenMD := metadata.New(mdMap)
+	return metadata.NewOutgoingContext(ctx, tokenMD)
+}
+
+func (as *authStore) HasRole(user, role string) bool {
+	tx := as.be.BatchTx()
+	tx.Lock()
+	defer tx.Unlock()
+
+	u := getUser(tx, user)
+	if u == nil {
+		plog.Warningf("tried to check user %s has role %s, but user %s doesn't exist", user, role, user)
+		return false
+	}
+
+	for _, r := range u.Roles {
+		if role == r {
+			return true
+		}
+	}
+
+	return false
 }

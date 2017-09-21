@@ -15,6 +15,97 @@ import (
 	"time"
 )
 
+func TestBackend_Set(t *testing.T) {
+	f := newConsulFixture(t)
+	defer f.Stop()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	backend := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+		RetryInterval: time.Millisecond * 200,
+		Enabled:       true,
+		Timeout:       time.Second,
+		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
+		Advertise:     "127.0.0.1:7654",
+		TTL:           time.Second * 2,
+	})
+	err := backend.Open()
+	assert.NoError(t, err)
+
+	time.Sleep(time.Millisecond * 200)
+
+	backend.Set(map[string]string{
+		"test/1/pre-ttl": "pre",
+	}, true)
+
+	time.Sleep(time.Second)
+
+	cons1 := newDummyConsumer()
+	backend.RegisterConsumer("1", cons1)
+	time.Sleep(time.Second)
+
+	assert.Equal(t, cons1.states, []bool{true})
+	assert.Equal(t, cons1.res, []map[string]string{
+		{"pre-ttl": "pre"},
+	})
+
+	backend.Set(map[string]string{
+		"test/1/1": "v1",
+		"test/1/2": "v2",
+	}, false)
+	time.Sleep(time.Second)
+	assert.Equal(t, cons1.states, []bool{true, true, true})
+	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
+		"pre-ttl": "pre",
+		"1":       "v1",
+		"2":       "v2",
+	})
+
+	backend.Set(map[string]string{
+		"test/1/ttl1": "ttl1",
+		"test/1/ttl2": "ttl2",
+	}, true)
+	time.Sleep(time.Second)
+	assert.Equal(t, cons1.states, []bool{true, true, true, true, true})
+	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
+		"pre-ttl": "pre",
+		"1":       "v1",
+		"2":       "v2",
+		"ttl1":    "ttl1",
+		"ttl2":    "ttl2",
+	})
+
+	backend.Delete("test/1/1", "test/1/ttl2")
+	time.Sleep(time.Second)
+	assert.Equal(t, cons1.states, []bool{true, true, true, true, true, true, true})
+	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
+		"pre-ttl": "pre",
+		"2":       "v2",
+		"ttl1":    "ttl1",
+	})
+
+	// delete non-existent
+	backend.Delete("test/1/fake", "test/1/ttl2")
+
+	time.Sleep(time.Second * 2)
+
+	backend.Close()
+	backend.Wait()
+
+	assert.Equal(t, cons1.states, []bool{true, true, true, true, true, true, true})
+	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
+		"pre-ttl": "pre",
+		"2":       "v2",
+		"ttl1":    "ttl1",
+	})
+
+	for _, chunk := range cons1.res {
+		_, ok := chunk["pre-ttl"]
+		assert.True(t, ok)
+	}
+}
+
 func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	//t.SkipNow()
 	f := newConsulFixture(t)
@@ -34,12 +125,13 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewKVBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
 		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
 		Advertise:     "127.0.0.1:7654",
+		TTL:           time.Second * 2,
 	})
 	err = src.Open()
 	assert.NoError(t, err)
@@ -106,12 +198,13 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewKVBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
 		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
 		Advertise:     "127.0.0.1:7654",
+		TTL:           time.Second * 2,
 	})
 	err = src.Open()
 	assert.NoError(t, err)
@@ -166,6 +259,7 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 }
 
 func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
+	//t.SkipNow()
 	f := newConsulFixture(t)
 	defer f.Stop()
 	addr := f.Server.HTTPAddr
@@ -190,12 +284,13 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewKVBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
 		URL:           fmt.Sprintf("consul://%s/test", addr),
 		Advertise:     "127.0.0.1:7654",
+		TTL:           time.Second * 2,
 	})
 	err = src.Open()
 	assert.NoError(t, err)

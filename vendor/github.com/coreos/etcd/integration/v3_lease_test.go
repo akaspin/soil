@@ -15,18 +15,17 @@
 package integration
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
-
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	pb "github.com/coreos/etcd/etcdserver/etcdserverpb"
 	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/coreos/etcd/pkg/testutil"
+
+	"google.golang.org/grpc/metadata"
 )
 
 // TestV3LeasePrmote ensures the newly elected leader can promote itself
@@ -231,6 +230,43 @@ func TestV3LeaseExists(t *testing.T) {
 
 	if !leaseExist(t, clus, lresp.ID) {
 		t.Error("unexpected lease not exists")
+	}
+}
+
+// TestV3LeaseLeases creates leases and confirms list RPC fetches created ones.
+func TestV3LeaseLeases(t *testing.T) {
+	defer testutil.AfterTest(t)
+	clus := NewClusterV3(t, &ClusterConfig{Size: 1})
+	defer clus.Terminate(t)
+
+	ctx0, cancel0 := context.WithCancel(context.Background())
+	defer cancel0()
+
+	// create leases
+	ids := []int64{}
+	for i := 0; i < 5; i++ {
+		lresp, err := toGRPC(clus.RandClient()).Lease.LeaseGrant(
+			ctx0,
+			&pb.LeaseGrantRequest{TTL: 30})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if lresp.Error != "" {
+			t.Fatal(lresp.Error)
+		}
+		ids = append(ids, lresp.ID)
+	}
+
+	lresp, err := toGRPC(clus.RandClient()).Lease.LeaseLeases(
+		context.Background(),
+		&pb.LeaseLeasesRequest{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range lresp.Leases {
+		if lresp.Leases[i].ID != ids[i] {
+			t.Fatalf("#%d: lease ID expected %d, got %d", i, ids[i], lresp.Leases[i].ID)
+		}
 	}
 }
 
@@ -460,7 +496,7 @@ func TestV3LeaseFailover(t *testing.T) {
 	lreq := &pb.LeaseKeepAliveRequest{ID: lresp.ID}
 
 	md := metadata.Pairs(rpctypes.MetadataRequireLeaderKey, rpctypes.MetadataHasLeader)
-	mctx := metadata.NewContext(context.Background(), md)
+	mctx := metadata.NewOutgoingContext(context.Background(), md)
 	ctx, cancel := context.WithCancel(mctx)
 	defer cancel()
 	lac, err := lc.LeaseKeepAlive(ctx)
@@ -508,7 +544,7 @@ func TestV3LeaseRequireLeader(t *testing.T) {
 	clus.Members[2].Stop(t)
 
 	md := metadata.Pairs(rpctypes.MetadataRequireLeaderKey, rpctypes.MetadataHasLeader)
-	mctx := metadata.NewContext(context.Background(), md)
+	mctx := metadata.NewOutgoingContext(context.Background(), md)
 	ctx, cancel := context.WithCancel(mctx)
 	defer cancel()
 	lac, err := lc.LeaseKeepAlive(ctx)
@@ -523,7 +559,7 @@ func TestV3LeaseRequireLeader(t *testing.T) {
 		if err == nil {
 			t.Fatalf("got response %+v, expected error", resp)
 		}
-		if grpc.ErrorDesc(err) != rpctypes.ErrNoLeader.Error() {
+		if rpctypes.ErrorDesc(err) != rpctypes.ErrNoLeader.Error() {
 			t.Errorf("err = %v, want %v", err, rpctypes.ErrNoLeader)
 		}
 	}()

@@ -16,16 +16,12 @@
   version = "v14"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/hashicorp/go-memdb"
+  name = "github.com/docker/libkv"
+  version = "v0.2.1"
 
 [[constraint]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-
-[[constraint]]
-  name = "github.com/hashicorp/memberlist"
-  version = "v0.1.0"
 
 [[constraint]]
   branch = "master"

@@ -83,7 +83,7 @@
   branch = "master"
   name = "github.com/hashicorp/hcl"
   packages = [".","hcl/ast","hcl/parser","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
-  revision = "8f6b1344a92ff8877cf24a5de9177bf7d0a2a187"
+  revision = "68e816d1c783414e79bc65b3994d9ab6b0a722ab"
 
 [[projects]]
   name = "github.com/hashicorp/serf"
@@ -155,17 +155,17 @@
   branch = "master"
   name = "github.com/ugorji/go"
   packages = ["codec"]
-  revision = "8c0409fcbb70099c748d71f714529204975f6c3f"
+  revision = "54210f4e076c57f351166f0ed60e67d3fca57a36"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context"]
-  revision = "859d1a86bb617c0c20d154590c3c5d3fcb670b07"
+  revision = "b60f3a92103dfd93dfcb900ec77c6d0643510868"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "156044e04c07b5b95f04da437be1e9fb26611c4a8f3fcbad4c1fc22c267cbfdd"
+  inputs-digest = "51ffc1b3886d8e46464916585e8e1bcaf86a0a789adbe37b0a16ca5efe8c9300"
   solver-name = "gps-cdcl"
   solver-version = 1

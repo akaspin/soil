@@ -68,12 +68,12 @@ func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
 
 func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
 	if pod == nil {
-		go s.arbiter.Deregister(name, func(res error, env map[string]string, mark uint64) {
+		go s.arbiter.DeregisterResource(name, func() {
 			s.evaluator.Submit(name, nil)
 		})
 		return
 	}
-	s.arbiter.Register(name, pod, func(reason error, env map[string]string, mark uint64) {
+	s.arbiter.RegisterResource(name, pod.Namespace, pod.Constraint, func(reason error, env map[string]string, mark uint64) {
 		s.log.Debugf("received %v from arbiter for %s", reason, name)
 		var alloc *allocation.Pod
 		if pod != nil && reason == nil {

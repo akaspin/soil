@@ -83,14 +83,11 @@ func (c *Agent) Run(args ...string) (err error) {
 		statusSource,
 	)
 
-	//sink, manager, schedulerSv := scheduler.New(
-	//	ctx, c.log,
-	//	[]agent.EvaluationReporter{statusSource},
-	//)
-	manager := scheduler.NewManager(ctx, c.log)
-	manager.AddProducer(c.agentSource, false, "private", "public")
-	manager.AddProducer(c.metaSource, false, "private", "public")
-	manager.AddProducer(statusSource, true, "private", "public")
+	manager := scheduler.NewManager(ctx, c.log,
+		scheduler.NewManagerSource(c.agentSource, false, "private", "public"),
+		scheduler.NewManagerSource(c.metaSource, false, "private", "public"),
+		scheduler.NewManagerSource(statusSource, true, "private", "public"),
+	)
 
 	executor := scheduler.NewEvaluator(ctx, c.log)
 	sink := scheduler.NewSink(ctx, c.log, executor, manager)

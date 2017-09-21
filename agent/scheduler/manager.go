@@ -11,73 +11,76 @@ import (
 	"sync"
 )
 
-type managerCallback func(reason error, environment map[string]string, mark uint64)
+var drainError = errors.New("agent in drain state")
 
 type Manager struct {
 	*supervisor.Control
 	log *logx.Log
 
-	mu        *sync.Mutex
-	drain     bool
-	producers map[string]*managerSource
-	managed   map[string]*managerResource
+	mu      *sync.Mutex
+	drain   bool
+	sources map[string]*ManagerSource
+	managed map[string]*managerResource
+
+	dirtyNamespaces     map[string]struct{}
+	interpolatableCache map[string]string
+	interpolatableMark  uint64
+	containableCache    map[string]string
 }
 
-func NewManager(ctx context.Context, log *logx.Log) (m *Manager) {
+func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (m *Manager) {
 	m = &Manager{
-		Control:   supervisor.NewControl(ctx),
-		log:       log.GetLog("arbiter"),
-		mu:        &sync.Mutex{},
-		drain:     false,
-		producers: map[string]*managerSource{},
-		managed:   map[string]*managerResource{},
+		Control:             supervisor.NewControl(ctx),
+		log:                 log.GetLog("arbiter"),
+		mu:                  &sync.Mutex{},
+		drain:               false,
+		sources:             map[string]*ManagerSource{},
+		managed:             map[string]*managerResource{},
+		dirtyNamespaces:     map[string]struct{}{},
+		interpolatableCache: map[string]string{},
+		containableCache:    map[string]string{},
+	}
+	for _, source := range sources {
+		m.sources[source.producer.Prefix()] = source
+		for _, ns := range source.namespaces {
+			m.dirtyNamespaces[ns] = struct{}{}
+		}
 	}
 	return
 }
 
-// AddProducer should be called before Open
-func (m *Manager) AddProducer(producer metadata.Producer, constraintOnly bool, namespaces ...string) {
-	m.producers[producer.Prefix()] = &managerSource{
-		producer:       producer,
-		constraintOnly: constraintOnly,
-		namespaces:     namespaces,
-	}
-}
-
 func (m *Manager) Open() (err error) {
-	for _, s := range m.producers {
-		s.producer.RegisterConsumer("arbiter", m)
+	for _, s := range m.sources {
+		s.producer.RegisterConsumer("manager", m)
 	}
 	err = m.Control.Open()
 	return
 }
 
 // Add or update new manageable resource
-func (m *Manager) Register(name string, pod *manifest.Pod, fn managerCallback) {
-	go m.addPod(name, pod.Namespace, pod.Constraint, fn)
+func (m *Manager) RegisterResource(name, namespace string, constraint manifest.Constraint, notifyFn func(reason error, environment map[string]string, mark uint64)) {
+	go func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		resource := &managerResource{
+			Namespace:  namespace,
+			Constraint: constraint,
+			Fn:         notifyFn,
+		}
+		m.managed[name] = resource
+		m.log.Infof("resource registered: %s %v", name, constraint)
+		m.notifyResource(name, resource)
+	}()
 }
 
-func (m *Manager) Deregister(name string, fn managerCallback) {
-	go m.removePod(name, fn)
-}
-
-func (m *Manager) addPod(name, namespace string, constraint manifest.Constraint, fn managerCallback) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.managed[name] = &managerResource{
-		Namespace:  namespace,
-		Constraint: constraint,
-		Fn:         fn,
-	}
-	m.evaluate()
-}
-
-func (m *Manager) removePod(name string, fn managerCallback) {
-	m.mu.Lock()
-	delete(m.managed, name)
-	m.mu.Unlock()
-	fn(nil, nil, 0)
-	m.log.Debugf("removed %s", name)
+func (m *Manager) DeregisterResource(name string, notifyFn func()) {
+	go func() {
+		m.mu.Lock()
+		delete(m.managed, name)
+		m.mu.Unlock()
+		notifyFn()
+		m.log.Debugf("removed %s", name)
+	}()
 }
 
 // Drain modifies arbiter drain constraint
@@ -86,7 +89,9 @@ func (m *Manager) Drain(state bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.drain = state
-	m.evaluate()
+	for n, managed := range m.managed {
+		m.notifyResource(n, managed)
+	}
 }
 
 func (m *Manager) DrainState() bool {
@@ -95,7 +100,7 @@ func (m *Manager) DrainState() bool {
 	return m.drain
 }
 
-// Sync takes data from one of producers and evaluates all cached data
+// Sync takes data from one of sources and evaluates all cached data
 func (m *Manager) Sync(message metadata.Message) {
 	m.log.Debugf("got message %v", message)
 
@@ -103,56 +108,47 @@ func (m *Manager) Sync(message metadata.Message) {
 	defer m.mu.Unlock()
 
 	// update data in cache
-	m.producers[message.Prefix].message = message
+	m.sources[message.Prefix].message = message
 
-	// not clean - do nothing
-	if !message.Clean {
-		return
-	}
-	m.evaluate()
-}
-
-func (m *Manager) evaluate() {
-
-	// inactive namespaces
-	inactive := map[string]struct{}{}
-	all := map[string]string{}
-	interpolatable := map[string]string{}
-
-	if m.drain {
-		// disable all pods if agent in drain state
-		drainErr := errors.New("agent in drain state")
-		for n, managed := range m.managed {
-			m.log.Debugf("notify %s about agent in drain state", n)
-			managed.Fn(drainErr, interpolatable, 0)
-		}
-		return
-	}
-
-	for sourcePrefix, s := range m.producers {
-		if s.message.Clean {
+	m.interpolatableCache = map[string]string{}
+	m.containableCache = map[string]string{}
+	m.dirtyNamespaces = map[string]struct{}{}
+	for sourcePrefix, source := range m.sources {
+		if source.message.Clean {
 			// add fields if active
-			for k, v := range s.message.Data {
+			for k, v := range source.message.Data {
 				key := sourcePrefix + "." + k
-				all[key] = v
-				if !s.constraintOnly {
-					interpolatable[key] = v
+				m.containableCache[key] = v
+				if !source.constraintOnly {
+					m.interpolatableCache[key] = v
 				}
 			}
 			continue
 		}
-		for _, ns := range s.namespaces {
-			inactive[ns] = struct{}{}
+		for _, ns := range source.namespaces {
+			m.dirtyNamespaces[ns] = struct{}{}
 		}
 	}
+	m.interpolatableMark, _ = hashstructure.Hash(m.interpolatableCache, nil)
 
-	mark, _ := hashstructure.Hash(interpolatable, nil)
+	if !message.Clean {
+		return
+	}
 	for n, managed := range m.managed {
-		if _, ok := inactive[managed.Namespace]; !ok {
-			var checkErr error = managed.Constraint.Check(all)
-			m.log.Debugf("notify %s %v %v", n, checkErr, all)
-			managed.Fn(checkErr, interpolatable, mark)
-		}
+		m.notifyResource(n, managed)
+	}
+}
+
+func (m *Manager) notifyResource(name string, resource *managerResource) {
+	if m.drain {
+		m.log.Debugf("notify %s about agent in drain state", name)
+		resource.Fn(drainError, map[string]string{}, 0)
+		return
+	}
+	if _, ok := m.dirtyNamespaces[resource.Namespace]; !ok {
+		var checkErr error = resource.Constraint.Check(m.containableCache)
+		resource.Fn(checkErr, m.interpolatableCache, m.interpolatableMark)
+		m.log.Debugf("resource notified %s %v %v", name, checkErr, m.containableCache)
 	}
 }
 
@@ -162,9 +158,18 @@ type managerResource struct {
 	Fn         func(reason error, environment map[string]string, mark uint64)
 }
 
-type managerSource struct {
+type ManagerSource struct {
 	producer       metadata.Producer
 	constraintOnly bool
 	namespaces     []string
 	message        metadata.Message
+}
+
+func NewManagerSource(producer metadata.Producer, constraintOnly bool, namespaces ...string) (s *ManagerSource) {
+	s = &ManagerSource{
+		producer:       producer,
+		constraintOnly: constraintOnly,
+		namespaces:     namespaces,
+	}
+	return
 }

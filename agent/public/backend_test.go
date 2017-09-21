@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/public"
-	"github.com/akaspin/supervisor"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
@@ -17,7 +15,8 @@ import (
 	"time"
 )
 
-func TestUpdater_Declare_TTL5s(t *testing.T) {
+func TestBackend_RegisterConsumer_TTL(t *testing.T) {
+	//t.SkipNow()
 	f := newConsulFixture(t)
 	defer f.Stop()
 
@@ -41,59 +40,6 @@ func TestUpdater_Declare_TTL5s(t *testing.T) {
 		Timeout:       time.Second,
 		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
 		Advertise:     "127.0.0.1:7654",
-		Retry:         5,
-		TTL:           time.Second * 3,
-	})
-	updater := public.NewUpdater(ctx, src, "1")
-	sv := supervisor.NewChain(ctx, src, updater)
-	err = sv.Open()
-	assert.NoError(t, err)
-
-	// declare two keys
-	updater.Declare(map[string]string{
-		"test1": "1",
-		"test2": "2",
-	})
-
-	time.Sleep(time.Second * 2)
-
-	cons1 := newDummyConsumer()
-	src.RegisterConsumer("1", cons1)
-
-	time.Sleep(time.Second * 10)
-
-	sv.Close()
-	sv.Wait()
-
-	spew.Dump(cons1.res)
-}
-
-func TestKVBackend_RegisterConsumer_TTL(t *testing.T) {
-	t.SkipNow()
-	f := newConsulFixture(t)
-	defer f.Stop()
-
-	consul.Register()
-	kv, err := libkv.NewStore(
-		store.CONSUL,
-		[]string{f.Server.HTTPAddr},
-		&store.Config{
-			ConnectionTimeout: time.Second,
-		},
-	)
-	assert.NoError(t, err)
-	defer kv.Close()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	src := public.NewKVBackend(ctx, logx.GetLog("test"), public.BackendOptions{
-		RetryInterval: time.Millisecond * 200,
-		Enabled:       true,
-		Timeout:       time.Second,
-		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
-		Advertise:     "127.0.0.1:7654",
-		Retry:         5,
 	})
 	err = src.Open()
 	assert.NoError(t, err)
@@ -102,27 +48,37 @@ func TestKVBackend_RegisterConsumer_TTL(t *testing.T) {
 	src.RegisterConsumer("1", cons1)
 	time.Sleep(time.Second)
 
+	// set permanent value
 	err = kv.Put("test/1/permanent", []byte("value"), nil)
 	assert.NoError(t, err)
 
-	base := 2
-	err = kv.Put("test/1/ttl", []byte("val1"), nil)
+	// set ttl 1s
+	base := 1
+	err = kv.Put("test/1/ttl", []byte("val1"), &store.WriteOptions{
+		TTL: time.Second * time.Duration(base),
+	})
 	assert.NoError(t, err)
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 300)
 	err = kv.Put("test/1/ttl", []byte("val2"), &store.WriteOptions{
 		TTL: time.Second * time.Duration(base),
 	})
 	assert.NoError(t, err)
 
-	time.Sleep(time.Second * time.Duration(base+2))
+	// wait for expiration
+	time.Sleep(time.Second * 2)
 
 	src.Close()
 	src.Wait()
 
-	assert.Equal(t, cons1.states, []bool{false, true, true, true, true, true})
+	assert.Equal(t, cons1.states, []bool{
+		true,
+		true,
+		true,
+		true,
+		true,
+	})
 	assert.Equal(t, cons1.res, []map[string]string{
-		{}, // init
 		{}, // established
 		{"permanent": "value"},                // perm
 		{"permanent": "value", "ttl": "val1"}, // ttl1
@@ -131,8 +87,8 @@ func TestKVBackend_RegisterConsumer_TTL(t *testing.T) {
 	})
 }
 
-func TestKVBackend_RegisterConsumer_Recover(t *testing.T) {
-	t.SkipNow()
+func TestBackend_RegisterConsumer_Recover(t *testing.T) {
+	//t.SkipNow()
 	f := newConsulFixture(t)
 	defer f.Stop()
 
@@ -156,7 +112,6 @@ func TestKVBackend_RegisterConsumer_Recover(t *testing.T) {
 		Timeout:       time.Second,
 		URL:           fmt.Sprintf("consul://%s/test", f.Server.HTTPAddr),
 		Advertise:     "127.0.0.1:7654",
-		Retry:         5,
 	})
 	err = src.Open()
 	assert.NoError(t, err)
@@ -170,16 +125,18 @@ func TestKVBackend_RegisterConsumer_Recover(t *testing.T) {
 	err = kv.Put("test/1/1", []byte("1/1-1"), nil)
 	err = kv.Put("test/1/2", []byte("1/2-1"), nil)
 
-	f.Restart(time.Second, 0)
+	f.Restart(time.Millisecond*500, time.Millisecond*200)
 
 	err = kv.Put("test/1/2", []byte("1/2-2"), nil)
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Millisecond * 500)
+
+	src.Close()
+	src.Wait()
 
 	// cons1
 	assert.Equal(t, cons1.states, []bool{
-		false, // init
-		true,  // established
+		true, // established
 		true,
 		true,
 		false, // lost
@@ -187,75 +144,81 @@ func TestKVBackend_RegisterConsumer_Recover(t *testing.T) {
 		true,  // put
 	})
 	assert.Equal(t, cons1.res, []map[string]string{
-		{}, // init
 		{}, // established
 		{"1": "1/1-1"},
 		{"1": "1/1-1", "2": "1/2-1"},
-		{}, // lost
+		nil, // lost
 		{"1": "1/1-1", "2": "1/2-1"}, //recovered
 		{"1": "1/1-1", "2": "1/2-2"}, // put
 	})
 
 	// cons2
 	assert.Equal(t, cons2.states, []bool{
-		false, // init
 		true,  // established
 		false, // lost
 		true,  // recovered
 	})
 	assert.Equal(t, cons2.res, []map[string]string{
 		{},
-		{},
-		{},
+		nil,
 		{},
 	})
+}
 
-	// now stop server and wait for disable
+func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
+	f := newConsulFixture(t)
+	defer f.Stop()
+	addr := f.Server.HTTPAddr
+
+	consul.Register()
+	kv, err := libkv.NewStore(
+		store.CONSUL,
+		[]string{addr},
+		&store.Config{
+			ConnectionTimeout: time.Second,
+		},
+	)
+	assert.NoError(t, err)
+	defer kv.Close()
+
+	// put one record and stop server
+	err = kv.Put("test/1/1", []byte("val"), nil)
+	assert.NoError(t, err)
 	f.Stop()
-	time.Sleep(time.Second * 2)
 
-	// cons1
-	assert.Equal(t, cons1.states, []bool{
-		false, // init
-		true,  // established
-		true,
-		true,
-		false, // lost
-		true,  //recovered
-		true,
-		false, //lost
-		true,  //disabled
-	})
-	assert.Equal(t, cons1.res, []map[string]string{
-		{}, // init
-		{}, // established
-		{"1": "1/1-1"},
-		{"1": "1/1-1", "2": "1/2-1"},
-		{}, // lost
-		{"1": "1/1-1", "2": "1/2-1"}, //recovered
-		{"1": "1/1-1", "2": "1/2-2"},
-		{}, // lost
-		{}, // disabled
-	})
+	// create backend and bind consumer
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// cons2
-	assert.Equal(t, cons2.states, []bool{
-		false, // init
-		true,  // established
-		false, // lost
-		true,  // recovered
-		false, // lost
-		true,  // disabled
+	src := public.NewKVBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+		RetryInterval: time.Millisecond * 200,
+		Enabled:       true,
+		Timeout:       time.Second,
+		URL:           fmt.Sprintf("consul://%s/test", addr),
+		Advertise:     "127.0.0.1:7654",
 	})
-	assert.Equal(t, cons2.res, []map[string]string{
-		{},
-		{},
-		{},
-		{},
-		{},
-		{},
-	})
+	err = src.Open()
+	assert.NoError(t, err)
+
+	cons1 := newDummyConsumer()
+	src.RegisterConsumer("1", cons1)
+	time.Sleep(time.Millisecond * 400)
+
+	// start server
+	f.Start()
+	time.Sleep(time.Millisecond * 400)
 
 	src.Close()
 	src.Wait()
+
+	assert.Equal(t, cons1.states, []bool{
+		false,
+		true,
+	})
+	assert.Equal(t, cons1.res, []map[string]string{
+		nil,
+		{
+			"1": "val",
+		},
+	})
 }

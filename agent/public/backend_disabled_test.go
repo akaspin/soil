@@ -12,7 +12,7 @@ import (
 )
 
 func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
-	t.SkipNow()
+	//t.SkipNow()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -22,7 +22,6 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 		Timeout:       time.Second,
 		URL:           "",
 		Advertise:     "127.0.0.1:7654",
-		Retry:         0,
 	})
 	err := src.Open()
 	assert.NoError(t, err)
@@ -38,8 +37,8 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	src.Close()
 	src.Wait()
 
-	assert.Equal(t, cons1.states, []bool{false, true})
-	assert.Equal(t, cons1.res, []map[string]string{{}, {}})
-	assert.Equal(t, cons2.states, []bool{false, true})
-	assert.Equal(t, cons2.res, []map[string]string{{}, {}})
+	assert.Equal(t, cons1.states, []bool{true})
+	assert.Equal(t, cons1.res, []map[string]string{{}})
+	assert.Equal(t, cons2.states, []bool{true})
+	assert.Equal(t, cons2.res, []map[string]string{{}})
 }

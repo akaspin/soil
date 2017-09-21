@@ -12,21 +12,21 @@ type Updater struct {
 	*supervisor.Control
 	log *logx.Log
 
-	backend *KVBackend
+	backend *Backend
 	prefix  string
 
 	declared    map[string]string
 	declareChan chan map[string]string
 }
 
-func NewUpdater(ctx context.Context, backend *KVBackend, prefix string) (u *Updater) {
+func NewUpdater(ctx context.Context, backend *Backend, prefix string) (u *Updater) {
 	u = &Updater{
 		Control:     supervisor.NewControl(ctx),
 		log:         backend.log.GetLog(backend.log.Prefix(), append(backend.log.Tags(), []string{"updater", prefix}...)...),
 		prefix:      prefix,
 		backend:     backend,
 		declared:    map[string]string{},
-		declareChan: make(chan map[string]string, 1),
+		declareChan: make(chan map[string]string),
 	}
 	return
 }
@@ -38,13 +38,15 @@ func (u *Updater) Open() (err error) {
 }
 
 // Declare data. Data will be updated with TTL
-func (u *Updater) Declare(data map[string]string) {
+func (u *Updater) Set(data map[string]string) {
 	select {
 	case <-u.Control.Ctx().Done():
 		return
 	default:
 	}
-	u.declareChan <- data
+	go func() {
+		u.declareChan <- data
+	}()
 }
 
 func (u *Updater) declareLoop() {
@@ -52,9 +54,9 @@ func (u *Updater) declareLoop() {
 	defer u.Release()
 
 	// wait for conn
-	<-u.backend.dirtyCtx.Done()
-	if u.backend.failure != nil {
-		u.log.Infof("connection is not established: %v", u.backend.failure)
+	<-u.backend.connDirtyCtx.Done()
+	if u.backend.connErr != nil {
+		u.log.Infof("connection is not established: %v", u.backend.connErr)
 		return
 	}
 
@@ -83,7 +85,7 @@ LOOP:
 		case keys := <-actualiseChan:
 			u.log.Debugf("storing (restrict %v)", keys)
 			for k, v := range u.declared {
-				putErr = u.backend.kv.Put(chroot+"/"+k, []byte(v), &store.WriteOptions{
+				putErr = u.backend.conn.Put(chroot+"/"+k, []byte(v), &store.WriteOptions{
 					TTL: u.backend.options.TTL,
 				})
 				if putErr != nil {

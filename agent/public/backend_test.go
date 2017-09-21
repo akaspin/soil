@@ -22,7 +22,7 @@ func TestBackend_Set(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	backend := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	backend := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -125,7 +125,7 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -198,7 +198,7 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -284,7 +284,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.BackendOptions{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,

@@ -26,7 +26,7 @@ const (
 	opDelete
 )
 
-type BackendOptions struct {
+type Options struct {
 	Enabled       bool
 	Advertise     string
 	URL           string
@@ -38,7 +38,7 @@ type BackendOptions struct {
 type Backend struct {
 	*supervisor.Control
 	log     *logx.Log
-	options BackendOptions
+	options Options
 
 	// connection context
 	connDirtyCtx    context.Context
@@ -51,7 +51,7 @@ type Backend struct {
 	opChan chan []kvOp
 }
 
-func NewBackend(ctx context.Context, log *logx.Log, options BackendOptions) (b *Backend) {
+func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend) {
 	b = &Backend{
 		Control: supervisor.NewControl(ctx),
 		options: options,

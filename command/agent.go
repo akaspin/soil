@@ -27,7 +27,7 @@ type AgentOptions struct {
 	Meta       []string // Metadata set
 	Address    string   // bind address
 
-	Public public.BackendOptions
+	Public public.Options
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {

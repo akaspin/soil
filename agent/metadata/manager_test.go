@@ -1,12 +1,11 @@
 // +build ide test_unit
 
-package scheduler_test
+package metadata_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/metadata"
-	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -22,9 +21,9 @@ func TestManager(t *testing.T) {
 	a1 := metadata.NewPlain(ctx, log, "meta", false)
 	a2 := metadata.NewPlain(ctx, log, "with.dot", true)
 
-	man := scheduler.NewManager(ctx, log,
-		scheduler.NewManagerSource(a1, false, "private", "public"),
-		scheduler.NewManagerSource(a2, true, "private", "public"),
+	man := metadata.NewManager(ctx, log,
+		metadata.NewManagerSource(a1, false, "private", "public"),
+		metadata.NewManagerSource(a2, true, "private", "public"),
 	)
 
 	sv := supervisor.NewChain(ctx, a1, man)
@@ -39,7 +38,7 @@ func TestManager(t *testing.T) {
 		"second": "1",
 	})
 
-	privatePods, err := manifest.ParseFromFiles("private", "testdata/arbiter_test.hcl")
+	privatePods, err := manifest.ParseFromFiles("private", "testdata/manager_test.hcl")
 	assert.NoError(t, err)
 
 	mu := &sync.Mutex{}

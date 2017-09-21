@@ -1,10 +1,9 @@
-package scheduler
+package metadata
 
 import (
 	"context"
 	"errors"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
@@ -101,7 +100,7 @@ func (m *Manager) DrainState() bool {
 }
 
 // Sync takes data from one of sources and evaluates all cached data
-func (m *Manager) Sync(message metadata.Message) {
+func (m *Manager) Sync(message Message) {
 	m.log.Debugf("got message %v", message)
 
 	m.mu.Lock()
@@ -159,13 +158,13 @@ type managerResource struct {
 }
 
 type ManagerSource struct {
-	producer       metadata.Producer
+	producer       Producer
 	constraintOnly bool
 	namespaces     []string
-	message        metadata.Message
+	message        Message
 }
 
-func NewManagerSource(producer metadata.Producer, constraintOnly bool, namespaces ...string) (s *ManagerSource) {
+func NewManagerSource(producer Producer, constraintOnly bool, namespaces ...string) (s *ManagerSource) {
 	s = &ManagerSource{
 		producer:       producer,
 		constraintOnly: constraintOnly,

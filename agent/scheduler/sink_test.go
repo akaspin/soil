@@ -99,10 +99,10 @@ WantedBy=default.target
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
-	manager := scheduler.NewManager(ctx, log,
-		scheduler.NewManagerSource(source1, false, "private", "public"),
-		scheduler.NewManagerSource(source2, false, "private", "public"),
-		scheduler.NewManagerSource(allocSrc, true, "private", "public"),
+	manager := metadata.NewManager(ctx, log,
+		metadata.NewManagerSource(source1, false, "private", "public"),
+		metadata.NewManagerSource(source2, false, "private", "public"),
+		metadata.NewManagerSource(allocSrc, true, "private", "public"),
 	)
 
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)

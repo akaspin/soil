@@ -83,10 +83,10 @@ func (c *Agent) Run(args ...string) (err error) {
 		statusSource,
 	)
 
-	manager := scheduler.NewManager(ctx, c.log,
-		scheduler.NewManagerSource(c.agentSource, false, "private", "public"),
-		scheduler.NewManagerSource(c.metaSource, false, "private", "public"),
-		scheduler.NewManagerSource(statusSource, true, "private", "public"),
+	manager := metadata.NewManager(ctx, c.log,
+		metadata.NewManagerSource(c.agentSource, false, "private", "public"),
+		metadata.NewManagerSource(c.metaSource, false, "private", "public"),
+		metadata.NewManagerSource(statusSource, true, "private", "public"),
 	)
 
 	executor := scheduler.NewEvaluator(ctx, c.log)

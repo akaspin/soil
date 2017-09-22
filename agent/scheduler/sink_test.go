@@ -83,13 +83,26 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	source1 := metadata.NewSimpleProducer(ctx, log, "meta")
-	source2 := metadata.NewSimpleProducer(ctx, log, "agent")
-	allocSrc := metadata.NewAllocation(ctx, log)
+	manager := metadata.NewManager(ctx, log,
+		metadata.NewManagerSource("agent", false, nil, "private", "public"),
+		metadata.NewManagerSource("meta", false, nil, "private", "public"),
+	)
+	source1 := metadata.NewSimpleProducer(ctx, log, "meta", manager.Sync)
+	source2 := metadata.NewSimpleProducer(ctx, log, "agent", manager.Sync)
 
-	evaluator := scheduler.NewEvaluator(ctx, log, allocSrc)
+	evaluator := scheduler.NewEvaluator(ctx, log)
+	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
 
-	// Both map arbiters must be pre initialised
+	sv := supervisor.NewChain(ctx,
+		supervisor.NewChain(ctx,
+			manager,
+			supervisor.NewGroup(ctx, source1, source2),
+		),
+		evaluator,
+		sink,
+	)
+	assert.NoError(t, sv.Open())
+
 	source1.Replace(map[string]string{
 		"consul": "true",
 		"test":   "true",
@@ -98,24 +111,6 @@ WantedBy=default.target
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
-
-	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource(source1, false, nil, "private", "public"),
-		metadata.NewManagerSource(source2, false, nil, "private", "public"),
-		metadata.NewManagerSource(allocSrc, true, nil, "private", "public"),
-	)
-
-	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
-
-	sv := supervisor.NewChain(ctx,
-		supervisor.NewChain(ctx,
-			supervisor.NewGroup(ctx, source1, source2),
-			manager,
-		),
-		evaluator,
-		sink,
-	)
-	assert.NoError(t, sv.Open())
 
 	t.Run("first sync", func(t *testing.T) {
 		sink.Sync("private", pods)

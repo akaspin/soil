@@ -6,7 +6,6 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/metadata"
-	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -64,39 +63,4 @@ func TestSimplePipe_Sync(t *testing.T) {
 
 	producer.Close()
 	producer.Wait()
-}
-
-func TestPipe_Sync(t *testing.T) {
-	ctx := context.Background()
-	log := logx.GetLog("test")
-
-	cons1 := newTestConsumer()
-	producer := metadata.NewSimpleProducer(ctx, log, "test")
-	pipe := metadata.NewPipe(ctx, log, "pipe", producer, func(message metadata.Message) (res metadata.Message) {
-		delete(message.Data, "a")
-		res = message
-		return
-	}, cons1.Sync)
-	sv := supervisor.NewChain(ctx, producer, pipe)
-	assert.NoError(t, sv.Open())
-
-	cons2 := newTestConsumer()
-	//go pipe.RegisterConsumer("1", cons1)
-	go pipe.RegisterConsumer("2", cons2.Sync)
-
-	time.Sleep(time.Millisecond * 100)
-
-	producer.Replace(map[string]string{
-		"a": "1",
-		"b": "2",
-	})
-	time.Sleep(time.Millisecond * 100)
-
-	assert.Equal(t, cons1.messages, []metadata.Message{
-		{Clean: true, Prefix: "test", Data: map[string]string{"b": "2"}}})
-	assert.Equal(t, cons2.messages, []metadata.Message{
-		{Clean: true, Prefix: "test", Data: map[string]string{"b": "2"}}})
-
-	sv.Close()
-	sv.Wait()
 }

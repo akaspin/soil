@@ -99,7 +99,7 @@ LOOP:
 
 func (e *Evaluator) execute(evaluation *Evaluation) {
 	var failures []error
-	e.log.Debugf("begin %s", evaluation)
+	e.log.Tracef("begin %s", evaluation)
 	conn, err := dbus.New()
 	if err != nil {
 		e.log.Error(err)
@@ -139,12 +139,12 @@ func (e *Evaluator) executePhase(phase []Instruction, conn *dbus.Conn) (failures
 	for _, instruction := range phase {
 		go func(instruction Instruction) {
 			defer wg.Done()
-			e.log.Debugf("begin instruction %v", instruction)
+			e.log.Tracef("begin instruction %v", instruction)
 			var iErr error
 			if iErr = instruction.Execute(conn); iErr != nil {
 				e.log.Errorf("error while execute instruction %v: %s", instruction, iErr)
 			}
-			e.log.Debugf("finish instruction %s", instruction)
+			e.log.Tracef("finish instruction %s", instruction)
 			ch <- iErr
 		}(instruction)
 	}

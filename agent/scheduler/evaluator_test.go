@@ -11,7 +11,6 @@ import (
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
-	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/stretchr/testify/assert"
 	"reflect"
@@ -70,29 +69,28 @@ func TestNewEvaluator(t *testing.T) {
 	assert.NoError(t, sd.DeployPod("test-2", 3))
 
 	ctx := context.Background()
-	statusReporter := metadata.NewAllocation(ctx, logx.GetLog("test"))
-	evaluator := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
+	evaluator := scheduler.NewEvaluator(ctx, logx.GetLog("test"))
 
-	cons := newDummyConsumer()
+	assert.NoError(t, evaluator.Open())
+	time.Sleep(time.Second)
 
-	sv := supervisor.NewChain(ctx, statusReporter, evaluator)
-	assert.NoError(t, sv.Open())
-	time.Sleep(time.Second)
-	statusReporter.RegisterConsumer("test", cons.Sync)
-	time.Sleep(time.Second)
-	assert.NoError(t, sv.Close())
-	assert.NoError(t, sv.Wait())
-	assert.Equal(t, cons.count, 1)
-	assert.Equal(t, cons.res, map[string]string{
-		"test-2.failures":  "[]",
-		"test-1.present":   "true",
-		"test-2.present":   "true",
-		"test-2.namespace": "private",
-		"test-1.namespace": "private",
-		"test-1.failures":  "[]",
-		"test-2.units":     "test-2-0.service,test-2-1.service,test-2-2.service",
-		"test-1.units":     "test-1-0.service,test-1-1.service,test-1-2.service",
-	})
+	assert.Equal(t, map[string]*allocation.Header{
+		"test-1": {
+			Name:      "test-1",
+			Namespace: "private",
+			PodMark:   123,
+			AgentMark: 456,
+		},
+		"test-2": {
+			Name:      "test-2",
+			Namespace: "private",
+			PodMark:   123,
+			AgentMark: 456,
+		},
+	}, evaluator.List())
+
+	assert.NoError(t, evaluator.Close())
+	assert.NoError(t, evaluator.Wait())
 }
 
 func TestEvaluator_Submit(t *testing.T) {
@@ -105,18 +103,10 @@ func TestEvaluator_Submit(t *testing.T) {
 	defer sd.Cleanup()
 
 	ctx := context.Background()
-	statusReporter := metadata.NewAllocation(ctx, logx.GetLog("test"))
-	ex := scheduler.NewEvaluator(ctx, logx.GetLog("test"), statusReporter)
-
-	cons := newDummyConsumer()
-
-	sv := supervisor.NewChain(ctx, statusReporter, ex)
-	assert.NoError(t, sv.Open())
-	statusReporter.RegisterConsumer("test", cons.Sync)
+	evaluator := scheduler.NewEvaluator(ctx, logx.GetLog("test"))
+	assert.NoError(t, evaluator.Open())
 
 	time.Sleep(time.Second)
-	assert.Equal(t, cons.count, 1)
-	assert.Equal(t, cons.res, map[string]string{})
 
 	t.Run("create pod-1", func(t *testing.T) {
 		alloc := &allocation.Pod{
@@ -161,7 +151,7 @@ WantedBy=default.target
 				},
 			},
 		}
-		ex.Submit("pod-1", alloc)
+		evaluator.Submit("pod-1", alloc)
 		time.Sleep(time.Second)
 
 		assert.NoError(t, assertUnits(
@@ -177,17 +167,10 @@ WantedBy=default.target
 				PodMark:   1,
 				AgentMark: 0,
 			},
-		}, ex.List())
-		assert.Equal(t, cons.count, 2)
-		assert.Equal(t, cons.res, map[string]string{
-			"pod-1.namespace": "private",
-			"pod-1.failures":  "[]",
-			"pod-1.present":   "true",
-			"pod-1.units":     "unit-1.service",
-		})
+		}, evaluator.List())
 	})
 	t.Run("destroy non-existent", func(t *testing.T) {
-		ex.Submit("pod-2", nil)
+		evaluator.Submit("pod-2", nil)
 		time.Sleep(time.Second)
 		assert.NoError(t, assertUnits(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
@@ -202,27 +185,16 @@ WantedBy=default.target
 				PodMark:   1,
 				AgentMark: 0,
 			},
-		}, ex.List())
-		assert.Equal(t, cons.count, 2)
-		assert.Equal(t, cons.res, map[string]string{
-			"pod-1.namespace": "private",
-			"pod-1.failures":  "[]",
-			"pod-1.present":   "true",
-			"pod-1.units":     "unit-1.service",
-		})
+		}, evaluator.List())
 	})
 	t.Run("destroy pod-1", func(t *testing.T) {
-		ex.Submit("pod-1", nil)
+		evaluator.Submit("pod-1", nil)
 		time.Sleep(time.Second)
 		assert.NoError(t, assertUnits(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{}))
-		assert.Equal(t, map[string]*allocation.Header{}, ex.List())
-		assert.Equal(t, cons.count, 3)
-		assert.Equal(t, cons.res, map[string]string{})
 	})
 
-	//
-	assert.NoError(t, sv.Close())
-	assert.NoError(t, sv.Wait())
+	assert.NoError(t, evaluator.Close())
+	assert.NoError(t, evaluator.Wait())
 }

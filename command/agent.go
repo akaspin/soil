@@ -67,6 +67,7 @@ func (c *Agent) Bind(cc *cobra.Command) {
 }
 
 func (c *Agent) Run(args ...string) (err error) {
+	ctx := context.Background()
 	c.log = logx.GetLog("root")
 
 	// bind signals
@@ -77,14 +78,17 @@ func (c *Agent) Run(args ...string) (err error) {
 	c.readConfig()
 	c.readPrivatePods()
 
-	ctx := context.Background()
-
 	/// API
 
-	apiV1ClusterNodesGET := api_v1.NewClusterNodesGET(c.log)
+	apiV1StatusNodes := api_v1.NewStatusNodes(c.log)
+	apiV1StatusNode := api_v1.NewStatusNode(c.log)
+
 	apiRouter := api.NewRouter(ctx, c.log,
 		// status
 		api.GET("/v1/status/ping", api_v1.NewPingEndpoint(c.Id)),
+		api.GET("/v1/status/nodes", apiV1StatusNodes),
+		api.GET("/v1/status/node", apiV1StatusNode),
+
 		// lifecycle
 		api.GET("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
 			signalCh <- syscall.SIGHUP
@@ -107,63 +111,54 @@ func (c *Agent) Run(args ...string) (err error) {
 			})
 			return
 		})),
-		// public
-		api.GET("/v1/public/nodes", apiV1ClusterNodesGET),
 	)
 
 	// public KV
 	publicBackend := kv.NewBackend(ctx, c.log, c.Public)
 
 	// public watchers
-	kvNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
-		apiV1ClusterNodesGET.Sync,
+	publicNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
+		apiV1StatusNodes.Sync,
 		api.NewDiscoveryPipe(c.log, apiRouter).Sync,
 	)
+
 	// public announcers
-	kvNodesUpstream := public.NewAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id), nil)
-
-	// private metadata
-	c.agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent", kvNodesUpstream.Sync)
-	c.metaProducer = metadata.NewSimpleProducer(ctx, c.log, "meta")
-	allocationsProducer := metadata.NewAllocation(ctx, c.log)
-
+	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id))
 
 	manager := metadata.NewManager(ctx, c.log,
-		metadata.NewManagerSource(c.agentProducer, false, manifest.Constraint{
+		metadata.NewManagerSource("agent", false, manifest.Constraint{
 			"${agent.drain}": "!= true",
-		}, "private", "public"),
-		metadata.NewManagerSource(c.metaProducer, false, nil, "private", "public"),
-		metadata.NewManagerSource(allocationsProducer, true, nil, "private", "public"),
+		},
+			"private", "public",
+		),
+		metadata.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 
-	executor := scheduler.NewEvaluator(ctx, c.log)
-	registrySink := scheduler.NewSink(ctx, c.log, executor, manager)
+	// private metadata
+	c.agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent",
+		manager.Sync,
+		publicNodeAnnouncer.Sync,
+		apiV1StatusNode.Sync,
+	)
+	c.metaProducer = metadata.NewSimpleProducer(ctx, c.log, "meta",
+		manager.Sync,
+		apiV1StatusNode.Sync,
+	)
+
+	evaluator := scheduler.NewEvaluator(ctx, c.log)
+	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
 	c.privateRegistry = registry.NewPrivate(ctx, c.log, registrySink)
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,
-		// kv
-		supervisor.NewChain(ctx,
-			publicBackend,
-			supervisor.NewGroup(ctx,
-				kvNodesWatcher,
-				kvNodesUpstream,
-			),
-		),
-		supervisor.NewGroup(ctx,
-			c.agentProducer,
-			c.metaProducer,
-			allocationsProducer,
-		),
-		supervisor.NewGroup(ctx,
-			executor,
-			manager,
-		),
+		publicBackend,
+		supervisor.NewGroup(ctx, evaluator, manager),
+		supervisor.NewGroup(ctx, c.agentProducer, c.metaProducer),
 		registrySink,
 		c.privateRegistry,
 		apiRouter,
+		publicNodesWatcher,
 		api.NewServer(ctx, c.log, c.Address, apiRouter),
-
 	)
 
 	if err = agentSV.Open(); err != nil {
@@ -175,6 +170,8 @@ func (c *Agent) Run(args ...string) (err error) {
 		"advertise": c.Public.Advertise,
 		"pod_exec":  c.config.Exec,
 		"drain":     "false",
+		"version":   V,
+		"api":       "v1",
 	})
 	c.configureArbiters()
 	c.configurePrivateRegistry()

@@ -24,13 +24,14 @@ func (c *dummyConsumer) Sync(message metadata.Message) {
 
 func TestMapMetadata(t *testing.T) {
 
-	a := metadata.NewSimpleProducer(context.Background(), logx.GetLog("test"), "meta")
-	a.Open()
 	cons1 := &dummyConsumer{}
 	cons2 := &dummyConsumer{}
+	a := metadata.NewSimpleProducer(context.Background(), logx.GetLog("test"), "meta",
+		cons1.Sync, cons2.Sync)
+	a.Open()
 
-	a.RegisterConsumer("test1", cons1.Sync)
-	a.RegisterConsumer("test2", cons2.Sync)
+	//a.RegisterConsumer("test1", cons1.Sync)
+	//a.RegisterConsumer("test2", cons2.Sync)
 
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(0), atomic.LoadInt32(&cons1.changes))

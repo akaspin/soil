@@ -2,21 +2,18 @@ package metadata
 
 type Message struct {
 
-	// Producer clean status
+	// DynamicProducer clean status
 	Clean bool
 
-	// Producer prefix
+	// DynamicProducer prefix
 	Prefix string
 
 	// Message payload
 	Data map[string]string
 }
 
-// Producer syncs changed data to consumers
-type Producer interface {
-
-	// Prefix returns source prefix
-	Prefix() string
+// DynamicProducer permits to add consumers after initialisation
+type DynamicProducer interface {
 
 	// Register consumer in source
 	RegisterConsumer(name string, fn func(message Message))
@@ -27,7 +24,6 @@ type Consumer interface {
 	// Sync called by Source producer on data change
 	Sync(message Message)
 }
-
 
 type Upstream interface {
 	Replace(data map[string]string)

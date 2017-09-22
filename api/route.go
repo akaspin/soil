@@ -15,19 +15,19 @@ type Route struct {
 
 // Returns GET route
 func GET(path string, endpoint Endpoint) (r *Route) {
-	r = newRoute(methodGET, path, endpoint)
+	r = newRoute(HttpMethodGET, path, endpoint)
 	return
 }
 
 // Returns PUT route
 func PUT(path string, endpoint Endpoint) (r *Route) {
-	r = newRoute(methodPUT, path, endpoint)
+	r = newRoute(HttpMethodPUT, path, endpoint)
 	return
 }
 
 // Returns DELETE route
 func DELETE(path string, endpoint Endpoint) (r *Route) {
-	r = newRoute(methodDELETE, path, endpoint)
+	r = newRoute(HttpMethodDELETE, path, endpoint)
 	return
 }
 

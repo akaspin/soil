@@ -19,7 +19,6 @@ GOOPTS=-installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
 GOBIN ?= $(GOPATH)/bin
 
 
-
 sources: $(SRC) $(SRC_TEST)
 	go vet $(PACKAGES)
 	go fmt $(PACKAGES)

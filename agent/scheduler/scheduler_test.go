@@ -23,26 +23,25 @@ func TestNewScheduler(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentSource := metadata.NewSimpleProducer(ctx, log, "agent")
-		metaSource := metadata.NewSimpleProducer(ctx, log, "meta")
-		sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
 		manager := metadata.NewManager(ctx, log,
-			metadata.NewManagerSource(agentSource, false, nil, "private", "public"),
-			metadata.NewManagerSource(metaSource, false, nil, "private", "public"),
+			metadata.NewManagerSource("agent", false, nil, "private", "public"),
+			metadata.NewManagerSource("meta", false, nil, "private", "public"),
 		)
+		agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager.Sync)
+		metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager.Sync)
 
 		executor := scheduler.NewEvaluator(ctx, log)
 		sink := scheduler.NewSink(ctx, log, executor, manager)
-
-		schedulerSV := supervisor.NewChain(ctx,
-			supervisor.NewGroup(ctx, executor, manager),
-			sink,
+		sv := supervisor.NewChain(ctx,
+			supervisor.NewChain(ctx,
+				supervisor.NewGroup(ctx, executor, manager),
+				sink,
+			),
+			supervisor.NewGroup(ctx, agentSource, metaSource),
 		)
-
-		sv := supervisor.NewChain(ctx, sourceSV, schedulerSV)
-
 		assert.NoError(t, sv.Open())
+
 		// premature init arbiters
 		metaSource.Replace(map[string]string{
 			"first_private":  "1",
@@ -76,25 +75,23 @@ func TestNewScheduler(t *testing.T) {
 	})
 
 	// create new arbiter
-
-	agentSource := metadata.NewSimpleProducer(ctx, log, "agent")
-	metaSource := metadata.NewSimpleProducer(ctx, log, "meta")
-	sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
-
 	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource(agentSource, false, nil, "private", "public"),
-		metadata.NewManagerSource(metaSource, false, nil, "private", "public"),
+		metadata.NewManagerSource("agent", false, nil, "private", "public"),
+		metadata.NewManagerSource("meta", false, nil, "private", "public"),
 	)
+	agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager.Sync)
+	metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager.Sync)
 
 	executor := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, log, executor, manager)
-
-	schedulerSV := supervisor.NewChain(ctx,
-		supervisor.NewGroup(ctx, executor, manager),
-		sink,
+	sv := supervisor.NewChain(ctx,
+		supervisor.NewChain(ctx,
+			supervisor.NewGroup(ctx, executor, manager),
+			sink,
+		),
+		supervisor.NewGroup(ctx, agentSource, metaSource),
 	)
-
-	sv := supervisor.NewChain(ctx, sourceSV, schedulerSV)
+	assert.NoError(t, sv.Open())
 
 	// premature init arbiters
 	assert.NoError(t, sv.Open())

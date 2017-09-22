@@ -30,7 +30,7 @@ type Manager struct {
 func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (m *Manager) {
 	m = &Manager{
 		Control:             supervisor.NewControl(ctx),
-		log:                 log.GetLog("arbiter"),
+		log:                 log.GetLog("manager"),
 		mu:                  &sync.Mutex{},
 		drain:               false,
 		sources:             map[string]*ManagerSource{},
@@ -40,7 +40,7 @@ func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (
 		containableCache:    map[string]string{},
 	}
 	for _, source := range sources {
-		m.sources[source.producer.Prefix()] = source
+		m.sources[source.message.Prefix] = source
 		for _, ns := range source.namespaces {
 			m.dirtyNamespaces[ns] = struct{}{}
 		}
@@ -49,9 +49,10 @@ func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (
 }
 
 func (m *Manager) Open() (err error) {
-	for _, s := range m.sources {
-		s.producer.RegisterConsumer("manager", m.Sync)
-	}
+	m.log.Info("open")
+	//for _, s := range m.sources {
+	//	s.producer.RegisterConsumer("manager", m.Sync)
+	//}
 	err = m.Control.Open()
 	return
 }
@@ -67,7 +68,7 @@ func (m *Manager) RegisterResource(name, namespace string, constraint manifest.C
 			Fn:         notifyFn,
 		}
 		m.managed[name] = resource
-		m.log.Infof("resource registered: %s %v", name, constraint)
+		m.log.Infof("register: %s %v", name, constraint)
 		m.notifyResource(name, resource)
 	}()
 }
@@ -78,7 +79,7 @@ func (m *Manager) DeregisterResource(name string, notifyFn func()) {
 		delete(m.managed, name)
 		m.mu.Unlock()
 		notifyFn()
-		m.log.Debugf("removed %s", name)
+		m.log.Infof("deregister: %s", name)
 	}()
 }
 
@@ -150,20 +151,18 @@ type managerResource struct {
 }
 
 type ManagerSource struct {
-	producer       Producer            // bounded producer
 	constraintOnly bool                // use source only for constraints
 	namespaces     []string            // namespaces to manage
 	message        Message             // last message
 	required       manifest.Constraint // required constraint
 }
 
-func NewManagerSource(producer Producer, constraintOnly bool, required manifest.Constraint, namespaces ...string) (s *ManagerSource) {
+func NewManagerSource(producer string, constraintOnly bool, required manifest.Constraint, namespaces ...string) (s *ManagerSource) {
 	s = &ManagerSource{
-		producer:       producer,
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
 		message: Message{
-			Prefix: producer.Prefix(),
+			Prefix: producer,
 		},
 		required: required,
 	}

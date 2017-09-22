@@ -2,55 +2,43 @@ package api_v1
 
 import (
 	"context"
+	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/metadata"
-	"github.com/akaspin/soil/api/api-v1-types"
 	"net/url"
 	"sync"
-	"encoding/json"
-	"strings"
-	"github.com/akaspin/logx"
 )
 
-type ClusterNodesGET struct {
-	log *logx.Log
-	mu *sync.RWMutex
-	data api_v1_types.NodesResponse
+type statusNode struct {
+	log  *logx.Log
+	data *sync.Map
 }
 
-func NewClusterNodesGET(log *logx.Log) (e *ClusterNodesGET) {
-	e = &ClusterNodesGET{
-		log: log.GetLog("api", "public/nodes"),
-		mu: &sync.RWMutex{},
+func NewStatusNode(log *logx.Log) (e *statusNode) {
+	e = &statusNode{
+		log:  log.GetLog("api", "v1", "status/node"),
+		data: &sync.Map{},
 	}
 	return
 }
 
-func (e *ClusterNodesGET) Empty() interface{} {
+func (n *statusNode) Empty() interface{} {
 	return nil
 }
 
-func (e *ClusterNodesGET) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	res = e.data
+func (n *statusNode) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
+	res1 := map[string]map[string]string{}
+	n.data.Range(func(key, value interface{}) bool {
+		res1[key.(string)] = value.(map[string]string)
+		return true
+	})
+	res = res1
 	return
 }
 
-func (e *ClusterNodesGET) Sync(message metadata.Message) {
+func (n *statusNode) Sync(message metadata.Message) {
 	if !message.Clean {
 		return
 	}
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	e.data = e.data[:]
-	for _, v := range message.Data {
-		var val api_v1_types.NodeResponse
-		if err := json.NewDecoder(strings.NewReader(v)).Decode(&val); err != nil {
-			e.log.Error(err)
-			continue
-		}
-		e.data = append(e.data, val)
-	}
-
+	n.data.Store(message.Prefix, message.Data)
+	n.log.Debugf("stored: %s=%v", message.Prefix, message.Data)
 }
-
-
-

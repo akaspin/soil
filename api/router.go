@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	methodGET    = "GET"
-	methodPUT    = "PUT"
-	methodDELETE = "DELETE"
+	HttpMethodGET    = "GET"
+	HttpMethodPUT    = "PUT"
+	HttpMethodDELETE = "DELETE"
 
 	queryParamNode     = "node"
 	queryParamRedirect = "redirect"
@@ -27,16 +27,16 @@ type Router struct {
 	log    *logx.Log
 	routes []*Route
 
-	nodesMu       *sync.RWMutex
-	nodes         map[string]string
+	nodesMu *sync.RWMutex
+	nodes   map[string]string
 }
 
 func NewRouter(ctx context.Context, log *logx.Log, routes ...*Route) (r *Router) {
 	r = &Router{
-		Control:       supervisor.NewControl(ctx),
-		log:           log.GetLog("router"),
-		routes:        routes,
-		nodesMu:       &sync.RWMutex{},
+		Control: supervisor.NewControl(ctx),
+		log:     log.GetLog("router"),
+		routes:  routes,
+		nodesMu: &sync.RWMutex{},
 	}
 	return
 }
@@ -71,11 +71,11 @@ func (r *Router) newHandler(records []*Route) (fn func(w http.ResponseWriter, re
 	del := r.notAllowedHandlerFunc
 	for _, record := range records {
 		switch record.method {
-		case methodGET:
+		case HttpMethodGET:
 			get = record.getHandleFunc(r.Control.Ctx(), r.log)
-		case methodPUT:
+		case HttpMethodPUT:
 			put = record.getHandleFunc(r.Control.Ctx(), r.log)
-		case methodDELETE:
+		case HttpMethodDELETE:
 			del = record.getHandleFunc(r.Control.Ctx(), r.log)
 		}
 	}
@@ -86,11 +86,11 @@ func (r *Router) newHandler(records []*Route) (fn func(w http.ResponseWriter, re
 		switch nodeId {
 		case "", "self":
 			switch req.Method {
-			case methodGET:
+			case HttpMethodGET:
 				get(w, req)
-			case methodPUT:
+			case HttpMethodPUT:
 				put(w, req)
-			case methodDELETE:
+			case HttpMethodDELETE:
 				del(w, req)
 			default:
 				r.notAllowedHandlerFunc(w, req)

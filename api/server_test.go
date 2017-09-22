@@ -72,7 +72,6 @@ func TestRouter_Sync(t *testing.T) {
 	log := logx.GetLog("test")
 	ctx := context.Background()
 
-
 	router1 := api.NewRouter(ctx, log,
 		api.GET("/v1/route", &jsonEndpoint{"node-1"}),
 	)

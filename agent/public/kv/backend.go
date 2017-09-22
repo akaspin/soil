@@ -69,10 +69,6 @@ func (b *Backend) Open() (err error) {
 	return
 }
 
-func (b *Backend) Prefix() string {
-	return "kv"
-}
-
 // Registers Consumer with specific prefix
 func (b *Backend) RegisterConsumer(prefix string, consumer func(message metadata.Message)) {
 	go b.watchLoop(prefix, consumer)

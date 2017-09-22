@@ -9,36 +9,24 @@ import (
 	"github.com/akaspin/soil/agent/public/kv"
 )
 
-// Announcer exposes Agent properties in kv
-type Announcer struct {
+// NodeAnnouncer exposes Agent properties in kv
+type NodeAnnouncer struct {
+	log     *logx.Log
 	backend *kv.Backend
-	*metadata.SimpleProducer
-
-	log *logx.Log
-
-	//upstream metadata.Producer
-	prefix   string
+	prefix  string
 }
 
-func NewAnnouncer(ctx context.Context, log *logx.Log, backend *kv.Backend, prefix string, upstream metadata.Producer) (j *Announcer) {
-	j = &Announcer{
-		backend:        backend,
-		log:            log.GetLog("json", prefix),
-		SimpleProducer: metadata.NewSimpleProducer(ctx, log, prefix),
-		prefix:         prefix,
-		//upstream:       upstream,
+func NewNodesAnnouncer(ctx context.Context, log *logx.Log, backend *kv.Backend, prefix string) (j *NodeAnnouncer) {
+	j = &NodeAnnouncer{
+		log:     log.GetLog("json", prefix),
+		backend: backend,
+		prefix:  prefix,
 	}
 	return
 }
 
-func (r *Announcer) Open() (err error) {
-	//r.upstream.RegisterConsumer(r.prefix, r.Sync)
-	err = r.SimpleProducer.Open()
-	return
-}
-
 // Accepts data and pipes it to kv upstream
-func (r *Announcer) Sync(message metadata.Message) {
+func (r *NodeAnnouncer) Sync(message metadata.Message) {
 	if !message.Clean {
 		return
 	}

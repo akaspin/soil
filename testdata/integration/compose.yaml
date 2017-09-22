@@ -27,6 +27,7 @@ services:
       - /etc/systemd/system:/etc/systemd/system
       - /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket
     command: [
+      "soil-debug",
       "agent",
       "--id", "${AGENT_ID}.node.dc1.consul",
       "--public-enable",

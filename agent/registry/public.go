@@ -14,11 +14,11 @@ type Public struct {
 	*supervisor.Control
 	log *logx.Log
 
-	producer  metadata.Producer
+	producer  metadata.DynamicProducer
 	scheduler agent.Scheduler
 }
 
-func NewPublic(ctx context.Context, log *logx.Log, producer metadata.Producer) (r *Public) {
+func NewPublic(ctx context.Context, log *logx.Log, producer metadata.DynamicProducer) (r *Public) {
 	r = &Public{
 		Control:  supervisor.NewControl(ctx),
 		log:      log.GetLog("registry", "public"),

@@ -30,19 +30,18 @@ func TestManager(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := metadata.NewSimpleProducer(ctx, log, "meta")
-	a2 := metadata.NewSimpleProducer(ctx, log, "with.dot")
-	drainMeta := metadata.NewSimpleProducer(ctx, log, "drain")
-
 	man := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource(a1, false, nil, "private", "public"),
-		metadata.NewManagerSource(a2, true, nil, "private", "public"),
-		metadata.NewManagerSource(drainMeta, false, manifest.Constraint{
+		metadata.NewManagerSource("meta", false, nil, "private", "public"),
+		metadata.NewManagerSource("with.dot", true, nil, "private", "public"),
+		metadata.NewManagerSource("drain", false, manifest.Constraint{
 			"${drain.state}": "!= true",
 		}, "private", "public"),
 	)
+	a1 := metadata.NewSimpleProducer(ctx, log, "meta", man.Sync)
+	a2 := metadata.NewSimpleProducer(ctx, log, "with.dot", man.Sync)
+	drainMeta := metadata.NewSimpleProducer(ctx, log, "drain", man.Sync)
 
-	sv := supervisor.NewChain(ctx, a1, man)
+	sv := supervisor.NewChain(ctx, man, a1, a2, drainMeta)
 	assert.NoError(t, sv.Open())
 
 	a1.Replace(map[string]string{

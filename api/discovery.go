@@ -1,10 +1,10 @@
 package api
 
 import (
-	"github.com/akaspin/soil/agent/metadata"
-	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/api/api-v1-types"
 	"encoding/json"
+	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/api/api-v1-types"
 	"strings"
 )
 

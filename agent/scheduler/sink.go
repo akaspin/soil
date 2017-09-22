@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"sync"
-	"github.com/akaspin/soil/agent/metadata"
 )
 
 type Sink struct {

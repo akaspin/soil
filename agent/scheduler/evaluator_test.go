@@ -78,7 +78,7 @@ func TestNewEvaluator(t *testing.T) {
 	sv := supervisor.NewChain(ctx, statusReporter, evaluator)
 	assert.NoError(t, sv.Open())
 	time.Sleep(time.Second)
-	statusReporter.RegisterConsumer("test", cons)
+	statusReporter.RegisterConsumer("test", cons.Sync)
 	time.Sleep(time.Second)
 	assert.NoError(t, sv.Close())
 	assert.NoError(t, sv.Wait())
@@ -112,7 +112,7 @@ func TestEvaluator_Submit(t *testing.T) {
 
 	sv := supervisor.NewChain(ctx, statusReporter, ex)
 	assert.NoError(t, sv.Open())
-	statusReporter.RegisterConsumer("test", cons)
+	statusReporter.RegisterConsumer("test", cons.Sync)
 
 	time.Sleep(time.Second)
 	assert.Equal(t, cons.count, 1)

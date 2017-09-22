@@ -83,26 +83,26 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	source1 := metadata.NewPlain(ctx, log, "meta", false)
-	source2 := metadata.NewPlain(ctx, log, "agent", false)
+	source1 := metadata.NewSimpleProducer(ctx, log, "meta")
+	source2 := metadata.NewSimpleProducer(ctx, log, "agent")
 	allocSrc := metadata.NewAllocation(ctx, log)
 
 	evaluator := scheduler.NewEvaluator(ctx, log, allocSrc)
 
 	// Both map arbiters must be pre initialised
-	source1.Configure(map[string]string{
+	source1.Replace(map[string]string{
 		"consul": "true",
 		"test":   "true",
 	})
-	source2.Configure(map[string]string{
+	source2.Replace(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
 	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource(source1, false, "private", "public"),
-		metadata.NewManagerSource(source2, false, "private", "public"),
-		metadata.NewManagerSource(allocSrc, true, "private", "public"),
+		metadata.NewManagerSource(source1, false, nil, "private", "public"),
+		metadata.NewManagerSource(source2, false, nil, "private", "public"),
+		metadata.NewManagerSource(allocSrc, true, nil, "private", "public"),
 	)
 
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
@@ -132,7 +132,7 @@ WantedBy=default.target
 		time.Sleep(time.Second)
 	})
 	t.Run("enable pod-3", func(t *testing.T) {
-		source1.Configure(map[string]string{
+		source1.Replace(map[string]string{
 			"consul":    "true",
 			"test":      "true",
 			"undefined": "true",

@@ -50,7 +50,7 @@ clean-test-unit:
 ### Test SystemD
 ###
 
-test-systemd: testdata/systemd/.vagrant/machines/soil-test/virtualbox/id
+test-systemd: testdata/systemd/.vagrant-ok
 	docker -H 127.0.0.1:2475 run --rm --name=test \
 		-v /run/soil:/run/soil \
 		-v /var/lib/soil:/var/lib/soil \
@@ -60,12 +60,12 @@ test-systemd: testdata/systemd/.vagrant/machines/soil-test/virtualbox/id
 		-v /vagrant:/go/src/github.com/akaspin/soil \
 		golang:1.9 go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
 
-testdata/systemd/.vagrant/machines/soil-test/virtualbox/id: testdata/systemd/Vagrantfile
+testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel
 
 clean-test-systemd:
 	cd testdata/systemd && vagrant destroy -f
-	rm -rf testdata/systemd/.vagrant
+	rm -rf testdata/systemd/.vagrant*
 
 ###
 ### Test Integration
@@ -78,11 +78,11 @@ test-integration: \
 	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_integration $(TEST_TAGS)" $(PACKAGES)
 
 test-integration-env-up-%: \
-		testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id \
+		testdata/integration/.vagrant-ok \
 		dist/$(BIN)-$(V)-linux-amd64.tar.gz
 	HOST=172.17.8.10$* AGENT_ID=node-$* V=$(V) docker-compose -H 127.0.0.1:257$* -f testdata/integration/compose.yaml up -d --build
 
-testdata/integration/.vagrant/machines/soil-integration-01/virtualbox/id: testdata/integration/Vagrantfile
+testdata/integration/.vagrant-ok: testdata/integration/Vagrantfile
 	cd testdata/integration && vagrant up --parallel
 
 integration-env-down:
@@ -92,7 +92,7 @@ integration-env-down:
 
 clean-test-integration:
 	cd testdata/integration && vagrant destroy -f
-	rm -rf testdata/integration/.vagrant
+	rm -rf testdata/integration/.vagrant*
 
 ###
 ### Dist

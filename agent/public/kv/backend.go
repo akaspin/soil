@@ -1,4 +1,4 @@
-package public
+package kv
 
 import (
 	"context"
@@ -69,8 +69,12 @@ func (b *Backend) Open() (err error) {
 	return
 }
 
+func (b *Backend) Prefix() string {
+	return "kv"
+}
+
 // Registers Consumer with specific prefix
-func (b *Backend) RegisterConsumer(prefix string, consumer metadata.Consumer) {
+func (b *Backend) RegisterConsumer(prefix string, consumer func(message metadata.Message)) {
 	go b.watchLoop(prefix, consumer)
 }
 
@@ -122,7 +126,7 @@ func (b *Backend) setLoop() {
 		return
 	}
 
-	log.Info("open")
+	log.Infof("open: TTL %v", b.ttl)
 
 	// wait for conn and setup ticker
 	go func() {
@@ -168,15 +172,16 @@ LOOP:
 
 			for _, op := range pending {
 				log.Tracef("executing %v", op)
+				key := b.chroot + "/" + op.key
 				switch op.op {
 				case opSetTTL:
-					opErr = b.conn.Put(op.key, []byte(op.value), &store.WriteOptions{
-						TTL: b.options.TTL,
+					opErr = b.conn.Put(key, []byte(op.value), &store.WriteOptions{
+						TTL: b.ttl,
 					})
 				case opSet:
-					opErr = b.conn.Put(op.key, []byte(op.value), nil)
+					opErr = b.conn.Put(key, []byte(op.value), nil)
 				case opDelete:
-					opErr = b.conn.Delete(op.key)
+					opErr = b.conn.Delete(key)
 					switch opErr {
 					case store.ErrKeyNotFound:
 						opErr = nil
@@ -250,11 +255,11 @@ func (b *Backend) connect() {
 	}
 }
 
-func (b *Backend) watchLoop(prefix string, consumer metadata.Consumer) {
+func (b *Backend) watchLoop(prefix string, consumer func(message metadata.Message)) {
 	<-b.connDirtyCtx.Done()
 	if b.connErr != nil {
 		b.log.Errorf("%v: disabling consumer", b.connErr)
-		consumer.Sync(metadata.Message{
+		consumer(metadata.Message{
 			Prefix: prefix,
 			Clean:  true,
 			Data:   map[string]string{},
@@ -321,7 +326,7 @@ LOOP:
 			}
 			lastHash = newHash
 			cache = data
-			consumer.Sync(metadata.Message{
+			consumer(metadata.Message{
 				Prefix: prefix,
 				Clean:  true,
 				Data:   data,
@@ -334,7 +339,7 @@ LOOP:
 			receiving = false
 			lastHash = ^uint64(0)
 			if retryCount == 1 {
-				consumer.Sync(metadata.Message{
+				consumer(metadata.Message{
 					Prefix: prefix,
 					Clean:  false,
 				})

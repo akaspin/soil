@@ -2,7 +2,12 @@ package api
 
 import (
 	"fmt"
+	"github.com/akaspin/logx"
 	"net/http"
+)
+
+var (
+	errorMethodsNotAllowed = NewError(http.StatusMethodNotAllowed, "method is not allowed")
 )
 
 type Error struct {
@@ -32,5 +37,22 @@ func UnwrapError(in error) (out *Error) {
 		return
 	}
 	out = NewError(http.StatusInternalServerError, in.Error())
+	return
+}
+
+func sendCode(log *logx.Log, w http.ResponseWriter, req *http.Request, handlerErr error) (err error) {
+	parsed := NewError(http.StatusInternalServerError, "unknown")
+	if unwrapped := UnwrapError(handlerErr); unwrapped != nil {
+		parsed = unwrapped
+	}
+	if parsed.Code >= http.StatusBadRequest {
+		log.Errorf("%s %s %s", req.Method, req.URL.String(), parsed.Error())
+	}
+	switch parsed.Code {
+	case http.StatusMovedPermanently, http.StatusFound, http.StatusSeeOther:
+		http.Redirect(w, req, parsed.Reason, parsed.Code)
+	default:
+		http.Error(w, parsed.Reason, parsed.Code)
+	}
 	return
 }

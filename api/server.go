@@ -31,9 +31,10 @@ func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) 
 }
 
 func (s *Server) Close() (err error) {
-	s.log.Info("close")
+	s.log.Debug("closing")
 	s.server.Shutdown(s.Ctx())
 	err = s.Control.Close()
+	s.log.Info("close")
 	return
 }
 

@@ -23,13 +23,13 @@ func TestNewScheduler(t *testing.T) {
 	log := logx.GetLog("test")
 
 	t.Run("0", func(t *testing.T) {
-		agentSource := metadata.NewPlain(ctx, log, "agent", false)
-		metaSource := metadata.NewPlain(ctx, log, "meta", false)
+		agentSource := metadata.NewSimpleProducer(ctx, log, "agent")
+		metaSource := metadata.NewSimpleProducer(ctx, log, "meta")
 		sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
 		manager := metadata.NewManager(ctx, log,
-			metadata.NewManagerSource(agentSource, false, "private", "public"),
-			metadata.NewManagerSource(metaSource, false, "private", "public"),
+			metadata.NewManagerSource(agentSource, false, nil, "private", "public"),
+			metadata.NewManagerSource(metaSource, false, nil, "private", "public"),
 		)
 
 		executor := scheduler.NewEvaluator(ctx, log)
@@ -44,12 +44,12 @@ func TestNewScheduler(t *testing.T) {
 
 		assert.NoError(t, sv.Open())
 		// premature init arbiters
-		metaSource.Configure(map[string]string{
+		metaSource.Replace(map[string]string{
 			"first_private":  "1",
 			"second_private": "1",
 			"third_public":   "1",
 		})
-		agentSource.Configure(map[string]string{
+		agentSource.Replace(map[string]string{
 			"id":       "one",
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			"drain":    "false",
@@ -77,13 +77,13 @@ func TestNewScheduler(t *testing.T) {
 
 	// create new arbiter
 
-	agentSource := metadata.NewPlain(ctx, log, "agent", false)
-	metaSource := metadata.NewPlain(ctx, log, "meta", false)
+	agentSource := metadata.NewSimpleProducer(ctx, log, "agent")
+	metaSource := metadata.NewSimpleProducer(ctx, log, "meta")
 	sourceSV := supervisor.NewGroup(ctx, agentSource, metaSource)
 
 	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource(agentSource, false, "private", "public"),
-		metadata.NewManagerSource(metaSource, false, "private", "public"),
+		metadata.NewManagerSource(agentSource, false, nil, "private", "public"),
+		metadata.NewManagerSource(metaSource, false, nil, "private", "public"),
 	)
 
 	executor := scheduler.NewEvaluator(ctx, log)
@@ -98,11 +98,11 @@ func TestNewScheduler(t *testing.T) {
 
 	// premature init arbiters
 	assert.NoError(t, sv.Open())
-	metaSource.Configure(map[string]string{
+	metaSource.Replace(map[string]string{
 		"first_private":  "1",
 		"second_private": "1",
 	})
-	agentSource.Configure(map[string]string{
+	agentSource.Replace(map[string]string{
 		"id":       "one",
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
@@ -155,7 +155,7 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		// modify meta
-		metaSource.Configure(map[string]string{
+		metaSource.Replace(map[string]string{
 			"first_private":  "1",
 			"first_public":   "1",
 			"second_private": "1",
@@ -206,7 +206,7 @@ func TestNewScheduler(t *testing.T) {
 		assert.NoError(t, err)
 		sink.Sync("private", private)
 
-		metaSource.Configure(map[string]string{
+		metaSource.Replace(map[string]string{
 			"first_private":  "2",
 			"first_public":   "1",
 			"second_private": "1",

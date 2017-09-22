@@ -49,3 +49,7 @@ required = [
 [[constraint]]
   name = "github.com/stretchr/testify"
   version = "v1.1.4"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/ryanuber/columnize"

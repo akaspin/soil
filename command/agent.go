@@ -2,12 +2,14 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/api-v1"
 	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/public"
+	"github.com/akaspin/soil/agent/public/kv"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/api"
@@ -18,6 +20,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type AgentOptions struct {
@@ -27,7 +30,7 @@ type AgentOptions struct {
 	Meta       []string // Metadata set
 	Address    string   // bind address
 
-	Public public.Options
+	Public kv.Options
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
@@ -37,13 +40,12 @@ func (o *AgentOptions) Bind(cc *cobra.Command) {
 	cc.Flags().StringArrayVarP(&o.Meta, "meta", "", nil, "node metadata in form field=value")
 	cc.Flags().StringVarP(&o.Address, "address", "", ":7654", "listen address")
 
-	//cc.Flags().BoolVarP(&o.Public.Enabled, "public-enable", "", false, "enable public namespace clustering")
-	//cc.Flags().StringVarP(&o.Public.Advertise, "public-advertise", "", "127.0.0.1:7654", "advertise address public namespace")
-	//cc.Flags().StringVarP(&o.Public.URL, "public-backend", "", "consul://127.0.0.1:8500/soil", "backend url for public namespace")
-	//cc.Flags().DurationVarP(&o.Public.Timeout, "public-timeout", "", time.Second*30, "connect timeout for public namespace backend")
-	//cc.Flags().IntVarP(&o.Public.Retry, "public-retry", "", 0, "connection retry count for public namespace backend (0 to infinite)")
-	//cc.Flags().DurationVarP(&o.Public.RetryInterval, "public-retry-interval", "", time.Second*30, "public namespace backend connect retry interval")
-	//cc.Flags().DurationVarP(&o.Public.TTL, "public-ttl", "", time.Minute*5, "TTL for agent entries in public namespace backend")
+	cc.Flags().BoolVarP(&o.Public.Enabled, "public-enable", "", false, "enable public namespace clustering")
+	cc.Flags().StringVarP(&o.Public.Advertise, "public-advertise", "", "127.0.0.1:7654", "advertise address public namespace")
+	cc.Flags().StringVarP(&o.Public.URL, "public-backend", "", "consul://127.0.0.1:8500/soil", "backend url for public namespace")
+	cc.Flags().DurationVarP(&o.Public.Timeout, "public-timeout", "", time.Minute, "connect timeout for public namespace backend")
+	cc.Flags().DurationVarP(&o.Public.RetryInterval, "public-retry-interval", "", time.Second*30, "public namespace backend connect retry interval")
+	cc.Flags().DurationVarP(&o.Public.TTL, "public-ttl", "", time.Minute*3, "TTL for agent entries in public namespace backend")
 }
 
 type Agent struct {
@@ -55,8 +57,8 @@ type Agent struct {
 	privatePods []*manifest.Pod
 
 	log             *logx.Log
-	agentSource     *metadata.Plain
-	metaSource      *metadata.Plain
+	agentProducer   *metadata.SimpleProducer
+	metaProducer    *metadata.SimpleProducer
 	privateRegistry *registry.Private
 }
 
@@ -67,78 +69,113 @@ func (c *Agent) Bind(cc *cobra.Command) {
 func (c *Agent) Run(args ...string) (err error) {
 	c.log = logx.GetLog("root")
 
+	// bind signals
+	signalCh := make(chan os.Signal)
+	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+
 	// parse configs
 	c.readConfig()
 	c.readPrivatePods()
 
 	ctx := context.Background()
 
-	// sources
-	c.agentSource = metadata.NewPlain(ctx, c.log, "agent", false)
-	c.metaSource = metadata.NewPlain(ctx, c.log, "meta", false)
-	statusSource := metadata.NewAllocation(ctx, c.log)
-	sourceSV := supervisor.NewGroup(ctx,
-		c.agentSource,
-		c.metaSource,
-		statusSource,
+	/// API
+
+	apiV1ClusterNodesGET := api_v1.NewClusterNodesGET(c.log)
+	apiRouter := api.NewRouter(ctx, c.log,
+		// status
+		api.GET("/v1/status/ping", api_v1.NewPingEndpoint(c.Id)),
+		// lifecycle
+		api.GET("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
+			signalCh <- syscall.SIGHUP
+			return
+		})),
+		api.GET("/v1/agent/stop", api_v1.NewWrapper(func() (err error) {
+			signalCh <- syscall.SIGTERM
+			return
+		})),
+		// drain
+		api.PUT("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
+			c.agentProducer.Set(true, map[string]string{
+				"drain": "true",
+			})
+			return
+		})),
+		api.DELETE("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
+			c.agentProducer.Set(true, map[string]string{
+				"drain": "false",
+			})
+			return
+		})),
+		// public
+		api.GET("/v1/public/nodes", apiV1ClusterNodesGET),
 	)
 
+	// public KV
+	publicBackend := kv.NewBackend(ctx, c.log, c.Public)
+
+	// public watchers
+	kvNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
+		apiV1ClusterNodesGET.Sync,
+		api.NewDiscoveryPipe(c.log, apiRouter).Sync,
+	)
+	// public announcers
+	kvNodesUpstream := public.NewAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id), nil)
+
+	// private metadata
+	c.agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent", kvNodesUpstream.Sync)
+	c.metaProducer = metadata.NewSimpleProducer(ctx, c.log, "meta")
+	allocationsProducer := metadata.NewAllocation(ctx, c.log)
+
+
 	manager := metadata.NewManager(ctx, c.log,
-		metadata.NewManagerSource(c.agentSource, false, "private", "public"),
-		metadata.NewManagerSource(c.metaSource, false, "private", "public"),
-		metadata.NewManagerSource(statusSource, true, "private", "public"),
+		metadata.NewManagerSource(c.agentProducer, false, manifest.Constraint{
+			"${agent.drain}": "!= true",
+		}, "private", "public"),
+		metadata.NewManagerSource(c.metaProducer, false, nil, "private", "public"),
+		metadata.NewManagerSource(allocationsProducer, true, nil, "private", "public"),
 	)
 
 	executor := scheduler.NewEvaluator(ctx, c.log)
-	sink := scheduler.NewSink(ctx, c.log, executor, manager)
+	registrySink := scheduler.NewSink(ctx, c.log, executor, manager)
+	c.privateRegistry = registry.NewPrivate(ctx, c.log, registrySink)
 
-	schedulerSV := supervisor.NewChain(ctx,
-		supervisor.NewGroup(ctx, executor, manager),
-		sink,
-	)
-
-	c.privateRegistry = registry.NewPrivate(ctx, c.log, sink)
-
-	// bind signals
-	signalCh := make(chan os.Signal)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
-	// Agent
-	apiRouter := api.NewRouter()
-	apiRouter.Get("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
-		signalCh <- syscall.SIGHUP
-		return
-	}))
-	apiRouter.Get("/v1/agent/stop", api_v1.NewWrapper(func() (err error) {
-		signalCh <- syscall.SIGTERM
-		return
-	}))
-
-	// Info
-	statusInfoGetEndpoint := api_v1.NewStatusInfoGetEndpoint(ctx, c.agentSource, c.metaSource, statusSource)
-	apiRouter.Get("/v1/status/ping", api_v1.NewPingEndpoint(c.Id))
-	apiRouter.Get("/v1/status/info", statusInfoGetEndpoint)
-
-	// drain
-	apiRouter.Get("/v1/status/drain", api_v1.NewDrainGetEndpoint(c.Id, manager.DrainState))
-	apiRouter.Put("/v1/agent/drain", api_v1.NewDrainPutEndpoint(manager.Drain))
-	apiRouter.Delete("/v1/agent/drain", api_v1.NewDrainDeleteEndpoint(manager.Drain))
-
-	apiServer := api.NewServer(ctx, c.log, c.Address, apiRouter)
-	apiServerSV := supervisor.NewChain(ctx, statusInfoGetEndpoint, apiServer)
-
-	// agent
+	// SV
 	agentSV := supervisor.NewChain(ctx,
-		sourceSV,
-		schedulerSV,
+		// kv
+		supervisor.NewChain(ctx,
+			publicBackend,
+			supervisor.NewGroup(ctx,
+				kvNodesWatcher,
+				kvNodesUpstream,
+			),
+		),
+		supervisor.NewGroup(ctx,
+			c.agentProducer,
+			c.metaProducer,
+			allocationsProducer,
+		),
+		supervisor.NewGroup(ctx,
+			executor,
+			manager,
+		),
+		registrySink,
 		c.privateRegistry,
-		apiServerSV,
+		apiRouter,
+		api.NewServer(ctx, c.log, c.Address, apiRouter),
+
 	)
 
 	if err = agentSV.Open(); err != nil {
 		return
 	}
 
+	c.agentProducer.Replace(map[string]string{
+		"id":        c.Id,
+		"advertise": c.Public.Advertise,
+		"pod_exec":  c.config.Exec,
+		"drain":     "false",
+	})
 	c.configureArbiters()
 	c.configurePrivateRegistry()
 
@@ -189,11 +226,7 @@ func (c *Agent) readPrivatePods() {
 }
 
 func (c *Agent) configureArbiters() {
-	c.agentSource.Configure(map[string]string{
-		"id":       c.Id,
-		"pod_exec": c.config.Exec,
-	})
-	c.metaSource.Configure(c.config.Meta)
+	c.metaProducer.Replace(c.config.Meta)
 }
 
 func (c *Agent) configurePrivateRegistry() (err error) {

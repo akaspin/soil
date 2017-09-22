@@ -11,16 +11,16 @@ import (
 
 // Allocations accepts reports from executor
 type Allocations struct {
-	*BaseProducer
+	*SimpleProducer
 	dataMu   *sync.Mutex
 	podsData map[string]string
 }
 
 func NewAllocation(ctx context.Context, log *logx.Log) (s *Allocations) {
 	s = &Allocations{
-		BaseProducer: NewBaseProducer(ctx, log, "allocation"),
-		dataMu:       &sync.Mutex{},
-		podsData:     map[string]string{},
+		SimpleProducer: NewSimpleProducer(ctx, log, "allocation"),
+		dataMu:         &sync.Mutex{},
+		podsData:       map[string]string{},
 	}
 	return
 }
@@ -32,14 +32,14 @@ func (s *Allocations) Sync(pods []*allocation.Pod) {
 	for _, v := range pods {
 		s.update(v.Name, v, nil)
 	}
-	s.Store(true, s.podsData)
+	s.Replace(s.podsData)
 }
 
 func (s *Allocations) Report(name string, pod *allocation.Pod, failures []error) {
 	s.dataMu.Lock()
 	defer s.dataMu.Unlock()
 	s.update(name, pod, failures)
-	s.Store(true, s.podsData)
+	s.Replace(s.podsData)
 }
 
 func (s *Allocations) update(name string, pod *allocation.Pod, failures []error) {

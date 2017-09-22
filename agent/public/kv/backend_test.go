@@ -1,12 +1,12 @@
 // +build ide test_cluster
 
-package public_test
+package kv_test
 
 import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/public"
+	"github.com/akaspin/soil/agent/public/kv"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
@@ -22,7 +22,7 @@ func TestBackend_Set(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	backend := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	backend := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -36,13 +36,13 @@ func TestBackend_Set(t *testing.T) {
 	time.Sleep(time.Millisecond * 200)
 
 	backend.Set(map[string]string{
-		"test/1/pre-ttl": "pre",
+		"1/pre-ttl": "pre",
 	}, true)
 
 	time.Sleep(time.Second)
 
 	cons1 := newDummyConsumer()
-	backend.RegisterConsumer("1", cons1)
+	backend.RegisterConsumer("1", cons1.Sync)
 	time.Sleep(time.Second)
 
 	assert.Equal(t, cons1.states, []bool{true})
@@ -51,8 +51,8 @@ func TestBackend_Set(t *testing.T) {
 	})
 
 	backend.Set(map[string]string{
-		"test/1/1": "v1",
-		"test/1/2": "v2",
+		"1/1": "v1",
+		"1/2": "v2",
 	}, false)
 	time.Sleep(time.Second)
 	assert.Equal(t, cons1.states, []bool{true, true, true})
@@ -63,8 +63,8 @@ func TestBackend_Set(t *testing.T) {
 	})
 
 	backend.Set(map[string]string{
-		"test/1/ttl1": "ttl1",
-		"test/1/ttl2": "ttl2",
+		"1/ttl1": "ttl1",
+		"1/ttl2": "ttl2",
 	}, true)
 	time.Sleep(time.Second)
 	assert.Equal(t, cons1.states, []bool{true, true, true, true, true})
@@ -76,7 +76,7 @@ func TestBackend_Set(t *testing.T) {
 		"ttl2":    "ttl2",
 	})
 
-	backend.Delete("test/1/1", "test/1/ttl2")
+	backend.Delete("1/1", "1/ttl2")
 	time.Sleep(time.Second)
 	assert.Equal(t, cons1.states, []bool{true, true, true, true, true, true, true})
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
@@ -86,7 +86,7 @@ func TestBackend_Set(t *testing.T) {
 	})
 
 	// delete non-existent
-	backend.Delete("test/1/fake", "test/1/ttl2")
+	backend.Delete("1/fake", "1/ttl2")
 
 	time.Sleep(time.Second * 2)
 
@@ -112,7 +112,7 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	defer f.Stop()
 
 	consul.Register()
-	kv, err := libkv.NewStore(
+	lkv, err := libkv.NewStore(
 		store.CONSUL,
 		[]string{f.Server.HTTPAddr},
 		&store.Config{
@@ -120,12 +120,12 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err)
-	defer kv.Close()
+	defer lkv.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -137,22 +137,22 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	assert.NoError(t, err)
 
 	cons1 := newDummyConsumer()
-	src.RegisterConsumer("1", cons1)
+	src.RegisterConsumer("1", cons1.Sync)
 	time.Sleep(time.Second)
 
 	// set permanent value
-	err = kv.Put("test/1/permanent", []byte("value"), nil)
+	err = lkv.Put("test/1/permanent", []byte("value"), nil)
 	assert.NoError(t, err)
 
 	// set ttl 1s
 	base := 1
-	err = kv.Put("test/1/ttl", []byte("val1"), &store.WriteOptions{
+	err = lkv.Put("test/1/ttl", []byte("val1"), &store.WriteOptions{
 		TTL: time.Second * time.Duration(base),
 	})
 	assert.NoError(t, err)
 
 	time.Sleep(time.Millisecond * 300)
-	err = kv.Put("test/1/ttl", []byte("val2"), &store.WriteOptions{
+	err = lkv.Put("test/1/ttl", []byte("val2"), &store.WriteOptions{
 		TTL: time.Second * time.Duration(base),
 	})
 	assert.NoError(t, err)
@@ -185,7 +185,7 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	defer f.Stop()
 
 	consul.Register()
-	kv, err := libkv.NewStore(
+	lkv, err := libkv.NewStore(
 		store.CONSUL,
 		[]string{f.Server.HTTPAddr},
 		&store.Config{
@@ -193,12 +193,12 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err)
-	defer kv.Close()
+	defer lkv.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -212,15 +212,15 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	cons1 := newDummyConsumer()
 	cons2 := newDummyConsumer()
 
-	src.RegisterConsumer("1", cons1)
-	src.RegisterConsumer("2", cons2)
+	src.RegisterConsumer("1", cons1.Sync)
+	src.RegisterConsumer("2", cons2.Sync)
 
-	err = kv.Put("test/1/1", []byte("1/1-1"), nil)
-	err = kv.Put("test/1/2", []byte("1/2-1"), nil)
+	err = lkv.Put("test/1/1", []byte("1/1-1"), nil)
+	err = lkv.Put("test/1/2", []byte("1/2-1"), nil)
 
 	f.Restart(time.Millisecond*500, time.Millisecond*200)
 
-	err = kv.Put("test/1/2", []byte("1/2-2"), nil)
+	err = lkv.Put("test/1/2", []byte("1/2-2"), nil)
 
 	time.Sleep(time.Millisecond * 500)
 
@@ -265,7 +265,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	addr := f.Server.HTTPAddr
 
 	consul.Register()
-	kv, err := libkv.NewStore(
+	lkv, err := libkv.NewStore(
 		store.CONSUL,
 		[]string{addr},
 		&store.Config{
@@ -273,10 +273,10 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 		},
 	)
 	assert.NoError(t, err)
-	defer kv.Close()
+	defer lkv.Close()
 
 	// put one record and stop server
-	err = kv.Put("test/1/1", []byte("val"), nil)
+	err = lkv.Put("test/1/1", []byte("val"), nil)
 	assert.NoError(t, err)
 	f.Stop()
 
@@ -284,7 +284,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -296,7 +296,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	assert.NoError(t, err)
 
 	cons1 := newDummyConsumer()
-	src.RegisterConsumer("1", cons1)
+	src.RegisterConsumer("1", cons1.Sync)
 	time.Sleep(time.Millisecond * 400)
 
 	// start server

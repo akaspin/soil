@@ -19,11 +19,18 @@ type Producer interface {
 	Prefix() string
 
 	// Register consumer in source
-	RegisterConsumer(name string, consumer Consumer)
+	RegisterConsumer(name string, fn func(message Message))
 }
 
 type Consumer interface {
 
 	// Sync called by Source producer on data change
 	Sync(message Message)
+}
+
+
+type Upstream interface {
+	Replace(data map[string]string)
+	Set(data map[string]string)
+	Delete(keys ...string)
 }

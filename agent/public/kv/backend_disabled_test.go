@@ -1,11 +1,11 @@
 // +build ide test_cluster
 
-package public_test
+package kv_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/public"
+	"github.com/akaspin/soil/agent/public/kv"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -16,7 +16,7 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
 		RetryInterval: time.Millisecond * 300,
 		Enabled:       false,
 		Timeout:       time.Second,
@@ -29,8 +29,8 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	cons1 := newDummyConsumer()
 	cons2 := newDummyConsumer()
 
-	src.RegisterConsumer("1", cons1)
-	src.RegisterConsumer("2", cons2)
+	src.RegisterConsumer("1", cons1.Sync)
+	src.RegisterConsumer("2", cons2.Sync)
 
 	time.Sleep(time.Millisecond * 200)
 

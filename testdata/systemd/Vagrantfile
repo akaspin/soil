@@ -13,6 +13,7 @@ EOF
 systemctl enable docker.service
 systemctl restart docker.service
 sudo usermod -aG docker vagrant
+touch /vagrant/testdata/systemd/.vagrant-ok
 SCRIPT
 
 Vagrant.configure("2") do |config|

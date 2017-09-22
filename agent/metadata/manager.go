@@ -50,7 +50,7 @@ func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (
 
 func (m *Manager) Open() (err error) {
 	for _, s := range m.sources {
-		s.producer.RegisterConsumer("manager", m)
+		s.producer.RegisterConsumer("manager", m.Sync)
 	}
 	err = m.Control.Open()
 	return
@@ -82,26 +82,9 @@ func (m *Manager) DeregisterResource(name string, notifyFn func()) {
 	}()
 }
 
-// Drain modifies arbiter drain constraint
-func (m *Manager) Drain(state bool) {
-	m.log.Infof("received drain request %v", state)
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.drain = state
-	for n, managed := range m.managed {
-		m.notifyResource(n, managed)
-	}
-}
-
-func (m *Manager) DrainState() bool {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	return m.drain
-}
-
 // Sync takes data from one of sources and evaluates all cached data
 func (m *Manager) Sync(message Message) {
-	m.log.Debugf("got message %v", message)
+	m.log.Tracef("got message %v", message)
 
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -112,8 +95,9 @@ func (m *Manager) Sync(message Message) {
 	m.interpolatableCache = map[string]string{}
 	m.containableCache = map[string]string{}
 	m.dirtyNamespaces = map[string]struct{}{}
+
 	for sourcePrefix, source := range m.sources {
-		if source.message.Clean {
+		if source.required != nil || source.message.Clean {
 			// add fields if active
 			for k, v := range source.message.Data {
 				key := sourcePrefix + "." + k
@@ -130,7 +114,7 @@ func (m *Manager) Sync(message Message) {
 	}
 	m.interpolatableMark, _ = hashstructure.Hash(m.interpolatableCache, nil)
 
-	if !message.Clean {
+	if m.sources[message.Prefix].required == nil && !message.Clean {
 		return
 	}
 	for n, managed := range m.managed {
@@ -139,15 +123,23 @@ func (m *Manager) Sync(message Message) {
 }
 
 func (m *Manager) notifyResource(name string, resource *managerResource) {
-	if m.drain {
-		m.log.Debugf("notify %s about agent in drain state", name)
-		resource.Fn(drainError, map[string]string{}, 0)
-		return
+	m.log.Tracef("evaluating resource %s against %v", name, m.containableCache)
+
+	var checkErr error
+	for _, source := range m.sources {
+		if source.required != nil {
+			if checkErr = source.required.Check(m.containableCache); checkErr != nil {
+				resource.Fn(checkErr, m.interpolatableCache, m.interpolatableMark)
+				m.log.Warningf("(required) resource %s notified: %v %v", name, checkErr, m.containableCache)
+				return
+			}
+		}
 	}
-	if _, ok := m.dirtyNamespaces[resource.Namespace]; !ok {
-		var checkErr error = resource.Constraint.Check(m.containableCache)
+
+	if _, ok := m.dirtyNamespaces[resource.Namespace]; checkErr == nil && !ok {
+		checkErr = resource.Constraint.Check(m.containableCache)
 		resource.Fn(checkErr, m.interpolatableCache, m.interpolatableMark)
-		m.log.Debugf("resource notified %s %v %v", name, checkErr, m.containableCache)
+		m.log.Debugf("resource %s notified: %v %v", name, checkErr, m.containableCache)
 	}
 }
 
@@ -158,17 +150,23 @@ type managerResource struct {
 }
 
 type ManagerSource struct {
-	producer       Producer
-	constraintOnly bool
-	namespaces     []string
-	message        Message
+	producer       Producer            // bounded producer
+	constraintOnly bool                // use source only for constraints
+	namespaces     []string            // namespaces to manage
+	message        Message             // last message
+	required       manifest.Constraint // required constraint
 }
 
-func NewManagerSource(producer Producer, constraintOnly bool, namespaces ...string) (s *ManagerSource) {
+func NewManagerSource(producer Producer, constraintOnly bool, required manifest.Constraint, namespaces ...string) (s *ManagerSource) {
 	s = &ManagerSource{
 		producer:       producer,
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
+		message: Message{
+			Prefix: producer.Prefix(),
+		},
+		required: required,
 	}
+
 	return
 }

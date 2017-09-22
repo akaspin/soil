@@ -3,11 +3,8 @@
 package command_test
 
 import (
-	"encoding/json"
-	"github.com/akaspin/soil/agent/api-v1"
 	"github.com/akaspin/soil/command"
 	"github.com/akaspin/soil/fixture"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -45,39 +42,6 @@ func TestAgent_Run_Stop(t *testing.T) {
 	resp, err = http.Get("http://127.0.0.1:7654/v1/status/ping")
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
-
-	// info
-	resp, err = http.Get("http://127.0.0.1:7654/v1/status/info")
-	assert.NoError(t, err)
-	assert.Equal(t, resp.StatusCode, 200)
-	var res1 api_v1.StatusInfoResponse
-	err = json.NewDecoder(resp.Body).Decode(&res1)
-	assert.NoError(t, err)
-	//assert.Equal(t, res1, api_v1.StatusInfoResponse{
-	//	"agent": {
-	//		Active: true,
-	//		Namespaces: []string{"private", "public"},
-	//		Data: map[string]string{
-	//			"id": "node",
-	//			"pod_exec": "ExecStart=/usr/bin/sleep inf",
-	//		},
-	//	},
-	//	"allocation": {
-	//		Active: true,
-	//		Namespaces: []string{"private", "public"},
-	//		Data: map[string]string{
-	//		},
-	//	},
-	//	"meta": {
-	//		Active: true,
-	//		Namespaces: []string{"private", "public"},
-	//		Data: map[string]string{
-	//			"rack": "left",
-	//			"dc": "1",
-	//		},
-	//	},
-	//})
-	spew.Dump(res1)
 
 	resp, err = http.Get("http://127.0.0.1:7654/v1/agent/stop")
 	assert.NoError(t, err)

@@ -14,26 +14,42 @@ import (
 	"time"
 )
 
+func TestMap_Nil(t *testing.T) {
+	a := func(data map[string]string, constraint manifest.Constraint) {
+		if data != nil {
+			t.Fail()
+		}
+		if constraint != nil {
+			t.Fail()
+		}
+	}
+	a(nil, nil)
+}
+
 func TestManager(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	a1 := metadata.NewPlain(ctx, log, "meta", false)
-	a2 := metadata.NewPlain(ctx, log, "with.dot", true)
+	a1 := metadata.NewSimpleProducer(ctx, log, "meta")
+	a2 := metadata.NewSimpleProducer(ctx, log, "with.dot")
+	drainMeta := metadata.NewSimpleProducer(ctx, log, "drain")
 
 	man := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource(a1, false, "private", "public"),
-		metadata.NewManagerSource(a2, true, "private", "public"),
+		metadata.NewManagerSource(a1, false, nil, "private", "public"),
+		metadata.NewManagerSource(a2, true, nil, "private", "public"),
+		metadata.NewManagerSource(drainMeta, false, manifest.Constraint{
+			"${drain.state}": "!= true",
+		}, "private", "public"),
 	)
 
 	sv := supervisor.NewChain(ctx, a1, man)
 	assert.NoError(t, sv.Open())
 
-	a1.Configure(map[string]string{
+	a1.Replace(map[string]string{
 		"first":  "1",
 		"second": "1",
 	})
-	a2.Configure(map[string]string{
+	a2.Replace(map[string]string{
 		"first":  "1",
 		"second": "1",
 	})
@@ -88,7 +104,9 @@ func TestManager(t *testing.T) {
 		})
 	})
 	t.Run("drain on", func(t *testing.T) {
-		man.Drain(true)
+		drainMeta.Replace(map[string]string{
+			"state": "true",
+		})
 		time.Sleep(time.Millisecond * 100)
 		assert.Len(t, res["first"], 2, "first should be notified")
 		assert.Len(t, res["second"], 2, "second should be notified")
@@ -96,7 +114,7 @@ func TestManager(t *testing.T) {
 		assert.Error(t, res["second"][1].Reason)
 	})
 	t.Run("drain off", func(t *testing.T) {
-		man.Drain(false)
+		drainMeta.Replace(map[string]string{})
 		time.Sleep(time.Millisecond * 100)
 		assert.Len(t, res["first"], 3, "first should be notified")
 		assert.Len(t, res["second"], 3, "second should be notified")
@@ -112,7 +130,7 @@ func TestManager(t *testing.T) {
 		})
 	})
 	t.Run("fail second constraint", func(t *testing.T) {
-		a1.Configure(map[string]string{
+		a1.Replace(map[string]string{
 			"first": "1",
 		})
 		time.Sleep(time.Millisecond * 100)

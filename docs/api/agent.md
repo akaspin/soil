@@ -10,22 +10,25 @@ weight: 100
 
 ## Reload
 
-#### `GET /v1/agent/reload`
+|Method |Path|Result
+|-
+|`GET` |`/v1/agent/reload`|application/json
 
 Equivalent to `SIGHUP` signal. Reloads Agent.
 
 ## Stop
 
-#### `GET /v1/agent/stop`
+|Method |Path|Result
+|-
+|`GET` |`/v1/agent/stop`|application/json
 
 Equivalent to `SIGTERM` signal. Stops Agent.
 
 ## Drain
 
-#### `PUT /v1/agent/drain`
+|Method |Path|Result
+|-
+|`PUT` |`/v1/agent/drain`|application/json
+|`DELETE` |`/v1/agent/drain`|application/json
 
-Puts Agent in drain state.
-
-#### `DELETE /v1/agent/drain`
-
-Removes drain state from Agent.
+`PUT` and `DELETE` methods manages Agent drain state. In drain state Agent removes all pods from SystemD.

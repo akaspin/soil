@@ -42,17 +42,11 @@ pod "my-pod" {
 }
 ```
 
-`runtime` (`true`) Defines where pod units will be deployed: in 
-runtime `/run/systemd/system` or local `/etc/systemd/system`. This setting also 
-tells where to activate each unit in pod.
- 
-`target` (`multi-user.target`) [Pod unit](/soil/pod/internals) target.
-
-`constraint` Defines pod constraints.
- 
-`unit` Units definitions.
-
-`blob` Additional files.
+* `runtime` (`true`) Defines where pod units will be deployed: in runtime `/run/systemd/system` or local `/etc/systemd/system`. This setting also tells where to activate each unit in pod.
+* `target` (`multi-user.target`) [Pod unit](/soil/pod/internals) target.
+* `constraint` Defines pod constraints.
+* `unit` Units definitions.
+* `blob` Additional files.
 
 ## Units
 
@@ -75,17 +69,14 @@ unit "my-unit-1.service" {
 }
 ```
 
-`source` SystemD unit source. Can be [interpolated]({{site.baseurl}}/pod/interpolation). Soil agent will write interpolated source to disk only if it differs from existent.
-
-`create` (`start`) Systemd command to execute on unit creation.
- 
-`update` (`restart`) Systemd command to execute on unit update. This command will be triggered only if unit is exists before pod update and interpolated source from pending pod manifest is differs from existent.  
- 
-`destroy` (`stop`) Systemd command to execute on unit destroy.
+* `source` SystemD unit source. Can be [interpolated]({{site.baseurl}}/pod/interpolation). Soil agent will write interpolated source to disk only if it differs from existent.
+* `permanent` (`false`) Soil agent will enable unit in SystemD. Enabling this setting assumes what `[Install]` section is present in unit source.
+* `create` (`start`) Systemd command to execute on unit creation.
+* `update` (`restart`) Systemd command to execute on unit update. This command will be triggered only if unit is exists before pod update and interpolated source from pending pod manifest is differs from existent.  
+* `destroy` (`stop`) Systemd command to execute on unit destroy.
  
 Available commands for `create`, `update` and `destroy` are: `start`, `stop`, `restart`, `reload`, `try-restart`, `reload-or-restart`, `reload-or-try-restart`.
 
-`permanent` (`false`) Soil agent will enable unit in SystemD. Enabling this setting assumes what `[Install]` section is present in unit source.
 
 ## BLOBs
 
@@ -101,11 +92,9 @@ blob "/etc/my-pod/sample" {
 }
 ```
 
-`source` BLOB source. Can be [interpolated]({{site.baseurl}}/pod/interpolation).
-
-`permissions` (`0644`) BLOB permissions.
-
-`leave` (`false`) Leave BLOB on disk after destroy.
+* `source` BLOB source. Can be [interpolated]({{site.baseurl}}/pod/interpolation).
+* `permissions` (`0644`) BLOB permissions.
+* `leave` (`false`) Leave BLOB on disk after destroy.
 
 ## Mark
 

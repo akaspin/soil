@@ -5,6 +5,7 @@ import (
 	"net/url"
 )
 
+// simple wrapper for non-processing handlers
 type Wrapper struct {
 	fn func() (err error)
 }
@@ -22,5 +23,8 @@ func (e *Wrapper) Empty() interface{} {
 
 func (e *Wrapper) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	err = e.fn()
+	if err = e.fn(); err == nil {
+		res = "ok"
+	}
 	return
 }

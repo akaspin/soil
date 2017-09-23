@@ -24,7 +24,7 @@ type Sink struct {
 func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *metadata.Manager) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),
-		log:       log.GetLog("scheduler"),
+		log:       log.GetLog("scheduler", "sink"),
 		evaluator: evaluator,
 		arbiter:   manager,
 		mu:        &sync.Mutex{},
@@ -55,7 +55,7 @@ func (s *Sink) Wait() (err error) {
 
 // SyncNamespace scheduler pods. Called by registry on initialization.
 func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
-	s.log.Debugf("Sync %s", namespace)
+	s.log.Debugf("begin: %s", namespace)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -63,7 +63,7 @@ func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
 	for name, pod := range changes {
 		s.submitToExecutor(name, pod)
 	}
-	s.log.Infof("sync %s finished", namespace)
+	s.log.Infof("done: %s", namespace)
 	return
 }
 

@@ -71,8 +71,8 @@ func (c *Agent) Run(args ...string) (err error) {
 	c.log = logx.GetLog("root")
 
 	// bind signals
-	signalCh := make(chan os.Signal)
-	signal.Notify(signalCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// parse configs
 	c.readConfig()
@@ -85,19 +85,16 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	apiRouter := api.NewRouter(ctx, c.log,
 		// status
-		api.GET("/v1/status/ping", api_v1.NewPingEndpoint(c.Id)),
+		api.GET("/v1/status/ping", api_v1.NewPingEndpoint()),
 		api.GET("/v1/status/nodes", apiV1StatusNodes),
 		api.GET("/v1/status/node", apiV1StatusNode),
 
 		// lifecycle
 		api.GET("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
-			signalCh <- syscall.SIGHUP
+			signalChan <- syscall.SIGHUP
 			return
 		})),
-		api.GET("/v1/agent/stop", api_v1.NewWrapper(func() (err error) {
-			signalCh <- syscall.SIGTERM
-			return
-		})),
+		api.GET("/v1/agent/stop", api_v1.NewAgentStop(signalChan)),
 		// drain
 		api.PUT("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
 			c.agentProducer.Set(true, map[string]string{
@@ -179,11 +176,11 @@ func (c *Agent) Run(args ...string) (err error) {
 LOOP:
 	for {
 		select {
-		case sig := <-signalCh:
+		case sig := <-signalChan:
 			switch sig {
 			case syscall.SIGINT, syscall.SIGTERM:
 				c.log.Infof("stop received")
-				agentSV.Close()
+				go agentSV.Close()
 				break LOOP
 			case syscall.SIGHUP:
 				c.log.Infof("reload received")

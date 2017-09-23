@@ -62,4 +62,4 @@ Not in `!~` This constraint assumes what none of values from left subset are pre
 
 Default constraints are defined for each pod and cannot be changed.
 
-`"${agent.drain}" = "false"` All pods managed by Agent in `drain` state will be destroyed.
+`"${agent.drain}" = "!= true"` All pods managed by Agent in `drain` state will be destroyed.

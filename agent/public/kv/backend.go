@@ -54,11 +54,11 @@ type Backend struct {
 func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend) {
 	b = &Backend{
 		Control: supervisor.NewControl(ctx),
+		log: log.GetLog("kv", "backend"),
 		options: options,
 		opChan:  make(chan []kvOp, 500),
 	}
 	b.connDirtyCtx, b.connDirtyCancel = context.WithCancel(context.Background())
-	b.log = log.GetLog("kv")
 	return
 }
 

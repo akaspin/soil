@@ -30,7 +30,7 @@ type Manager struct {
 func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (m *Manager) {
 	m = &Manager{
 		Control:             supervisor.NewControl(ctx),
-		log:                 log.GetLog("manager"),
+		log:                 log.GetLog("metadata", "manager"),
 		mu:                  &sync.Mutex{},
 		drain:               false,
 		sources:             map[string]*ManagerSource{},
@@ -50,9 +50,6 @@ func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (
 
 func (m *Manager) Open() (err error) {
 	m.log.Info("open")
-	//for _, s := range m.sources {
-	//	s.producer.RegisterConsumer("manager", m.Sync)
-	//}
 	err = m.Control.Open()
 	return
 }

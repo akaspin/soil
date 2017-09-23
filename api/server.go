@@ -19,7 +19,7 @@ func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) 
 	mux := http.NewServeMux()
 	s = &Server{
 		Control: supervisor.NewControl(ctx),
-		log:     log.GetLog("api"),
+		log:     log.GetLog("api", "server"),
 		server: &http.Server{
 			Addr:    addr,
 			Handler: mux,

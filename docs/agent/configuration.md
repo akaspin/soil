@@ -9,7 +9,7 @@ weight: 10
 Soil uses command line options and configuration files. Configuration from 
 files can be reloaded on `SIGHUP`.
 
-```
+```shell
 $ soil agent --id=agent-1 --config=... --meta=rack=left
 ```
 

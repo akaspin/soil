@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/akaspin/logx"
 	"net/http"
+	"bytes"
 )
 
 type Route struct {
@@ -64,6 +65,15 @@ func (r *Route) getHandleFunc(ctx context.Context, log *logx.Log) (h func(w http
 		var raw []byte
 		if raw, err = json.Marshal(&data); err != nil {
 			sendCode(log, w, req, NewError(http.StatusInternalServerError, "can't marshal response"))
+		}
+		if _, ok := req.URL.Query()["pretty"]; ok {
+			// pretty
+			var buf bytes.Buffer
+			if err = json.Indent(&buf, raw, "", "  "); err != nil {
+				sendCode(log, w, req, NewError(http.StatusInternalServerError, "can't marshal response"))
+			}
+			w.Write(append(buf.Bytes(), "\n"...))
+			return
 		}
 		w.Write(raw)
 	}

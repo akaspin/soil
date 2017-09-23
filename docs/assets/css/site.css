@@ -16,7 +16,7 @@ h1 {
 
 h2 {
     margin-top: 1.4em;
-    margin-bottom: 1em;
+    margin-bottom: .4em;
 }
 
 code, pre {
@@ -29,9 +29,10 @@ code {
 }
 
 pre {
-    padding: 20px;
-    margin: 2em 0;
-    background-color: #f8f8f8;
+    padding: 12px 14px;
+    margin: 1.4em 0;
+    background-color: #fcfcfc;
+    border-color: #dddddd;
 }
 
 a, a code {
@@ -103,6 +104,70 @@ content
 
 .content h2:hover a.header-link {
     visibility: visible;
+}
+
+.content table {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+.content thead {
+    display: table-row-group;
+    vertical-align: middle;
+    border-color: inherit;
+}
+
+.content tbody {
+    display: table-row-group;
+    vertical-align: middle;
+    border-color: inherit;
+}
+
+.content tr {
+    display: table-row;
+    vertical-align: inherit;
+    border-color: inherit;
+}
+
+.content td, .content th {
+    line-height: 1.42857;
+    vertical-align: top;
+    font-size: 90%;
+    margin: 0;
+}
+
+.content td {
+    padding: 10px 8px 8px;
+    border-top: 1px solid #ddd;
+}
+
+.content th {
+    padding: 1px 8px 8px;
+    border-bottom: 2px solid #ddd;
+}
+
+.content tbody>tr:last-child {
+    border-bottom: 2px solid #ddd;
+}
+
+.content tbody>tr:first-child {
+    border-top: 2px solid #ddd;
+}
+
+.content td>code, .content th>code {
+    background: transparent;
+    font-size: 100%;
+    line-height: 1.42857;
+    padding: 0;
+    margin: 0;
+    color: #666666;
+}
+
+.content li {
+    margin-top: 14px;
+    margin-bottom: 16px;
 }
 
 /*

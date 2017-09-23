@@ -6,16 +6,10 @@ import (
 )
 
 // PingEndpoint serves "/v1/status/ping" requests
-type PingEndpoint struct {
-	resp PingResponse
-}
+type PingEndpoint struct {}
 
-func NewPingEndpoint(id string) (e *PingEndpoint) {
-	e = &PingEndpoint{
-		resp: PingResponse{
-			Id: id,
-		},
-	}
+func NewPingEndpoint() (e *PingEndpoint) {
+	e = &PingEndpoint{}
 	return
 }
 
@@ -24,7 +18,7 @@ func (e *PingEndpoint) Empty() interface{} {
 }
 
 func (e *PingEndpoint) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	res = e.resp
+	res = "ok"
 	return
 }
 

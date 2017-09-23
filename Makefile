@@ -19,7 +19,10 @@ GOOPTS=-installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
 GOBIN ?= $(GOPATH)/bin
 
 
-sources: $(SRC) $(SRC_TEST)
+help:
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
+sources: $(SRC) $(SRC_TEST) ## go vet and fmt
 	go vet $(PACKAGES)
 	go fmt $(PACKAGES)
 
@@ -39,11 +42,11 @@ test-unit-simple: $(SRC) $(SRC_TEST)
 	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)
 
 test-unit-cluster: $(SRC) $(SRC_TEST)
-	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(PACKAGES)
+	go test -run=$(TESTS) $(TEST_ARGS) -p=1 -tags="test_cluster $(TEST_TAGS)" $(PACKAGES)
 
 
 clean-test-unit:
-	find . -name .consul_data_* -type d -exec rm -rf {} +
+	-find . -name .consul_data_* -type d -exec rm -rf {} +
 
 ###
 ### Test SystemD
@@ -61,6 +64,7 @@ test-systemd: testdata/systemd/.vagrant-ok
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel
+	touch testdata/systemd/.vagrant-ok
 
 clean-test-systemd:
 	cd testdata/systemd && vagrant destroy -f
@@ -83,6 +87,7 @@ test-integration-env-up-%: \
 
 testdata/integration/.vagrant-ok: testdata/integration/Vagrantfile
 	cd testdata/integration && vagrant up --parallel
+	touch testdata/integration/.vagrant-ok
 
 integration-env-down:
 	docker-compose -H 127.0.0.1:2571 -f testdata/integration/compose.yaml down --rmi all
@@ -158,8 +163,7 @@ clean-docs:
 
 .PHONY: \
 	docs \
-	test \
-	test-unit \
+	test test-unit \
 	test-systemd \
 	test-integration \
-	clean
+	clean clean-dist uninstall clean-test-unit clean-test-systemd clean-test-integration clean-docs

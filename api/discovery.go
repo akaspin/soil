@@ -15,7 +15,7 @@ type DiscoveryPipe struct {
 
 func NewDiscoveryPipe(log *logx.Log, router *Router) (p *DiscoveryPipe) {
 	p = &DiscoveryPipe{
-		log: log.GetLog("pipe"),
+		log: log.GetLog("pipe", "discovery"),
 	}
 	p.SimplePipe = metadata.NewSimplePipe(p.process, router.Sync)
 	return

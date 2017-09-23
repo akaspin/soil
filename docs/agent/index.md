@@ -13,11 +13,11 @@ Soil Agent ships as single static-linked binary. It interacts with DBus manages 
 
 Soil Agent needs RW access to next system paths:
 
-`/var/run/dbus/system_bus_socket` Path to DBus socket.
-
-`/run/systemd/system` Systemd Runtime path.
-
-`/etc/systemd/system` Systemd Local path
+|Path|Description|
+|---
+|`/var/run/dbus/system_bus_socket`  |Path to DBus socket|
+|`/run/systemd/system`              |Systemd Runtime path|
+|`/etc/systemd/system`              |Systemd Local path|
 
 Also Soil Agent needs RO access to own configuration files and RW access to directories where agent manages BLOBs.
 

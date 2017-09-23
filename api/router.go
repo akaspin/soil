@@ -34,7 +34,7 @@ type Router struct {
 func NewRouter(ctx context.Context, log *logx.Log, routes ...*Route) (r *Router) {
 	r = &Router{
 		Control: supervisor.NewControl(ctx),
-		log:     log.GetLog("router"),
+		log:     log.GetLog("api", "router"),
 		routes:  routes,
 		nodesMu: &sync.RWMutex{},
 	}

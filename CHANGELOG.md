@@ -1,18 +1,21 @@
-## 0.2.4
+## 0.3.0
 
 ### API
 
 * /v1/agent/drain (PUT, DELETE)
-* /v1/status/drain (GET)
+* /v1/status/node (GET)
+* /v1/status/nodes (GET)
 
 ### Agent
 
 * status -> allocation
 * status.<pod> = present -> allocation.<prod>.present = true
+* Massive refactorings
 
 ### Clustering
 
-* Initial implementation
+* Announce node
+* Sync announced nodes
 
 ## 0.2.3 (13.09.2017)
 

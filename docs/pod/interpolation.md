@@ -33,15 +33,15 @@ pod "my-pod" {
 
 All interpolated variables are named as `<source-name>.<variable-name>`.
 
-## `meta` source
+## `meta`
 
 `meta` variables can be declared in [Agent configuration]({{site.baseurl}}/agent/configuration).
 
-## `blob` source
+## `blob`
 
 If pod contains one or more BLOBs their hashes will be available as `${blob.<blob-id>}`. There `blob-id` is escaped path. For example blob with path `/etc/my/blob.env` hash will be available in units as `${blob.etc-my-blob.env}`.
 
-## `agent` source
+## `agent`
 
 Agent variables are accessible as `${agent.*}`:
 

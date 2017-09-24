@@ -1,8 +1,8 @@
 package api_v1
 
 import (
-	"os"
 	"github.com/akaspin/soil/api"
+	"os"
 	"syscall"
 )
 

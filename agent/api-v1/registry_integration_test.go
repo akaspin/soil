@@ -36,7 +36,7 @@ func Test_Integration_RegistryPut_Process(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&marks)
 
 	assert.Equal(t, marks, api_v1_types.RegistrySubmitResponse{
-		"first": 0x515d988d1de74877,
+		"first":  0x515d988d1de74877,
 		"second": 0x20a35ccef17a69c5,
 	})
 }

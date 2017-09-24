@@ -23,13 +23,13 @@ func NewMessage() (m Message) {
 type DynamicProducer interface {
 
 	// Register consumer in source
-	RegisterConsumer(name string, fn func(message Message))
+	RegisterConsumer(name string, consumer Consumer)
 }
 
 type Consumer interface {
 
-	// Sync called by Source producer on data change
-	Sync(message Message)
+	// ConsumeMessage called by Source producer on data change
+	ConsumeMessage(message Message)
 }
 
 type Upstream interface {

@@ -2,17 +2,14 @@ package metadata
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
-	"sync"
 	"sort"
-	"fmt"
+	"sync"
 )
-
-var drainError = errors.New("agent in drain state")
 
 type Manager struct {
 	*supervisor.Control
@@ -82,8 +79,8 @@ func (m *Manager) DeregisterResource(name string, notifyFn func()) {
 	}()
 }
 
-// Sync takes data from one of sources and evaluates all cached data
-func (m *Manager) Sync(message Message) {
+// ConsumeMessage takes data from one of sources and evaluates all cached data
+func (m *Manager) ConsumeMessage(message Message) {
 	m.log.Tracef("got message %v", message)
 
 	m.mu.Lock()
@@ -97,7 +94,6 @@ func (m *Manager) Sync(message Message) {
 	m.interpolatableCache = map[string]string{}
 	m.containableCache = map[string]string{}
 	m.dirtyNamespaces = map[string]struct{}{}
-
 
 	for sourcePrefix, source := range m.sources {
 		if source.required != nil || source.message.Clean {
@@ -116,7 +112,6 @@ func (m *Manager) Sync(message Message) {
 		}
 	}
 	m.interpolatableMark, _ = hashstructure.Hash(m.interpolatableCache, nil)
-
 
 	if currentDirty := m.getDirtyState(m.dirtyNamespaces); previousDirty != currentDirty {
 		m.log.Infof("dirty namespaces changed: %s->%s", previousDirty, currentDirty)

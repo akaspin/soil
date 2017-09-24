@@ -17,28 +17,28 @@ type Private struct {
 	*supervisor.Control
 	log *logx.Log
 
-	stateConsumer func(message metadata.Message)
-	scheduler agent.Scheduler
+	stateConsumer metadata.Consumer
+	scheduler     agent.Scheduler
 }
 
-func New(ctx context.Context, log *logx.Log, scheduler agent.Scheduler, stateConsumer func(message metadata.Message)) (p *Private) {
+func New(ctx context.Context, log *logx.Log, scheduler agent.Scheduler, stateConsumer metadata.Consumer) (p *Private) {
 	p = &Private{
-		Control:   supervisor.NewControl(ctx),
-		log:       log.GetLog("registry", "private"),
+		Control:       supervisor.NewControl(ctx),
+		log:           log.GetLog("registry", "private"),
 		stateConsumer: stateConsumer,
-		scheduler: scheduler,
+		scheduler:     scheduler,
 	}
 	return
 }
 
 func (r *Private) Sync(pods []*manifest.Pod) {
-	r.stateConsumer(metadata.Message{
+	r.stateConsumer.ConsumeMessage(metadata.Message{
 		Prefix: "private_registry",
-		Clean: false,
+		Clean:  false,
 	})
-	defer r.stateConsumer(metadata.Message{
+	defer r.stateConsumer.ConsumeMessage(metadata.Message{
 		Prefix: "private_registry",
-		Clean: true,
+		Clean:  true,
 	})
 	var verified []*manifest.Pod
 	for _, pod := range pods {

@@ -6,7 +6,7 @@ import (
 )
 
 // PingEndpoint serves "/v1/status/ping" requests
-type PingEndpoint struct {}
+type PingEndpoint struct{}
 
 func NewPingEndpoint() (e *PingEndpoint) {
 	e = &PingEndpoint{}

@@ -117,15 +117,12 @@ func (c *Agent) Run(args ...string) (err error) {
 		api.PUT("/v1/registry", api_v1.NewRegistryPut(c.log, publicBackend)),
 	)
 
-
 	// public watchers
 	publicNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
-		apiV1StatusNodes.Sync,
-		api.NewDiscoveryPipe(c.log, apiRouter).Sync,
+		apiV1StatusNodes,
+		api.NewDiscoveryPipe(c.log, apiRouter),
 	)
-	publicRegistryWatcher := metadata.NewPipe(ctx, c.log, "registry", publicBackend, nil,
-
-	)
+	publicRegistryWatcher := metadata.NewPipe(ctx, c.log, "registry", publicBackend, nil)
 
 	// public announcers
 	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id))
@@ -141,18 +138,18 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	// private metadata
 	c.agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent",
-		manager.Sync,
-		publicNodeAnnouncer.Sync,
-		apiV1StatusNode.Sync,
+		manager,
+		publicNodeAnnouncer,
+		apiV1StatusNode,
 	)
 	c.metaProducer = metadata.NewSimpleProducer(ctx, c.log, "meta",
-		manager.Sync,
-		apiV1StatusNode.Sync,
+		manager,
+		apiV1StatusNode,
 	)
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
 	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
-	c.privateRegistry = registry.New(ctx, c.log, registrySink, manager.Sync)
+	c.privateRegistry = registry.New(ctx, c.log, registrySink, manager)
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,

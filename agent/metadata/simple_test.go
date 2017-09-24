@@ -16,7 +16,7 @@ type dummyConsumer struct {
 	changes int32
 }
 
-func (c *dummyConsumer) Sync(message metadata.Message) {
+func (c *dummyConsumer) ConsumeMessage(message metadata.Message) {
 	if message.Clean {
 		atomic.AddInt32(&c.changes, 1)
 	}
@@ -27,11 +27,8 @@ func TestMapMetadata(t *testing.T) {
 	cons1 := &dummyConsumer{}
 	cons2 := &dummyConsumer{}
 	a := metadata.NewSimpleProducer(context.Background(), logx.GetLog("test"), "meta",
-		cons1.Sync, cons2.Sync)
+		cons1, cons2)
 	a.Open()
-
-	//a.RegisterConsumer("test1", cons1.Sync)
-	//a.RegisterConsumer("test2", cons2.Sync)
 
 	time.Sleep(time.Millisecond * 100)
 	assert.Equal(t, int32(0), atomic.LoadInt32(&cons1.changes))

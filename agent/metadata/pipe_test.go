@@ -24,7 +24,7 @@ func newTestConsumer() (c *testConsumer) {
 	return
 }
 
-func (c *testConsumer) Sync(message metadata.Message) {
+func (c *testConsumer) ConsumeMessage(message metadata.Message) {
 	go func() {
 		c.mu.Lock()
 		defer c.mu.Unlock()
@@ -43,9 +43,9 @@ func TestSimplePipe_Sync(t *testing.T) {
 		delete(message.Data, "a")
 		res = message
 		return
-	}, cons1.Sync, cons2.Sync)
+	}, cons1, cons2)
 
-	producer := metadata.NewSimpleProducer(ctx, log, "test", pipe.Sync)
+	producer := metadata.NewSimpleProducer(ctx, log, "test", pipe)
 	assert.NoError(t, producer.Open())
 
 	time.Sleep(time.Millisecond * 100)

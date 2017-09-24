@@ -16,7 +16,7 @@ type Allocations struct {
 	podsData map[string]string
 }
 
-func NewAllocation(ctx context.Context, log *logx.Log, consumers ...func(message Message)) (s *Allocations) {
+func NewAllocation(ctx context.Context, log *logx.Log, consumers ...Consumer) (s *Allocations) {
 	s = &Allocations{
 		SimpleProducer: NewSimpleProducer(ctx, log, "allocation", consumers...),
 		dataMu:         &sync.Mutex{},

@@ -53,7 +53,7 @@ func (r *Router) Bind(ctx context.Context, log *logx.Log, mux *http.ServeMux) {
 	mux.HandleFunc("/", r.notFoundHandlerFunc)
 }
 
-func (r *Router) Sync(message metadata.Message) {
+func (r *Router) ConsumeMessage(message metadata.Message) {
 	if !message.Clean {
 		return
 	}

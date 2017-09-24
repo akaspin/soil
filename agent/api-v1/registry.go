@@ -9,44 +9,16 @@ import (
 	"github.com/akaspin/soil/api/api-v1-types"
 	"github.com/mitchellh/hashstructure"
 	"net/url"
-	"sync"
-	"github.com/akaspin/soil/agent/metadata"
 )
 
-type registryGet struct {
-	mu *sync.Mutex
-	data api_v1_types.RegistryGetResponse
-}
-
-func NewRegistryGet() (e *registryGet) {
-	e = &registryGet{
-		mu: &sync.Mutex{},
-	}
-	return
-}
-
-func (e *registryGet) Empty() interface{} {
-	return nil
-}
-
-func (e *registryGet) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	return
-}
-
-func (e *registryGet) Sync(message metadata.Message) {
-
-
-	return
-}
-
 type registryPut struct {
-	log *logx.Log
+	log    *logx.Log
 	setter kv.Setter
 }
 
 func NewRegistryPut(log *logx.Log, setter kv.Setter) (e *registryPut) {
 	e = &registryPut{
-		log: log.GetLog("api", "put /v1/pods"),
+		log:    log.GetLog("api", "put /v1/pods"),
 		setter: setter,
 	}
 	return
@@ -70,7 +42,7 @@ func (e *registryPut) Process(ctx context.Context, u *url.URL, v interface{}) (r
 			e.log.Errorf("can't marshal pod: %v", err)
 			continue
 		}
-		ingest["registry/" + pod.Name] = string(data)
+		ingest["registry/"+pod.Name] = string(data)
 		mark, _ := hashstructure.Hash(pod, nil)
 		marks[pod.Name] = mark
 	}
@@ -78,4 +50,3 @@ func (e *registryPut) Process(ctx context.Context, u *url.URL, v interface{}) (r
 	res = marks
 	return
 }
-

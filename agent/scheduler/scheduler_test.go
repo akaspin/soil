@@ -28,8 +28,8 @@ func TestNewScheduler(t *testing.T) {
 			metadata.NewManagerSource("agent", false, nil, "private", "public"),
 			metadata.NewManagerSource("meta", false, nil, "private", "public"),
 		)
-		agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager.Sync)
-		metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager.Sync)
+		agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
+		metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
 
 		executor := scheduler.NewEvaluator(ctx, log)
 		sink := scheduler.NewSink(ctx, log, executor, manager)
@@ -79,8 +79,8 @@ func TestNewScheduler(t *testing.T) {
 		metadata.NewManagerSource("agent", false, nil, "private", "public"),
 		metadata.NewManagerSource("meta", false, nil, "private", "public"),
 	)
-	agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager.Sync)
-	metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager.Sync)
+	agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
+	metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
 
 	executor := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, log, executor, manager)

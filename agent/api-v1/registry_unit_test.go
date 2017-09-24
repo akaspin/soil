@@ -3,18 +3,18 @@
 package api_v1_test
 
 import (
-	"testing"
-	"github.com/akaspin/soil/manifest"
-	"os"
-	"github.com/stretchr/testify/assert"
-	"encoding/json"
-	"net/http"
 	"bytes"
-	"github.com/akaspin/soil/api"
 	"context"
+	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/api-v1"
+	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/api/api-v1-types"
+	"github.com/akaspin/soil/manifest"
+	"github.com/stretchr/testify/assert"
+	"net/http"
+	"os"
+	"testing"
 )
 
 func Test_Unit_RegistryPut_Process(t *testing.T) {
@@ -52,7 +52,7 @@ func Test_Unit_RegistryPut_Process(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&marks)
 
 	assert.Equal(t, marks, api_v1_types.RegistrySubmitResponse{
-		"first": 0x515d988d1de74877,
+		"first":  0x515d988d1de74877,
 		"second": 0x20a35ccef17a69c5,
 	})
 }

@@ -26,7 +26,7 @@ func NewNodesAnnouncer(ctx context.Context, log *logx.Log, backend kv.Setter, pr
 }
 
 // Accepts data and pipes it to kv upstream
-func (r *NodeAnnouncer) Sync(message metadata.Message) {
+func (r *NodeAnnouncer) ConsumeMessage(message metadata.Message) {
 	if !message.Clean {
 		return
 	}

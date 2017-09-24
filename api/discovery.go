@@ -17,7 +17,7 @@ func NewDiscoveryPipe(log *logx.Log, router *Router) (p *DiscoveryPipe) {
 	p = &DiscoveryPipe{
 		log: log.GetLog("pipe", "discovery"),
 	}
-	p.SimplePipe = metadata.NewSimplePipe(p.process, router.Sync)
+	p.SimplePipe = metadata.NewSimplePipe(p.process, router)
 	return
 }
 

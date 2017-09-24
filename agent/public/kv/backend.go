@@ -58,7 +58,7 @@ type Backend struct {
 func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend) {
 	b = &Backend{
 		Control: supervisor.NewControl(ctx),
-		log: log.GetLog("kv", "backend"),
+		log:     log.GetLog("kv", "backend"),
 		options: options,
 		opChan:  make(chan []kvOp, 500),
 	}
@@ -74,7 +74,7 @@ func (b *Backend) Open() (err error) {
 }
 
 // Registers Consumer with specific prefix
-func (b *Backend) RegisterConsumer(prefix string, consumer func(message metadata.Message)) {
+func (b *Backend) RegisterConsumer(prefix string, consumer metadata.Consumer) {
 	go b.watchLoop(prefix, consumer)
 }
 
@@ -255,11 +255,11 @@ func (b *Backend) connect() {
 	}
 }
 
-func (b *Backend) watchLoop(prefix string, consumer func(message metadata.Message)) {
+func (b *Backend) watchLoop(prefix string, consumer metadata.Consumer) {
 	<-b.connDirtyCtx.Done()
 	if b.connErr != nil {
 		b.log.Errorf("%v: disabling consumer", b.connErr)
-		consumer(metadata.Message{
+		consumer.ConsumeMessage(metadata.Message{
 			Prefix: prefix,
 			Clean:  true,
 			Data:   map[string]string{},
@@ -326,7 +326,7 @@ LOOP:
 			}
 			lastHash = newHash
 			cache = data
-			consumer(metadata.Message{
+			consumer.ConsumeMessage(metadata.Message{
 				Prefix: prefix,
 				Clean:  true,
 				Data:   data,
@@ -339,7 +339,7 @@ LOOP:
 			receiving = false
 			lastHash = ^uint64(0)
 			if retryCount == 1 {
-				consumer(metadata.Message{
+				consumer.ConsumeMessage(metadata.Message{
 					Prefix: prefix,
 					Clean:  false,
 				})

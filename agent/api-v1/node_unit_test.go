@@ -15,14 +15,14 @@ import (
 func TestUnit_StatusNode_Process(t *testing.T) {
 
 	e := api_v1.NewStatusNode(logx.GetLog("test"))
-	go e.Sync(metadata.Message{
+	go e.ConsumeMessage(metadata.Message{
 		Prefix: "a",
 		Clean:  true,
 		Data: map[string]string{
 			"a-k1": "a-v1",
 		},
 	})
-	go e.Sync(metadata.Message{
+	go e.ConsumeMessage(metadata.Message{
 		Prefix: "b",
 		Clean:  true,
 		Data: map[string]string{

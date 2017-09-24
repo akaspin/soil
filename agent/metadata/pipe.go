@@ -8,11 +8,11 @@ import (
 )
 
 type SimplePipe struct {
-	consumers []func(message Message)
+	consumers []Consumer
 	fn        func(message Message) Message
 }
 
-func NewSimplePipe(fn func(message Message) Message, consumers ...func(message Message)) (p *SimplePipe) {
+func NewSimplePipe(fn func(message Message) Message, consumers ...Consumer) (p *SimplePipe) {
 	p = &SimplePipe{
 		fn:        fn,
 		consumers: consumers,
@@ -20,13 +20,13 @@ func NewSimplePipe(fn func(message Message) Message, consumers ...func(message M
 	return
 }
 
-func (p *SimplePipe) Sync(message Message) {
+func (p *SimplePipe) ConsumeMessage(message Message) {
 	res := message
 	if p.fn != nil {
 		res = p.fn(res)
 	}
 	for _, consumer := range p.consumers {
-		consumer(res)
+		consumer.ConsumeMessage(res)
 	}
 }
 
@@ -40,10 +40,10 @@ type BoundedPipe struct {
 
 	mu        *sync.Mutex
 	cache     Message
-	consumers []func(message Message)
+	consumers []Consumer
 }
 
-func NewPipe(ctx context.Context, log *logx.Log, prefix string, producer DynamicProducer, fn func(message Message) Message, consumers ...func(message Message)) (p *BoundedPipe) {
+func NewPipe(ctx context.Context, log *logx.Log, prefix string, producer DynamicProducer, fn func(message Message) Message, consumers ...Consumer) (p *BoundedPipe) {
 	p = &BoundedPipe{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("pipe", prefix),
@@ -57,12 +57,12 @@ func NewPipe(ctx context.Context, log *logx.Log, prefix string, producer Dynamic
 }
 
 func (p *BoundedPipe) Open() (err error) {
-	go p.producer.RegisterConsumer(p.prefix, p.sync)
+	go p.producer.RegisterConsumer(p.prefix, p)
 	err = p.Control.Open()
 	return
 }
 
-func (p *BoundedPipe) sync(message Message) {
+func (p *BoundedPipe) ConsumeMessage(message Message) {
 	p.log.Debugf("accepted message %v", message)
 	res := message
 	if p.fn != nil {
@@ -74,7 +74,7 @@ func (p *BoundedPipe) sync(message Message) {
 		consumers := p.consumers
 		p.mu.Unlock()
 		for _, consumer := range consumers {
-			consumer(res)
+			consumer.ConsumeMessage(res)
 		}
 	}()
 }

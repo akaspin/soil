@@ -35,7 +35,7 @@ func (n *statusNode) Process(ctx context.Context, u *url.URL, v interface{}) (re
 	return
 }
 
-func (n *statusNode) Sync(message metadata.Message) {
+func (n *statusNode) ConsumeMessage(message metadata.Message) {
 	if !message.Clean {
 		return
 	}

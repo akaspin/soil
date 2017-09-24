@@ -87,8 +87,8 @@ WantedBy=default.target
 		metadata.NewManagerSource("agent", false, nil, "private", "public"),
 		metadata.NewManagerSource("meta", false, nil, "private", "public"),
 	)
-	source1 := metadata.NewSimpleProducer(ctx, log, "meta", manager.Sync)
-	source2 := metadata.NewSimpleProducer(ctx, log, "agent", manager.Sync)
+	source1 := metadata.NewSimpleProducer(ctx, log, "meta", manager)
+	source2 := metadata.NewSimpleProducer(ctx, log, "agent", manager)
 
 	evaluator := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)

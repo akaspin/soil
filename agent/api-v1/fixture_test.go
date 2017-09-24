@@ -3,11 +3,10 @@ package api_v1_test
 import "sync"
 
 type fixtureBackend struct {
-	mu *sync.Mutex
+	mu     *sync.Mutex
 	states []map[string]string
-	ttl []bool
+	ttl    []bool
 }
-
 
 func newFixtureBackend() (b *fixtureBackend) {
 	b = &fixtureBackend{

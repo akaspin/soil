@@ -84,7 +84,7 @@ func TestRouter_Sync(t *testing.T) {
 	server2 := api.NewServer(ctx, log, ":5555", router2)
 	sv2 := supervisor.NewChain(ctx, router2, server2)
 
-	nodesProducer := metadata.NewSimpleProducer(ctx, log, "nodes", router1.Sync, router2.Sync)
+	nodesProducer := metadata.NewSimpleProducer(ctx, log, "nodes", router1, router2)
 
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewGroup(ctx, sv1, sv2),

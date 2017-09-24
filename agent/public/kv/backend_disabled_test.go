@@ -29,8 +29,8 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	cons1 := newDummyConsumer()
 	cons2 := newDummyConsumer()
 
-	src.RegisterConsumer("1", cons1.Sync)
-	src.RegisterConsumer("2", cons2.Sync)
+	src.RegisterConsumer("1", cons1)
+	src.RegisterConsumer("2", cons2)
 
 	time.Sleep(time.Millisecond * 200)
 

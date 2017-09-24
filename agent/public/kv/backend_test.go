@@ -42,7 +42,7 @@ func TestBackend_Set(t *testing.T) {
 	time.Sleep(time.Second)
 
 	cons1 := newDummyConsumer()
-	backend.RegisterConsumer("1", cons1.Sync)
+	backend.RegisterConsumer("1", cons1)
 	time.Sleep(time.Second)
 
 	assert.Equal(t, cons1.states, []bool{true})
@@ -137,7 +137,7 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	assert.NoError(t, err)
 
 	cons1 := newDummyConsumer()
-	src.RegisterConsumer("1", cons1.Sync)
+	src.RegisterConsumer("1", cons1)
 	time.Sleep(time.Second)
 
 	// set permanent value
@@ -212,8 +212,8 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	cons1 := newDummyConsumer()
 	cons2 := newDummyConsumer()
 
-	src.RegisterConsumer("1", cons1.Sync)
-	src.RegisterConsumer("2", cons2.Sync)
+	src.RegisterConsumer("1", cons1)
+	src.RegisterConsumer("2", cons2)
 
 	err = lkv.Put("test/1/1", []byte("1/1-1"), nil)
 	err = lkv.Put("test/1/2", []byte("1/2-1"), nil)
@@ -296,7 +296,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	assert.NoError(t, err)
 
 	cons1 := newDummyConsumer()
-	src.RegisterConsumer("1", cons1.Sync)
+	src.RegisterConsumer("1", cons1)
 	time.Sleep(time.Millisecond * 400)
 
 	// start server

@@ -1,12 +1,12 @@
 package manifest
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/hashstructure"
 	"io"
-	"bytes"
-	"fmt"
 )
 
 const (

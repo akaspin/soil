@@ -12,14 +12,14 @@ type SimpleProducer struct {
 	log *logx.Log
 
 	prefix    string
-	consumers []func(message Message)
+	consumers []Consumer
 
 	mu     *sync.Mutex
 	data   map[string]string
 	active bool
 }
 
-func NewSimpleProducer(ctx context.Context, log *logx.Log, prefix string, consumers ...func(message Message)) (p *SimpleProducer) {
+func NewSimpleProducer(ctx context.Context, log *logx.Log, prefix string, consumers ...Consumer) (p *SimpleProducer) {
 	p = &SimpleProducer{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("producer", prefix),
@@ -73,7 +73,7 @@ func (p *SimpleProducer) Delete(active bool, keys ...string) {
 func (p *SimpleProducer) notifyAll() {
 	p.log.Tracef("syncing with %d consumers", len(p.consumers))
 	for _, consumer := range p.consumers {
-		consumer(Message{
+		consumer.ConsumeMessage(Message{
 			Prefix: p.prefix,
 			Clean:  p.active,
 			Data:   p.data,

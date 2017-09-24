@@ -117,7 +117,7 @@ func newDummyConsumer() (c *dummyConsumer) {
 	return
 }
 
-func (c *dummyConsumer) Sync(message metadata.Message) {
+func (c *dummyConsumer) ConsumeMessage(message metadata.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.states = append(c.states, message.Clean)

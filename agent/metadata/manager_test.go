@@ -135,6 +135,7 @@ func TestManager(t *testing.T) {
 		time.Sleep(time.Millisecond * 100)
 		assert.Len(t, res["first"], 4, "first should be notified")
 		assert.Len(t, res["second"], 4, "second should be notified")
+		//pretty.Log(res["first"])
 		assert.NoError(t, res["first"][3].Reason)
 		assert.Error(t, res["second"][3].Reason)
 	})

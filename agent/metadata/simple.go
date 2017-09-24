@@ -50,10 +50,10 @@ func (p *SimpleProducer) Replace(data map[string]string) {
 	p.notifyAll()
 }
 
-func (p *SimpleProducer) Set(active bool, data map[string]string) {
+func (p *SimpleProducer) Set(data map[string]string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.active = active
+	p.active = true
 	for k, v := range data {
 		p.data[k] = v
 	}
@@ -62,11 +62,11 @@ func (p *SimpleProducer) Set(active bool, data map[string]string) {
 
 func (p *SimpleProducer) notifyAll() {
 	p.log.Tracef("syncing with %d consumers", len(p.consumers))
+	msg := Message{
+		Prefix: p.prefix,
+		Data:   p.data,
+	}
 	for _, consumer := range p.consumers {
-		consumer.ConsumeMessage(Message{
-			Prefix: p.prefix,
-			Clean:  p.active,
-			Data:   p.data,
-		})
+		consumer.ConsumeMessage(msg)
 	}
 }

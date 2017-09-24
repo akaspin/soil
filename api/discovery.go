@@ -22,9 +22,6 @@ func NewDiscoveryPipe(log *logx.Log, router *Router) (p *DiscoveryPipe) {
 }
 
 func (p *DiscoveryPipe) process(message metadata.Message) (res metadata.Message) {
-	if !message.Clean {
-		return
-	}
 	data := map[string]string{}
 	for _, v := range message.Data {
 		var value api_v1_types.NodeResponse

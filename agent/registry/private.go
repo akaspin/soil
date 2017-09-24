@@ -14,15 +14,15 @@ type Syncer interface {
 
 type Private struct {
 	*supervisor.Control
-	log *logx.Log
-	scheduler     agent.Scheduler
+	log       *logx.Log
+	scheduler agent.Scheduler
 }
 
 func New(ctx context.Context, log *logx.Log, scheduler agent.Scheduler) (p *Private) {
 	p = &Private{
-		Control:       supervisor.NewControl(ctx),
-		log:           log.GetLog("registry", "private"),
-		scheduler:     scheduler,
+		Control:   supervisor.NewControl(ctx),
+		log:       log.GetLog("registry", "private"),
+		scheduler: scheduler,
 	}
 	return
 }

@@ -36,9 +36,6 @@ func (n *statusNode) Process(ctx context.Context, u *url.URL, v interface{}) (re
 }
 
 func (n *statusNode) ConsumeMessage(message metadata.Message) {
-	if !message.Clean {
-		return
-	}
 	n.data.Store(message.GetPrefix(), message.GetPayload())
 	n.log.Debugf("stored: %v", message)
 }

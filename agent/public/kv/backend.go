@@ -267,8 +267,8 @@ func (b *Backend) watchLoop(prefix string, consumer metadata.Consumer) {
 		b.log.Errorf("%v: disabling consumer", b.connErr)
 		consumer.ConsumeMessage(metadata.Message{
 			Prefix: prefix,
-			Clean:  true,
-			Data:   map[string]string{},
+			//Clean:  true,
+			Data: map[string]string{},
 		})
 		return
 	}
@@ -334,7 +334,6 @@ LOOP:
 			cache = data
 			consumer.ConsumeMessage(metadata.Message{
 				Prefix: prefix,
-				Clean:  true,
 				Data:   data,
 			})
 			log.Debugf("consumer updated with %v", data)

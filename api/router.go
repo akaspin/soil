@@ -54,9 +54,6 @@ func (r *Router) Bind(ctx context.Context, log *logx.Log, mux *http.ServeMux) {
 }
 
 func (r *Router) ConsumeMessage(message metadata.Message) {
-	if !message.Clean {
-		return
-	}
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()

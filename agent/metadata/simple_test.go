@@ -17,9 +17,7 @@ type dummyConsumer struct {
 }
 
 func (c *dummyConsumer) ConsumeMessage(message metadata.Message) {
-	if message.Clean {
-		atomic.AddInt32(&c.changes, 1)
-	}
+	atomic.AddInt32(&c.changes, 1)
 }
 
 func TestMapMetadata(t *testing.T) {

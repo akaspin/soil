@@ -101,13 +101,13 @@ func (c *Agent) Run(args ...string) (err error) {
 		api.GET("/v1/agent/stop", api_v1.NewAgentStop(signalChan)),
 		// drain
 		api.PUT("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
-			c.agentProducer.Set(true, map[string]string{
+			c.agentProducer.Set(map[string]string{
 				"drain": "true",
 			})
 			return
 		})),
 		api.DELETE("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
-			c.agentProducer.Set(true, map[string]string{
+			c.agentProducer.Set(map[string]string{
 				"drain": "false",
 			})
 			return

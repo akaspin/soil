@@ -90,13 +90,14 @@ func (m *Manager) ConsumeMessage(message Message) {
 
 	// update data in cache
 	m.sources[message.GetPrefix()].message = message
+	m.sources[message.GetPrefix()].clean = true
 
 	m.interpolatableCache = map[string]string{}
 	m.containableCache = map[string]string{}
 	m.dirtyNamespaces = map[string]struct{}{}
 
 	for sourcePrefix, source := range m.sources {
-		if source.required != nil || source.message.Clean {
+		if source.required != nil || source.clean {
 			// add fields if active
 			for k, v := range source.message.Data {
 				key := sourcePrefix + "." + k
@@ -117,9 +118,6 @@ func (m *Manager) ConsumeMessage(message Message) {
 		m.log.Infof("dirty namespaces changed: %s->%s", previousDirty, currentDirty)
 	}
 
-	if m.sources[message.GetPrefix()].required == nil && !message.Clean {
-		return
-	}
 	for n, managed := range m.managed {
 		m.notifyResource(n, managed)
 	}
@@ -166,6 +164,7 @@ type ManagerSource struct {
 	constraintOnly bool                // use source only for constraints
 	namespaces     []string            // namespaces to manage
 	message        Message             // last message
+	clean          bool                // clean status
 	required       manifest.Constraint // required constraint
 }
 
@@ -173,8 +172,11 @@ func NewManagerSource(producer string, constraintOnly bool, required manifest.Co
 	s = &ManagerSource{
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
-		message:        NewDirtyMessage(producer),
-		required:       required,
+		message: Message{
+			Prefix: producer,
+			Data:   map[string]string{},
+		},
+		required: required,
 	}
 
 	return

@@ -35,9 +35,6 @@ func (e *StatusNodes) Process(ctx context.Context, u *url.URL, v interface{}) (r
 }
 
 func (e *StatusNodes) ConsumeMessage(message metadata.Message) {
-	if !message.Clean {
-		return
-	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.data = e.data[:0]

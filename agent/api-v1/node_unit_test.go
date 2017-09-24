@@ -15,10 +15,10 @@ import (
 func TestUnit_StatusNode_Process(t *testing.T) {
 
 	e := api_v1.NewStatusNode(logx.GetLog("test"))
-	go e.ConsumeMessage(metadata.NewCleanMessage("a", map[string]string{
+	go e.ConsumeMessage(metadata.NewMessage("a", map[string]string{
 		"a-k1": "a-v1",
 	}))
-	go e.ConsumeMessage(metadata.NewCleanMessage("b", map[string]string{
+	go e.ConsumeMessage(metadata.NewMessage("b", map[string]string{
 		"b-k1": "b-v1",
 	}))
 	time.Sleep(time.Millisecond * 200)

@@ -1,11 +1,12 @@
 // +build ide test_unit
 
-package metadata_test
+package scheduler_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -30,10 +31,10 @@ func TestManager(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource("meta", false, nil, "private", "public"),
-		metadata.NewManagerSource("with.dot", true, nil, "private", "public"),
-		metadata.NewManagerSource("drain", false, manifest.Constraint{
+	manager := scheduler.NewManager(ctx, log,
+		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
+		scheduler.NewManagerSource("with.dot", true, nil, "private", "public"),
+		scheduler.NewManagerSource("drain", false, manifest.Constraint{
 			"${drain.state}": "!= true",
 		}, "private", "public"),
 	)

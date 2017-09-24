@@ -83,9 +83,9 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource("agent", false, nil, "private", "public"),
-		metadata.NewManagerSource("meta", false, nil, "private", "public"),
+	manager := scheduler.NewManager(ctx, log,
+		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
+		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 	source1 := metadata.NewSimpleProducer(ctx, log, "meta", manager)
 	source2 := metadata.NewSimpleProducer(ctx, log, "agent", manager)

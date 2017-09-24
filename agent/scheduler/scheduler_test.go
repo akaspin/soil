@@ -24,9 +24,9 @@ func TestNewScheduler(t *testing.T) {
 
 	t.Run("0", func(t *testing.T) {
 
-		manager := metadata.NewManager(ctx, log,
-			metadata.NewManagerSource("agent", false, nil, "private", "public"),
-			metadata.NewManagerSource("meta", false, nil, "private", "public"),
+		manager := scheduler.NewManager(ctx, log,
+			scheduler.NewManagerSource("agent", false, nil, "private", "public"),
+			scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 		)
 		agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
 		metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
@@ -75,9 +75,9 @@ func TestNewScheduler(t *testing.T) {
 	})
 
 	// create new arbiter
-	manager := metadata.NewManager(ctx, log,
-		metadata.NewManagerSource("agent", false, nil, "private", "public"),
-		metadata.NewManagerSource("meta", false, nil, "private", "public"),
+	manager := scheduler.NewManager(ctx, log,
+		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
+		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 	agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
 	metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)

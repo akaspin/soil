@@ -127,12 +127,12 @@ func (c *Agent) Run(args ...string) (err error) {
 	// public announcers
 	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id))
 
-	manager := metadata.NewManager(ctx, c.log,
-		metadata.NewManagerSource("agent", false, manifest.Constraint{
+	manager := scheduler.NewManager(ctx, c.log,
+		scheduler.NewManagerSource("agent", false, manifest.Constraint{
 			"${agent.drain}": "!= true",
 		}, "private", "public"),
-		metadata.NewManagerSource("meta", false, nil, "private", "public"),
-		metadata.NewManagerSource("private_registry", true, nil, "private"),
+		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
+		scheduler.NewManagerSource("private_registry", true, nil, "private"),
 	)
 
 	// private metadata

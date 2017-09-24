@@ -1,9 +1,10 @@
-package metadata
+package scheduler
 
 import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
@@ -80,7 +81,7 @@ func (m *Manager) DeregisterResource(name string, notifyFn func()) {
 }
 
 // ConsumeMessage takes data from one of sources and evaluates all cached data
-func (m *Manager) ConsumeMessage(message Message) {
+func (m *Manager) ConsumeMessage(message metadata.Message) {
 	m.log.Tracef("got message %v", message)
 
 	m.mu.Lock()
@@ -163,7 +164,7 @@ type managerResource struct {
 type ManagerSource struct {
 	constraintOnly bool                // use source only for constraints
 	namespaces     []string            // namespaces to manage
-	message        Message             // last message
+	message        metadata.Message    // last message
 	clean          bool                // clean status
 	required       manifest.Constraint // required constraint
 }
@@ -172,7 +173,7 @@ func NewManagerSource(producer string, constraintOnly bool, required manifest.Co
 	s = &ManagerSource{
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
-		message: Message{
+		message: metadata.Message{
 			Prefix: producer,
 			Data:   map[string]string{},
 		},

@@ -28,7 +28,7 @@ func NewNodesAnnouncer(ctx context.Context, log *logx.Log, backend kv.Setter, pr
 // Accepts data and pipes it to kv upstream
 func (r *NodeAnnouncer) ConsumeMessage(message metadata.Message) {
 	buf := &bytes.Buffer{}
-	if err := json.NewEncoder(buf).Encode(message.Data); err != nil {
+	if err := json.NewEncoder(buf).Encode(message.GetPayload()); err != nil {
 		r.log.Error(err)
 		return
 	}

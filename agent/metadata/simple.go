@@ -14,9 +14,8 @@ type SimpleProducer struct {
 	prefix    string
 	consumers []Consumer
 
-	mu     *sync.Mutex
-	data   map[string]string
-	active bool
+	mu   *sync.Mutex
+	data map[string]string
 }
 
 func NewSimpleProducer(ctx context.Context, log *logx.Log, prefix string, consumers ...Consumer) (p *SimpleProducer) {
@@ -46,14 +45,12 @@ func (p *SimpleProducer) Replace(data map[string]string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.data = data
-	p.active = data != nil
 	p.notifyAll()
 }
 
 func (p *SimpleProducer) Set(data map[string]string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.active = true
 	for k, v := range data {
 		p.data[k] = v
 	}
@@ -62,10 +59,7 @@ func (p *SimpleProducer) Set(data map[string]string) {
 
 func (p *SimpleProducer) notifyAll() {
 	p.log.Tracef("syncing with %d consumers", len(p.consumers))
-	msg := Message{
-		Prefix: p.prefix,
-		Data:   p.data,
-	}
+	msg := NewMessage(p.prefix, p.data)
 	for _, consumer := range p.consumers {
 		consumer.ConsumeMessage(msg)
 	}

@@ -23,14 +23,13 @@ func NewDiscoveryPipe(log *logx.Log, router *Router) (p *DiscoveryPipe) {
 
 func (p *DiscoveryPipe) process(message metadata.Message) (res metadata.Message) {
 	data := map[string]string{}
-	for _, v := range message.Data {
+	for _, v := range message.GetPayload() {
 		var value api_v1_types.NodeResponse
 		if err := json.NewDecoder(strings.NewReader(v)).Decode(&value); err != nil {
 			p.log.Error(err)
 		}
 		data[value.Id] = value.Advertise
 	}
-	res = message
-	res.Data = data
+	res = metadata.NewMessage(message.GetPrefix(), data)
 	return
 }

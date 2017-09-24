@@ -40,8 +40,9 @@ func TestSimplePipe_Sync(t *testing.T) {
 	cons2 := newTestConsumer()
 
 	pipe := metadata.NewSimplePipe(func(message metadata.Message) (res metadata.Message) {
-		delete(message.Data, "a")
-		res = message
+		payload := message.GetPayload()
+		delete(payload, "a")
+		res = metadata.NewMessage(message.GetPrefix(), payload)
 		return
 	}, cons1, cons2)
 

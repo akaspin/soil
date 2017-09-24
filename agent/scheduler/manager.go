@@ -100,7 +100,7 @@ func (m *Manager) ConsumeMessage(message metadata.Message) {
 	for sourcePrefix, source := range m.sources {
 		if source.required != nil || source.clean {
 			// add fields if active
-			for k, v := range source.message.Data {
+			for k, v := range source.message.GetPayload() {
 				key := sourcePrefix + "." + k
 				m.containableCache[key] = v
 				if !source.constraintOnly {
@@ -173,11 +173,8 @@ func NewManagerSource(producer string, constraintOnly bool, required manifest.Co
 	s = &ManagerSource{
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
-		message: metadata.Message{
-			Prefix: producer,
-			Data:   map[string]string{},
-		},
-		required: required,
+		message:        metadata.NewMessage(producer, map[string]string{}),
+		required:       required,
 	}
 
 	return

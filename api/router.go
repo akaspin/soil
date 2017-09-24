@@ -57,8 +57,8 @@ func (r *Router) ConsumeMessage(message metadata.Message) {
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()
-		r.nodes = message.Data
-		r.log.Debugf("synced nodes: %v", message.Data)
+		r.nodes = message.GetPayload()
+		r.log.Debugf("synced nodes: %v", message.GetPayload())
 	}()
 }
 

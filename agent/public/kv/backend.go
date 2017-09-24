@@ -265,11 +265,7 @@ func (b *Backend) watchLoop(prefix string, consumer metadata.Consumer) {
 	<-b.connDirtyCtx.Done()
 	if b.connErr != nil {
 		b.log.Errorf("%v: disabling consumer", b.connErr)
-		consumer.ConsumeMessage(metadata.Message{
-			Prefix: prefix,
-			//Clean:  true,
-			Data: map[string]string{},
-		})
+		consumer.ConsumeMessage(metadata.NewMessage(prefix, map[string]string{}))
 		return
 	}
 	chroot := b.chroot + "/" + prefix
@@ -332,17 +328,13 @@ LOOP:
 			}
 			lastHash = newHash
 			cache = data
-			consumer.ConsumeMessage(metadata.Message{
-				Prefix: prefix,
-				Data:   data,
-			})
+			consumer.ConsumeMessage(metadata.NewMessage(prefix, data))
 			log.Debugf("consumer updated with %v", data)
 
 		case <-sleepChan:
 			log.Trace("sleep request received")
 			retryCount++
 			receiving = false
-			//lastHash = ^uint64(0)
 			log.Infof("sleeping %v (retry %d)", b.options.RetryInterval, retryCount)
 			select {
 			case <-b.Ctx().Done():

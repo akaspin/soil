@@ -38,7 +38,7 @@ func (e *StatusNodes) ConsumeMessage(message metadata.Message) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.data = e.data[:0]
-	for _, v := range message.Data {
+	for _, v := range message.GetPayload() {
 		var val api_v1_types.NodeResponse
 		if err := json.NewDecoder(strings.NewReader(v)).Decode(&val); err != nil {
 			e.log.Error(err)

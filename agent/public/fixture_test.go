@@ -1,6 +1,6 @@
 // +build ide test_cluster
 
-package kv_test
+package public_test
 
 import (
 	"fmt"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/public/kv"
+	"github.com/akaspin/soil/agent/public"
 	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/api/api-v1-types"
 	"github.com/mitchellh/hashstructure"
@@ -13,10 +13,10 @@ import (
 
 type registryPut struct {
 	log    *logx.Log
-	setter kv.Setter
+	setter public.Setter
 }
 
-func NewRegistryPut(log *logx.Log, setter kv.Setter) (e *registryPut) {
+func NewRegistryPut(log *logx.Log, setter public.Setter) (e *registryPut) {
 	e = &registryPut{
 		log:    log.GetLog("api", "put /v1/pods"),
 		setter: setter,

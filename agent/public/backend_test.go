@@ -1,12 +1,12 @@
 // +build ide test_cluster
 
-package kv_test
+package public_test
 
 import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/public/kv"
+	"github.com/akaspin/soil/agent/public"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
@@ -20,7 +20,7 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 300,
 		Enabled:       false,
 		Timeout:       time.Second,
@@ -53,7 +53,7 @@ func TestBackend_Set(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	backend := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
+	backend := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -153,7 +153,7 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -219,7 +219,7 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -288,7 +288,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
+	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,

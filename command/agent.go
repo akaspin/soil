@@ -9,7 +9,6 @@ import (
 	"github.com/akaspin/soil/agent/api-v1"
 	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/public"
-	"github.com/akaspin/soil/agent/public/kv"
 	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/api"
@@ -30,7 +29,7 @@ type AgentOptions struct {
 	Meta       []string // Metadata set
 	Address    string   // bind address
 
-	Public kv.Options
+	Public public.Options
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
@@ -82,7 +81,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	/// API
 
 	// public KV
-	publicBackend := kv.NewBackend(ctx, c.log, c.Public)
+	publicBackend := public.NewBackend(ctx, c.log, c.Public)
 
 	apiV1StatusNodes := api_v1.NewStatusNodes(c.log)
 	apiV1StatusNode := api_v1.NewStatusNode(c.log)

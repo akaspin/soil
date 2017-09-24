@@ -6,20 +6,19 @@ import (
 	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/metadata"
-	"github.com/akaspin/soil/agent/public/kv"
 )
 
 // NodeAnnouncer exposes Agent properties in kv
 type NodeAnnouncer struct {
 	log    *logx.Log
-	setter kv.Setter
+	setter Setter
 	prefix string
 }
 
-func NewNodesAnnouncer(ctx context.Context, log *logx.Log, backend kv.Setter, prefix string) (j *NodeAnnouncer) {
+func NewNodesAnnouncer(ctx context.Context, log *logx.Log, setter Setter, prefix string) (j *NodeAnnouncer) {
 	j = &NodeAnnouncer{
 		log:    log.GetLog("json", prefix),
-		setter: backend,
+		setter: setter,
 		prefix: prefix,
 	}
 	return

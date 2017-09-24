@@ -1,4 +1,4 @@
-package kv
+package public
 
 import (
 	"context"

@@ -133,7 +133,6 @@ func (c *Agent) Run(args ...string) (err error) {
 		}, "private", "public"),
 		metadata.NewManagerSource("meta", false, nil, "private", "public"),
 		metadata.NewManagerSource("private_registry", true, nil, "private"),
-		metadata.NewManagerSource("registry.public.valid", true, nil, "public"),
 	)
 
 	// private metadata
@@ -149,7 +148,7 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
 	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
-	c.privateRegistry = registry.New(ctx, c.log, registrySink, manager)
+	c.privateRegistry = registry.New(ctx, c.log, registrySink)
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,

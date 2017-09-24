@@ -106,8 +106,8 @@ func (*nullWriter) Write(p []byte) (n int, err error) {
 type dummyConsumer struct {
 	changes int
 	res     []map[string]string
-	states  []bool
-	mu      *sync.Mutex
+	//states  []bool
+	mu *sync.Mutex
 }
 
 func newDummyConsumer() (c *dummyConsumer) {
@@ -120,6 +120,6 @@ func newDummyConsumer() (c *dummyConsumer) {
 func (c *dummyConsumer) ConsumeMessage(message metadata.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.states = append(c.states, message.Clean)
+	//c.states = append(c.states, message.Clean)
 	c.res = append(c.res, message.Data)
 }

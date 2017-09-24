@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -43,23 +42,6 @@ type dummyConsumer struct {
 	mu    *sync.Mutex
 	count int
 	res   map[string]string
-}
-
-func newDummyConsumer() (c *dummyConsumer) {
-	c = &dummyConsumer{
-		mu:  &sync.Mutex{},
-		res: map[string]string{},
-	}
-	return
-}
-
-func (c *dummyConsumer) Sync(message metadata.Message) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if message.Clean {
-		c.count++
-	}
-	c.res = message.Data
 }
 
 func TestNewEvaluator(t *testing.T) {

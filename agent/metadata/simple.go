@@ -60,16 +60,6 @@ func (p *SimpleProducer) Set(active bool, data map[string]string) {
 	p.notifyAll()
 }
 
-func (p *SimpleProducer) Delete(active bool, keys ...string) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.active = active
-	for _, k := range keys {
-		delete(p.data, k)
-	}
-	p.notifyAll()
-}
-
 func (p *SimpleProducer) notifyAll() {
 	p.log.Tracef("syncing with %d consumers", len(p.consumers))
 	for _, consumer := range p.consumers {

@@ -39,7 +39,7 @@ func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (
 		containableCache:    map[string]string{},
 	}
 	for _, source := range sources {
-		m.sources[source.message.Prefix] = source
+		m.sources[source.message.GetPrefix()] = source
 		for _, ns := range source.namespaces {
 			m.dirtyNamespaces[ns] = struct{}{}
 		}
@@ -89,7 +89,7 @@ func (m *Manager) ConsumeMessage(message Message) {
 	previousDirty := m.getDirtyState(m.dirtyNamespaces)
 
 	// update data in cache
-	m.sources[message.Prefix].message = message
+	m.sources[message.GetPrefix()].message = message
 
 	m.interpolatableCache = map[string]string{}
 	m.containableCache = map[string]string{}
@@ -117,7 +117,7 @@ func (m *Manager) ConsumeMessage(message Message) {
 		m.log.Infof("dirty namespaces changed: %s->%s", previousDirty, currentDirty)
 	}
 
-	if m.sources[message.Prefix].required == nil && !message.Clean {
+	if m.sources[message.GetPrefix()].required == nil && !message.Clean {
 		return
 	}
 	for n, managed := range m.managed {
@@ -173,10 +173,8 @@ func NewManagerSource(producer string, constraintOnly bool, required manifest.Co
 	s = &ManagerSource{
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
-		message: Message{
-			Prefix: producer,
-		},
-		required: required,
+		message:        NewDirtyMessage(producer),
+		required:       required,
 	}
 
 	return

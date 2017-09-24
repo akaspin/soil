@@ -15,7 +15,38 @@ import (
 	"time"
 )
 
+func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
+	//t.SkipNow()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	src := kv.NewBackend(ctx, logx.GetLog("test"), kv.Options{
+		RetryInterval: time.Millisecond * 300,
+		Enabled:       false,
+		Timeout:       time.Second,
+		URL:           "",
+		Advertise:     "127.0.0.1:7654",
+	})
+	err := src.Open()
+	assert.NoError(t, err)
+
+	cons1 := newDummyConsumer()
+	cons2 := newDummyConsumer()
+
+	src.RegisterConsumer("1", cons1)
+	src.RegisterConsumer("2", cons2)
+
+	time.Sleep(time.Millisecond * 200)
+
+	src.Close()
+	src.Wait()
+
+	assert.Equal(t, cons1.res, []map[string]string{{}})
+	assert.Equal(t, cons2.res, []map[string]string{{}})
+}
+
 func TestBackend_Set(t *testing.T) {
+	//t.SkipNow()
 	f := newConsulFixture(t)
 	defer f.Stop()
 
@@ -45,7 +76,6 @@ func TestBackend_Set(t *testing.T) {
 	backend.RegisterConsumer("1", cons1)
 	time.Sleep(time.Second)
 
-	assert.Equal(t, cons1.states, []bool{true})
 	assert.Equal(t, cons1.res, []map[string]string{
 		{"pre-ttl": "pre"},
 	})
@@ -55,7 +85,7 @@ func TestBackend_Set(t *testing.T) {
 		"1/2": "v2",
 	}, false)
 	time.Sleep(time.Second)
-	assert.Equal(t, cons1.states, []bool{true, true, true})
+
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
 		"pre-ttl": "pre",
 		"1":       "v1",
@@ -67,7 +97,7 @@ func TestBackend_Set(t *testing.T) {
 		"1/ttl2": "ttl2",
 	}, true)
 	time.Sleep(time.Second)
-	assert.Equal(t, cons1.states, []bool{true, true, true, true, true})
+
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
 		"pre-ttl": "pre",
 		"1":       "v1",
@@ -78,7 +108,6 @@ func TestBackend_Set(t *testing.T) {
 
 	backend.Delete("1/1", "1/ttl2")
 	time.Sleep(time.Second)
-	assert.Equal(t, cons1.states, []bool{true, true, true, true, true, true, true})
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
 		"pre-ttl": "pre",
 		"2":       "v2",
@@ -93,7 +122,6 @@ func TestBackend_Set(t *testing.T) {
 	backend.Close()
 	backend.Wait()
 
-	assert.Equal(t, cons1.states, []bool{true, true, true, true, true, true, true})
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
 		"pre-ttl": "pre",
 		"2":       "v2",
@@ -163,13 +191,6 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	src.Close()
 	src.Wait()
 
-	assert.Equal(t, cons1.states, []bool{
-		true,
-		true,
-		true,
-		true,
-		true,
-	})
 	assert.Equal(t, cons1.res, []map[string]string{
 		{}, // established
 		{"permanent": "value"},                // perm
@@ -228,32 +249,15 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	src.Wait()
 
 	// cons1
-	assert.Equal(t, cons1.states, []bool{
-		true, // established
-		true,
-		true,
-		false, // lost
-		true,  //recovered
-		true,  // put
-	})
 	assert.Equal(t, cons1.res, []map[string]string{
 		{}, // established
 		{"1": "1/1-1"},
 		{"1": "1/1-1", "2": "1/2-1"},
-		nil, // lost
-		{"1": "1/1-1", "2": "1/2-1"}, //recovered
 		{"1": "1/1-1", "2": "1/2-2"}, // put
 	})
 
 	// cons2
-	assert.Equal(t, cons2.states, []bool{
-		true,  // established
-		false, // lost
-		true,  // recovered
-	})
 	assert.Equal(t, cons2.res, []map[string]string{
-		{},
-		nil,
 		{},
 	})
 }
@@ -306,12 +310,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	src.Close()
 	src.Wait()
 
-	assert.Equal(t, cons1.states, []bool{
-		false,
-		true,
-	})
 	assert.Equal(t, cons1.res, []map[string]string{
-		nil,
 		{
 			"1": "val",
 		},

@@ -57,9 +57,11 @@ func TestSimplePipe_Sync(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	assert.Equal(t, cons1.messages, []metadata.Message{
-		{Clean: true, Prefix: "test", Data: map[string]string{"b": "2"}}})
+		metadata.NewCleanMessage("test", map[string]string{"b": "2"}),
+	})
 	assert.Equal(t, cons2.messages, []metadata.Message{
-		{Clean: true, Prefix: "test", Data: map[string]string{"b": "2"}}})
+		metadata.NewCleanMessage("test", map[string]string{"b": "2"}),
+	})
 
 	producer.Close()
 	producer.Wait()

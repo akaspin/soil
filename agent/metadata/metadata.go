@@ -1,24 +1,5 @@
 package metadata
 
-type Message struct {
-
-	// DynamicProducer clean status
-	Clean bool
-
-	// DynamicProducer prefix
-	Prefix string
-
-	// Message payload
-	Data map[string]string
-}
-
-func NewMessage() (m Message) {
-	m = Message{
-		Data: map[string]string{},
-	}
-	return
-}
-
 // DynamicProducer permits to add consumers after initialisation
 type DynamicProducer interface {
 

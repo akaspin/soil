@@ -30,6 +30,12 @@ type Setter interface {
 	Set(data map[string]string, withTTL bool)
 }
 
+type operation struct {
+	key   string
+	value string
+	op    int
+}
+
 type Options struct {
 	Enabled       bool
 	Advertise     string
@@ -52,15 +58,15 @@ type Backend struct {
 	chroot          string
 	ttl             time.Duration
 
-	opChan chan []kvOp
+	operationChan chan []operation
 }
 
 func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend) {
 	b = &Backend{
-		Control: supervisor.NewControl(ctx),
-		log:     log.GetLog("kv", "backend"),
-		options: options,
-		opChan:  make(chan []kvOp, 500),
+		Control:       supervisor.NewControl(ctx),
+		log:           log.GetLog("public", "backend"),
+		options:       options,
+		operationChan: make(chan []operation, 500),
 	}
 	b.connDirtyCtx, b.connDirtyCancel = context.WithCancel(context.Background())
 	return
@@ -68,7 +74,7 @@ func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend
 
 func (b *Backend) Open() (err error) {
 	go b.connect()
-	go b.setLoop()
+	go b.operationLoop()
 	err = b.Control.Open()
 	return
 }
@@ -83,20 +89,20 @@ func (b *Backend) Set(data map[string]string, withTTL bool) {
 	if !b.options.Enabled {
 		return
 	}
-	var ops []kvOp
+	var ops []operation
 	op := opSet
 	if withTTL {
 		op = opSetTTL
 	}
 	for key, value := range data {
-		ops = append(ops, kvOp{
+		ops = append(ops, operation{
 			key:   key,
 			value: value,
 			op:    op,
 		})
 	}
 	go func() {
-		b.opChan <- ops
+		b.operationChan <- ops
 	}()
 }
 
@@ -105,102 +111,16 @@ func (b *Backend) Delete(keys ...string) {
 	if !b.options.Enabled {
 		return
 	}
-	var ops []kvOp
+	var ops []operation
 	for _, key := range keys {
-		ops = append(ops, kvOp{
+		ops = append(ops, operation{
 			key: key,
 			op:  opDelete,
 		})
 	}
 	go func() {
-		b.opChan <- ops
+		b.operationChan <- ops
 	}()
-}
-
-func (b *Backend) setLoop() {
-	log := b.log.GetLog(b.log.Prefix(), "operations")
-	defer log.Info("close")
-
-	if !b.options.Enabled {
-		log.Info("disabled")
-		return
-	}
-
-	log.Infof("open: TTL %v", b.ttl)
-
-	// wait for conn and setup ticker
-	go func() {
-		select {
-		case <-b.Control.Ctx().Done():
-		case <-b.connDirtyCtx.Done():
-			go func() {
-				log.Trace("ticker open")
-				defer log.Trace("ticker close")
-				ticker := time.NewTicker(b.ttl / 2)
-				defer ticker.Stop()
-				for {
-					select {
-					case <-b.Control.Ctx().Done():
-					case <-ticker.C:
-						log.Trace("tick")
-						b.opChan <- nil
-					}
-				}
-			}()
-		}
-	}()
-
-	pending := map[string]kvOp{}
-	var opErr error
-LOOP:
-	for {
-		select {
-		case <-b.Control.Ctx().Done():
-			break LOOP
-		case ingest := <-b.opChan:
-			log.Debugf("operations received: %v", ingest)
-			for _, op := range ingest {
-				pending[op.key] = op
-			}
-
-			select {
-			case <-b.connDirtyCtx.Done():
-			default:
-				log.Infof("connection is not established")
-				continue LOOP
-			}
-
-			for _, op := range pending {
-				log.Tracef("executing %v", op)
-				key := b.chroot + "/" + op.key
-				switch op.op {
-				case opSetTTL:
-					opErr = b.conn.Put(key, []byte(op.value), &store.WriteOptions{
-						TTL: b.ttl,
-					})
-				case opSet:
-					opErr = b.conn.Put(key, []byte(op.value), nil)
-				case opDelete:
-					opErr = b.conn.Delete(key)
-					switch opErr {
-					case store.ErrKeyNotFound:
-						opErr = nil
-					}
-				}
-				if opErr != nil {
-					log.Error(opErr)
-				} else {
-					log.Tracef("op %v executed successfully", op)
-					// remove finite op
-					switch op.op {
-					case opDelete, opSet:
-						delete(pending, op.key)
-						log.Tracef("finite op %v removed from pending", op)
-					}
-				}
-			}
-		}
-	}
 }
 
 func (b *Backend) connect() {
@@ -251,6 +171,92 @@ func (b *Backend) connect() {
 		} else {
 			b.log.Infof("connected to %s", b.options.URL)
 			return
+		}
+	}
+}
+
+func (b *Backend) operationLoop() {
+	log := b.log.GetLog(b.log.Prefix(), "operation")
+	defer log.Info("close")
+
+	if !b.options.Enabled {
+		log.Info("disabled")
+		return
+	}
+
+	log.Infof("open: TTL %v", b.ttl)
+
+	// wait for conn and setup ticker
+	go func() {
+		select {
+		case <-b.Control.Ctx().Done():
+		case <-b.connDirtyCtx.Done():
+			go func() {
+				log.Trace("ticker open")
+				defer log.Trace("ticker close")
+				ticker := time.NewTicker(b.ttl / 2)
+				defer ticker.Stop()
+				for {
+					select {
+					case <-b.Control.Ctx().Done():
+					case <-ticker.C:
+						log.Trace("tick")
+						b.operationChan <- nil
+					}
+				}
+			}()
+		}
+	}()
+
+	pending := map[string]operation{}
+	var opErr error
+LOOP:
+	for {
+		select {
+		case <-b.Control.Ctx().Done():
+			break LOOP
+		case ingest := <-b.operationChan:
+			log.Debugf("operations received: %v", ingest)
+			for _, op := range ingest {
+				pending[op.key] = op
+			}
+
+			select {
+			case <-b.connDirtyCtx.Done():
+			default:
+				log.Infof("connection is not established")
+				continue LOOP
+			}
+
+			for _, op := range pending {
+				log.Tracef("executing %v", op)
+				key := b.chroot + "/" + op.key
+				switch op.op {
+				case opSetTTL:
+					opErr = b.conn.Put(key, []byte(op.value), &store.WriteOptions{
+						TTL: b.ttl,
+					})
+				case opSet:
+					opErr = b.conn.Put(key, []byte(op.value), nil)
+				case opDelete:
+					opErr = b.conn.Delete(key)
+					switch opErr {
+					case store.ErrKeyNotFound:
+						opErr = nil
+					}
+				}
+				if opErr != nil {
+					log.Error(opErr)
+				} else {
+					log.Tracef("op %v executed successfully", op)
+					// remove finite op
+					switch op.op {
+					case opDelete, opSet:
+						delete(pending, op.key)
+						log.Tracef("finite op %v removed from pending", op)
+					}
+				}
+			}
 		}
 	}
 }
@@ -337,13 +343,7 @@ LOOP:
 			log.Trace("sleep request received")
 			retryCount++
 			receiving = false
-			lastHash = ^uint64(0)
-			if retryCount == 1 {
-				consumer.ConsumeMessage(metadata.Message{
-					Prefix: prefix,
-					Clean:  false,
-				})
-			}
+			//lastHash = ^uint64(0)
 			log.Infof("sleeping %v (retry %d)", b.options.RetryInterval, retryCount)
 			select {
 			case <-b.Ctx().Done():
@@ -354,10 +354,4 @@ LOOP:
 			}
 		}
 	}
-}
-
-type kvOp struct {
-	key   string
-	value string
-	op    int
 }

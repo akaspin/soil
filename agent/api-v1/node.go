@@ -39,6 +39,6 @@ func (n *statusNode) ConsumeMessage(message metadata.Message) {
 	if !message.Clean {
 		return
 	}
-	n.data.Store(message.Prefix, message.Data)
-	n.log.Debugf("stored: %s=%v", message.Prefix, message.Data)
+	n.data.Store(message.GetPrefix(), message.GetPayload())
+	n.log.Debugf("stored: %v", message)
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
 	"sync"
+	"sort"
+	"fmt"
 )
 
 var drainError = errors.New("agent in drain state")
@@ -87,12 +89,15 @@ func (m *Manager) Sync(message Message) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	previousDirty := m.getDirtyState(m.dirtyNamespaces)
+
 	// update data in cache
 	m.sources[message.Prefix].message = message
 
 	m.interpolatableCache = map[string]string{}
 	m.containableCache = map[string]string{}
 	m.dirtyNamespaces = map[string]struct{}{}
+
 
 	for sourcePrefix, source := range m.sources {
 		if source.required != nil || source.message.Clean {
@@ -112,12 +117,27 @@ func (m *Manager) Sync(message Message) {
 	}
 	m.interpolatableMark, _ = hashstructure.Hash(m.interpolatableCache, nil)
 
+
+	if currentDirty := m.getDirtyState(m.dirtyNamespaces); previousDirty != currentDirty {
+		m.log.Infof("dirty namespaces changed: %s->%s", previousDirty, currentDirty)
+	}
+
 	if m.sources[message.Prefix].required == nil && !message.Clean {
 		return
 	}
 	for n, managed := range m.managed {
 		m.notifyResource(n, managed)
 	}
+}
+
+func (m *Manager) getDirtyState(states map[string]struct{}) (res string) {
+	var currentDirty []string
+	for ns := range states {
+		currentDirty = append(currentDirty, ns)
+	}
+	sort.Strings(currentDirty)
+	res = fmt.Sprintf("%v", currentDirty)
+	return
 }
 
 func (m *Manager) notifyResource(name string, resource *managerResource) {

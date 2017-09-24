@@ -248,6 +248,11 @@ header ul.sections {
     padding-top: 1em;
 }
 
+.headroom {
+    background-color: #9d9d9d;
+    width: 100%;
+}
+
 /*
 footer
  */

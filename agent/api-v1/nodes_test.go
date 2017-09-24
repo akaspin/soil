@@ -11,6 +11,8 @@ import (
 )
 
 func TestStatusNodes_Process(t *testing.T) {
+	t.SkipNow()
+
 	// first node
 	resp, err := http.Get("http://127.0.0.1:7651/v1/status/nodes")
 	assert.NoError(t, err)

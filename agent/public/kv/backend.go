@@ -26,6 +26,10 @@ const (
 	opDelete
 )
 
+type Setter interface {
+	Set(data map[string]string, withTTL bool)
+}
+
 type Options struct {
 	Enabled       bool
 	Advertise     string

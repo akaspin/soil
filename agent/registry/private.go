@@ -4,27 +4,51 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
+	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 )
+
+type Syncer interface {
+	Sync(pods manifest.Pods)
+}
 
 type Private struct {
 	*supervisor.Control
 	log *logx.Log
 
+	stateConsumer func(message metadata.Message)
 	scheduler agent.Scheduler
 }
 
-func NewPrivate(ctx context.Context, log *logx.Log, scheduler agent.Scheduler) (p *Private) {
+func New(ctx context.Context, log *logx.Log, scheduler agent.Scheduler, stateConsumer func(message metadata.Message)) (p *Private) {
 	p = &Private{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("registry", "private"),
+		stateConsumer: stateConsumer,
 		scheduler: scheduler,
 	}
 	return
 }
 
 func (r *Private) Sync(pods []*manifest.Pod) {
-	r.scheduler.Sync("private", pods)
+	r.stateConsumer(metadata.Message{
+		Prefix: "private_registry",
+		Clean: false,
+	})
+	defer r.stateConsumer(metadata.Message{
+		Prefix: "private_registry",
+		Clean: true,
+	})
+	var verified []*manifest.Pod
+	for _, pod := range pods {
+		if err := pod.Verify("private"); err != nil {
+			r.log.Error(err)
+			continue
+		}
+		verified = append(verified, pod)
+	}
+
+	r.scheduler.Sync("private", verified)
 	return
 }

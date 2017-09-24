@@ -1,6 +1,6 @@
 // +build ide test_integration
 
-package api_v1
+package api_v1_test
 
 import (
 	"encoding/json"
@@ -10,6 +10,8 @@ import (
 )
 
 func TestIntegration_StatusNode_Process(t *testing.T) {
+	t.SkipNow()
+
 	// first node
 	resp, err := http.Get("http://127.0.0.1:7651/v1/status/node")
 	assert.NoError(t, err)

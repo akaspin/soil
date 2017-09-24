@@ -11,16 +11,16 @@ import (
 
 // NodeAnnouncer exposes Agent properties in kv
 type NodeAnnouncer struct {
-	log     *logx.Log
-	backend *kv.Backend
-	prefix  string
+	log    *logx.Log
+	setter kv.Setter
+	prefix string
 }
 
-func NewNodesAnnouncer(ctx context.Context, log *logx.Log, backend *kv.Backend, prefix string) (j *NodeAnnouncer) {
+func NewNodesAnnouncer(ctx context.Context, log *logx.Log, backend kv.Setter, prefix string) (j *NodeAnnouncer) {
 	j = &NodeAnnouncer{
-		log:     log.GetLog("json", prefix),
-		backend: backend,
-		prefix:  prefix,
+		log:    log.GetLog("json", prefix),
+		setter: backend,
+		prefix: prefix,
 	}
 	return
 }
@@ -35,7 +35,7 @@ func (r *NodeAnnouncer) Sync(message metadata.Message) {
 		r.log.Error(err)
 		return
 	}
-	r.backend.Set(map[string]string{
+	r.setter.Set(map[string]string{
 		r.prefix: buf.String(),
 	}, true)
 }

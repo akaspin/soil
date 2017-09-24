@@ -6,8 +6,20 @@ import (
 	"encoding/json"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
+
+func TestPods_Unmarshal(t *testing.T) {
+	var pods manifest.Pods
+	r, err := os.Open("testdata/example-multi.hcl")
+	assert.NoError(t, err)
+	defer r.Close()
+
+	err = (&pods).Unmarshal("private", r)
+	assert.NoError(t, err)
+	assert.Len(t, pods, 2)
+}
 
 func TestManifest(t *testing.T) {
 	res, err := manifest.ParseFromFiles("private", "testdata/example-multi.hcl")

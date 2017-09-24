@@ -12,6 +12,13 @@ type Message struct {
 	Data map[string]string
 }
 
+func NewMessage() (m Message) {
+	m = Message{
+		Data: map[string]string{},
+	}
+	return
+}
+
 // DynamicProducer permits to add consumers after initialisation
 type DynamicProducer interface {
 

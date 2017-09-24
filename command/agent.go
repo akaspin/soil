@@ -81,6 +81,9 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	/// API
 
+	// public KV
+	publicBackend := kv.NewBackend(ctx, c.log, c.Public)
+
 	apiV1StatusNodes := api_v1.NewStatusNodes(c.log)
 	apiV1StatusNode := api_v1.NewStatusNode(c.log)
 
@@ -109,15 +112,19 @@ func (c *Agent) Run(args ...string) (err error) {
 			})
 			return
 		})),
+
+		// registry
+		api.PUT("/v1/registry", api_v1.NewRegistryPut(c.log, publicBackend)),
 	)
 
-	// public KV
-	publicBackend := kv.NewBackend(ctx, c.log, c.Public)
 
 	// public watchers
 	publicNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
 		apiV1StatusNodes.Sync,
 		api.NewDiscoveryPipe(c.log, apiRouter).Sync,
+	)
+	publicRegistryWatcher := metadata.NewPipe(ctx, c.log, "registry", publicBackend, nil,
+
 	)
 
 	// public announcers
@@ -126,10 +133,10 @@ func (c *Agent) Run(args ...string) (err error) {
 	manager := metadata.NewManager(ctx, c.log,
 		metadata.NewManagerSource("agent", false, manifest.Constraint{
 			"${agent.drain}": "!= true",
-		},
-			"private", "public",
-		),
+		}, "private", "public"),
 		metadata.NewManagerSource("meta", false, nil, "private", "public"),
+		metadata.NewManagerSource("private_registry", true, nil, "private"),
+		metadata.NewManagerSource("registry.public.valid", true, nil, "public"),
 	)
 
 	// private metadata
@@ -145,7 +152,7 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
 	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
-	c.privateRegistry = registry.NewPrivate(ctx, c.log, registrySink)
+	c.privateRegistry = registry.New(ctx, c.log, registrySink, manager.Sync)
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,
@@ -156,6 +163,7 @@ func (c *Agent) Run(args ...string) (err error) {
 		c.privateRegistry,
 		apiRouter,
 		publicNodesWatcher,
+		publicRegistryWatcher,
 		api.NewServer(ctx, c.log, c.Address, apiRouter),
 	)
 

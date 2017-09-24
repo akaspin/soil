@@ -30,22 +30,21 @@ sources: $(SRC) $(SRC_TEST) ## go vet and fmt
 ### Test
 ###
 
-test: test-unit test-systemd test-integration
+test: test-unit test-cluster test-systemd test-integration
 
 ###
 ### Test Unit
 ###
 
-test-unit: test-unit-simple test-unit-cluster
 
-test-unit-simple: $(SRC) $(SRC_TEST)
+test-unit: $(SRC) $(SRC_TEST)
 	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)
 
-test-unit-cluster: $(SRC) $(SRC_TEST)
+test-cluster: $(SRC) $(SRC_TEST)
 	go test -run=$(TESTS) $(TEST_ARGS) -p=1 -tags="test_cluster $(TEST_TAGS)" $(PACKAGES)
 
 
-clean-test-unit:
+clean-test-cluster:
 	-find . -name .consul_data_* -type d -exec rm -rf {} +
 
 ###
@@ -148,7 +147,7 @@ uninstall:
 ### clean
 ###
 
-clean: clean-dist uninstall clean-test-unit clean-test-systemd clean-test-integration clean-docs
+clean: clean-dist uninstall clean-docs clean-test-cluster clean-test-systemd clean-test-integration
 
 ###
 ### docs

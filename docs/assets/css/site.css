@@ -24,8 +24,10 @@ code, pre {
 }
 
 code {
-    color: #555555;
-    background: #f5f5f5;
+    color: #444444;
+    font-size: 85%;
+    background: transparent;
+    padding: 0;
 }
 
 pre {
@@ -106,6 +108,20 @@ content
     visibility: visible;
 }
 
+.content dt, .content dd {
+    line-height: 1.84em;
+}
+
+.content dt {
+    font-weight: normal;
+}
+
+.content dd {
+    font-weight: normal;
+    margin-bottom: 16px;
+    margin-left: 40px;
+}
+
 .content table {
     width: 100%;
     max-width: 100%;
@@ -169,6 +185,8 @@ content
     margin-top: 14px;
     margin-bottom: 16px;
 }
+
+
 
 /*
 Section navigation

@@ -30,7 +30,8 @@ services:
       "soil-debug",
       "agent",
       "--id", "${AGENT_ID}.node.dc1.consul",
-      "--public-enable",
-      "--public-backend", "consul://127.0.0.1:8500/soil"
+      "--public",
+      "--advertise", "${HOST}:7654",
+      "--url", "consul://127.0.0.1:8500/soil",
     ]
 

@@ -51,15 +51,7 @@ func (o *AgentOptions) Bind(cc *cobra.Command) {
 type Agent struct {
 	*cut.Environment
 	*AgentOptions
-
-	// reconfigurable
-	config      *agent.Config
-	privatePods []*manifest.Pod
-
 	log             *logx.Log
-	agentProducer   *metadata.SimpleProducer
-	metaProducer    *metadata.SimpleProducer
-	privateRegistry *registry.Private
 }
 
 func (c *Agent) Bind(cc *cobra.Command) {
@@ -74,17 +66,14 @@ func (c *Agent) Run(args ...string) (err error) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	// parse configs
-	c.readConfig()
-	c.readPrivatePods()
-
-	/// API
+	var agentProducer *metadata.SimpleProducer
 
 	// public KV
 	publicBackend := public.NewBackend(ctx, c.log, c.Public)
 
 	apiV1StatusNodes := api_v1.NewStatusNodes(c.log)
 	apiV1StatusNode := api_v1.NewStatusNode(c.log)
+	apiV1Registry := api_v1.NewRegistryGet(c.log)
 
 	apiRouter := api.NewRouter(ctx, c.log,
 		// status
@@ -100,28 +89,23 @@ func (c *Agent) Run(args ...string) (err error) {
 		api.GET("/v1/agent/stop", api_v1.NewAgentStop(signalChan)),
 		// drain
 		api.PUT("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
-			c.agentProducer.Set(map[string]string{
+			agentProducer.Set(map[string]string{
 				"drain": "true",
 			})
 			return
 		})),
 		api.DELETE("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
-			c.agentProducer.Set(map[string]string{
+			agentProducer.Set(map[string]string{
 				"drain": "false",
 			})
 			return
 		})),
 
 		// registry
+		api.GET("/v1/registry", apiV1Registry),
 		api.PUT("/v1/registry", api_v1.NewRegistryPut(c.log, publicBackend)),
 	)
 
-	// public watchers
-	publicNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
-		apiV1StatusNodes,
-		api.NewDiscoveryPipe(c.log, apiRouter),
-	)
-	publicRegistryWatcher := metadata.NewPipe(ctx, c.log, "registry", publicBackend, nil)
 
 	// public announcers
 	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id))
@@ -130,32 +114,42 @@ func (c *Agent) Run(args ...string) (err error) {
 		scheduler.NewManagerSource("agent", false, manifest.Constraint{
 			"${agent.drain}": "!= true",
 		}, "private", "public"),
+		scheduler.NewManagerSource("system", false, nil, "private", "public"),
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
-		scheduler.NewManagerSource("private_registry", true, nil, "private"),
 	)
 
 	// private metadata
-	c.agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent",
+	agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent",
 		manager,
 		publicNodeAnnouncer,
 		apiV1StatusNode,
 	)
-	c.metaProducer = metadata.NewSimpleProducer(ctx, c.log, "meta",
+	metaProducer := metadata.NewSimpleProducer(ctx, c.log, "meta",
+		manager,
+		apiV1StatusNode,
+	)
+	systemProducer := metadata.NewSimpleProducer(ctx, c.log, "system",
 		manager,
 		apiV1StatusNode,
 	)
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
 	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
-	c.privateRegistry = registry.New(ctx, c.log, registrySink)
+
+	// public watchers
+	publicNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
+		apiV1StatusNodes,
+		api.NewDiscoveryPipe(c.log, apiRouter),
+	)
+	publicRegistryWatcher := metadata.NewPipe(ctx, c.log, "registry", publicBackend, nil,
+		registry.NewWatcher(c.log, registrySink, apiV1Registry))
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,
 		publicBackend,
 		supervisor.NewGroup(ctx, evaluator, manager),
-		supervisor.NewGroup(ctx, c.agentProducer, c.metaProducer),
+		supervisor.NewGroup(ctx, agentProducer, metaProducer, systemProducer),
 		registrySink,
-		c.privateRegistry,
 		apiRouter,
 		publicNodesWatcher,
 		publicRegistryWatcher,
@@ -166,16 +160,16 @@ func (c *Agent) Run(args ...string) (err error) {
 		return
 	}
 
-	c.agentProducer.Replace(map[string]string{
+	// Configure static agent properties
+	agentProducer.Replace(map[string]string{
 		"id":        c.Id,
 		"advertise": c.Public.Advertise,
-		"pod_exec":  c.config.Exec,
 		"drain":     "false",
 		"version":   V,
 		"api":       "v1",
 	})
-	c.configureArbiters()
-	c.configurePrivateRegistry()
+
+	c.reload(systemProducer, metaProducer, registrySink, apiV1Registry)
 
 LOOP:
 	for {
@@ -188,7 +182,7 @@ LOOP:
 				break LOOP
 			case syscall.SIGHUP:
 				c.log.Infof("reload received")
-				c.reload()
+				c.reload(systemProducer, metaProducer, registrySink, apiV1Registry)
 			}
 		case <-ctx.Done():
 			break LOOP
@@ -200,42 +194,32 @@ LOOP:
 	return
 }
 
-func (c *Agent) readConfig() {
-	c.config = agent.DefaultConfig()
+func (c *Agent) reload(systemSetter, metaSetter metadata.Upstream, registryConsumers ...registry.Consumer) (err error) {
+	// read config
+	config := agent.DefaultConfig()
 	for _, meta := range c.Meta {
 		split := strings.SplitN(meta, "=", 2)
 		if len(split) != 2 {
 			c.log.Warningf("bad --meta=%s", meta)
 			continue
 		}
-		c.config.Meta[split[0]] = split[1]
+		config.Meta[split[0]] = split[1]
 	}
-	if err := c.config.Read(c.ConfigPath...); err != nil {
+	if err := config.Read(c.ConfigPath...); err != nil {
 		c.log.Warningf("error reading config %s", err)
 	}
-	return
-}
 
-func (c *Agent) readPrivatePods() {
-	var err error
-	if c.privatePods, err = manifest.ParseFromFiles("private", c.ConfigPath...); err != nil {
-		c.log.Warningf("error reading private pods %s", err)
+	// producers
+	systemSetter.Replace(config.System)
+	metaSetter.Replace(config.Meta)
+
+	// private registry
+	var private manifest.Registry
+	if err := private.UnmarshalFiles("private", c.ConfigPath...); err != nil {
+		c.log.Warningf("error reading private registry %s", err)
 	}
-}
-
-func (c *Agent) configureArbiters() {
-	c.metaProducer.Replace(c.config.Meta)
-}
-
-func (c *Agent) configurePrivateRegistry() (err error) {
-	c.privateRegistry.Sync(c.privatePods)
-	return
-}
-
-func (c *Agent) reload() (err error) {
-	c.readConfig()
-	c.readPrivatePods()
-	c.configureArbiters()
-	c.configurePrivateRegistry()
+	for _, registryConsumers := range registryConsumers {
+		registryConsumers.ConsumeRegistry("private", private)
+	}
 	return
 }

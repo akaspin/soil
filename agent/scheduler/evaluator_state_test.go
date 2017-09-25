@@ -10,8 +10,11 @@ import (
 	"testing"
 )
 
-func makeAllocations(path string) (recovered []*allocation.Pod) {
-	pods, _ := manifest.ParseFromFiles("private", path)
+func makeAllocations(t *testing.T, path string) (recovered []*allocation.Pod) {
+	t.Helper()
+	var pods manifest.Registry
+	err := pods.UnmarshalFiles("private", path)
+	assert.NoError(t, err)
 	for _, pod := range pods {
 		alloc, _ := allocation.NewFromManifest(pod, map[string]string{})
 		recovered = append(recovered, alloc)
@@ -19,23 +22,24 @@ func makeAllocations(path string) (recovered []*allocation.Pod) {
 	return
 }
 
-func zeroEvaluatorState() (s *scheduler.EvaluatorState) {
-	recovered := makeAllocations("testdata/evaluator_state_test_0.hcl")
+func zeroEvaluatorState(t *testing.T) (s *scheduler.EvaluatorState) {
+	t.Helper()
+	recovered := makeAllocations(t, "testdata/evaluator_state_test_0.hcl")
 	s = scheduler.NewEvaluatorState(recovered)
 	return
 }
 
 func TestEvaluatorState(t *testing.T) {
 	t.Run("1", func(t *testing.T) {
-		state := zeroEvaluatorState()
+		state := zeroEvaluatorState(t)
 		// simple submit
-		next := state.Submit("pod-1", makeAllocations("testdata/evaluator_state_test_1.hcl")[0])
+		next := state.Submit("pod-1", makeAllocations(t, "testdata/evaluator_state_test_1.hcl")[0])
 		assert.Len(t, next, 0)
 	})
 	t.Run("2", func(t *testing.T) {
-		state := zeroEvaluatorState()
+		state := zeroEvaluatorState(t)
 		// submit blocking pod
-		next := state.Submit("pod-3", makeAllocations("testdata/evaluator_state_test_2.hcl")[0])
+		next := state.Submit("pod-3", makeAllocations(t, "testdata/evaluator_state_test_2.hcl")[0])
 		assert.Len(t, next, 0)
 		// remove pod-1 (unblock pod-3)
 		next = state.Submit("pod-1", nil)
@@ -50,7 +54,7 @@ func TestEvaluatorState(t *testing.T) {
 		assert.Equal(t, next[0].Right.Name, "pod-3")
 	})
 	t.Run("3", func(t *testing.T) {
-		state := zeroEvaluatorState()
+		state := zeroEvaluatorState(t)
 		// simple submit
 		next := state.Submit("pod-3", nil)
 		assert.Len(t, next, 0)

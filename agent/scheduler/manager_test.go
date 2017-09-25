@@ -54,7 +54,9 @@ func TestManager(t *testing.T) {
 		"second": "1",
 	})
 
-	privatePods, err := manifest.ParseFromFiles("private", "testdata/manager_test.hcl")
+	var privatePods manifest.Registry
+	err := privatePods.UnmarshalFiles("private", "testdata/manager_test.hcl")
+	//privatePods, err := manifest.ParseFromFiles("private", "testdata/manager_test.hcl")
 	assert.NoError(t, err)
 
 	mu := &sync.Mutex{}

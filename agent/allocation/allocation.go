@@ -17,7 +17,7 @@ const (
 Description=${pod.name}
 Before=${pod.units}
 [Service]
-${agent.pod_exec}
+${system.pod_exec}
 [Install]
 WantedBy=${pod.target}
 `

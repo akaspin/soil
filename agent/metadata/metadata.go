@@ -14,7 +14,6 @@ type Consumer interface {
 }
 
 type Upstream interface {
-	Replace(data map[string]string)
-	Set(data map[string]string)
-	Delete(keys ...string)
+	Set(map[string]string)
+	Replace(map[string]string)
 }

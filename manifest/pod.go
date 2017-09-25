@@ -1,50 +1,15 @@
 package manifest
 
 import (
-	"bytes"
-	"fmt"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/hashstructure"
-	"io"
 )
 
 const (
 	defaultPodTarget = "multi-user.target"
 )
 
-type Pods []*Pod
-
-func (p *Pods) Unmarshal(namespace string, r io.Reader) (err error) {
-	var buf bytes.Buffer
-	if _, err = io.Copy(&buf, r); err != nil {
-		return
-	}
-
-	root, err := hcl.Parse(buf.String())
-	if err != nil {
-		err = fmt.Errorf("error parsing: %s", err)
-		return
-	}
-	buf.Reset()
-
-	list, ok := root.Node.(*ast.ObjectList)
-	if !ok {
-		err = fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object"))
-		return
-	}
-
-	pods, err := parseFromAST(namespace, list)
-	*p = append(*p, pods...)
-	return
-}
-
-func (p *Pod) Verify(namespace string) (err error) {
-	if p.Namespace != namespace {
-		err = fmt.Errorf("bad pod %s namespace %s(actual) != %s(expected)", p.Name, p.Namespace, namespace)
-	}
-	return
-}
 
 type Pod struct {
 	Namespace  string

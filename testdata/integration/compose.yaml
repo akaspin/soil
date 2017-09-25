@@ -29,6 +29,8 @@ services:
     command: [
       "soil-debug",
       "agent",
+      "--config", "/etc/soil/config.hcl",
+      "--config", "/opt/permanent.hcl",
       "--id", "${AGENT_ID}.node.dc1.consul",
       "--public",
       "--advertise", "${HOST}:7654",

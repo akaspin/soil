@@ -43,7 +43,7 @@ func TestNewFromManifest(t *testing.T) {
 	}
 	env := map[string]string{
 		"meta.consul":    "true",
-		"agent.pod_exec": "ExecStart=/usr/bin/sleep inf",
+		"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 	}
 	res, err := allocation.NewFromManifest(m, env)
 	assert.NoError(t, err)
@@ -51,12 +51,12 @@ func TestNewFromManifest(t *testing.T) {
 		Header: &allocation.Header{
 			Name:      "pod-1",
 			PodMark:   7228519356168739269,
-			AgentMark: 13519672434109364665,
+			AgentMark: 7076960218577909541,
 			Namespace: "private",
 		},
 		UnitFile: &allocation.UnitFile{
 			Path:   "/run/systemd/system/pod-private-pod-1.service",
-			Source: "### POD pod-1 {\"AgentMark\":13519672434109364665,\"Namespace\":\"private\",\"PodMark\":7228519356168739269}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+			Source: "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":7228519356168739269}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 		},
 		Units: []*allocation.Unit{
 			{

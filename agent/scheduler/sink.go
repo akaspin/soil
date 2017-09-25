@@ -20,6 +20,8 @@ type Sink struct {
 	mu *sync.Mutex
 }
 
+
+
 func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Manager) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),
@@ -53,7 +55,7 @@ func (s *Sink) Wait() (err error) {
 }
 
 // SyncNamespace scheduler pods. Called by registry on initialization.
-func (s *Sink) Sync(namespace string, pods []*manifest.Pod) (err error) {
+func (s *Sink) ConsumeRegistry(namespace string, pods manifest.Registry) {
 	s.log.Debugf("begin: %s", namespace)
 	s.mu.Lock()
 	defer s.mu.Unlock()

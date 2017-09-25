@@ -17,7 +17,7 @@ import (
 )
 
 func TestSink(t *testing.T) {
-	pods := []*manifest.Pod{
+	pods := manifest.Registry{
 		{
 			Namespace: "private",
 			Name:      "pod-2",
@@ -86,9 +86,11 @@ WantedBy=default.target
 	manager := scheduler.NewManager(ctx, log,
 		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
+		scheduler.NewManagerSource("system", false, nil, "private", "public"),
 	)
 	source1 := metadata.NewSimpleProducer(ctx, log, "meta", manager)
 	source2 := metadata.NewSimpleProducer(ctx, log, "agent", manager)
+	systemSource := metadata.NewSimpleProducer(ctx, log, "system", manager)
 
 	evaluator := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
@@ -96,7 +98,7 @@ WantedBy=default.target
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,
 			manager,
-			supervisor.NewGroup(ctx, source1, source2),
+			supervisor.NewGroup(ctx, source1, source2, systemSource),
 		),
 		evaluator,
 		sink,
@@ -109,18 +111,20 @@ WantedBy=default.target
 	})
 	source2.Replace(map[string]string{
 		"id":       "one",
+	})
+	systemSource.Replace(map[string]string{
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
 	t.Run("first sync", func(t *testing.T) {
-		sink.Sync("private", pods)
+		sink.ConsumeRegistry("private", pods)
 		time.Sleep(time.Second)
 
 		assert.Equal(t, map[string]*allocation.Header{
 			"pod-2": {
 				Name:      "pod-2",
 				PodMark:   11887013412892795164,
-				AgentMark: 17231133757460468042,
+				AgentMark: 3929574824791171030,
 				Namespace: "private",
 			},
 		}, evaluator.List())
@@ -137,13 +141,13 @@ WantedBy=default.target
 			"pod-2": {
 				Name:      "pod-2",
 				PodMark:   11887013412892795164,
-				AgentMark: 14562539397153910086,
+				AgentMark: 1419029487994004442,
 				Namespace: "private",
 			},
 			"pod-3": {
 				Name:      "pod-3",
 				PodMark:   7050032075987695032,
-				AgentMark: 14562539397153910086,
+				AgentMark: 1419029487994004442,
 				Namespace: "private",
 			},
 		}, evaluator.List())

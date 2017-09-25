@@ -27,9 +27,11 @@ func TestNewScheduler(t *testing.T) {
 		manager := scheduler.NewManager(ctx, log,
 			scheduler.NewManagerSource("agent", false, nil, "private", "public"),
 			scheduler.NewManagerSource("meta", false, nil, "private", "public"),
+			scheduler.NewManagerSource("system", false, nil, "private", "public"),
 		)
 		agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
 		metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
+		systemSource := metadata.NewSimpleProducer(ctx, log, "system", manager)
 
 		executor := scheduler.NewEvaluator(ctx, log)
 		sink := scheduler.NewSink(ctx, log, executor, manager)
@@ -38,7 +40,7 @@ func TestNewScheduler(t *testing.T) {
 				supervisor.NewGroup(ctx, executor, manager),
 				sink,
 			),
-			supervisor.NewGroup(ctx, agentSource, metaSource),
+			supervisor.NewGroup(ctx, agentSource, metaSource, systemSource),
 		)
 		assert.NoError(t, sv.Open())
 
@@ -50,15 +52,20 @@ func TestNewScheduler(t *testing.T) {
 		})
 		agentSource.Replace(map[string]string{
 			"id":       "one",
-			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			"drain":    "false",
 		})
-		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_0_private.hcl")
+		systemSource.Replace(map[string]string{
+			"pod_exec": "ExecStart=/usr/bin/sleep inf",
+		})
+
+		var private, public manifest.Registry
+		err := private.UnmarshalFiles("private", "testdata/scheduler_test_0_private.hcl")
 		assert.NoError(t, err)
-		sink.Sync("private", private)
-		public, err := manifest.ParseFromFiles("public", "testdata/scheduler_test_0_public.hcl")
+		err = public.UnmarshalFiles("public", "testdata/scheduler_test_0_public.hcl")
 		assert.NoError(t, err)
-		sink.Sync("public", public)
+
+		sink.ConsumeRegistry("private", private)
+		sink.ConsumeRegistry("public", public)
 
 		time.Sleep(time.Second)
 
@@ -78,9 +85,11 @@ func TestNewScheduler(t *testing.T) {
 	manager := scheduler.NewManager(ctx, log,
 		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
+		scheduler.NewManagerSource("system", false, nil, "private", "public"),
 	)
 	agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
 	metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
+	systemSource := metadata.NewSimpleProducer(ctx, log, "system", manager)
 
 	executor := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, log, executor, manager)
@@ -89,7 +98,7 @@ func TestNewScheduler(t *testing.T) {
 			supervisor.NewGroup(ctx, executor, manager),
 			sink,
 		),
-		supervisor.NewGroup(ctx, agentSource, metaSource),
+		supervisor.NewGroup(ctx, agentSource, metaSource, systemSource),
 	)
 	assert.NoError(t, sv.Open())
 
@@ -101,6 +110,8 @@ func TestNewScheduler(t *testing.T) {
 	})
 	agentSource.Replace(map[string]string{
 		"id":       "one",
+	})
+	systemSource.Replace(map[string]string{
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
@@ -115,16 +126,18 @@ func TestNewScheduler(t *testing.T) {
 		}, res)
 	})
 	t.Run("2", func(t *testing.T) {
-		// re sync private
-		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_2_private.hcl")
+		var private, public manifest.Registry
+		err := private.UnmarshalFiles("private", "testdata/scheduler_test_2_private.hcl")
 		assert.NoError(t, err)
-		sink.Sync("private", private)
+		err = public.UnmarshalFiles("public", "testdata/scheduler_test_2_public.hcl")
+		assert.NoError(t, err)
+
+		// re sync private
+		sink.ConsumeRegistry("private", private)
 		time.Sleep(time.Second)
 
 		// Deploy first in public namespace
-		public, err := manifest.ParseFromFiles("public", "testdata/scheduler_test_2_public.hcl")
-		assert.NoError(t, err)
-		sink.Sync("public", public)
+		sink.ConsumeRegistry("public", public)
 		time.Sleep(time.Second)
 
 		// assert first pod is not overrided by public
@@ -138,9 +151,11 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("3", func(t *testing.T) {
 		// Remove first private
-		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_3_private.hcl")
+		var private manifest.Registry
+		err := private.UnmarshalFiles("private", "testdata/scheduler_test_3_private.hcl")
 		assert.NoError(t, err)
-		sink.Sync("private", private)
+
+		sink.ConsumeRegistry("private", private)
 		time.Sleep(time.Second)
 
 		// ensure first is gone
@@ -169,9 +184,11 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("5", func(t *testing.T) {
 		// reenter first private
-		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_5_private.hcl")
+		var private manifest.Registry
+		err := private.UnmarshalFiles("private", "testdata/scheduler_test_5_private.hcl")
 		assert.NoError(t, err)
-		sink.Sync("private", private)
+
+		sink.ConsumeRegistry("private", private)
 		time.Sleep(time.Second)
 
 		// ensure first is private
@@ -184,9 +201,11 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("6", func(t *testing.T) {
 		// remove first private
-		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_6_private.hcl")
+		var private manifest.Registry
+		err := private.UnmarshalFiles("private", "testdata/scheduler_test_6_private.hcl")
 		assert.NoError(t, err)
-		sink.Sync("private", private)
+
+		sink.ConsumeRegistry("private", private)
 		time.Sleep(time.Second)
 
 		// ensure first is public
@@ -199,9 +218,11 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("7", func(t *testing.T) {
 		// update private and meta
-		private, err := manifest.ParseFromFiles("private", "testdata/scheduler_test_7_private.hcl")
+		var private manifest.Registry
+		err := private.UnmarshalFiles("private", "testdata/scheduler_test_7_private.hcl")
+
 		assert.NoError(t, err)
-		sink.Sync("private", private)
+		sink.ConsumeRegistry("private", private)
 
 		metaSource.Replace(map[string]string{
 			"first_private":  "2",

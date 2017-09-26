@@ -5,7 +5,7 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -38,25 +38,24 @@ func TestManager(t *testing.T) {
 			"${drain.state}": "!= true",
 		}, "private", "public"),
 	)
-	a1 := metadata.NewSimpleProducer(ctx, log, "meta", manager)
-	a2 := metadata.NewSimpleProducer(ctx, log, "with.dot", manager)
-	drainMeta := metadata.NewSimpleProducer(ctx, log, "drain", manager)
+	a1 := bus.NewFlatMap(ctx, log, true, "meta", manager)
+	a2 := bus.NewFlatMap(ctx, log, true, "with.dot", manager)
+	drainMeta := bus.NewFlatMap(ctx, log, true, "drain", manager)
 
 	sv := supervisor.NewChain(ctx, manager, a1, a2, drainMeta)
 	assert.NoError(t, sv.Open())
 
-	a1.Replace(map[string]string{
+	a1.Set(map[string]string{
 		"first":  "1",
 		"second": "1",
 	})
-	a2.Replace(map[string]string{
+	a2.Set(map[string]string{
 		"first":  "1",
 		"second": "1",
 	})
 
 	var privatePods manifest.Registry
 	err := privatePods.UnmarshalFiles("private", "testdata/manager_test.hcl")
-	//privatePods, err := manifest.ParseFromFiles("private", "testdata/manager_test.hcl")
 	assert.NoError(t, err)
 
 	mu := &sync.Mutex{}
@@ -106,7 +105,7 @@ func TestManager(t *testing.T) {
 		})
 	})
 	t.Run("drain on", func(t *testing.T) {
-		drainMeta.Replace(map[string]string{
+		drainMeta.Set(map[string]string{
 			"state": "true",
 		})
 		time.Sleep(time.Millisecond * 100)
@@ -116,7 +115,7 @@ func TestManager(t *testing.T) {
 		assert.Error(t, res["second"][1].Reason)
 	})
 	t.Run("drain off", func(t *testing.T) {
-		drainMeta.Replace(map[string]string{})
+		drainMeta.Set(map[string]string{})
 		time.Sleep(time.Millisecond * 100)
 		assert.Len(t, res["first"], 3, "first should be notified")
 		assert.Len(t, res["second"], 3, "second should be notified")
@@ -132,7 +131,7 @@ func TestManager(t *testing.T) {
 		})
 	})
 	t.Run("fail second constraint", func(t *testing.T) {
-		a1.Replace(map[string]string{
+		a1.Set(map[string]string{
 			"first": "1",
 		})
 		time.Sleep(time.Millisecond * 100)

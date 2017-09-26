@@ -6,14 +6,30 @@ import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/public"
+	"github.com/akaspin/soil/agent/bus/public"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"path"
 )
+
+func TestPath(t *testing.T) {
+	t.Run("multi", func(t *testing.T) {
+		res := path.Join("a", "b", "c")
+		assert.Equal(t, "a/b/c", res)
+	})
+	t.Run("with empty", func(t *testing.T) {
+		res := path.Join("a", "b", "c", "")
+		assert.Equal(t, "a/b/c", res)
+	})
+	t.Run("with slash", func(t *testing.T) {
+		res := path.Join("a", "b/c")
+		assert.Equal(t, "a/b/c", res)
+	})
+}
 
 func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	//t.SkipNow()
@@ -66,9 +82,12 @@ func TestBackend_Set(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 200)
 
-	backend.Set(map[string]string{
-		"1/pre-ttl": "pre",
-	}, true)
+	ephemeral := public.NewEphemeralOperator(backend, "1")
+	permanent := public.NewPermanentOperator(backend, "1")
+
+	ephemeral.Set(map[string]string{
+		"pre-ttl": "pre",
+	})
 
 	time.Sleep(time.Second)
 
@@ -80,10 +99,10 @@ func TestBackend_Set(t *testing.T) {
 		{"pre-ttl": "pre"},
 	})
 
-	backend.Set(map[string]string{
-		"1/1": "v1",
-		"1/2": "v2",
-	}, false)
+	permanent.Set(map[string]string{
+		"1": "v1",
+		"2": "v2",
+	})
 	time.Sleep(time.Second)
 
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
@@ -92,10 +111,10 @@ func TestBackend_Set(t *testing.T) {
 		"2":       "v2",
 	})
 
-	backend.Set(map[string]string{
-		"1/ttl1": "ttl1",
-		"1/ttl2": "ttl2",
-	}, true)
+	ephemeral.Set(map[string]string{
+		"ttl1": "ttl1",
+		"ttl2": "ttl2",
+	})
 	time.Sleep(time.Second)
 
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{

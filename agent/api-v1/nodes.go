@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/api/api-v1-types"
 	"net/url"
 	"strings"
@@ -34,7 +34,7 @@ func (e *StatusNodes) Process(ctx context.Context, u *url.URL, v interface{}) (r
 	return
 }
 
-func (e *StatusNodes) ConsumeMessage(message metadata.Message) {
+func (e *StatusNodes) ConsumeMessage(message bus.Message) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.data = e.data[:0]

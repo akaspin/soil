@@ -6,7 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/api"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -84,7 +84,7 @@ func TestRouter_Sync(t *testing.T) {
 	server2 := api.NewServer(ctx, log, ":5555", router2)
 	sv2 := supervisor.NewChain(ctx, router2, server2)
 
-	nodesProducer := metadata.NewSimpleProducer(ctx, log, "nodes", router1, router2)
+	nodesProducer := bus.NewFlatMap(ctx, log, true, "nodes", router1, router2)
 
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewGroup(ctx, sv1, sv2),
@@ -94,7 +94,7 @@ func TestRouter_Sync(t *testing.T) {
 
 	time.Sleep(time.Second)
 
-	nodesProducer.Replace(map[string]string{
+	nodesProducer.Set(map[string]string{
 		"node-1": "127.0.0.1:4444",
 		"node-2": "127.0.0.1:5555",
 	})

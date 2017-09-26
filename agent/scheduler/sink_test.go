@@ -6,7 +6,7 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -88,9 +88,9 @@ WantedBy=default.target
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 		scheduler.NewManagerSource("system", false, nil, "private", "public"),
 	)
-	source1 := metadata.NewSimpleProducer(ctx, log, "meta", manager)
-	source2 := metadata.NewSimpleProducer(ctx, log, "agent", manager)
-	systemSource := metadata.NewSimpleProducer(ctx, log, "system", manager)
+	source1 := bus.NewFlatMap(ctx, log, true, "meta", manager)
+	source2 := bus.NewFlatMap(ctx, log, true, "agent", manager)
+	systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 	evaluator := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
@@ -105,14 +105,14 @@ WantedBy=default.target
 	)
 	assert.NoError(t, sv.Open())
 
-	source1.Replace(map[string]string{
+	source1.Set(map[string]string{
 		"consul": "true",
 		"test":   "true",
 	})
-	source2.Replace(map[string]string{
+	source2.Set(map[string]string{
 		"id":       "one",
 	})
-	systemSource.Replace(map[string]string{
+	systemSource.Set(map[string]string{
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
@@ -131,7 +131,7 @@ WantedBy=default.target
 		time.Sleep(time.Second)
 	})
 	t.Run("enable pod-3", func(t *testing.T) {
-		source1.Replace(map[string]string{
+		source1.Set(map[string]string{
 			"consul":    "true",
 			"test":      "true",
 			"undefined": "true",

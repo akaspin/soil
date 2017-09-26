@@ -1,27 +1,26 @@
-package registry
+package bus
 
 import (
 	"encoding/json"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
 	"github.com/akaspin/soil/manifest"
 	"strings"
 )
 
-type Watcher struct {
+type PublicRegistryWatcher struct {
 	log *logx.Log
-	consumers []Consumer
+	consumers []RegistryConsumer
 }
 
-func NewWatcher(log *logx.Log, consumers ...Consumer) (w *Watcher) {
-	w = &Watcher{
+func NewWatcher(log *logx.Log, consumers ...RegistryConsumer) (w *PublicRegistryWatcher) {
+	w = &PublicRegistryWatcher{
 		log: log.GetLog("public", "watch", "registry"),
 		consumers: consumers,
 	}
 	return
 }
 
-func (w *Watcher) ConsumeMessage(message metadata.Message) {
+func (w *PublicRegistryWatcher) ConsumeMessage(message Message) {
 	var res manifest.Registry
 	for _, raw := range message.GetPayload() {
 		var pod manifest.Pod

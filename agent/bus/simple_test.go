@@ -1,11 +1,11 @@
 // +build ide test_unit
 
-package metadata_test
+package bus_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
 	"sync/atomic"
 	"testing"
@@ -16,7 +16,7 @@ type dummyConsumer struct {
 	changes int32
 }
 
-func (c *dummyConsumer) ConsumeMessage(message metadata.Message) {
+func (c *dummyConsumer) ConsumeMessage(message bus.Message) {
 	atomic.AddInt32(&c.changes, 1)
 }
 
@@ -24,7 +24,7 @@ func TestMapMetadata(t *testing.T) {
 
 	cons1 := &dummyConsumer{}
 	cons2 := &dummyConsumer{}
-	a := metadata.NewSimpleProducer(context.Background(), logx.GetLog("test"), "meta",
+	a := bus.NewFlatMap(context.Background(), logx.GetLog("test"), true, "meta",
 		cons1, cons2)
 	a.Open()
 
@@ -32,7 +32,7 @@ func TestMapMetadata(t *testing.T) {
 	assert.Equal(t, int32(0), atomic.LoadInt32(&cons1.changes))
 	assert.Equal(t, int32(0), atomic.LoadInt32(&cons2.changes))
 
-	a.Replace(map[string]string{
+	a.Set(map[string]string{
 		"first":  "1",
 		"second": "3",
 	})
@@ -41,7 +41,7 @@ func TestMapMetadata(t *testing.T) {
 	assert.Equal(t, int32(1), atomic.LoadInt32(&cons1.changes))
 	assert.Equal(t, int32(1), atomic.LoadInt32(&cons2.changes))
 
-	a.Replace(map[string]string{
+	a.Set(map[string]string{
 		"first": "2",
 	})
 	time.Sleep(time.Millisecond * 300)

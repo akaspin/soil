@@ -3,7 +3,7 @@ package api_v1
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"net/url"
 	"sync"
 )
@@ -35,7 +35,7 @@ func (n *statusNode) Process(ctx context.Context, u *url.URL, v interface{}) (re
 	return
 }
 
-func (n *statusNode) ConsumeMessage(message metadata.Message) {
+func (n *statusNode) ConsumeMessage(message bus.Message) {
 	n.data.Store(message.GetPrefix(), message.GetPayload())
 	n.log.Debugf("stored: %v", message)
 }

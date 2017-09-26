@@ -1,5 +1,6 @@
-package metadata
+package bus
 
+// Message
 type Message struct {
 	Prefix string            // Producer prefix
 	Data   map[string]string // Message payload

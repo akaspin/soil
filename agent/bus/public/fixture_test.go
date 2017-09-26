@@ -4,7 +4,7 @@ package public_test
 
 import (
 	"fmt"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/hashicorp/consul/testutil"
 	"github.com/nu7hatch/gouuid"
 	"io/ioutil"
@@ -35,13 +35,13 @@ func newConsulFixture(t *testing.T) (f *consulFixture) {
 	}
 	os.RemoveAll(f.Dir)
 	f.Ports = &testutil.TestPortConfig{
-		DNS:     randomPort(),
-		HTTP:    randomPort(),
-		HTTPS:   randomPort(),
-		SerfLan: randomPort(),
-		SerfWan: randomPort(),
-		Server:  randomPort(),
-		RPC:     randomPort(),
+		DNS:     f.randomPort(),
+		HTTP:    f.randomPort(),
+		HTTPS:   f.randomPort(),
+		SerfLan: f.randomPort(),
+		SerfWan: f.randomPort(),
+		Server:  f.randomPort(),
+		RPC:     f.randomPort(),
 	}
 	os.MkdirAll(f.Dir, 0777)
 	ioutil.WriteFile(f.Dir+"/ttl.json", []byte(`{"session_ttl_min":".5s"}`), 0777)
@@ -87,7 +87,7 @@ func (f *consulFixture) Restart(wrap, between time.Duration) {
 	time.Sleep(wrap)
 }
 
-func randomPort() int {
+func (f *consulFixture) randomPort() int {
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		panic(err)
@@ -116,7 +116,7 @@ func newDummyConsumer() (c *dummyConsumer) {
 	return
 }
 
-func (c *dummyConsumer) ConsumeMessage(message metadata.Message) {
+func (c *dummyConsumer) ConsumeMessage(message bus.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.res = append(c.res, message.GetPayload())

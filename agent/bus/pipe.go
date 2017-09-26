@@ -1,4 +1,4 @@
-package metadata
+package bus
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 )
 
 type SimplePipe struct {
-	consumers []Consumer
+	consumers []MessageConsumer
 	fn        func(message Message) Message
 }
 
-func NewSimplePipe(fn func(message Message) Message, consumers ...Consumer) (p *SimplePipe) {
+func NewSimplePipe(fn func(message Message) Message, consumers ...MessageConsumer) (p *SimplePipe) {
 	p = &SimplePipe{
 		fn:        fn,
 		consumers: consumers,
@@ -35,15 +35,15 @@ type BoundedPipe struct {
 	*supervisor.Control
 	log      *logx.Log
 	prefix   string
-	producer DynamicProducer
+	producer BindableProducer
 	fn       func(message Message) Message
 
 	mu        *sync.Mutex
 	cache     Message
-	consumers []Consumer
+	consumers []MessageConsumer
 }
 
-func NewPipe(ctx context.Context, log *logx.Log, prefix string, producer DynamicProducer, fn func(message Message) Message, consumers ...Consumer) (p *BoundedPipe) {
+func NewPipe(ctx context.Context, log *logx.Log, prefix string, producer BindableProducer, fn func(message Message) Message, consumers ...MessageConsumer) (p *BoundedPipe) {
 	p = &BoundedPipe{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("pipe", prefix),

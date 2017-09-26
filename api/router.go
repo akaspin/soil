@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/supervisor"
 	"net/http"
 	"net/http/httputil"
@@ -53,7 +53,7 @@ func (r *Router) Bind(ctx context.Context, log *logx.Log, mux *http.ServeMux) {
 	mux.HandleFunc("/", r.notFoundHandlerFunc)
 }
 
-func (r *Router) ConsumeMessage(message metadata.Message) {
+func (r *Router) ConsumeMessage(message bus.Message) {
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()

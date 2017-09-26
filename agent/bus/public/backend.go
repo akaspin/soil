@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/supervisor"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"path"
 )
 
 var disabledError = errors.New("public namespace is disabled")
@@ -26,9 +27,7 @@ const (
 	opDelete
 )
 
-type Setter interface {
-	Set(data map[string]string, withTTL bool)
-}
+
 
 type operation struct {
 	key   string
@@ -79,31 +78,9 @@ func (b *Backend) Open() (err error) {
 	return
 }
 
-// Registers Consumer with specific prefix
-func (b *Backend) RegisterConsumer(prefix string, consumer metadata.Consumer) {
+// Registers MessageConsumer with specific prefix
+func (b *Backend) RegisterConsumer(prefix string, consumer bus.MessageConsumer) {
 	go b.watchLoop(prefix, consumer)
-}
-
-// Set data in storage
-func (b *Backend) Set(data map[string]string, withTTL bool) {
-	if !b.options.Enabled {
-		return
-	}
-	var ops []operation
-	op := opSet
-	if withTTL {
-		op = opSetTTL
-	}
-	for key, value := range data {
-		ops = append(ops, operation{
-			key:   key,
-			value: value,
-			op:    op,
-		})
-	}
-	go func() {
-		b.operationChan <- ops
-	}()
 }
 
 // delete data
@@ -122,6 +99,29 @@ func (b *Backend) Delete(keys ...string) {
 		b.operationChan <- ops
 	}()
 }
+
+// Set data in storage
+func (b *Backend) set(prefix string, data map[string]string, withTTL bool) {
+	if !b.options.Enabled {
+		return
+	}
+	var ops []operation
+	op := opSet
+	if withTTL {
+		op = opSetTTL
+	}
+	for key, value := range data {
+		ops = append(ops, operation{
+			key:  path.Join(prefix, key),
+			value: value,
+			op:    op,
+		})
+	}
+	go func() {
+		b.operationChan <- ops
+	}()
+}
+
 
 func (b *Backend) connect() {
 	defer b.connDirtyCancel()
@@ -261,11 +261,11 @@ LOOP:
 	}
 }
 
-func (b *Backend) watchLoop(prefix string, consumer metadata.Consumer) {
+func (b *Backend) watchLoop(prefix string, consumer bus.MessageConsumer) {
 	<-b.connDirtyCtx.Done()
 	if b.connErr != nil {
 		b.log.Errorf("%v: disabling consumer", b.connErr)
-		consumer.ConsumeMessage(metadata.NewMessage(prefix, map[string]string{}))
+		consumer.ConsumeMessage(bus.NewMessage(prefix, map[string]string{}))
 		return
 	}
 	chroot := b.chroot + "/" + prefix
@@ -328,7 +328,7 @@ LOOP:
 			}
 			lastHash = newHash
 			cache = data
-			consumer.ConsumeMessage(metadata.NewMessage(prefix, data))
+			consumer.ConsumeMessage(bus.NewMessage(prefix, data))
 			log.Debugf("consumer updated with %v", data)
 
 		case <-sleepChan:

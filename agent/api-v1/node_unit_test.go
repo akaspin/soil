@@ -6,7 +6,7 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/api-v1"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -15,10 +15,10 @@ import (
 func TestUnit_StatusNode_Process(t *testing.T) {
 
 	e := api_v1.NewStatusNode(logx.GetLog("test"))
-	go e.ConsumeMessage(metadata.NewMessage("a", map[string]string{
+	go e.ConsumeMessage(bus.NewMessage("a", map[string]string{
 		"a-k1": "a-v1",
 	}))
-	go e.ConsumeMessage(metadata.NewMessage("b", map[string]string{
+	go e.ConsumeMessage(bus.NewMessage("b", map[string]string{
 		"b-k1": "b-v1",
 	}))
 	time.Sleep(time.Millisecond * 200)

@@ -5,7 +5,7 @@ package scheduler_test
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -29,9 +29,9 @@ func TestNewScheduler(t *testing.T) {
 			scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 			scheduler.NewManagerSource("system", false, nil, "private", "public"),
 		)
-		agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
-		metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
-		systemSource := metadata.NewSimpleProducer(ctx, log, "system", manager)
+		agentSource := bus.NewFlatMap(ctx, log, true, "agent", manager)
+		metaSource := bus.NewFlatMap(ctx, log, true, "meta", manager)
+		systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 		executor := scheduler.NewEvaluator(ctx, log)
 		sink := scheduler.NewSink(ctx, log, executor, manager)
@@ -45,16 +45,16 @@ func TestNewScheduler(t *testing.T) {
 		assert.NoError(t, sv.Open())
 
 		// premature init arbiters
-		metaSource.Replace(map[string]string{
+		metaSource.Set(map[string]string{
 			"first_private":  "1",
 			"second_private": "1",
 			"third_public":   "1",
 		})
-		agentSource.Replace(map[string]string{
+		agentSource.Set(map[string]string{
 			"id":       "one",
 			"drain":    "false",
 		})
-		systemSource.Replace(map[string]string{
+		systemSource.Set(map[string]string{
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 
@@ -87,9 +87,9 @@ func TestNewScheduler(t *testing.T) {
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 		scheduler.NewManagerSource("system", false, nil, "private", "public"),
 	)
-	agentSource := metadata.NewSimpleProducer(ctx, log, "agent", manager)
-	metaSource := metadata.NewSimpleProducer(ctx, log, "meta", manager)
-	systemSource := metadata.NewSimpleProducer(ctx, log, "system", manager)
+	agentSource := bus.NewFlatMap(ctx, log, true, "agent", manager)
+	metaSource := bus.NewFlatMap(ctx, log, true, "meta", manager)
+	systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 	executor := scheduler.NewEvaluator(ctx, log)
 	sink := scheduler.NewSink(ctx, log, executor, manager)
@@ -104,14 +104,14 @@ func TestNewScheduler(t *testing.T) {
 
 	// premature init arbiters
 	assert.NoError(t, sv.Open())
-	metaSource.Replace(map[string]string{
+	metaSource.Set(map[string]string{
 		"first_private":  "1",
 		"second_private": "1",
 	})
-	agentSource.Replace(map[string]string{
+	agentSource.Set(map[string]string{
 		"id":       "one",
 	})
-	systemSource.Replace(map[string]string{
+	systemSource.Set(map[string]string{
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",
 	})
 
@@ -167,7 +167,7 @@ func TestNewScheduler(t *testing.T) {
 	})
 	t.Run("4", func(t *testing.T) {
 		// modify meta
-		metaSource.Replace(map[string]string{
+		metaSource.Set(map[string]string{
 			"first_private":  "1",
 			"first_public":   "1",
 			"second_private": "1",
@@ -224,7 +224,7 @@ func TestNewScheduler(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry("private", private)
 
-		metaSource.Replace(map[string]string{
+		metaSource.Set(map[string]string{
 			"first_private":  "2",
 			"first_public":   "1",
 			"second_private": "1",

@@ -2,14 +2,12 @@ package command
 
 import (
 	"context"
-	"fmt"
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/api-v1"
-	"github.com/akaspin/soil/agent/metadata"
-	"github.com/akaspin/soil/agent/public"
-	"github.com/akaspin/soil/agent/registry"
+	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/public"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/manifest"
@@ -66,7 +64,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	var agentProducer *metadata.SimpleProducer
+	var agentProducer *bus.FlatMap
 
 	// public KV
 	publicBackend := public.NewBackend(ctx, c.log, c.Public)
@@ -103,12 +101,12 @@ func (c *Agent) Run(args ...string) (err error) {
 
 		// registry
 		api.GET("/v1/registry", apiV1Registry),
-		api.PUT("/v1/registry", api_v1.NewRegistryPut(c.log, publicBackend)),
+		api.PUT("/v1/registry", api_v1.NewRegistryPut(c.log, public.NewPermanentOperator(publicBackend, "registry"))),
 	)
 
 
 	// public announcers
-	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, publicBackend, fmt.Sprintf("nodes/%s", c.Id))
+	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, public.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
 
 	manager := scheduler.NewManager(ctx, c.log,
 		scheduler.NewManagerSource("agent", false, manifest.Constraint{
@@ -119,16 +117,16 @@ func (c *Agent) Run(args ...string) (err error) {
 	)
 
 	// private metadata
-	agentProducer = metadata.NewSimpleProducer(ctx, c.log, "agent",
+	agentProducer = bus.NewFlatMap(ctx, c.log, false, "agent",
 		manager,
 		publicNodeAnnouncer,
 		apiV1StatusNode,
 	)
-	metaProducer := metadata.NewSimpleProducer(ctx, c.log, "meta",
+	metaProducer := bus.NewFlatMap(ctx, c.log, true, "meta",
 		manager,
 		apiV1StatusNode,
 	)
-	systemProducer := metadata.NewSimpleProducer(ctx, c.log, "system",
+	systemProducer := bus.NewFlatMap(ctx, c.log, true, "system",
 		manager,
 		apiV1StatusNode,
 	)
@@ -137,12 +135,12 @@ func (c *Agent) Run(args ...string) (err error) {
 	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
 
 	// public watchers
-	publicNodesWatcher := metadata.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
+	publicNodesWatcher := bus.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
 		apiV1StatusNodes,
 		api.NewDiscoveryPipe(c.log, apiRouter),
 	)
-	publicRegistryWatcher := metadata.NewPipe(ctx, c.log, "registry", publicBackend, nil,
-		registry.NewWatcher(c.log, registrySink, apiV1Registry))
+	publicRegistryWatcher := bus.NewPipe(ctx, c.log, "registry", publicBackend, nil,
+		bus.NewWatcher(c.log, registrySink, apiV1Registry))
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,
@@ -161,7 +159,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	}
 
 	// Configure static agent properties
-	agentProducer.Replace(map[string]string{
+	agentProducer.Set(map[string]string{
 		"id":        c.Id,
 		"advertise": c.Public.Advertise,
 		"drain":     "false",
@@ -194,7 +192,7 @@ LOOP:
 	return
 }
 
-func (c *Agent) reload(systemSetter, metaSetter metadata.Upstream, registryConsumers ...registry.Consumer) (err error) {
+func (c *Agent) reload(systemSetter, metaSetter bus.Setter, registryConsumers ...bus.RegistryConsumer) (err error) {
 	// read config
 	config := agent.DefaultConfig()
 	for _, meta := range c.Meta {
@@ -210,8 +208,8 @@ func (c *Agent) reload(systemSetter, metaSetter metadata.Upstream, registryConsu
 	}
 
 	// producers
-	systemSetter.Replace(config.System)
-	metaSetter.Replace(config.Meta)
+	systemSetter.Set(config.System)
+	metaSetter.Set(config.Meta)
 
 	// private registry
 	var private manifest.Registry

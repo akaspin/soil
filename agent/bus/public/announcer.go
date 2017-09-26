@@ -5,17 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 )
 
 // NodeAnnouncer exposes Agent properties in kv
 type NodeAnnouncer struct {
 	log    *logx.Log
-	setter Setter
+	setter bus.Setter
 	prefix string
 }
 
-func NewNodesAnnouncer(ctx context.Context, log *logx.Log, setter Setter, prefix string) (j *NodeAnnouncer) {
+func NewNodesAnnouncer(ctx context.Context, log *logx.Log, setter bus.Setter, prefix string) (j *NodeAnnouncer) {
 	j = &NodeAnnouncer{
 		log:    log.GetLog("json", prefix),
 		setter: setter,
@@ -25,7 +25,7 @@ func NewNodesAnnouncer(ctx context.Context, log *logx.Log, setter Setter, prefix
 }
 
 // Accepts data and pipes it to kv upstream
-func (r *NodeAnnouncer) ConsumeMessage(message metadata.Message) {
+func (r *NodeAnnouncer) ConsumeMessage(message bus.Message) {
 	buf := &bytes.Buffer{}
 	if err := json.NewEncoder(buf).Encode(message.GetPayload()); err != nil {
 		r.log.Error(err)
@@ -33,5 +33,5 @@ func (r *NodeAnnouncer) ConsumeMessage(message metadata.Message) {
 	}
 	r.setter.Set(map[string]string{
 		r.prefix: buf.String(),
-	}, true)
+	})
 }

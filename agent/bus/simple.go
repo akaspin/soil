@@ -1,4 +1,4 @@
-package metadata
+package bus
 
 import (
 	"context"
@@ -7,22 +7,24 @@ import (
 	"sync"
 )
 
-type SimpleProducer struct {
+type FlatMap struct {
 	*supervisor.Control
 	log *logx.Log
 
 	prefix    string
-	consumers []Consumer
+	isStrict bool
+	consumers []MessageConsumer
 
 	mu   *sync.Mutex
 	data map[string]string
 }
 
-func NewSimpleProducer(ctx context.Context, log *logx.Log, prefix string, consumers ...Consumer) (p *SimpleProducer) {
-	p = &SimpleProducer{
+func NewFlatMap(ctx context.Context, log *logx.Log, strict bool, prefix string, consumers ...MessageConsumer) (p *FlatMap) {
+	p = &FlatMap{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("producer", prefix),
 		prefix:    prefix,
+		isStrict: strict,
 		consumers: consumers,
 		mu:        &sync.Mutex{},
 		data:      map[string]string{},
@@ -30,34 +32,40 @@ func NewSimpleProducer(ctx context.Context, log *logx.Log, prefix string, consum
 	return
 }
 
-func (p *SimpleProducer) Open() (err error) {
+func (p *FlatMap) Open() (err error) {
 	p.log.Debug("open")
 	err = p.Control.Open()
 	return
 }
 
-func (p *SimpleProducer) Close() error {
+func (p *FlatMap) Close() error {
 	p.log.Debug("close")
 	return p.Control.Close()
 }
 
-func (p *SimpleProducer) Replace(data map[string]string) {
+// Replaces all data
+func (p *FlatMap) Replace(data map[string]string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.data = data
 	p.notifyAll()
 }
 
-func (p *SimpleProducer) Set(data map[string]string) {
+// Set specific keys
+func (p *FlatMap) Set(data map[string]string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	for k, v := range data {
-		p.data[k] = v
+	if p.isStrict {
+		p.data = data
+	} else {
+		for k, v := range data {
+			p.data[k] = v
+		}
 	}
 	p.notifyAll()
 }
 
-func (p *SimpleProducer) notifyAll() {
+func (p *FlatMap) notifyAll() {
 	p.log.Tracef("syncing with %d consumers", len(p.consumers))
 	msg := NewMessage(p.prefix, p.data)
 	for _, consumer := range p.consumers {

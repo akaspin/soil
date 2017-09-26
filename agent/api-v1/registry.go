@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/public"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/api/api-v1-types"
 	"github.com/akaspin/soil/manifest"
@@ -52,10 +52,10 @@ func (e *registryGet) ConsumeRegistry(namespace string, payload manifest.Registr
 
 type registryPut struct {
 	log    *logx.Log
-	setter public.Setter
+	setter bus.Setter
 }
 
-func NewRegistryPut(log *logx.Log, setter public.Setter) (e *registryPut) {
+func NewRegistryPut(log *logx.Log, setter bus.Setter) (e *registryPut) {
 	e = &registryPut{
 		log:    log.GetLog("api", "put", "/v1/registry"),
 		setter: setter,
@@ -81,11 +81,11 @@ func (e *registryPut) Process(ctx context.Context, u *url.URL, v interface{}) (r
 			e.log.Errorf("can't marshal pod: %v", err)
 			continue
 		}
-		ingest["registry/"+pod.Name] = string(data)
+		ingest[pod.Name] = string(data)
 		mark, _ := hashstructure.Hash(pod, nil)
 		marks[pod.Name] = mark
 	}
-	e.setter.Set(ingest, false)
+	e.setter.Set(ingest)
 	res = marks
 	return
 }

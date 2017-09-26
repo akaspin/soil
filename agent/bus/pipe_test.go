@@ -1,11 +1,11 @@
 // +build ide test_unit
 
-package metadata_test
+package bus_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/metadata"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
@@ -14,7 +14,7 @@ import (
 
 type testConsumer struct {
 	mu       *sync.Mutex
-	messages []metadata.Message
+	messages []bus.Message
 }
 
 func newTestConsumer() (c *testConsumer) {
@@ -24,7 +24,7 @@ func newTestConsumer() (c *testConsumer) {
 	return
 }
 
-func (c *testConsumer) ConsumeMessage(message metadata.Message) {
+func (c *testConsumer) ConsumeMessage(message bus.Message) {
 	go func() {
 		c.mu.Lock()
 		defer c.mu.Unlock()
@@ -39,29 +39,29 @@ func TestSimplePipe_Sync(t *testing.T) {
 	cons1 := newTestConsumer()
 	cons2 := newTestConsumer()
 
-	pipe := metadata.NewSimplePipe(func(message metadata.Message) (res metadata.Message) {
+	pipe := bus.NewSimplePipe(func(message bus.Message) (res bus.Message) {
 		payload := message.GetPayload()
 		delete(payload, "a")
-		res = metadata.NewMessage(message.GetPrefix(), payload)
+		res = bus.NewMessage(message.GetPrefix(), payload)
 		return
 	}, cons1, cons2)
 
-	producer := metadata.NewSimpleProducer(ctx, log, "test", pipe)
+	producer := bus.NewFlatMap(ctx, log, true, "test", pipe)
 	assert.NoError(t, producer.Open())
 
 	time.Sleep(time.Millisecond * 100)
 
-	producer.Replace(map[string]string{
+	producer.Set(map[string]string{
 		"a": "1",
 		"b": "2",
 	})
 	time.Sleep(time.Millisecond * 100)
 
-	assert.Equal(t, cons1.messages, []metadata.Message{
-		metadata.NewMessage("test", map[string]string{"b": "2"}),
+	assert.Equal(t, cons1.messages, []bus.Message{
+		bus.NewMessage("test", map[string]string{"b": "2"}),
 	})
-	assert.Equal(t, cons2.messages, []metadata.Message{
-		metadata.NewMessage("test", map[string]string{"b": "2"}),
+	assert.Equal(t, cons2.messages, []bus.Message{
+		bus.NewMessage("test", map[string]string{"b": "2"}),
 	})
 
 	producer.Close()

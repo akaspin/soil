@@ -5,8 +5,8 @@ import "sync"
 type fixtureBackend struct {
 	mu     *sync.Mutex
 	states []map[string]string
-	ttl    []bool
 }
+
 
 func newFixtureBackend() (b *fixtureBackend) {
 	b = &fixtureBackend{
@@ -15,9 +15,8 @@ func newFixtureBackend() (b *fixtureBackend) {
 	return
 }
 
-func (b *fixtureBackend) Set(data map[string]string, withTTL bool) {
+func (b *fixtureBackend) Set(data map[string]string) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.ttl = append(b.ttl, withTTL)
 	b.states = append(b.states, data)
 }

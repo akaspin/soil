@@ -1,4 +1,4 @@
-package public
+package backend
 
 import (
 	"context"
@@ -14,9 +14,9 @@ import (
 	"github.com/docker/libkv/store/zookeeper"
 	"github.com/mitchellh/hashstructure"
 	"net/url"
+	"path"
 	"strings"
 	"time"
-	"path"
 )
 
 var disabledError = errors.New("public namespace is disabled")
@@ -26,8 +26,6 @@ const (
 	opSet
 	opDelete
 )
-
-
 
 type operation struct {
 	key   string
@@ -44,7 +42,7 @@ type Options struct {
 	TTL           time.Duration
 }
 
-type Backend struct {
+type LibKVBackend struct {
 	*supervisor.Control
 	log     *logx.Log
 	options Options
@@ -60,8 +58,8 @@ type Backend struct {
 	operationChan chan []operation
 }
 
-func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend) {
-	b = &Backend{
+func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *LibKVBackend) {
+	b = &LibKVBackend{
 		Control:       supervisor.NewControl(ctx),
 		log:           log.GetLog("public", "backend"),
 		options:       options,
@@ -71,7 +69,7 @@ func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *Backend
 	return
 }
 
-func (b *Backend) Open() (err error) {
+func (b *LibKVBackend) Open() (err error) {
 	go b.connect()
 	go b.operationLoop()
 	err = b.Control.Open()
@@ -79,19 +77,19 @@ func (b *Backend) Open() (err error) {
 }
 
 // Registers MessageConsumer with specific prefix
-func (b *Backend) RegisterConsumer(prefix string, consumer bus.MessageConsumer) {
+func (b *LibKVBackend) RegisterConsumer(prefix string, consumer bus.MessageConsumer) {
 	go b.watchLoop(prefix, consumer)
 }
 
 // delete data
-func (b *Backend) Delete(keys ...string) {
+func (b *LibKVBackend) deleteWithPrefix(prefix string, keys ...string) {
 	if !b.options.Enabled {
 		return
 	}
 	var ops []operation
 	for _, key := range keys {
 		ops = append(ops, operation{
-			key: key,
+			key: path.Join(prefix, key),
 			op:  opDelete,
 		})
 	}
@@ -101,7 +99,7 @@ func (b *Backend) Delete(keys ...string) {
 }
 
 // Set data in storage
-func (b *Backend) set(prefix string, data map[string]string, withTTL bool) {
+func (b *LibKVBackend) set(prefix string, data map[string]string, withTTL bool) {
 	if !b.options.Enabled {
 		return
 	}
@@ -112,7 +110,7 @@ func (b *Backend) set(prefix string, data map[string]string, withTTL bool) {
 	}
 	for key, value := range data {
 		ops = append(ops, operation{
-			key:  path.Join(prefix, key),
+			key:   path.Join(prefix, key),
 			value: value,
 			op:    op,
 		})
@@ -122,8 +120,7 @@ func (b *Backend) set(prefix string, data map[string]string, withTTL bool) {
 	}()
 }
 
-
-func (b *Backend) connect() {
+func (b *LibKVBackend) connect() {
 	defer b.connDirtyCancel()
 
 	if !b.options.Enabled {
@@ -175,7 +172,7 @@ func (b *Backend) connect() {
 	}
 }
 
-func (b *Backend) operationLoop() {
+func (b *LibKVBackend) operationLoop() {
 	log := b.log.GetLog(b.log.Prefix(), "operation")
 	defer log.Info("close")
 
@@ -261,7 +258,7 @@ LOOP:
 	}
 }
 
-func (b *Backend) watchLoop(prefix string, consumer bus.MessageConsumer) {
+func (b *LibKVBackend) watchLoop(prefix string, consumer bus.MessageConsumer) {
 	<-b.connDirtyCtx.Done()
 	if b.connErr != nil {
 		b.log.Errorf("%v: disabling consumer", b.connErr)

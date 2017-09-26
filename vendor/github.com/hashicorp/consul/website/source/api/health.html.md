@@ -24,9 +24,9 @@ This endpoint returns the checks specific to the node provided on the path.
 | `GET`  | `/health/node/:node`         | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |
@@ -89,9 +89,9 @@ path.
 | `GET`  | `/health/checks/:service`    | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |
@@ -152,9 +152,9 @@ incorporating the use of health checks.
 | `GET`  | `/health/service/:service`   | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |
@@ -255,9 +255,9 @@ This endpoint returns the checks in the state provided on the path.
 | `GET`  | `/health/state/:state`       | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |

@@ -25,9 +25,9 @@ This endpoint retrieves its latest Autopilot configuration.
 | `GET`  | `/operator/autopilot/configuration` | `application/json` |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -78,9 +78,9 @@ This endpoint updates the Autopilot configuration of the cluster.
 | `PUT`  | `/operator/autopilot/configuration` | `application/json` |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required     |
 | ---------------- | ----------------- | ---------------- |
@@ -150,9 +150,9 @@ This endpoint queries the health of the autopilot status.
 | `GET`  | `/operator/autopilot/health` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |

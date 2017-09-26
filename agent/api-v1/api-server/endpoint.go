@@ -1,51 +1,56 @@
-package api
+package api_server
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/akaspin/logx"
 	"net/http"
 )
 
-type Route struct {
-	path     string
-	method   string
-	endpoint Endpoint
+type Endpoint struct {
+	path      string
+	method    string
+	processor Processor
 }
 
 // Returns GET route
-func GET(path string, endpoint Endpoint) (r *Route) {
-	r = newRoute(HttpMethodGET, path, endpoint)
+func GET(path string, processor Processor) (r *Endpoint) {
+	r = NewEndpoint(http.MethodGet, path, processor)
 	return
 }
 
 // Returns PUT route
-func PUT(path string, endpoint Endpoint) (r *Route) {
-	r = newRoute(HttpMethodPUT, path, endpoint)
+func PUT(path string, processor Processor) (r *Endpoint) {
+	r = NewEndpoint(http.MethodPut, path, processor)
 	return
 }
 
 // Returns DELETE route
-func DELETE(path string, endpoint Endpoint) (r *Route) {
-	r = newRoute(HttpMethodDELETE, path, endpoint)
+func DELETE(path string, processor Processor) (r *Endpoint) {
+	r = NewEndpoint(http.MethodDelete, path, processor)
 	return
 }
 
-func newRoute(method, path string, endpoint Endpoint) (r *Route) {
-	r = &Route{
-		method:   method,
-		path:     path,
-		endpoint: endpoint,
+func NewEndpoint(method, path string, endpoint Processor) (r *Endpoint) {
+	r = &Endpoint{
+		method:    method,
+		path:      path,
+		processor: endpoint,
 	}
 	return
 }
 
+func (e *Endpoint) Processor() (p Processor) {
+	p = e.processor
+	return
+}
+
 // generates local HTTP handler
-func (r *Route) getHandleFunc(ctx context.Context, log *logx.Log) (h func(w http.ResponseWriter, req *http.Request)) {
+func (e *Endpoint) getHandleFunc(log *logx.Log) (h func(w http.ResponseWriter, req *http.Request)) {
 	h = func(w http.ResponseWriter, req *http.Request) {
 		var err error
-		empty := r.endpoint.Empty()
+		empty := e.processor.Empty()
 		if empty != nil {
 			func() {
 				defer req.Body.Close()
@@ -58,7 +63,11 @@ func (r *Route) getHandleFunc(ctx context.Context, log *logx.Log) (h func(w http
 			}()
 		}
 		var data interface{}
-		if data, err = r.endpoint.Process(ctx, req.URL, empty); err != nil {
+		if data, err = e.processor.Process(req.Context(), req.URL, empty); err != nil {
+			if err == ErrorBadRequestData {
+				sendCode(log, w, req, NewError(http.StatusBadRequest, fmt.Sprintf("bad data (%T)%#v", empty, empty)))
+				return
+			}
 			sendCode(log, w, req, err)
 			return
 		}

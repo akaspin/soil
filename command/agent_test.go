@@ -33,7 +33,9 @@ func TestAgent_Run_Stop(t *testing.T) {
 	time.Sleep(time.Second)
 
 	// reload
-	resp, err := http.Get("http://127.0.0.1:7654/v1/agent/reload")
+	req, err := http.NewRequest(http.MethodPut, "http://127.0.0.1:7654/v1/agent/reload", nil)
+	assert.NoError(t, err)
+	resp, err := http.DefaultClient.Do(req)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
 
@@ -43,7 +45,24 @@ func TestAgent_Run_Stop(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
 
-	resp, err = http.Get("http://127.0.0.1:7654/v1/agent/stop")
+	// drain
+	time.Sleep(time.Second)
+	req, err = http.NewRequest(http.MethodPut, "http://127.0.0.1:7654/v1/agent/drain", nil)
+	assert.NoError(t, err)
+	resp, err = http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, resp.StatusCode, 200)
+
+	time.Sleep(time.Second)
+	req, err = http.NewRequest(http.MethodDelete, "http://127.0.0.1:7654/v1/agent/drain", nil)
+	assert.NoError(t, err)
+	resp, err = http.DefaultClient.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, resp.StatusCode, 200)
+
+	time.Sleep(time.Second)
+	stopRequest, err := http.NewRequest(http.MethodPut, "http://127.0.0.1:7654/v1/agent/stop", nil)
+	resp, err = http.DefaultClient.Do(stopRequest)
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
 

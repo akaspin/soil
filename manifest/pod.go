@@ -10,7 +10,6 @@ const (
 	defaultPodTarget = "multi-user.target"
 )
 
-
 type Pod struct {
 	Namespace  string
 	Name       string

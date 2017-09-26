@@ -11,14 +11,14 @@ import (
 
 // Agent - specific config
 type Config struct {
-	Meta  map[string]string `hcl:"meta" json:"meta"`
-	System  map[string]string `hcl:"system" json:"system"`
+	Meta   map[string]string `hcl:"meta" json:"meta"`
+	System map[string]string `hcl:"system" json:"system"`
 }
 
 func DefaultConfig() (c *Config) {
 	c = &Config{
-		Meta:  map[string]string{},
-		System:  map[string]string{
+		Meta: map[string]string{},
+		System: map[string]string{
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 		},
 	}

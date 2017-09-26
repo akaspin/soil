@@ -19,7 +19,3 @@ type MessageConsumer interface {
 type RegistryConsumer interface {
 	ConsumeRegistry(namespace string, payload manifest.Registry)
 }
-
-
-
-

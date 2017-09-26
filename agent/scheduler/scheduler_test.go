@@ -51,8 +51,8 @@ func TestNewScheduler(t *testing.T) {
 			"third_public":   "1",
 		})
 		agentSource.Set(map[string]string{
-			"id":       "one",
-			"drain":    "false",
+			"id":    "one",
+			"drain": "false",
 		})
 		systemSource.Set(map[string]string{
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
@@ -109,7 +109,7 @@ func TestNewScheduler(t *testing.T) {
 		"second_private": "1",
 	})
 	agentSource.Set(map[string]string{
-		"id":       "one",
+		"id": "one",
 	})
 	systemSource.Set(map[string]string{
 		"pod_exec": "ExecStart=/usr/bin/sleep inf",

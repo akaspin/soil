@@ -1,13 +1,13 @@
 ## 0.3.1
 
-### API
+### Breaking changes
 
-* GET /v1/registry
-* PUT /v1/registry
+* (API) GET /v1/agent/reload -> PUT /v1/agent/reload
+* (API) GET /v1/agent/stop -> PUT /v1/agent/stop
 
-### Clustering
+### New features
 
-* Public namespace registry
+* (API) {GET|PUT|DELETE} /v1/registry/pods
 
 ## 0.3.0 (23.09.2017)
 

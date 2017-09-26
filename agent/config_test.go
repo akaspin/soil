@@ -18,7 +18,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 			"testdata/config3.json",
 		))
 		assert.Equal(t, &agent.Config{
-			System:map[string]string{
+			System: map[string]string{
 				"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			},
 			Meta: map[string]string{
@@ -43,7 +43,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 			"testdata/non-exists.hcl",
 		))
 		assert.Equal(t, &agent.Config{
-			System:map[string]string{
+			System: map[string]string{
 				"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			},
 			Meta: map[string]string{

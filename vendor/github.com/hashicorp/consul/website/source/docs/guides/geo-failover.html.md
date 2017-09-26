@@ -10,7 +10,7 @@ description: |-
 
 Within a datacenter, Consul provides automatic failover for services by omitting failed service instances from DNS lookups, and by providing service health information in APIs. When there are no more instances of a service available in the local datacenter, it can be challenging to implement failover policies to other datacenters because typically that logic would need to be written into each application.
 
-Fortunately, Consul has a [prepared query](/api/query.html) capability that lets users define failover policies in a centralized way. It's easy to expose these to applications using Consul's DNS interface and it's also available to applications that consume Consul's APIs. These policies range from fully static lists of alternate datacenters to fully dynamic policies that make use of Consul's [network coordinate](/docs/internals/coordinates.html) subsystem to automatically determine the next best datacenter to fail over to based on network round trip time. Prepared queries can be made with policies specific to certain services and prepared query templates allow one policy to apply to many, or even all services, with just a small number of templates.
+Fortunately, Consul has a [prepared query](/agent/api-v1/api-server/query.html) capability that lets users define failover policies in a centralized way. It's easy to expose these to applications using Consul's DNS interface and it's also available to applications that consume Consul's APIs. These policies range from fully static lists of alternate datacenters to fully dynamic policies that make use of Consul's [network coordinate](/docs/internals/coordinates.html) subsystem to automatically determine the next best datacenter to fail over to based on network round trip time. Prepared queries can be made with policies specific to certain services and prepared query templates allow one policy to apply to many, or even all services, with just a small number of templates.
 
 This guide shows how to build geo failover policies using prepared queries through a set of examples.
 
@@ -35,9 +35,9 @@ $ curl \
 {"ID":"fe3b8d40-0ee0-8783-6cc2-ab1aa9bb16c1"}
 ```
 
-This creates a prepared query called "api" that does a lookup for all instances of the "api" service with the tag "v1.2.3". This policy could be used to control which version of a "api" applications should be using in a centralized way. By [updating this prepared query](/api/query.html#update-prepared-query) to look for the tag "v1.2.4" applications could start to find the newer version of the service without having to reconfigure anything.
+This creates a prepared query called "api" that does a lookup for all instances of the "api" service with the tag "v1.2.3". This policy could be used to control which version of a "api" applications should be using in a centralized way. By [updating this prepared query](/agent/api-v1/api-server/query.html#update-prepared-query) to look for the tag "v1.2.4" applications could start to find the newer version of the service without having to reconfigure anything.
 
-Applications can make use of this query in two ways. Since we gave the prepared query a name, they can simply do a DNS lookup for "api.query.consul" instead of "api.service.consul". Now with the prepared query, there's the additional filter policy working behind the scenes that the application doesn't have to know about. Queries can also be executed using the [prepared query execute API](/api/query.html#execute-prepared-query) for applications that integrate with Consul's APIs directly.
+Applications can make use of this query in two ways. Since we gave the prepared query a name, they can simply do a DNS lookup for "api.query.consul" instead of "api.service.consul". Now with the prepared query, there's the additional filter policy working behind the scenes that the application doesn't have to know about. Queries can also be executed using the [prepared query execute API](/agent/api-v1/api-server/query.html#execute-prepared-query) for applications that integrate with Consul's APIs directly.
 
 ## Failover Policies
 
@@ -114,7 +114,7 @@ It is possible to combine `Datacenters` and `NearestN` in the same policy. The `
 
 ## Templates
 
-For datacenters with many services, it can be cumbersome to define a prepared query to apply a geo failover policy for each service. Consul provides a [prepared query template](/api/query.html#prepared-query-templates) capability to allow one prepared query to apply to many, and even all, services.
+For datacenters with many services, it can be cumbersome to define a prepared query to apply a geo failover policy for each service. Consul provides a [prepared query template](/agent/api-v1/api-server/query.html#prepared-query-templates) capability to allow one prepared query to apply to many, and even all, services.
 
 Here's an example request to create a prepared query template that applies a dynamic geo failover policy to all services:
 

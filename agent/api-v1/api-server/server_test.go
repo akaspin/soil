@@ -1,16 +1,18 @@
 // +build ide test_unit
 
-package api_test
+package api_server_test
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/api-v1/api-server"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/api"
-	"github.com/akaspin/supervisor"
+	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
@@ -43,89 +45,75 @@ func checkGetResponse(t *testing.T, uri string, expect map[string]interface{}) {
 	assert.Equal(t, expect, res)
 }
 
-func TestServer_Single(t *testing.T) {
-	t.SkipNow()
+func TestNewServer(t *testing.T) {
 	log := logx.GetLog("test")
-	ctx := context.Background()
-
-	router := api.NewRouter(ctx, log,
-		api.GET("/v1/route", &jsonEndpoint{}),
-		api.GET("/v1/route/", &jsonEndpoint{}),
-	)
-	server := api.NewServer(ctx, log, ":3333", router)
-	sv := supervisor.NewChain(ctx, router, server)
-	assert.NoError(t, sv.Open())
+	addr := fmt.Sprintf(":%d", fixture.RandomPort(t))
+	server := api_server.NewServer(context.Background(), log, addr, api_server.NewRouter(log,
+		api_server.NewEndpoint(http.MethodGet, "/v1/route/", &jsonEndpoint{}),
+	))
+	assert.NoError(t, server.Open())
 
 	time.Sleep(time.Second)
 
-	resp, err := http.Get("http://127.0.0.1:3333/v1/route/1")
+	resp, err := http.Get(fmt.Sprintf("http://127.0.0.1%s/v1/route/1", addr))
 	assert.NoError(t, err)
 	assert.Equal(t, resp.StatusCode, 200)
 
-	sv.Close()
-	sv.Wait()
+	server.Close()
+	server.Wait()
 }
 
-func TestRouter_Sync(t *testing.T) {
+func TestRouter_ConsumeMessage(t *testing.T) {
 	//t.SkipNow()
-	// run two servers
 	log := logx.GetLog("test")
 	ctx := context.Background()
 
-	router1 := api.NewRouter(ctx, log,
-		api.GET("/v1/route", &jsonEndpoint{"node-1"}),
+	router1 := api_server.NewRouter(log,
+		api_server.GET("/v1/route", &jsonEndpoint{"node-1"}),
 	)
-	server1 := api.NewServer(ctx, log, ":4444", router1)
-	sv1 := supervisor.NewChain(ctx, router1, server1)
+	router2 := api_server.NewRouter(log,
+		api_server.GET("/v1/route", &jsonEndpoint{"node-2"}),
+	)
 
-	router2 := api.NewRouter(ctx, log,
-		api.GET("/v1/route", &jsonEndpoint{"node-2"}),
-	)
-	server2 := api.NewServer(ctx, log, ":5555", router2)
-	sv2 := supervisor.NewChain(ctx, router2, server2)
+	ts1 := httptest.NewServer(router1)
+	defer ts1.Close()
+	ts2 := httptest.NewServer(router2)
+	defer ts1.Close()
 
 	nodesProducer := bus.NewFlatMap(ctx, log, true, "nodes", router1, router2)
-
-	sv := supervisor.NewChain(ctx,
-		supervisor.NewGroup(ctx, sv1, sv2),
-		nodesProducer,
-	)
-	assert.NoError(t, sv.Open())
-
-	time.Sleep(time.Second)
-
 	nodesProducer.Set(map[string]string{
-		"node-1": "127.0.0.1:4444",
-		"node-2": "127.0.0.1:5555",
+		"node-1": ts1.Listener.Addr().String(),
+		"node-2": ts2.Listener.Addr().String(),
 	})
 	time.Sleep(time.Second)
 
 	checkGetResponse(t,
-		"http://127.0.0.1:4444/v1/route?test=2",
+		ts1.URL+"/v1/route?test=2",
 		map[string]interface{}{
 			"id":     "node-1",
 			"url":    "/v1/route",
 			"params": map[string]interface{}{"test": []interface{}{"2"}},
 		})
-	checkGetResponse(t, "http://127.0.0.1:5555/v1/route?test=2",
+	checkGetResponse(t,
+		ts2.URL+"/v1/route?test=2",
 		map[string]interface{}{
 			"id":     "node-2",
 			"url":    "/v1/route",
 			"params": map[string]interface{}{"test": []interface{}{"2"}},
 		})
-	checkGetResponse(t, "http://127.0.0.1:4444/v1/route?node=node-2&redirect&test=2",
+	checkGetResponse(t,
+		ts1.URL+"/v1/route?node=node-2&redirect&test=2",
 		map[string]interface{}{
 			"id":     "node-2",
 			"url":    "/v1/route",
 			"params": map[string]interface{}{"test": []interface{}{"2"}},
 		})
-	checkGetResponse(t, "http://127.0.0.1:4444/v1/route?node=node-2&test=2",
+	checkGetResponse(t,
+		ts1.URL+"/v1/route?node=node-2&test=2",
 		map[string]interface{}{
 			"id":     "node-2",
 			"url":    "/v1/route",
 			"params": map[string]interface{}{"test": []interface{}{"2"}},
 		})
 
-	sv.Close()
-	sv.Wait()
 }

@@ -1,4 +1,4 @@
-package api_v1_types
+package proto
 
 type NodeResponse struct {
 	Id        string

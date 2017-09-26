@@ -625,7 +625,7 @@ Consul will not enable TLS for the HTTP API unless the `https` port has been ass
     When provided, this will enable [ACL replication](/docs/guides/acl.html#replication) using this
     token to retrieve and replicate the ACLs to the non-authoritative local datacenter. In Consul 0.9.1
     and later you can enable ACL replication using [`enable_acl_replication`](#enable_acl_replication)
-    and then set the token later using the [agent token API](/api/agent.html#update-acl-tokens) on each
+    and then set the token later using the [agent token API](/agent/api-v1/api-server/agent.html#update-acl-tokens) on each
     server. If the `acl_replication_token` is set in the config, it will automatically set
     [`enable_acl_replication`](#enable_acl_replication) to true for backward compatibility.
 
@@ -850,7 +850,7 @@ Consul will not enable TLS for the HTTP API unless the `https` port has been ass
 * <a name="enable_acl_replication"></a><a href="#enable_acl_replication">`enable_acl_replication`</a> When
   set on a Consul server, enables [ACL replication](/docs/guides/acl.html#replication) without having to set
   the replication token via [`acl_replication_token`](#acl_replication_token). Instead, enable ACL replication
-  and then introduce the token using the [agent token API](/api/agent.html#update-acl-tokens) on each server.
+  and then introduce the token using the [agent token API](/agent/api-v1/api-server/agent.html#update-acl-tokens) on each server.
   See [`acl_replication_token`](#acl_replication_token) for more details.
 
 * <a name="enable_debug"></a><a href="#enable_debug">`enable_debug`</a> When set, enables some
@@ -1252,17 +1252,17 @@ Consul will not enable TLS for the HTTP API unless the `https` port has been ass
 
     Starting in Consul 0.7 and later, node addresses in responses to HTTP requests will also prefer a
     node's configured <a href="#_advertise-wan">WAN address</a> when querying for a node in a remote
-    datacenter. An [`X-Consul-Translate-Addresses`](/api/index.html#translated-addresses) header
+    datacenter. An [`X-Consul-Translate-Addresses`](/agent/api-v1/api-server/index.html#translated-addresses) header
     will be present on all responses when translation is enabled to help clients know that the addresses
     may be translated. The `TaggedAddresses` field in responses also have a `lan` address for clients that
     need knowledge of that address, regardless of translation.
 
     The following endpoints translate addresses:
-    - [`/v1/catalog/nodes`](/api/catalog.html#catalog_nodes)
-    - [`/v1/catalog/node/<node>`](/api/catalog.html#catalog_node)
-    - [`/v1/catalog/service/<service>`](/api/catalog.html#catalog_service)
-    - [`/v1/health/service/<service>`](/api/health.html#health_service)
-    - [`/v1/query/<query or name>/execute`](/api/query.html#execute)
+    - [`/v1/catalog/nodes`](/agent/api-v1/api-server/catalog.html#catalog_nodes)
+    - [`/v1/catalog/node/<node>`](/agent/api-v1/api-server/catalog.html#catalog_node)
+    - [`/v1/catalog/service/<service>`](/agent/api-v1/api-server/catalog.html#catalog_service)
+    - [`/v1/health/service/<service>`](/agent/api-v1/api-server/health.html#health_service)
+    - [`/v1/query/<query or name>/execute`](/agent/api-v1/api-server/query.html#execute)
 
 * <a name="ui"></a><a href="#ui">`ui`</a> - Equivalent to the [`-ui`](#_ui)
   command-line flag.

@@ -31,9 +31,9 @@ restore.
 | `GET`  | `/snapshot`                  | `200 application/x-gzip`   |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -85,9 +85,9 @@ call to the `GET` method.
 | `PUT`  | `/snapshot`                  | `200 text/plain (empty body)` |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |

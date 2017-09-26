@@ -70,7 +70,7 @@ Once the join is complete, the [`members`](/docs/commands/members.html) command 
 used to verify that all server nodes gossiping over WAN.
 
 We can also verify that both datacenters are known using the
-[HTTP Catalog API](/api/catalog.html#catalog_datacenters):
+[HTTP Catalog API](/agent/api-v1/api-server/catalog.html#catalog_datacenters):
 
 ```text
 $ curl http://localhost:8500/v1/catalog/datacenters

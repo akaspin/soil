@@ -1,14 +1,14 @@
-package api
+package api_server
 
 import (
 	"context"
 	"net/url"
 )
 
-// Endpoint handles RPC path-method
-type Endpoint interface {
+// Processor handles RPC path-method
+type Processor interface {
 
-	// Empty returns empty structure or <nil> if endpoint doesn't receive data
+	// Empty returns empty structure or <nil> if processor doesn't receive data
 	Empty() interface{}
 
 	// Process handles URL and ingest structure and returns data or error

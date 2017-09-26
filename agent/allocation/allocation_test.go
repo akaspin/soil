@@ -42,7 +42,7 @@ func TestNewFromManifest(t *testing.T) {
 		},
 	}
 	env := map[string]string{
-		"meta.consul":    "true",
+		"meta.consul":     "true",
 		"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 	}
 	res, err := allocation.NewFromManifest(m, env)

@@ -14,7 +14,7 @@ and deleting from the store. This command is available in Consul 0.7.1 and
 later.
 
 The KV store is also accessible via the
-[HTTP API](/api/kv.html).
+[HTTP API](/agent/api-v1/api-server/kv.html).
 
 ## Usage
 

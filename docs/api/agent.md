@@ -12,7 +12,7 @@ weight: 100
 
 |Method |Path|Result
 |-
-|`GET` |`/v1/agent/reload`|application/json
+|`PUT` |`/v1/agent/reload`|application/json
 
 Equivalent to `SIGHUP` signal. Reloads Agent.
 
@@ -20,7 +20,7 @@ Equivalent to `SIGHUP` signal. Reloads Agent.
 
 |Method |Path|Result
 |-
-|`GET` |`/v1/agent/stop`|application/json
+|`PUT` |`/v1/agent/stop`|application/json
 
 Equivalent to `SIGTERM` signal. Stops Agent.
 

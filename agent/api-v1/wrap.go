@@ -22,7 +22,6 @@ func (e *Wrapper) Empty() interface{} {
 }
 
 func (e *Wrapper) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	err = e.fn()
 	if err = e.fn(); err == nil {
 		res = "ok"
 	}

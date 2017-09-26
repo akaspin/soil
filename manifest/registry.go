@@ -60,7 +60,6 @@ func (r *Registry) Unmarshal(namespace string, reader io.Reader) (err error) {
 	return
 }
 
-
 // Verify registry
 func (r *Registry) Verify() (err error) {
 	namespaces := map[string]struct{}{}

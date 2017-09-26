@@ -1,4 +1,4 @@
-package api
+package api_server
 
 import (
 	"context"
@@ -9,32 +9,28 @@ import (
 
 type Server struct {
 	*supervisor.Control
-	trap *supervisor.Trap
-	log  *logx.Log
-
+	trap   *supervisor.Trap
+	log    *logx.Log
 	server *http.Server
 }
 
 func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) (s *Server) {
-	mux := http.NewServeMux()
 	s = &Server{
 		Control: supervisor.NewControl(ctx),
 		log:     log.GetLog("api", "server"),
 		server: &http.Server{
 			Addr:    addr,
-			Handler: mux,
+			Handler: router,
 		},
 	}
 	s.trap = supervisor.NewTrap(s.Control.Cancel)
-	router.Bind(ctx, s.log, mux)
 	return
 }
 
 func (s *Server) Close() (err error) {
-	s.log.Debug("closing")
 	s.server.Shutdown(s.Ctx())
 	err = s.Control.Close()
-	s.log.Info("close")
+	s.log.Info("closed")
 	return
 }
 

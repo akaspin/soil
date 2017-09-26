@@ -39,7 +39,7 @@ service/<service name>/lock/
 We'll abbreviate this pattern as simply `<prefix>` for the rest of this guide.
 
 The first step is to create a session. This is done using the
-[Session HTTP API](/api/session.html#session_create):
+[Session HTTP API](/agent/api-v1/api-server/session.html#session_create):
 
 ```text
 curl  -X PUT -d '{"Name": "dbservice"}' \
@@ -66,7 +66,7 @@ curl -X PUT -d <body> http://localhost:8500/v1/kv/<prefix>/<session>?acquire=<se
  ```
 
 The `<session>` value is the ID returned by the call to
-[`/v1/session/create`](/api/session.html#session_create).
+[`/v1/session/create`](/agent/api-v1/api-server/session.html#session_create).
 
 `body` can be used to associate a meaningful value with the contender. This is opaque
 to Consul but can be useful for human operators.

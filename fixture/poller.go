@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func PollEqual(t *testing.T, retry int, timeout time.Duration, fn func() (res interface{}, err error), expect interface{}) {
+func PollEqual(t *testing.T, retry int, timeout time.Duration, fn func() (res interface{}, err error), expect interface{}, doneCh chan error) {
 	t.Helper()
 	r := retrier.New(retrier.ConstantBackoff(retry, timeout), &retrier.DefaultClassifier{})
 
@@ -28,6 +28,12 @@ func PollEqual(t *testing.T, retry int, timeout time.Duration, fn func() (res in
 	if retryErr != nil {
 		t.Error(retryErr)
 		t.Fail()
+	}
+	if doneCh != nil {
+		select {
+		case doneCh <- retryErr:
+		default:
+		}
 	}
 }
 

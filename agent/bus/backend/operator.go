@@ -1,25 +1,25 @@
-package public
+package backend
 
 type operator struct {
-	backend *Backend
+	backend *LibKVBackend
 	withTTL bool
-	prefix string
+	prefix  string
 }
 
-func NewPermanentOperator(backend *Backend, prefix string) (o *operator) {
+func NewPermanentOperator(backend *LibKVBackend, prefix string) (o *operator) {
 	o = &operator{
 		backend: backend,
 		withTTL: false,
-		prefix: prefix,
+		prefix:  prefix,
 	}
 	return
 }
 
-func NewEphemeralOperator(backend *Backend, prefix string) (o *operator) {
+func NewEphemeralOperator(backend *LibKVBackend, prefix string) (o *operator) {
 	o = &operator{
 		backend: backend,
 		withTTL: true,
-		prefix: prefix,
+		prefix:  prefix,
 	}
 	return
 }
@@ -29,5 +29,5 @@ func (o *operator) Set(data map[string]string) {
 }
 
 func (o *operator) Delete(key ...string) {
-	o.backend.Delete(key...)
+	o.backend.deleteWithPrefix(o.prefix, key...)
 }

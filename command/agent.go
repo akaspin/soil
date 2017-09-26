@@ -6,10 +6,11 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/api-v1"
+	"github.com/akaspin/soil/agent/api-v1/api-server"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/backend"
 	"github.com/akaspin/soil/agent/bus/public"
 	"github.com/akaspin/soil/agent/scheduler"
-	"github.com/akaspin/soil/api"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ type AgentOptions struct {
 	Meta       []string // Metadata set
 	Address    string   // bind address
 
-	Public public.Options
+	Public backend.Options
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
@@ -49,7 +50,7 @@ func (o *AgentOptions) Bind(cc *cobra.Command) {
 type Agent struct {
 	*cut.Environment
 	*AgentOptions
-	log             *logx.Log
+	log *logx.Log
 }
 
 func (c *Agent) Bind(cc *cobra.Command) {
@@ -64,49 +65,12 @@ func (c *Agent) Run(args ...string) (err error) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
-	var agentProducer *bus.FlatMap
-
 	// public KV
-	publicBackend := public.NewBackend(ctx, c.log, c.Public)
-
-	apiV1StatusNodes := api_v1.NewStatusNodes(c.log)
-	apiV1StatusNode := api_v1.NewStatusNode(c.log)
-	apiV1Registry := api_v1.NewRegistryGet(c.log)
-
-	apiRouter := api.NewRouter(ctx, c.log,
-		// status
-		api.GET("/v1/status/ping", api_v1.NewPingEndpoint()),
-		api.GET("/v1/status/nodes", apiV1StatusNodes),
-		api.GET("/v1/status/node", apiV1StatusNode),
-
-		// lifecycle
-		api.GET("/v1/agent/reload", api_v1.NewWrapper(func() (err error) {
-			signalChan <- syscall.SIGHUP
-			return
-		})),
-		api.GET("/v1/agent/stop", api_v1.NewAgentStop(signalChan)),
-		// drain
-		api.PUT("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
-			agentProducer.Set(map[string]string{
-				"drain": "true",
-			})
-			return
-		})),
-		api.DELETE("/v1/agent/drain", api_v1.NewWrapper(func() (err error) {
-			agentProducer.Set(map[string]string{
-				"drain": "false",
-			})
-			return
-		})),
-
-		// registry
-		api.GET("/v1/registry", apiV1Registry),
-		api.PUT("/v1/registry", api_v1.NewRegistryPut(c.log, public.NewPermanentOperator(publicBackend, "registry"))),
-	)
-
+	publicBackend := backend.NewBackend(ctx, c.log, c.Public)
+	publicRegistryPodsOperator := backend.NewPermanentOperator(publicBackend, "registry/pods")
 
 	// public announcers
-	publicNodeAnnouncer := public.NewNodesAnnouncer(ctx, c.log, public.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
+	publicNodeAnnouncer := backend.NewNodesAnnouncer(ctx, c.log, backend.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
 
 	manager := scheduler.NewManager(ctx, c.log,
 		scheduler.NewManagerSource("agent", false, manifest.Constraint{
@@ -116,19 +80,42 @@ func (c *Agent) Run(args ...string) (err error) {
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 
-	// private metadata
-	agentProducer = bus.NewFlatMap(ctx, c.log, false, "agent",
+	apiStatusNodeGet := api_v1.NewStatusNodeGet(c.log)
+	apiStatusNodesGet := api_v1.NewStatusNodesGet(c.log)
+	apiRegistryGet := api_v1.NewRegistryPodsGet(c.log)
+
+	agentProducer := bus.NewFlatMap(ctx, c.log, false, "agent",
 		manager,
 		publicNodeAnnouncer,
-		apiV1StatusNode,
+		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)
+
+	apiRouter := api_server.NewRouter(c.log,
+		// status
+		api_v1.NewStatusPingGet(),
+		apiStatusNodesGet,
+		apiStatusNodeGet,
+
+		// lifecycle
+		api_v1.NewAgentReloadPut(signalChan),
+		api_v1.NewAgentStopPut(signalChan),
+		api_v1.NewAgentDrainPut(agentProducer),
+		api_v1.NewAgentDrainDelete(agentProducer),
+
+		// registry
+		apiRegistryGet,
+		api_v1.NewRegistryPodsPut(c.log, publicRegistryPodsOperator),
+		api_v1.NewRegistryPodsDelete(publicRegistryPodsOperator),
+	)
+
+	// private metadata
 	metaProducer := bus.NewFlatMap(ctx, c.log, true, "meta",
 		manager,
-		apiV1StatusNode,
+		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)
 	systemProducer := bus.NewFlatMap(ctx, c.log, true, "system",
 		manager,
-		apiV1StatusNode,
+		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
@@ -136,11 +123,14 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	// public watchers
 	publicNodesWatcher := bus.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
-		apiV1StatusNodes,
-		api.NewDiscoveryPipe(c.log, apiRouter),
+		apiStatusNodesGet.Processor().(bus.MessageConsumer),
+		public.NewDiscoveryPipe(c.log, apiRouter),
 	)
-	publicRegistryWatcher := bus.NewPipe(ctx, c.log, "registry", publicBackend, nil,
-		bus.NewWatcher(c.log, registrySink, apiV1Registry))
+	publicRegistryWatcher := bus.NewPipe(ctx, c.log, "registry/pods", publicBackend, nil,
+		public.NewRegistryWatcher(c.log,
+			registrySink,
+			apiRegistryGet.Processor().(bus.RegistryConsumer),
+		))
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,
@@ -148,10 +138,9 @@ func (c *Agent) Run(args ...string) (err error) {
 		supervisor.NewGroup(ctx, evaluator, manager),
 		supervisor.NewGroup(ctx, agentProducer, metaProducer, systemProducer),
 		registrySink,
-		apiRouter,
 		publicNodesWatcher,
 		publicRegistryWatcher,
-		api.NewServer(ctx, c.log, c.Address, apiRouter),
+		api_server.NewServer(ctx, c.log, c.Address, apiRouter),
 	)
 
 	if err = agentSV.Open(); err != nil {
@@ -167,7 +156,10 @@ func (c *Agent) Run(args ...string) (err error) {
 		"api":       "v1",
 	})
 
-	c.reload(systemProducer, metaProducer, registrySink, apiV1Registry)
+	c.reload(systemProducer, metaProducer,
+		registrySink,
+		apiRegistryGet.Processor().(bus.RegistryConsumer),
+	)
 
 LOOP:
 	for {
@@ -180,7 +172,8 @@ LOOP:
 				break LOOP
 			case syscall.SIGHUP:
 				c.log.Infof("reload received")
-				c.reload(systemProducer, metaProducer, registrySink, apiV1Registry)
+				c.reload(systemProducer, metaProducer, registrySink,
+					apiRegistryGet.Processor().(bus.RegistryConsumer))
 			}
 		case <-ctx.Done():
 			break LOOP

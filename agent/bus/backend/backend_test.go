@@ -1,19 +1,19 @@
 // +build ide test_cluster
 
-package public_test
+package backend_test
 
 import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/bus/public"
+	"github.com/akaspin/soil/agent/bus/backend"
 	"github.com/docker/libkv"
 	"github.com/docker/libkv/store"
 	"github.com/docker/libkv/store/consul"
 	"github.com/stretchr/testify/assert"
+	"path"
 	"testing"
 	"time"
-	"path"
 )
 
 func TestPath(t *testing.T) {
@@ -36,7 +36,7 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 300,
 		Enabled:       false,
 		Timeout:       time.Second,
@@ -69,7 +69,7 @@ func TestBackend_Set(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	backend := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	be := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -77,13 +77,13 @@ func TestBackend_Set(t *testing.T) {
 		Advertise:     "127.0.0.1:7654",
 		TTL:           time.Second * 2,
 	})
-	err := backend.Open()
+	err := be.Open()
 	assert.NoError(t, err)
 
-	time.Sleep(time.Millisecond * 200)
+	ephemeral := backend.NewEphemeralOperator(be, "1")
+	permanent := backend.NewPermanentOperator(be, "1")
 
-	ephemeral := public.NewEphemeralOperator(backend, "1")
-	permanent := public.NewPermanentOperator(backend, "1")
+	time.Sleep(time.Millisecond * 200)
 
 	ephemeral.Set(map[string]string{
 		"pre-ttl": "pre",
@@ -92,7 +92,7 @@ func TestBackend_Set(t *testing.T) {
 	time.Sleep(time.Second)
 
 	cons1 := newDummyConsumer()
-	backend.RegisterConsumer("1", cons1)
+	be.RegisterConsumer("1", cons1)
 	time.Sleep(time.Second)
 
 	assert.Equal(t, cons1.res, []map[string]string{
@@ -125,7 +125,7 @@ func TestBackend_Set(t *testing.T) {
 		"ttl2":    "ttl2",
 	})
 
-	backend.Delete("1/1", "1/ttl2")
+	permanent.Delete("1", "ttl2")
 	time.Sleep(time.Second)
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
 		"pre-ttl": "pre",
@@ -134,12 +134,12 @@ func TestBackend_Set(t *testing.T) {
 	})
 
 	// delete non-existent
-	backend.Delete("1/fake", "1/ttl2")
+	ephemeral.Delete("fake", "ttl2")
 
 	time.Sleep(time.Second * 2)
 
-	backend.Close()
-	backend.Wait()
+	be.Close()
+	be.Wait()
 
 	assert.Equal(t, cons1.res[len(cons1.res)-1], map[string]string{
 		"pre-ttl": "pre",
@@ -172,7 +172,7 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -238,7 +238,7 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -307,7 +307,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := public.NewBackend(ctx, logx.GetLog("test"), public.Options{
+	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,

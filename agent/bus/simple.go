@@ -12,7 +12,7 @@ type FlatMap struct {
 	log *logx.Log
 
 	prefix    string
-	isStrict bool
+	isStrict  bool
 	consumers []MessageConsumer
 
 	mu   *sync.Mutex
@@ -24,7 +24,7 @@ func NewFlatMap(ctx context.Context, log *logx.Log, strict bool, prefix string, 
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("producer", prefix),
 		prefix:    prefix,
-		isStrict: strict,
+		isStrict:  strict,
 		consumers: consumers,
 		mu:        &sync.Mutex{},
 		data:      map[string]string{},
@@ -41,14 +41,6 @@ func (p *FlatMap) Open() (err error) {
 func (p *FlatMap) Close() error {
 	p.log.Debug("close")
 	return p.Control.Close()
-}
-
-// Replaces all data
-func (p *FlatMap) Replace(data map[string]string) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.data = data
-	p.notifyAll()
 }
 
 // Set specific keys

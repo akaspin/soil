@@ -1,4 +1,4 @@
-package api
+package api_server
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 
 var (
 	errorMethodsNotAllowed = NewError(http.StatusMethodNotAllowed, "method is not allowed")
+	ErrorBadRequestData    = NewError(http.StatusBadRequest, "bad request data")
 )
 
 type Error struct {

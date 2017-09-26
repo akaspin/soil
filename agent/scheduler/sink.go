@@ -20,8 +20,6 @@ type Sink struct {
 	mu *sync.Mutex
 }
 
-
-
 func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Manager) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),

@@ -1,6 +1,6 @@
 // +build ide test_cluster
 
-package public_test
+package backend_test
 
 import (
 	"fmt"

@@ -26,9 +26,9 @@ configuration files.
 | `PUT`  | `/acl/bootstrap`             | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -67,9 +67,9 @@ This endpoint makes a new ACL token.
 | `PUT`  | `/acl/create`                | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -125,9 +125,9 @@ generating a new token ID, the `ID` field must be provided.
 | `PUT`  | `/acl/update`                | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -167,9 +167,9 @@ This endpoint deletes an ACL token with the given ID.
 | `PUT`  | `/acl/destroy/:uuid`         | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -197,9 +197,9 @@ This endpoint reads an ACL token with the given ID.
 | `GET`  | `/acl/info/:uuid`            | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -245,9 +245,9 @@ complex rule management.
 | `PUT`  | `/acl/clone/:uuid`         | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -283,9 +283,9 @@ This endpoint lists all the active ACL tokens.
 | `GET`  | `/acl/list`                  | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -327,9 +327,9 @@ section for more details.
 | `GET`  | `/acl/replication`           | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/api/index.html#blocking-queries),
-[consistency modes](/api/index.html#consistency-modes), and
-[required ACLs](/api/index.html#acls).
+[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api-v1/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |

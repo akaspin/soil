@@ -1,26 +1,27 @@
-package bus
+package public
 
 import (
 	"encoding/json"
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/manifest"
 	"strings"
 )
 
-type PublicRegistryWatcher struct {
-	log *logx.Log
-	consumers []RegistryConsumer
+type RegistryPipe struct {
+	log       *logx.Log
+	consumers []bus.RegistryConsumer
 }
 
-func NewWatcher(log *logx.Log, consumers ...RegistryConsumer) (w *PublicRegistryWatcher) {
-	w = &PublicRegistryWatcher{
-		log: log.GetLog("public", "watch", "registry"),
+func NewRegistryWatcher(log *logx.Log, consumers ...bus.RegistryConsumer) (w *RegistryPipe) {
+	w = &RegistryPipe{
+		log:       log.GetLog("public", "watch", "registry"),
 		consumers: consumers,
 	}
 	return
 }
 
-func (w *PublicRegistryWatcher) ConsumeMessage(message Message) {
+func (w *RegistryPipe) ConsumeMessage(message bus.Message) {
 	var res manifest.Registry
 	for _, raw := range message.GetPayload() {
 		var pod manifest.Pod
@@ -34,6 +35,3 @@ func (w *PublicRegistryWatcher) ConsumeMessage(message Message) {
 		consumer.ConsumeRegistry("public", res)
 	}
 }
-
-
-

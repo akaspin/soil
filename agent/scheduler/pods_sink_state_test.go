@@ -35,7 +35,6 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 		assert.NoError(t, err)
 		changes := state.SyncNamespace("public", ingestPublic)
 		assert.Equal(t, map[string]*manifest.Pod{
-			//"pod-1": ingestPrivate[0],
 			"pod-4": nil,
 			"pod-3": ingestPublic[1],
 		}, changes)

@@ -9,29 +9,29 @@ import (
 	"sync"
 )
 
-type Sink struct {
+type RegistrySink struct {
 	*supervisor.Control
 	log *logx.Log
 
 	evaluator *Evaluator
-	arbiter   *Manager
+	manager   *Manager
 	state     *SinkState
 
 	mu *sync.Mutex
 }
 
-func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Manager) (r *Sink) {
-	r = &Sink{
+func NewRegistrySink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Manager) (r *RegistrySink) {
+	r = &RegistrySink{
 		Control:   supervisor.NewControl(ctx),
-		log:       log.GetLog("scheduler", "sink"),
+		log:       log.GetLog("scheduler", "sink", "pods"),
 		evaluator: evaluator,
-		arbiter:   manager,
+		manager:   manager,
 		mu:        &sync.Mutex{},
 	}
 	return
 }
 
-func (s *Sink) Open() (err error) {
+func (s *RegistrySink) Open() (err error) {
 	s.log.Debugf("open")
 	dirty := map[string]string{}
 	for _, recovered := range s.evaluator.List() {
@@ -42,39 +42,39 @@ func (s *Sink) Open() (err error) {
 	return
 }
 
-func (s *Sink) Close() error {
+func (s *RegistrySink) Close() error {
 	s.log.Debug("close")
 	return s.Control.Close()
 }
 
-func (s *Sink) Wait() (err error) {
+func (s *RegistrySink) Wait() (err error) {
 	err = s.Control.Wait()
 	return
 }
 
 // SyncNamespace scheduler pods. Called by registry on initialization.
-func (s *Sink) ConsumeRegistry(namespace string, pods manifest.Registry) {
+func (s *RegistrySink) ConsumeRegistry(namespace string, pods manifest.Registry) {
 	s.log.Debugf("begin: %s", namespace)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	changes := s.state.SyncNamespace(namespace, pods)
 	for name, pod := range changes {
-		s.submitToExecutor(name, pod)
+		s.submitToEvaluator(name, pod)
 	}
 	s.log.Infof("done: %s", namespace)
 	return
 }
 
-func (s *Sink) submitToExecutor(name string, pod *manifest.Pod) (err error) {
+func (s *RegistrySink) submitToEvaluator(name string, pod *manifest.Pod) (err error) {
 	if pod == nil {
-		go s.arbiter.DeregisterResource(name, func() {
+		go s.manager.DeregisterResource(name, func() {
 			s.evaluator.Submit(name, nil)
 		})
 		return
 	}
-	s.arbiter.RegisterResource(name, pod.Namespace, pod.Constraint, func(reason error, env map[string]string, mark uint64) {
-		s.log.Debugf("received %v from arbiter for %s", reason, name)
+	s.manager.RegisterResource(name, pod.Namespace, pod.Constraint, func(reason error, env map[string]string, mark uint64) {
+		s.log.Debugf("received %v from manager for %s", reason, name)
 		var alloc *allocation.Pod
 		if pod != nil && reason == nil {
 			if alloc, err = allocation.NewFromManifest(pod, env); err != nil {

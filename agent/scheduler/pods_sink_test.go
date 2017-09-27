@@ -93,7 +93,7 @@ WantedBy=default.target
 	systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 	evaluator := scheduler.NewEvaluator(ctx, log)
-	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
+	sink := scheduler.NewRegistrySink(ctx, logx.GetLog("test"), evaluator, manager)
 
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,

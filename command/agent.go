@@ -119,7 +119,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	)
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
-	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
+	registrySink := scheduler.NewRegistrySink(ctx, c.log, evaluator, manager)
 
 	// public watchers
 	publicNodesWatcher := bus.NewPipe(ctx, c.log, "nodes", publicBackend, nil,

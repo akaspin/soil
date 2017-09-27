@@ -34,7 +34,7 @@ func TestNewScheduler(t *testing.T) {
 		systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 		executor := scheduler.NewEvaluator(ctx, log)
-		sink := scheduler.NewSink(ctx, log, executor, manager)
+		sink := scheduler.NewRegistrySink(ctx, log, executor, manager)
 		sv := supervisor.NewChain(ctx,
 			supervisor.NewChain(ctx,
 				supervisor.NewGroup(ctx, executor, manager),
@@ -92,7 +92,7 @@ func TestNewScheduler(t *testing.T) {
 	systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 	executor := scheduler.NewEvaluator(ctx, log)
-	sink := scheduler.NewSink(ctx, log, executor, manager)
+	sink := scheduler.NewRegistrySink(ctx, log, executor, manager)
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,
 			supervisor.NewGroup(ctx, executor, manager),

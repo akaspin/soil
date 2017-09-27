@@ -70,7 +70,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	publicRegistryPodsOperator := backend.NewPermanentOperator(publicBackend, "registry/pods")
 
 	// public announcers
-	publicNodeAnnouncer := backend.NewNodesAnnouncer(ctx, c.log, backend.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
+	publicNodeAnnouncer := backend.NewNodesAnnouncer(c.log, backend.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
 
 	manager := scheduler.NewManager(ctx, c.log,
 		scheduler.NewManagerSource("agent", false, manifest.Constraint{

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
@@ -15,7 +14,7 @@ type NodeAnnouncer struct {
 	prefix string
 }
 
-func NewNodesAnnouncer(ctx context.Context, log *logx.Log, setter bus.Setter, prefix string) (j *NodeAnnouncer) {
+func NewNodesAnnouncer(log *logx.Log, setter bus.Setter, prefix string) (j *NodeAnnouncer) {
 	j = &NodeAnnouncer{
 		log:    log.GetLog("json", prefix),
 		setter: setter,

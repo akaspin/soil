@@ -11,8 +11,7 @@ import (
 
 type Evaluator struct {
 	*supervisor.Control
-	log       *logx.Log
-	//reporters []agent.EvaluationReporter
+	log *logx.Log
 
 	state  *EvaluatorState
 	nextCh chan *Evaluation
@@ -20,10 +19,9 @@ type Evaluator struct {
 
 func NewEvaluator(ctx context.Context, log *logx.Log) (e *Evaluator) {
 	e = &Evaluator{
-		Control:   supervisor.NewControl(ctx),
-		log:       log.GetLog("scheduler", "evaluator"),
-		//reporters: reporters,
-		nextCh:    make(chan *Evaluation),
+		Control: supervisor.NewControl(ctx),
+		log:     log.GetLog("scheduler", "evaluator"),
+		nextCh:  make(chan *Evaluation),
 	}
 	return
 }
@@ -52,9 +50,6 @@ func (e *Evaluator) Open() (err error) {
 		e.log.Infof("restored allocation %v", alloc.Header)
 	}
 	e.state = NewEvaluatorState(res)
-	//for _, reporter := range e.reporters {
-	//	reporter.Sync(res)
-	//}
 	err = e.Control.Open()
 	go e.loop()
 	return
@@ -120,9 +115,6 @@ func (e *Evaluator) execute(evaluation *Evaluation) {
 
 	e.log.Infof("evaluation done %s (failures:%v)", evaluation, failures)
 	next := e.state.Commit(evaluation.Name())
-	//for _, reporter := range e.reporters {
-	//	reporter.Report(evaluation.Name(), evaluation.Right, failures)
-	//}
 	e.fanOut(next)
 	return
 }

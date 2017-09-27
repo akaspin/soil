@@ -13,7 +13,6 @@ import (
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/stretchr/testify/assert"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 )
@@ -36,12 +35,6 @@ func assertUnits(names []string, states map[string]string) (err error) {
 		err = fmt.Errorf("not equal %v %v", states, res)
 	}
 	return
-}
-
-type dummyConsumer struct {
-	mu    *sync.Mutex
-	count int
-	res   map[string]string
 }
 
 func TestNewEvaluator(t *testing.T) {

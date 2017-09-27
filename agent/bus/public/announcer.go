@@ -1,4 +1,4 @@
-package backend
+package public
 
 import (
 	"bytes"
@@ -9,16 +9,16 @@ import (
 
 // NodeAnnouncer exposes Agent properties in kv
 type NodeAnnouncer struct {
-	log    *logx.Log
-	setter bus.Setter
-	prefix string
+	log     *logx.Log
+	setter  bus.Setter
+	agentId string
 }
 
-func NewNodesAnnouncer(log *logx.Log, setter bus.Setter, prefix string) (j *NodeAnnouncer) {
+func NewNodeAnnouncer(log *logx.Log, setter bus.Setter, agentId string) (j *NodeAnnouncer) {
 	j = &NodeAnnouncer{
-		log:    log.GetLog("json", prefix),
-		setter: setter,
-		prefix: prefix,
+		log:     log.GetLog("json", agentId),
+		setter:  setter,
+		agentId: agentId,
 	}
 	return
 }
@@ -31,6 +31,6 @@ func (r *NodeAnnouncer) ConsumeMessage(message bus.Message) {
 		return
 	}
 	r.setter.Set(map[string]string{
-		r.prefix: buf.String(),
+		r.agentId: buf.String(),
 	})
 }

@@ -30,12 +30,11 @@ sources: $(SRC) $(SRC_TEST) ## go vet and fmt
 ### Test
 ###
 
-test: test-unit test-cluster test-systemd test-integration
+test: test-unit test-cluster test-systemd
 
 ###
 ### Test Unit
 ###
-
 
 test-unit: $(SRC) $(SRC_TEST)
 	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(PACKAGES)

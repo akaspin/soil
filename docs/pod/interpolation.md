@@ -45,6 +45,22 @@ If pod contains one or more BLOBs their hashes will be available as `${blob.<blo
 
 Agent variables are accessible as `${agent.*}`:
 
-* `id` Agent ID.
-* `pod_exec` Pod unit "Exec*".
+`id`
+: Agent ID
 
+`advertise`
+: Advertise address
+
+`version`
+: Soil Agent version
+
+`api`
+: API Revision
+
+`drain`
+: Drain mode.
+
+## `system`
+
+`pod_exec` 
+: Pod unit "Exec*".

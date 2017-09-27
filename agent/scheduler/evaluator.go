@@ -3,7 +3,6 @@ package scheduler
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
@@ -13,17 +12,17 @@ import (
 type Evaluator struct {
 	*supervisor.Control
 	log       *logx.Log
-	reporters []agent.EvaluationReporter
+	//reporters []agent.EvaluationReporter
 
 	state  *EvaluatorState
 	nextCh chan *Evaluation
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, reporters ...agent.EvaluationReporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log) (e *Evaluator) {
 	e = &Evaluator{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler", "evaluator"),
-		reporters: reporters,
+		//reporters: reporters,
 		nextCh:    make(chan *Evaluation),
 	}
 	return
@@ -50,12 +49,12 @@ func (e *Evaluator) Open() (err error) {
 			continue
 		}
 		res = append(res, alloc)
-		e.log.Debugf("restored allocation %v", alloc.Header)
+		e.log.Infof("restored allocation %v", alloc.Header)
 	}
 	e.state = NewEvaluatorState(res)
-	for _, reporter := range e.reporters {
-		reporter.Sync(res)
-	}
+	//for _, reporter := range e.reporters {
+	//	reporter.Sync(res)
+	//}
 	err = e.Control.Open()
 	go e.loop()
 	return
@@ -121,9 +120,9 @@ func (e *Evaluator) execute(evaluation *Evaluation) {
 
 	e.log.Infof("evaluation done %s (failures:%v)", evaluation, failures)
 	next := e.state.Commit(evaluation.Name())
-	for _, reporter := range e.reporters {
-		reporter.Report(evaluation.Name(), evaluation.Right, failures)
-	}
+	//for _, reporter := range e.reporters {
+	//	reporter.Report(evaluation.Name(), evaluation.Right, failures)
+	//}
 	e.fanOut(next)
 	return
 }

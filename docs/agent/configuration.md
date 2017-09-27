@@ -69,8 +69,8 @@ pod "second-pod" {
 `meta` `(map: {})` 
 : Agent metadata. These values can be used in pod [constraints]({{site.baseurl}}/pod/constraint) and [interpolations]({{site.baseurl}}/pod/interpolation) as `${meta.<key>}`.
 
-`exec` `(string: "ExecStart=/usr/bin/sleep inf")` 
-: [Pod unit]({{site.baseurl}}/pod/internals) "Exec" lines.
+`system` `(map: {"pod_exec": "ExecStart=/usr/bin/sleep inf"})` 
+: System properties. By default only [Pod unit]({{site.baseurl}}/pod/internals) "Exec" is defined.
 
 `pod` `(map: {})`
 : Each [pod stansa]({{site.baseurl}}/pod) defines pod in private namespace.

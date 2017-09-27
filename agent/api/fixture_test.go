@@ -1,4 +1,4 @@
-package api_v1_test
+package api_test
 
 import "sync"
 

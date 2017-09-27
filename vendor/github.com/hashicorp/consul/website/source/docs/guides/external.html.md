@@ -72,4 +72,4 @@ $ curl -X PUT -d '{"Datacenter": "dc1", "Node": "google"}' http://127.0.0.1:8500
 
 This will deregister the `google` node along with all services it provides.
 
-For more information, please see the [HTTP Catalog API](/agent/api-v1/api-server/catalog.html).
+For more information, please see the [HTTP Catalog API](/agent/api/api-server/catalog.html).

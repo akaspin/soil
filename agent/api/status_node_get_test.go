@@ -1,11 +1,11 @@
 // +build ide test_unit
 
-package api_v1_test
+package api_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/api-v1"
+	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -14,7 +14,7 @@ import (
 
 func TestStatusNodeProcessor_Process(t *testing.T) {
 
-	e := api_v1.NewStatusNodeGet(logx.GetLog("test")).Processor()
+	e := api.NewStatusNodeGet(logx.GetLog("test")).Processor()
 	go e.(bus.MessageConsumer).ConsumeMessage(bus.NewMessage("a", map[string]string{
 		"a-k1": "a-v1",
 	}))

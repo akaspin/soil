@@ -5,8 +5,8 @@ import (
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
-	"github.com/akaspin/soil/agent/api-v1"
-	"github.com/akaspin/soil/agent/api-v1/api-server"
+	"github.com/akaspin/soil/agent/api"
+	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/bus/backend"
 	"github.com/akaspin/soil/agent/bus/public"
@@ -80,9 +80,9 @@ func (c *Agent) Run(args ...string) (err error) {
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 
-	apiStatusNodeGet := api_v1.NewStatusNodeGet(c.log)
-	apiStatusNodesGet := api_v1.NewStatusNodesGet(c.log)
-	apiRegistryGet := api_v1.NewRegistryPodsGet(c.log)
+	apiStatusNodeGet := api.NewStatusNodeGet(c.log)
+	apiStatusNodesGet := api.NewStatusNodesGet(c.log)
+	apiRegistryGet := api.NewRegistryPodsGet(c.log)
 
 	agentProducer := bus.NewFlatMap(ctx, c.log, false, "agent",
 		manager,
@@ -92,20 +92,20 @@ func (c *Agent) Run(args ...string) (err error) {
 
 	apiRouter := api_server.NewRouter(c.log,
 		// status
-		api_v1.NewStatusPingGet(),
+		api.NewStatusPingGet(),
 		apiStatusNodesGet,
 		apiStatusNodeGet,
 
 		// lifecycle
-		api_v1.NewAgentReloadPut(signalChan),
-		api_v1.NewAgentStopPut(signalChan),
-		api_v1.NewAgentDrainPut(agentProducer),
-		api_v1.NewAgentDrainDelete(agentProducer),
+		api.NewAgentReloadPut(signalChan),
+		api.NewAgentStopPut(signalChan),
+		api.NewAgentDrainPut(agentProducer),
+		api.NewAgentDrainDelete(agentProducer),
 
 		// registry
 		apiRegistryGet,
-		api_v1.NewRegistryPodsPut(c.log, publicRegistryPodsOperator),
-		api_v1.NewRegistryPodsDelete(publicRegistryPodsOperator),
+		api.NewRegistryPodsPut(c.log, publicRegistryPodsOperator),
+		api.NewRegistryPodsDelete(publicRegistryPodsOperator),
 	)
 
 	// private metadata

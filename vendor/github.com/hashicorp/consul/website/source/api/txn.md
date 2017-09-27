@@ -36,9 +36,9 @@ the leader via the Raft consensus protocol.
 | `PUT`  | `/txn`                       | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |

@@ -1,7 +1,7 @@
-package api_v1
+package api
 
 import (
-	"github.com/akaspin/soil/agent/api-v1/api-server"
+	"github.com/akaspin/soil/agent/api/api-server"
 )
 
 func NewStatusPingGet() (e *api_server.Endpoint) {

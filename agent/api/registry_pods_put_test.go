@@ -1,6 +1,6 @@
 // +build ide test_unit
 
-package api_v1_test
+package api_test
 
 import (
 	"bytes"
@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/api-v1"
-	"github.com/akaspin/soil/agent/api-v1/api-server"
+	"github.com/akaspin/soil/agent/api"
+	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/soil/proto"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ import (
 func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 	log := logx.GetLog("test")
 	backend := newFixtureBackend()
-	processor := api_v1.NewRegistryPodsPut(log, backend).Processor()
+	processor := api.NewRegistryPodsPut(log, backend).Processor()
 
 	var pods manifest.Registry
 	err := pods.UnmarshalFiles("public", "testdata/example-multi.hcl")
@@ -41,7 +41,7 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 func TestNewRegistryPodsPut(t *testing.T) {
 	log := logx.GetLog("test")
 	backend := newFixtureBackend()
-	endpoint := api_v1.NewRegistryPodsPut(log, backend)
+	endpoint := api.NewRegistryPodsPut(log, backend)
 
 	ts := httptest.NewServer(api_server.NewRouter(log, endpoint))
 	defer ts.Close()

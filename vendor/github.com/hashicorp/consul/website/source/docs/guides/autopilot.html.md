@@ -39,7 +39,7 @@ bootstrapping the cluster:
 
 After bootstrapping, the configuration can be viewed or modified either via the
 [`operator autopilot`](/docs/commands/operator/autopilot.html) subcommand or the
-[`/v1/operator/autopilot/configuration`](/agent/api-v1/api-server/operator.html#autopilot-configuration)
+[`/v1/operator/autopilot/configuration`](/agent/api/api-server/operator.html#autopilot-configuration)
 HTTP endpoint:
 
 ```

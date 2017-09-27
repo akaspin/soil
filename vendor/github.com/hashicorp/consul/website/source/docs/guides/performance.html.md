@@ -85,7 +85,7 @@ reasonable, non-zero [DNS TTL values](/docs/guides/dns-cache.html#ttl) if your c
 respect them.
 
 * In other applications that perform high volumes of reads against Consul, consider using the
-[stale consistency mode](/agent/api-v1/api-server/index.html#consistency) available to allow reads to scale
+[stale consistency mode](/agent/api/api-server/index.html#consistency) available to allow reads to scale
 across all the servers and not just be forwarded to the leader.
 
 * In Consul 0.9.3 and later, a new [`limits`](/docs/agent/options.html#limits) configuration is

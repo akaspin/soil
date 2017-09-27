@@ -28,9 +28,9 @@ everything will be in sync within a few seconds.
 | `GET`  | `/agent/checks`              | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |
@@ -71,9 +71,9 @@ check and keeping the Catalog in sync.
 | `PUT`  | `/agent/check/register`      | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -186,9 +186,9 @@ not exist, no action is taken.
 | `PUT`  | `/agent/check/deregister/:check_id` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -217,9 +217,9 @@ This endpoint is used with a TTL type check to set the status of the check to
 | `GET`  | `/agent/check/pass/:check_id` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -250,9 +250,9 @@ This endpoint is used with a TTL type check to set the status of the check to
 | `GET`  | `/agent/check/warn/:check_id` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -283,9 +283,9 @@ This endpoint is used with a TTL type check to set the status of the check to
 | `GET`  | `/agent/check/fail/:check_id` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -316,9 +316,9 @@ to reset the TTL clock.
 | `PUT`  | `/agent/check/update/:check_id` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |

@@ -26,9 +26,9 @@ read privileges.
 | `GET`  | `/operator/keyring`          | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required   |
 | ---------------- | ----------------- | -------------- |
@@ -98,9 +98,9 @@ This endpoint installs a new gossip encryption key into the cluster.
 | `POST` | `/operator/keyring`          | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -143,9 +143,9 @@ installed before this operation can succeed.
 | `PUT`  | `/operator/keyring`          | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -188,9 +188,9 @@ may only be performed on keys which are not currently the primary key.
 | `DELETE`| `/operator/keyring`          | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |

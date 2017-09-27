@@ -1,8 +1,8 @@
-package api_v1
+package api
 
 import (
 	"context"
-	"github.com/akaspin/soil/agent/api-v1/api-server"
+	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/proto"
 	"net/http"

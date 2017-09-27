@@ -77,7 +77,7 @@ attempts to replicate to a quorum of followers. Once the log entry is considered
 is application specific; in Consul's case, we use
 [MemDB](https://github.com/hashicorp/go-memdb) to maintain cluster state. Consul's writes
 block until it is both _committed_ and _applied_. This achieves read after write semantics
-when used with the [consistent](/agent/api-v1/api-server/index.html#consistent) mode for queries.
+when used with the [consistent](/agent/api/api-server/index.html#consistent) mode for queries.
 
 Obviously, it would be undesirable to allow a replicated log to grow in an unbounded
 fashion. Raft provides a mechanism by which the current state is snapshotted and the
@@ -172,7 +172,7 @@ The three read modes are:
   a cluster that is unavailable will still be able to respond.
 
 For more documentation about using these various modes, see the
-[HTTP API](/agent/api-v1/api-server/index.html).
+[HTTP API](/agent/api/api-server/index.html).
 
 ## <a name="deployment_table"></a>Deployment Table
 

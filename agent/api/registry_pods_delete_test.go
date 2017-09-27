@@ -1,4 +1,4 @@
-package api_v1_test
+package api_test
 
 import (
 	"bytes"
@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/api-v1"
-	"github.com/akaspin/soil/agent/api-v1/api-server"
+	"github.com/akaspin/soil/agent/api"
+	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/proto"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -17,7 +17,7 @@ import (
 
 func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
 	backend := newFixtureBackend()
-	processor := api_v1.NewRegistryPodsDelete(backend).Processor()
+	processor := api.NewRegistryPodsDelete(backend).Processor()
 
 	processor.Process(context.Background(), nil, &proto.RegistryPodsDeleteRequest{
 		"1", "2",
@@ -32,7 +32,7 @@ func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
 func TestNewRegistryPodsDelete(t *testing.T) {
 	log := logx.GetLog("test")
 	backend := newFixtureBackend()
-	endpoint := api_v1.NewRegistryPodsDelete(backend)
+	endpoint := api.NewRegistryPodsDelete(backend)
 
 	ts := httptest.NewServer(api_server.NewRouter(log, endpoint))
 	defer ts.Close()

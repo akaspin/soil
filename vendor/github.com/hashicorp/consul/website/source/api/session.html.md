@@ -20,9 +20,9 @@ node and may be associated with any number of checks.
 | `PUT`  | `/session/create`            | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -105,9 +105,9 @@ either a literal `true` or `false`, indicating of whether the destroy was
 successful.
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -145,9 +145,9 @@ This endpoint returns the requested session information.
 | `GET`  | `/session/info/:uuid`        | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required   |
 | ---------------- | ----------------- | -------------- |
@@ -196,9 +196,9 @@ This endpoint returns the active sessions for a given node.
 | `GET`  | `/session/node/:node`        | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required   |
 | ---------------- | ----------------- | -------------- |
@@ -245,9 +245,9 @@ This endpoint returns the list of active sessions.
 | `GET`  | `/session/list`              | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required   |
 | ---------------- | ----------------- | -------------- |
@@ -292,9 +292,9 @@ TTL, and it extends the expiration by the TTL.
 | `PUT`  | `/session/renew/:uuid`       | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api-v1/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api-v1/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api-v1/api-server/index.html#acls).
+[blocking queries](/agent/api/api-server/index.html#blocking-queries),
+[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
+[required ACLs](/agent/api/api-server/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |

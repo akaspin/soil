@@ -20,8 +20,8 @@ func ExtractEnv(v string) (res []string) {
 func Interpolate(v string, env ...map[string]string) (res string) {
 	res = envRe.ReplaceAllStringFunc(v, func(arg string) string {
 		stripped := arg[2 : len(arg)-1]
-		for _, env := range env {
-			if value, ok := env[stripped]; ok {
+		for _, envChunk := range env {
+			if value, ok := envChunk[stripped]; ok {
 				return value
 			}
 		}

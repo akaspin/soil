@@ -44,13 +44,21 @@ func NewFromManifest(m *manifest.Pod, env map[string]string) (p *Pod, err error)
 		},
 		UnitFile: NewFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), m.Runtime),
 	}
+	baseEnv := map[string]string{
+		"pod.name":      m.Name,
+		"pod.namespace": m.Namespace,
+	}
+	baseSourceEnv := map[string]string{
+		"pod.target": m.Target,
+	}
+
 	fileHashes := map[string]string{}
 	for _, b := range m.Blobs {
 		ab := &Blob{
-			Name:        b.Name,
+			Name:        manifest.Interpolate(b.Name, baseEnv),
 			Permissions: b.Permissions,
 			Leave:       b.Leave,
-			Source:      manifest.Interpolate(b.Source, env),
+			Source:      manifest.Interpolate(b.Source, baseEnv, baseSourceEnv, env),
 		}
 		p.Blobs = append(p.Blobs, ab)
 		fileHash, _ := hashstructure.Hash(ab.Source, nil)
@@ -58,20 +66,19 @@ func NewFromManifest(m *manifest.Pod, env map[string]string) (p *Pod, err error)
 	}
 	var unitNames []string
 	for _, u := range m.Units {
+		unitName := manifest.Interpolate(u.Name, baseEnv)
 		pu := &Unit{
 			Transition: &u.Transition,
-			UnitFile:   NewFile(u.Name, m.Runtime),
+			UnitFile:   NewFile(unitName, m.Runtime),
 		}
-		pu.Source = manifest.Interpolate(u.Source, fileHashes, env)
+		pu.Source = manifest.Interpolate(u.Source, baseEnv, baseSourceEnv, fileHashes, env)
 		p.Units = append(p.Units, pu)
-		unitNames = append(unitNames, u.Name)
+		unitNames = append(unitNames, unitName)
 	}
 
 	p.Source, err = p.Header.Marshal(p.Name, p.Units, p.Blobs)
-	p.Source += manifest.Interpolate(podUnitTemplate, map[string]string{
-		"pod.units":  strings.Join(unitNames, " "),
-		"pod.name":   m.Name,
-		"pod.target": m.Target,
+	p.Source += manifest.Interpolate(podUnitTemplate, baseEnv, baseSourceEnv, map[string]string{
+		"pod.units": strings.Join(unitNames, " "),
 	}, env)
 
 	return

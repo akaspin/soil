@@ -10,86 +10,92 @@ import (
 )
 
 func TestNewFromManifest(t *testing.T) {
-	m := &manifest.Pod{
-		Runtime:   true,
-		Namespace: "private",
-		Name:      "pod-1",
-		Target:    "multi-user.target",
-		Units: []*manifest.Unit{
-			{
-				Name:   "unit-1.service",
-				Source: `# ${meta.consul}`,
-				Transition: manifest.Transition{
-					Create:  "start",
-					Destroy: "stop",
-				},
-			},
-			{
-				Name:   "unit-2.service",
-				Source: `# ${meta.consul} ${blob.etc-test}`,
-				Transition: manifest.Transition{
-					Create:  "start",
-					Destroy: "stop",
-				},
-			},
-		},
-		Blobs: []*manifest.Blob{
-			{
-				Name:        "/etc/test",
-				Permissions: 0644,
-				Source:      "test",
-			},
-		},
-	}
+
 	env := map[string]string{
 		"meta.consul":     "true",
 		"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 	}
-	res, err := allocation.NewFromManifest(m, env)
-	assert.NoError(t, err)
-	assert.Equal(t, &allocation.Pod{
-		Header: &allocation.Header{
-			Name:      "pod-1",
-			PodMark:   7228519356168739269,
-			AgentMark: 7076960218577909541,
-			Namespace: "private",
-		},
-		UnitFile: &allocation.UnitFile{
-			Path:   "/run/systemd/system/pod-private-pod-1.service",
-			Source: "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":7228519356168739269}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
-		},
-		Units: []*allocation.Unit{
-			{
-				Transition: &manifest.Transition{
-					Create:    "start",
-					Destroy:   "stop",
-					Permanent: false,
+
+	t.Run("0 simple names", func(t *testing.T) {
+		var pods manifest.Registry
+		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_0.hcl")
+		assert.NoError(t, err)
+
+		m := pods[0]
+		var res *allocation.Pod
+		res, err = allocation.NewFromManifest(m, env)
+		assert.NoError(t, err)
+		assert.Equal(t, &allocation.Pod{
+			Header: &allocation.Header{
+				Name:      "pod-1",
+				PodMark:   7228519356168739269,
+				AgentMark: 7076960218577909541,
+				Namespace: "private",
+			},
+			UnitFile: &allocation.UnitFile{
+				Path:   "/run/systemd/system/pod-private-pod-1.service",
+				Source: "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":7228519356168739269}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+			},
+			Units: []*allocation.Unit{
+				{
+					Transition: &manifest.Transition{
+						Create:    "start",
+						Destroy:   "stop",
+						Permanent: false,
+					},
+					UnitFile: &allocation.UnitFile{
+						Path:   "/run/systemd/system/unit-1.service",
+						Source: "# true",
+					},
 				},
-				UnitFile: &allocation.UnitFile{
-					Path:   "/run/systemd/system/unit-1.service",
-					Source: "# true",
+				{
+					Transition: &manifest.Transition{
+						Create:    "start",
+						Destroy:   "stop",
+						Permanent: false,
+					},
+					UnitFile: &allocation.UnitFile{
+						Path:   "/run/systemd/system/unit-2.service",
+						Source: "# true 10090666253179731817",
+					},
 				},
 			},
-			{
-				Transition: &manifest.Transition{
-					Create:    "start",
-					Destroy:   "stop",
-					Permanent: false,
-				},
-				UnitFile: &allocation.UnitFile{
-					Path:   "/run/systemd/system/unit-2.service",
-					Source: "# true 10090666253179731817",
+			Blobs: []*allocation.Blob{
+				{
+					Name:        "/etc/test",
+					Permissions: 0644,
+					Source:      "test",
 				},
 			},
-		},
-		Blobs: []*allocation.Blob{
-			{
-				Name:        "/etc/test",
-				Permissions: 0644,
-				Source:      "test",
+		}, res)
+	})
+	t.Run("interpolate names", func(t *testing.T) {
+		var pods manifest.Registry
+		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_1.hcl")
+		assert.NoError(t, err)
+		m := pods[0]
+		var res *allocation.Pod
+		res, err = allocation.NewFromManifest(m, env)
+		assert.NoError(t, err)
+
+		assert.Equal(t, res, &allocation.Pod{
+			Header:   &allocation.Header{Name: "pod-2", PodMark: 0xd5f515f9af5de917, AgentMark: 0x623669d2cde83725, Namespace: "private"},
+			UnitFile: &allocation.UnitFile{Path: "/run/systemd/system/pod-private-pod-2.service", Source: "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":15417253061505968407}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=pod-2-unit-1.service private-unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
+			Units: []*allocation.Unit{
+				&allocation.Unit{
+					UnitFile:   &allocation.UnitFile{Path: "/run/systemd/system/pod-2-unit-1.service", Source: "# true multi-user.target"},
+					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+				},
+				&allocation.Unit{
+					UnitFile:   &allocation.UnitFile{Path: "/run/systemd/system/private-unit-2.service", Source: "# true 10090666253179731817"},
+					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+				},
 			},
-		},
-	}, res)
+			Blobs: []*allocation.Blob{
+				&allocation.Blob{Name: "/pod-2/etc/test", Permissions: 420, Leave: false, Source: "test"},
+			},
+		})
+	})
 }
 
 func TestHeader_Unmarshal(t *testing.T) {

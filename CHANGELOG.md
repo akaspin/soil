@@ -1,5 +1,10 @@
 ## 0.3.2
 
+### Features
+
+* Allow to use `pod.{name,namespace}` in `unit` and `blob` names.
+* Allow to use `pod.{name,namespace,target}` in `unit` and `blob` sources.
+
 ## 0.3.1 (27.09.2017)
 
 ### Breaking changes

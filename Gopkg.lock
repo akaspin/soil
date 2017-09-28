@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/RoaringBitmap/roaring"
+  packages = ["."]
+  revision = "ad459fb842af17d3b3f7ab707bc3463c2db9e324"
+  version = "v0.3.10"
+
+[[projects]]
   name = "github.com/akaspin/cut"
   packages = ["."]
   revision = "85cd551c8eacfa274e0559da220c0ed217b2fb97"
@@ -35,7 +41,7 @@
   branch = "master"
   name = "github.com/coreos/etcd"
   packages = [".","alarm","auth","auth/authpb","client","clientv3","clientv3/concurrency","clientv3/leasing","clientv3/namespace","clientv3/naming","clientv3/ordering","compactor","discovery","embed","error","etcdmain","etcdserver","etcdserver/api","etcdserver/api/etcdhttp","etcdserver/api/v2http","etcdserver/api/v2http/httptypes","etcdserver/api/v2v3","etcdserver/api/v3client","etcdserver/api/v3election","etcdserver/api/v3election/v3electionpb","etcdserver/api/v3election/v3electionpb/gw","etcdserver/api/v3lock","etcdserver/api/v3lock/v3lockpb","etcdserver/api/v3lock/v3lockpb/gw","etcdserver/api/v3rpc","etcdserver/api/v3rpc/rpctypes","etcdserver/auth","etcdserver/etcdserverpb","etcdserver/etcdserverpb/gw","etcdserver/membership","etcdserver/stats","lease","lease/leasehttp","lease/leasepb","mvcc","mvcc/backend","mvcc/mvccpb","pkg/adt","pkg/contention","pkg/cors","pkg/cpuutil","pkg/crc","pkg/debugutil","pkg/fileutil","pkg/flags","pkg/httputil","pkg/idutil","pkg/ioutil","pkg/logutil","pkg/netutil","pkg/osutil","pkg/pathutil","pkg/pbutil","pkg/runtime","pkg/schedule","pkg/srv","pkg/tlsutil","pkg/transport","pkg/types","pkg/wait","proxy/grpcproxy","proxy/grpcproxy/adapter","proxy/grpcproxy/cache","proxy/httpproxy","proxy/tcpproxy","raft","raft/raftpb","rafthttp","snap","snap/snappb","store","version","wal","wal/walpb"]
-  revision = "3a7858c4398f4b9d7661a56bac9680b5ff2d8022"
+  revision = "f361dcc6395efd72e91ec276eeff83ab1e9d4886"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -86,6 +92,12 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/glycerine/go-unsnap-stream"
+  packages = ["."]
+  revision = "87275cecd8e984c5875577d22da7ce8945df780e"
+
+[[projects]]
   name = "github.com/godbus/dbus"
   packages = ["."]
   revision = "5f6efc7ef2759c81b7ba876593971bfce311eab3"
@@ -108,6 +120,12 @@
   name = "github.com/golang/protobuf"
   packages = ["jsonpb","proto","ptypes","ptypes/any","ptypes/duration","ptypes/struct","ptypes/timestamp"]
   revision = "130e6b02ab059e7b717a096f397c5b60111cae74"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/golang/snappy"
+  packages = ["."]
+  revision = "553a641470496b2327abcac10b36396bd98e45c9"
 
 [[projects]]
   branch = "master"
@@ -176,6 +194,18 @@
   version = "v0.1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kr/pretty"
+  packages = ["."]
+  revision = "cfb55aafdaf3ec08f0db22699ab822c50091b1c4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kr/text"
+  packages = ["."]
+  revision = "7cafcd837844e784b526369c9bce262804aebc60"
+
+[[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
   packages = ["pbutil"]
   revision = "3247c84500bff8d9fb6d579d800f20b3e091582c"
@@ -195,6 +225,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/mschoch/smat"
+  packages = ["."]
+  revision = "90eadee771aeab36e8bf796039b8c261bebebe4f"
+
+[[projects]]
+  branch = "master"
   name = "github.com/nu7hatch/gouuid"
   packages = ["."]
   revision = "179d4d0c4d8d407a32af483c2354df1d2c91e6c3"
@@ -204,6 +240,12 @@
   name = "github.com/petar/GoLLRB"
   packages = ["llrb"]
   revision = "53be0d36a84c2a886ca057d34b6aa4468df9ccb4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/philhofer/fwd"
+  packages = ["."]
+  revision = "bb6d471dc95d4fe11e432687f8b70ff496cf3136"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -257,7 +299,7 @@
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "b78744579491c1ceeaaa3b40205e56b0591b93a3"
+  revision = "e5f66de850af3302fbe378c8acded2b0fa55472c"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -272,10 +314,22 @@
   version = "v1.1.4"
 
 [[projects]]
+  name = "github.com/tinylib/msgp"
+  packages = ["msgp"]
+  revision = "b2b6a672cf1e5b90748f79b8b81fc8c5cf0571a1"
+  version = "1.0.2"
+
+[[projects]]
   branch = "master"
   name = "github.com/ugorji/go"
   packages = ["codec"]
   revision = "54210f4e076c57f351166f0ed60e67d3fca57a36"
+
+[[projects]]
+  name = "github.com/willf/bitset"
+  packages = ["."]
+  revision = "d860f346b89450988a379d7d705e83c58d1ea227"
+  version = "v1.1.3"
 
 [[projects]]
   name = "github.com/xiang90/probing"
@@ -287,19 +341,19 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["bcrypt","blowfish"]
-  revision = "7d9177d70076375b9a59c8fde23d52d9c4a7ecd5"
+  revision = "76eec36fa14229c4b25bb894c2d0e591527af429"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
-  revision = "b60f3a92103dfd93dfcb900ec77c6d0643510868"
+  revision = "0a9397675ba34b2845f758fe3cd68828369c6517"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix"]
-  revision = "b6e1ae21643682ce023deb8d152024597b0e9bb4"
+  revision = "314a259e304ff91bd6985da2a7149bbf91237993"
 
 [[projects]]
   branch = "master"
@@ -311,7 +365,7 @@
   branch = "master"
   name = "golang.org/x/time"
   packages = ["rate"]
-  revision = "8be79e1e0910c292df4e79c241bb7e8f7e725959"
+  revision = "6dc17368e09b0e8634d71cac8168d853e869a0c7"
 
 [[projects]]
   branch = "master"
@@ -334,6 +388,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b0fcd001ceb3deba2e038dffebf2aa4d00bdb1f910bfb5c4848913ffea19443f"
+  inputs-digest = "3b6802c8034660d622a853f65a93020f9c0c7b155c5722a9b02f41698e2a5f4c"
   solver-name = "gps-cdcl"
   solver-version = 1

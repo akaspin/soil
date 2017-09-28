@@ -17,7 +17,7 @@ API methods look similar.
 
 This endpoint is a low-level mechanism for registering or updating
 entries in the catalog. It is usually preferable to instead use the
-[agent endpoints](/agent/api/api-server/agent.html) for registration as they are simpler and
+[agent endpoints](/api/agent.html) for registration as they are simpler and
 perform [anti-entropy](/docs/internals/anti-entropy.html).
 
 | Method | Path                         | Produces                   |
@@ -25,9 +25,9 @@ perform [anti-entropy](/docs/internals/anti-entropy.html).
 | `PUT`  | `/catalog/register`          | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -124,7 +124,7 @@ $ curl \
 
 This endpoint is a low-level mechanism for directly removing
 entries from the Catalog. It is usually preferable to instead use the
-[agent endpoints](/agent/api/api-server/agent.html) for deregistration as they are simpler and
+[agent endpoints](/api/agent.html) for deregistration as they are simpler and
 perform [anti-entropy](/docs/internals/anti-entropy.html).
 
 | Method | Path                         | Produces                   |
@@ -132,9 +132,9 @@ perform [anti-entropy](/docs/internals/anti-entropy.html).
 | `PUT`  | `/catalog/deregister`        | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required               |
 | ---------------- | ----------------- | -------------------------- |
@@ -205,9 +205,9 @@ Consul servers are routable.
 | `GET`  | `/catalog/datacenters`       | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -235,9 +235,9 @@ This endpoint and returns the nodes registered in a given datacenter.
 | `GET`  | `/catalog/nodes`             | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -308,9 +308,9 @@ This endpoint returns the services registered in a given datacenter.
 | `GET`  | `/catalog/services`          | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required   |
 | ---------------- | ----------------- | -------------- |
@@ -359,9 +359,9 @@ This endpoint returns the nodes providing a service in a given datacenter.
 | `GET`  | `/catalog/service/:service`  | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |
@@ -469,9 +469,9 @@ The table below shows this endpoint's support for blocking queries and
 consistency modes.
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required             |
 | ---------------- | ----------------- | ------------------------ |

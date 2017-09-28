@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package api_test
 
 import (

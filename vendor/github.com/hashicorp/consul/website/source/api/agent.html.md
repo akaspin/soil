@@ -30,9 +30,9 @@ by agent. The strongly consistent view of nodes is instead provided by
 | `GET`  | `/agent/members`             | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -92,9 +92,9 @@ agent.
 | `GET`  | `/agent/self`                | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -197,9 +197,9 @@ section on the agent options page for details on which options are supported.
 | `PUT`  | `/agent/reload`              | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required  |
 | ---------------- | ----------------- | ------------- |
@@ -227,9 +227,9 @@ restart.
 | `PUT`  | `/agent/maintenance`         | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -385,9 +385,9 @@ This endpoint streams logs from the local agent until the connection is closed.
 | `GET`  | `/agent/monitor`             | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -426,9 +426,9 @@ This endpoint instructs the agent to attempt to connect to a given address.
 | `GET`  | `/agent/join/:address`       | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required  |
 | ---------------- | ----------------- | ------------- |
@@ -465,9 +465,9 @@ can affect cluster availability.
 | `PUT`  | `/agent/leave`               | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required  |
 | ---------------- | ----------------- | ------------- |
@@ -494,9 +494,9 @@ state allows its old entries to be removed.
 | `PUT`  | `/agent/force-leave`         | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required  |
 | ---------------- | ----------------- | ------------- |
@@ -530,9 +530,9 @@ The paths above correspond to the token names as found in the agent configuratio
 [`acl_replication_token`](/docs/agent/options.html#acl_replication_token).
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required  |
 | ---------------- | ----------------- | ------------- |

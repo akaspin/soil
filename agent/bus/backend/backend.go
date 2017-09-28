@@ -58,7 +58,7 @@ type LibKVBackend struct {
 	operationChan chan []operation
 }
 
-func NewBackend(ctx context.Context, log *logx.Log, options Options) (b *LibKVBackend) {
+func NewLibKVBackend(ctx context.Context, log *logx.Log, options Options) (b *LibKVBackend) {
 	b = &LibKVBackend{
 		Control:       supervisor.NewControl(ctx),
 		log:           log.GetLog("public", "backend"),
@@ -76,7 +76,7 @@ func (b *LibKVBackend) Open() (err error) {
 	return
 }
 
-// Registers MessageConsumer with specific prefix
+// RegisterConsumer Registers MessageConsumer with specific prefix
 func (b *LibKVBackend) RegisterConsumer(prefix string, consumer bus.MessageConsumer) {
 	go b.watchLoop(prefix, consumer)
 }

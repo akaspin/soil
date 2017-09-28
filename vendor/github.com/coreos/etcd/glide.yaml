@@ -5,7 +5,7 @@ import:
 - package: github.com/bgentry/speakeasy
   version: v0.1.0
 - package: github.com/coreos/bbolt
-  version: v1.3.1-coreos.1
+  version: v1.3.1-coreos.2
 - package: github.com/coreos/go-semver
   version: v0.2.0
   subpackages:
@@ -97,7 +97,7 @@ import:
   subpackages:
   - rate
 - package: google.golang.org/grpc
-  version: v1.5.1
+  version: v1.6.0
   subpackages:
   - codes
   - credentials

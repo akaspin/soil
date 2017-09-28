@@ -77,7 +77,7 @@ func TestManager(t *testing.T) {
 	}
 
 	t.Run("register first", func(t *testing.T) {
-		manager.RegisterResource("first", privatePods[0].Namespace, privatePods[0].Constraint, func(reason error, env map[string]string, mark uint64) {
+		manager.RegisterResource("first", privatePods[0].Namespace, privatePods[0].GetConstraint(), func(reason error, env map[string]string, mark uint64) {
 			handler("first", reason, env, mark)
 		})
 		time.Sleep(time.Millisecond * 100)
@@ -90,7 +90,7 @@ func TestManager(t *testing.T) {
 
 	})
 	t.Run("register second", func(t *testing.T) {
-		manager.RegisterResource("second", privatePods[1].Namespace, privatePods[1].Constraint, func(reason error, env map[string]string, mark uint64) {
+		manager.RegisterResource("second", privatePods[1].Namespace, privatePods[1].GetConstraint(), func(reason error, env map[string]string, mark uint64) {
 			handler("second", reason, env, mark)
 		})
 		time.Sleep(time.Millisecond * 100)

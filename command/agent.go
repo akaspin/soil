@@ -66,7 +66,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// public KV
-	publicBackend := backend.NewBackend(ctx, c.log, c.Public)
+	publicBackend := backend.NewLibKVBackend(ctx, c.log, c.Public)
 	publicRegistryPodsOperator := backend.NewPermanentOperator(publicBackend, "registry/pods")
 
 	// public announcers
@@ -119,7 +119,7 @@ func (c *Agent) Run(args ...string) (err error) {
 	)
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
-	registrySink := scheduler.NewRegistrySink(ctx, c.log, evaluator, manager)
+	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
 
 	// public watchers
 	publicNodesWatcher := bus.NewPipe(ctx, c.log, "nodes", publicBackend, nil,

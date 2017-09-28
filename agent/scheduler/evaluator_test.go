@@ -92,7 +92,8 @@ func TestEvaluator_Submit(t *testing.T) {
 				Namespace: "private",
 			},
 			UnitFile: &allocation.UnitFile{
-				Path: "/run/systemd/system/pod-private-pod-1.service",
+				SystemPaths: allocation.DefaultSystemDPaths(),
+				Path:        "/run/systemd/system/pod-private-pod-1.service",
 				Source: `### POD pod-1 {"AgentMark":0,"PodMark":1,"Namespace":"private"}
 ### UNIT unit-1.service {"Permanent":false,"Create":"start","Update":"restart","Destroy":"stop"}
 [Unit]
@@ -107,7 +108,8 @@ WantedBy=default.target
 			Units: []*allocation.Unit{
 				{
 					UnitFile: &allocation.UnitFile{
-						Path: "/run/systemd/system/unit-1.service",
+						SystemPaths: allocation.DefaultSystemDPaths(),
+						Path:        "/run/systemd/system/unit-1.service",
 						Source: `
 [Unit]
 Description=Unit 1

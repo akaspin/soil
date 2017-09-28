@@ -15,102 +15,50 @@ func TestManifest(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("parse", func(t *testing.T) {
-		assert.Equal(t, manifest.Registry{
-			{
+		assert.Equal(t, res, manifest.Registry{
+			&manifest.Pod{
 				Namespace: "private",
 				Name:      "first",
 				Runtime:   true,
 				Target:    "multi-user.target",
 				Units: []*manifest.Unit{
 					{
-						Transition: manifest.Transition{
-							Create:    "start",
-							Update:    "",
-							Destroy:   "stop",
-							Permanent: true,
-						},
-						Name:   "first-1.service",
-						Source: "[Service]\n# ${meta.consul}\nExecStart=/usr/bin/sleep inf\nExecStopPost=/usr/bin/systemctl stop first-2.service\n",
+						Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: true},
+						Name:       "first-1.service",
+						Source:     "[Service]\n# ${meta.consul}\nExecStart=/usr/bin/sleep inf\nExecStopPost=/usr/bin/systemctl stop first-2.service\n",
 					},
 					{
-						Transition: manifest.Transition{
-							Create:  "",
-							Update:  "start",
-							Destroy: "",
-						},
-						Name:   "first-2.service",
-						Source: "[Service]\n# ${NONEXISTENT}\nExecStart=/usr/bin/sleep inf\n",
+						Transition: manifest.Transition{Create: "", Update: "start", Destroy: "", Permanent: false},
+						Name:       "first-2.service",
+						Source:     "[Service]\n# ${NONEXISTENT}\nExecStart=/usr/bin/sleep inf\n",
 					},
 				},
 				Blobs: []*manifest.Blob{
-					{
-						Name:        "/etc/vpn/users/env",
-						Permissions: 0644,
-						Source:      "My file\n",
-					},
+					{Name: "/etc/vpn/users/env", Permissions: 420, Leave: false, Source: "My file\n"},
 				},
+				Resources: nil,
 			},
-			{
-				Namespace: "private",
-				Name:      "second",
-				Target:    "multi-user.target",
-				Constraint: map[string]string{
-					"${meta.consul}": "true",
-				},
+			&manifest.Pod{
+				Namespace:  "private",
+				Name:       "second",
+				Runtime:    false,
+				Target:     "multi-user.target",
+				Constraint: manifest.Constraint{"${meta.consul}": "true"},
 				Units: []*manifest.Unit{
 					{
-						Transition: manifest.Transition{
-							Create:  "start",
-							Update:  "restart",
-							Destroy: "stop",
-						},
-						Name:   "second-1.service",
-						Source: "[Service]\nExecStart=/usr/bin/sleep inf\n",
+						Transition: manifest.Transition{Create: "start", Update: "restart", Destroy: "stop", Permanent: false},
+						Name:       "second-1.service",
+						Source:     "[Service]\nExecStart=/usr/bin/sleep inf\n",
 					},
 				},
+				Blobs: nil,
 			},
-		}, res)
+		})
 
 	})
-	t.Run("fields", func(t *testing.T) {
-		for _, pod := range []*manifest.Pod{
-			{
-				Constraint: map[string]string{
-					"${counter.test-1}": "< 4",
-					"${meta.consul}":    "true",
-					"${meta.a}":         "true",
-				},
-			},
-		} {
-			assert.Equal(t, map[string][]string{
-				"meta":    {"a", "consul"},
-				"counter": {"test-1"}},
-				pod.Constraint.ExtractFields())
-		}
-	})
-	t.Run("constraint ok", func(t *testing.T) {
-		cns := manifest.Constraint(map[string]string{
-			"${meta.consul}": "true",
-			"${agent.id}":    "localhost",
-		})
-		assert.NoError(t, cns.Check(map[string]string{
-			"meta.consul": "true",
-			"agent.id":    "localhost",
-		}))
-	})
-	t.Run("constraint fail", func(t *testing.T) {
-		cns := manifest.Constraint(map[string]string{
-			"${meta.consul}": "true",
-			"${agent.id}":    "localhost",
-		})
-		assert.Error(t, cns.Check(map[string]string{
-			"agent.id": "localhost",
-		}))
-	})
-
 	t.Run("mark", func(t *testing.T) {
 		for i, mark := range []uint64{
-			0x1c18aee4a1c89fd0, 0x6de66aa74d55be62,
+			0xab60e0f1d3db66ec, 0xda9e24b23f46475e,
 		} {
 			assert.Equal(t, mark, res[i].Mark())
 		}
@@ -123,7 +71,7 @@ func TestManifest_JSON(t *testing.T) {
 	assert.NoError(t, err)
 
 	data, err := json.Marshal(pods[0])
-	assert.Equal(t, "{\"Namespace\":\"private\",\"Name\":\"first\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"${meta.one}\":\"one\",\"${meta.two}\":\"two\"},\"Units\":[{\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":true,\"Name\":\"first-1.service\",\"Source\":\"[Service]\\n# ${meta.consul}\\nExecStart=/usr/bin/sleep inf\\nExecStopPost=/usr/bin/systemctl stop first-2.service\\n\"},{\"Create\":\"\",\"Update\":\"start\",\"Destroy\":\"\",\"Permanent\":false,\"Name\":\"first-2.service\",\"Source\":\"[Service]\\n# ${NONEXISTENT}\\nExecStart=/usr/bin/sleep inf\\n\"}],\"Blobs\":[{\"Name\":\"/etc/vpn/users/env\",\"Permissions\":420,\"Leave\":false,\"Source\":\"My file\\n\"}]}", string(data))
+	assert.Equal(t, string(data), "{\"Namespace\":\"private\",\"Name\":\"first\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"${meta.one}\":\"one\",\"${meta.two}\":\"two\"},\"Units\":[{\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":true,\"Name\":\"first-1.service\",\"Source\":\"[Service]\\n# ${meta.consul}\\nExecStart=/usr/bin/sleep inf\\nExecStopPost=/usr/bin/systemctl stop first-2.service\\n\"},{\"Create\":\"\",\"Update\":\"start\",\"Destroy\":\"\",\"Permanent\":false,\"Name\":\"first-2.service\",\"Source\":\"[Service]\\n# ${NONEXISTENT}\\nExecStart=/usr/bin/sleep inf\\n\"}],\"Blobs\":[{\"Name\":\"/etc/vpn/users/env\",\"Permissions\":420,\"Leave\":false,\"Source\":\"My file\\n\"}],\"Resources\":null}")
 
 	// unmarshal
 	pod := manifest.DefaultPod("private")

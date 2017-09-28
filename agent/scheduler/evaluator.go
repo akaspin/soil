@@ -42,7 +42,7 @@ func (e *Evaluator) Open() (err error) {
 		e.log.Debugf("restoring allocation from %s", record.Path)
 		var alloc *allocation.Pod
 		var allocErr error
-		if alloc, allocErr = allocation.NewFromSystemD(record.Path); allocErr != nil {
+		if alloc, allocErr = allocation.NewFromFS(record.Path, allocation.DefaultSystemDPaths()); allocErr != nil {
 			e.log.Warningf("can't restore allocation from %s", record.Path)
 			continue
 		}

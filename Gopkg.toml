@@ -36,6 +36,14 @@ required = [
 
 [[constraint]]
   branch = "master"
+  name = "github.com/mitchellh/mapstructure"
+
+[[constraint]]
+  name = "github.com/RoaringBitmap/roaring"
+  version = "v0.3.10"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/pkg/errors"
 
 [[constraint]]

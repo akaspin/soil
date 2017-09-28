@@ -16,7 +16,7 @@ func makeAllocations(t *testing.T, path string) (recovered []*allocation.Pod) {
 	err := pods.UnmarshalFiles("private", path)
 	assert.NoError(t, err)
 	for _, pod := range pods {
-		alloc, _ := allocation.NewFromManifest(pod, map[string]string{})
+		alloc, _ := allocation.NewFromManifest(pod, allocation.DefaultSystemDPaths(), map[string]string{})
 		recovered = append(recovered, alloc)
 	}
 	return

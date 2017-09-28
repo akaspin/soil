@@ -31,9 +31,9 @@ This endpoint lists all network areas.
 | `GET`  | `/operator/segment`     | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |

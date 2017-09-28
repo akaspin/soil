@@ -16,7 +16,7 @@ type Manager struct {
 	*supervisor.Control
 	log *logx.Log
 
-	mu      *sync.Mutex
+	mu      sync.RWMutex
 	drain   bool
 	sources map[string]*ManagerSource
 	managed map[string]*managerResource
@@ -31,7 +31,6 @@ func NewManager(ctx context.Context, log *logx.Log, sources ...*ManagerSource) (
 	m = &Manager{
 		Control:             supervisor.NewControl(ctx),
 		log:                 log.GetLog("metadata", "manager"),
-		mu:                  &sync.Mutex{},
 		drain:               false,
 		sources:             map[string]*ManagerSource{},
 		managed:             map[string]*managerResource{},
@@ -58,7 +57,6 @@ func (m *Manager) Open() (err error) {
 func (m *Manager) RegisterResource(name, namespace string, constraint manifest.Constraint, notifyFn func(reason error, environment map[string]string, mark uint64)) {
 	go func() {
 		m.mu.Lock()
-		defer m.mu.Unlock()
 		resource := &managerResource{
 			Namespace:  namespace,
 			Constraint: constraint,
@@ -66,7 +64,11 @@ func (m *Manager) RegisterResource(name, namespace string, constraint manifest.C
 		}
 		m.managed[name] = resource
 		m.log.Infof("register: %s %v", name, constraint)
+		m.mu.Unlock()
+
+		m.mu.RLock()
 		m.notifyResource(name, resource)
+		m.mu.RUnlock()
 	}()
 }
 
@@ -85,7 +87,6 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 	m.log.Tracef("got message %v", message)
 
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	previousDirty := m.getDirtyState(m.dirtyNamespaces)
 
@@ -114,7 +115,9 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 		}
 	}
 	m.interpolatableMark, _ = hashstructure.Hash(m.interpolatableCache, nil)
+	m.mu.Unlock()
 
+	m.mu.RLock()
 	if currentDirty := m.getDirtyState(m.dirtyNamespaces); previousDirty != currentDirty {
 		m.log.Infof("dirty namespaces changed: %s->%s", previousDirty, currentDirty)
 	}
@@ -122,6 +125,7 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 	for n, managed := range m.managed {
 		m.notifyResource(n, managed)
 	}
+	m.mu.RUnlock()
 }
 
 func (m *Manager) getDirtyState(states map[string]struct{}) (res string) {

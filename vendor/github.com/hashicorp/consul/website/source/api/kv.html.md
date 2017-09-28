@@ -19,7 +19,7 @@ replication between datacenters, please view the
 
 ~> Values in the KV store cannot be larger than 512kb.
 
-For multi-key updates, please consider using [transaction](/agent/api/api-server/txn.html).
+For multi-key updates, please consider using [transaction](/api/txn.html).
 
 ## Read Key
 
@@ -31,9 +31,9 @@ This endpoint returns the specified key. If no key exists at the given path, a
 | `GET`  | `/kv/:key`                   | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -151,9 +151,9 @@ Even though the return type is `application/json`, the value is either `true` or
 `false`, indicating whether the create/update succeeded.
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |
@@ -219,9 +219,9 @@ This endpoint deletes a single key or all keys sharing a prefix.
 | `DELETE` | `/kv/:key`                   | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required |
 | ---------------- | ----------------- | ------------ |

@@ -1,5 +1,5 @@
-hash: 49950d40cee960e66f818746fca6ccaa849c62851d81d0960f6089c3677eec65
-updated: 2017-09-19T14:50:30.702073385+02:00
+hash: c9112594e510eb16840a825117ac0945777d4ac56ce4dcde5fa76cd7a1c130d5
+updated: 2017-09-28T13:34:20.16956-07:00
 imports:
 - name: github.com/beorn7/perks
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
@@ -8,7 +8,7 @@ imports:
 - name: github.com/bgentry/speakeasy
   version: 4aabc24848ce5fd31929f7d1e4ea74d3709c14cd
 - name: github.com/coreos/bbolt
-  version: e1c92081e510bb6b2bbfc93e7e6bd0b6dabd3e12
+  version: 54f6fad6e4859cf6c17d98577f5aab4903c3fdde
 - name: github.com/coreos/go-semver
   version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
   subpackages:
@@ -47,8 +47,11 @@ imports:
   subpackages:
   - jsonpb
   - proto
+  - ptypes
   - ptypes/any
+  - ptypes/duration
   - ptypes/struct
+  - ptypes/timestamp
 - name: github.com/google/btree
   version: 925471ac9e2131377a91e1595defec898166fe49
 - name: github.com/grpc-ecosystem/go-grpc-prometheus
@@ -144,11 +147,12 @@ imports:
   subpackages:
   - googleapis/rpc/status
 - name: google.golang.org/grpc
-  version: b8669c35455183da6d5c474ea6e72fbf55183274
+  version: f92cdcd7dcdc69e81b2d7b338479a19a8723cfa3
   subpackages:
   - codes
+  - connectivity
   - credentials
-  - grpclb/grpc_lb_v1
+  - grpclb/grpc_lb_v1/messages
   - grpclog
   - health
   - health/grpc_health_v1

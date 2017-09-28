@@ -120,6 +120,27 @@ func TestConstraint_Check(t *testing.T) {
 			"meta.num": "3",
 		}))
 	})
+}
 
-	return
+func TestConstraint_Ignore(t *testing.T) {
+	constraint := manifest.Constraint{
+		"${meta.a}":                       "true",
+		"${resource.counter.a.allocated}": "true",
+		"${resource.port.8080.allocated}": "true",
+	}
+	t.Run("none", func(t *testing.T) {
+		res := constraint.Ignore("none.found")
+		assert.Equal(t, res, manifest.Constraint{
+			"${meta.a}":                       "true",
+			"${resource.counter.a.allocated}": "true",
+			"${resource.port.8080.allocated}": "true",
+		})
+	})
+	t.Run("all resource", func(t *testing.T) {
+		res := constraint.Ignore("resource.counter.a.allocated", "resource.port.8080.allocated")
+		assert.Equal(t, res, manifest.Constraint{
+			"${meta.a}": "true",
+		})
+
+	})
 }

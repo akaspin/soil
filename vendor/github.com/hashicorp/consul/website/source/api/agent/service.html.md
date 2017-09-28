@@ -29,9 +29,9 @@ everything will be in sync within a few seconds.
 | `GET`  | `/agent/services`            | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required   |
 | ---------------- | ----------------- | -------------- |
@@ -72,9 +72,9 @@ catalog in sync.
 | `PUT`  | `/agent/service/register`    | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -97,13 +97,13 @@ The table below shows this endpoint's support for
   DNS queries.
 
 - `Check` `(Check: nil)` - Specifies a check. Please see the
-  [check documentation](/agent/api/api-server/agent/check.html) for more information about the
+  [check documentation](/api/agent/check.html) for more information about the
   accepted fields. If you don't provide a name or id for the check then they
   will be generated. To provide a custom id and/or name set the `CheckID`
   and/or `Name` field.
   
 - `Checks` `(array<Check>: nil`) - Specifies a list of checks. Please see the
-  [check documentation](/agent/api/api-server/agent/check.html) for more information about the
+  [check documentation](/api/agent/check.html) for more information about the
   accepted fields. If you don't provide a name or id for the check then they
   will be generated. To provide a custom id and/or name set the `CheckID`
   and/or `Name` field. The automatically generated `Name` and `CheckID` depend
@@ -113,7 +113,7 @@ The table below shows this endpoint's support for
 
 - `EnableTagOverride` `(bool: false)` - Specifies to disable the anti-entropy
   feature for this service's tags. If `EnableTagOverride` is set to `true` then
-  external agents can update this service in the [catalog](/agent/api/api-server/catalog.html)
+  external agents can update this service in the [catalog](/api/catalog.html)
   and modify the tags. Subsequent local sync operations by this agent will
   ignore the updated tags. For instance, if an external agent modified both the
   tags and the port for this service and `EnableTagOverride` was set to `true`
@@ -178,9 +178,9 @@ is an associated check, that is also deregistered.
 | `PUT`  | `/agent/service/deregister/:service_id` | `application/json` |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |
@@ -211,9 +211,9 @@ will be automatically restored on agent restart.
 | `PUT`  | `/agent/service/maintenance/:service_id` | `application/json`         |
 
 The table below shows this endpoint's support for
-[blocking queries](/agent/api/api-server/index.html#blocking-queries),
-[consistency modes](/agent/api/api-server/index.html#consistency-modes), and
-[required ACLs](/agent/api/api-server/index.html#acls).
+[blocking queries](/api/index.html#blocking-queries),
+[consistency modes](/api/index.html#consistency-modes), and
+[required ACLs](/api/index.html#acls).
 
 | Blocking Queries | Consistency Modes | ACL Required    |
 | ---------------- | ----------------- | --------------- |

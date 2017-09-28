@@ -18,6 +18,7 @@ type Pod struct {
 	Constraint Constraint
 	Units      []*Unit
 	Blobs      []*Blob
+	Resources  []*Resource
 }
 
 func DefaultPod(namespace string) (p *Pod) {
@@ -29,75 +30,45 @@ func DefaultPod(namespace string) (p *Pod) {
 	return
 }
 
-func (p *Pod) UnmarshalAST(raw *ast.ObjectItem) (err error) {
+func (p *Pod) GetConstraint() (res Constraint) {
+	var resourceConstraint []Constraint
+	for _, resource := range p.Resources {
+		resourceConstraint = append(resourceConstraint, resource.GetConstraint(p.Name))
+	}
+	res = p.Constraint.Merge(resourceConstraint...)
+	return
+}
+
+func (p *Pod) parseAst(raw *ast.ObjectItem) (err error) {
 	err = hcl.DecodeObject(p, raw)
 	p.Name = raw.Keys[0].Token.Value().(string)
 
-	for _, u := range raw.Val.(*ast.ObjectType).List.Filter("unit").Items {
-		var unit *Unit
-		if unit, err = newUnitFromHCL(u); err != nil {
+	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("unit").Items {
+		unit := defaultUnit()
+		if err = unit.parseAst(f); err != nil {
 			return
 		}
 		p.Units = append(p.Units, unit)
 	}
 	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("blob").Items {
-		var blob *Blob
-		if blob, err = newBlobFromHCL(f); err != nil {
+		blob := defaultBlob()
+		if err = blob.parseAst(f); err != nil {
 			return
 		}
 		p.Blobs = append(p.Blobs, blob)
+	}
+	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("resource").Items {
+		resource := defaultResource()
+		if err = resource.parseAst(f); err != nil {
+			return
+		}
+		p.Resources = append(p.Resources, resource)
 	}
 	return
 }
 
 func (p *Pod) Mark() (res uint64) {
 	res, _ = hashstructure.Hash(p, nil)
-	return
-}
-
-type Unit struct {
-	Transition `hcl:",squash"`
-	Name       string
-	Source     string
-}
-
-func newUnitFromHCL(raw *ast.ObjectItem) (res *Unit, err error) {
-	res = &Unit{
-		Transition: Transition{
-			Create:  "start",
-			Update:  "restart",
-			Destroy: "stop",
-		},
-	}
-	res.Name = raw.Keys[0].Token.Value().(string)
-	err = hcl.DecodeObject(res, raw)
-	res.Source = Heredoc(res.Source)
-	return
-}
-
-// Unit transition
-type Transition struct {
-	Create    string
-	Update    string
-	Destroy   string
-	Permanent bool
-}
-
-// Pod file
-type Blob struct {
-	Name        string
-	Permissions int
-	Leave       bool
-	Source      string
-}
-
-func newBlobFromHCL(raw *ast.ObjectItem) (res *Blob, err error) {
-	res = &Blob{
-		Permissions: 0644,
-	}
-	res.Name = raw.Keys[0].Token.Value().(string)
-	err = hcl.DecodeObject(res, raw)
-	res.Source = Heredoc(res.Source)
 	return
 }
 

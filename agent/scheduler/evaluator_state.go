@@ -6,6 +6,8 @@ import (
 )
 
 type EvaluatorState struct {
+	mu sync.RWMutex
+
 	// Finished evaluations
 	finished map[string]*allocation.Pod
 
@@ -14,8 +16,6 @@ type EvaluatorState struct {
 
 	// Pending allocations
 	pending map[string]*allocation.Pod
-
-	mu *sync.Mutex
 }
 
 func NewEvaluatorState(recovered []*allocation.Pod) (s *EvaluatorState) {
@@ -23,7 +23,6 @@ func NewEvaluatorState(recovered []*allocation.Pod) (s *EvaluatorState) {
 		finished:   map[string]*allocation.Pod{},
 		inProgress: map[string]*allocation.Pod{},
 		pending:    map[string]*allocation.Pod{},
-		mu:         &sync.Mutex{},
 	}
 	for _, pod := range recovered {
 		s.finished[pod.Name] = pod
@@ -56,8 +55,8 @@ func (s *EvaluatorState) Commit(name string) (next []*Evaluation) {
 }
 
 func (s *EvaluatorState) List() (res map[string]*allocation.Header) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	res = map[string]*allocation.Header{}
 
 	for _, what := range []map[string]*allocation.Pod{

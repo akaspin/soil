@@ -44,23 +44,22 @@ EOF
 pod "second" {
   runtime = false
   constraint {
-//    "${resource.second.counter.allocated}" = "true"
     "${meta.consul}" = "true"
   }
 
-  resource "port.8080" {
-    type = "port"
-    config {
-      fixed = "8080"
-    }
-  }
-
-  resource "counter" {
-    type = "counter"
-    config {
-      count = "3"
-    }
-  }
+//  resource "port.8080" {
+//    type = "port"
+//    config {
+//      fixed = "8080"
+//    }
+//  }
+//
+//  resource "counter" {
+//    type = "counter"
+//    config {
+//      count = "3"
+//    }
+//  }
 
   unit "second-1.service" {
     source = <<EOF

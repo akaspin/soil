@@ -32,7 +32,7 @@ The following guides are available:
 
 * Federation ([Basic](/docs/guides/datacenters.html) and [Advanced](/docs/guides/areas.html)) - Configuring Consul to support multiple datacenters.
 
-* [Geo Failover](/docs/guides/geo-failover.html) - This guide covers using [prepared queries](/agent/api/api-server/query.html) to implement geo failover for services.
+* [Geo Failover](/docs/guides/geo-failover.html) - This guide covers using [prepared queries](/api/query.html) to implement geo failover for services.
 
 * [Leader Election](/docs/guides/leader-election.html) - The goal of this guide is to cover how to build client-side leader election using Consul.
 

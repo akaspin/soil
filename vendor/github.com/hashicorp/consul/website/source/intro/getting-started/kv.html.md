@@ -130,5 +130,5 @@ documentation, please see [Consul KV HTTP API][kv-api] or
 
 Next, we will look at the [web UI](ui.html) options supported by Consul.
 
-[kv-api]: /agent/api/api-server/kv.html
+[kv-api]: /api/kv.html
 [kv-cli]: /docs/commands/kv.html

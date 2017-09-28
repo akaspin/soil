@@ -44,6 +44,37 @@ func (c Constraint) ExtractFields() (res map[string][]string) {
 	return
 }
 
+// Merge returns constraint merged with given fields
+func (c Constraint) Merge(constraint ...Constraint) (res Constraint) {
+	res = Constraint{}
+	for _, cons := range append(constraint, c) {
+		for k, v := range cons {
+			res[k] = v
+		}
+	}
+	return
+}
+
+// Ignore returns constraint without pairs which contains variables with given names
+func (c Constraint) Ignore(name ...string) (res Constraint) {
+	res = Constraint{}
+	var findRes []string
+LOOP:
+	for k, v := range c {
+		findRes = envRe.FindAllString(k+" "+v, -1)
+		for _, chunk := range findRes {
+			chunk = chunk[2 : len(chunk)-1]
+			for _, candidate := range name {
+				if candidate == chunk {
+					continue LOOP
+				}
+			}
+			res[k] = v
+		}
+	}
+	return
+}
+
 func (c Constraint) Check(env map[string]string) (err error) {
 	for left, right := range c {
 		leftV := Interpolate(left, env)

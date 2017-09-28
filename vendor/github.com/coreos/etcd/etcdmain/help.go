@@ -70,6 +70,12 @@ member flags:
 		maximum number of operations permitted in a transaction.
 	--max-request-bytes '1572864'
 		maximum client request size in bytes the server will accept.
+	--grpc-keepalive-min-time '5s'
+		minimum duration interval that a client should wait before pinging server.
+	--grpc-keepalive-interval '2h'
+		frequency duration of server-to-client ping to check if a connection is alive (0 to disable).
+	--grpc-keepalive-timeout '20s'
+		additional duration of wait before closing a non-responsive connection (0 to disable).
 
 clustering flags:
 
@@ -99,7 +105,7 @@ clustering flags:
 	--auto-compaction-retention '0'
 		auto compaction retention length. 0 means disable auto compaction.
 	--auto-compaction-mode 'periodic'
-		'periodic' means hours, 'revision' means revision numbers to retain by auto compaction
+		interpret 'auto-compaction-retention' one of: periodic|revision. 'periodic' for duration based retention, defaulting to hours if no time unit is provided (e.g. '5m'). 'revision' for revision number based retention.
 	--enable-v2
 		Accept etcd V2 client requests.
 

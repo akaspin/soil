@@ -36,7 +36,7 @@ func TestKVBackend_RegisterConsumer_Disabled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
+	src := backend.NewLibKVBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 300,
 		Enabled:       false,
 		Timeout:       time.Second,
@@ -69,7 +69,7 @@ func TestBackend_Set(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	be := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
+	be := backend.NewLibKVBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -172,7 +172,7 @@ func TestBackend_RegisterConsumer_TTL(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
+	src := backend.NewLibKVBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -238,7 +238,7 @@ func TestBackend_RegisterConsumer_Recover(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
+	src := backend.NewLibKVBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,
@@ -307,7 +307,7 @@ func TestBackend_RegisterConsumer_LateInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	src := backend.NewBackend(ctx, logx.GetLog("test"), backend.Options{
+	src := backend.NewLibKVBackend(ctx, logx.GetLog("test"), backend.Options{
 		RetryInterval: time.Millisecond * 200,
 		Enabled:       true,
 		Timeout:       time.Second,

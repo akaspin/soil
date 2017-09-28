@@ -31,11 +31,9 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 	_, err = processor.Process(context.Background(), nil, &req)
 	assert.NoError(t, err)
 	assert.Equal(t, backend.states, []map[string]string{
-		{
-			"api-test-0": "{\"Namespace\":\"public\",\"Name\":\"api-test-0\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":null,\"Units\":null,\"Blobs\":null}",
-			"api-test-1": "{\"Namespace\":\"public\",\"Name\":\"api-test-1\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"never\":\"deploy\"},\"Units\":null,\"Blobs\":null}",
-		},
-	})
+		map[string]string{
+			"api-test-0": "{\"Namespace\":\"public\",\"Name\":\"api-test-0\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":null,\"Units\":null,\"Blobs\":null,\"Resources\":null}",
+			"api-test-1": "{\"Namespace\":\"public\",\"Name\":\"api-test-1\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"never\":\"deploy\"},\"Units\":null,\"Blobs\":null,\"Resources\":null}"}})
 }
 
 func TestNewRegistryPodsPut(t *testing.T) {
@@ -61,9 +59,7 @@ func TestNewRegistryPodsPut(t *testing.T) {
 	assert.Equal(t, resp.StatusCode, 200)
 
 	assert.Equal(t, backend.states, []map[string]string{
-		{
-			"api-test-0": "{\"Namespace\":\"public\",\"Name\":\"api-test-0\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":null,\"Units\":null,\"Blobs\":null}",
-			"api-test-1": "{\"Namespace\":\"public\",\"Name\":\"api-test-1\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"never\":\"deploy\"},\"Units\":null,\"Blobs\":null}",
-		},
-	})
+		map[string]string{
+			"api-test-0": "{\"Namespace\":\"public\",\"Name\":\"api-test-0\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":null,\"Units\":null,\"Blobs\":null,\"Resources\":null}",
+			"api-test-1": "{\"Namespace\":\"public\",\"Name\":\"api-test-1\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"never\":\"deploy\"},\"Units\":null,\"Blobs\":null,\"Resources\":null}"}})
 }

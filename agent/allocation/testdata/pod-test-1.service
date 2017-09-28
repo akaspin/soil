@@ -1,0 +1,10 @@
+### POD test-1 {"AgentMark":456,"Namespace":"private","PodMark":123}
+### UNIT testdata/test-1-0.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
+### UNIT testdata/test-1-1.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
+[Unit]
+Description=test-1
+Before=test-1-0.service test-1-1.service
+[Service]
+ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target

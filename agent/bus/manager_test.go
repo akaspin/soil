@@ -1,12 +1,11 @@
 // +build ide test_unit
 
-package scheduler_test
+package bus_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -31,10 +30,10 @@ func TestManager(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	manager := scheduler.NewManager(ctx, log,
-		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
-		scheduler.NewManagerSource("with.dot", true, nil, "private", "public"),
-		scheduler.NewManagerSource("drain", false, manifest.Constraint{
+	manager := bus.NewManager(ctx, log,
+		bus.NewManagerSource("meta", false, nil, "private", "public"),
+		bus.NewManagerSource("with.dot", true, nil, "private", "public"),
+		bus.NewManagerSource("drain", false, manifest.Constraint{
 			"${drain.state}": "!= true",
 		}, "private", "public"),
 	)

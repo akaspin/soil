@@ -1,10 +1,9 @@
-package scheduler
+package bus
 
 import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
@@ -83,7 +82,7 @@ func (m *Manager) DeregisterResource(name string, notifyFn func()) {
 }
 
 // ConsumeMessage takes data from one of sources and evaluates all cached data
-func (m *Manager) ConsumeMessage(message bus.Message) {
+func (m *Manager) ConsumeMessage(message Message) {
 	m.log.Tracef("got message %v", message)
 
 	m.mu.Lock()
@@ -168,7 +167,7 @@ type managerResource struct {
 type ManagerSource struct {
 	constraintOnly bool                // use source only for constraints
 	namespaces     []string            // namespaces to manage
-	message        bus.Message         // last message
+	message        Message         // last message
 	clean          bool                // clean status
 	required       manifest.Constraint // required constraint
 }
@@ -177,7 +176,7 @@ func NewManagerSource(producer string, constraintOnly bool, required manifest.Co
 	s = &ManagerSource{
 		constraintOnly: constraintOnly,
 		namespaces:     namespaces,
-		message:        bus.NewMessage(producer, map[string]string{}),
+		message:        NewMessage(producer, map[string]string{}),
 		required:       required,
 	}
 

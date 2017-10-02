@@ -24,10 +24,10 @@ func TestNewScheduler(t *testing.T) {
 
 	t.Run("0", func(t *testing.T) {
 
-		manager := scheduler.NewManager(ctx, log,
-			scheduler.NewManagerSource("agent", false, nil, "private", "public"),
-			scheduler.NewManagerSource("meta", false, nil, "private", "public"),
-			scheduler.NewManagerSource("system", false, nil, "private", "public"),
+		manager := bus.NewManager(ctx, log,
+			bus.NewManagerSource("agent", false, nil, "private", "public"),
+			bus.NewManagerSource("meta", false, nil, "private", "public"),
+			bus.NewManagerSource("system", false, nil, "private", "public"),
 		)
 		agentSource := bus.NewFlatMap(ctx, log, true, "agent", manager)
 		metaSource := bus.NewFlatMap(ctx, log, true, "meta", manager)
@@ -82,10 +82,10 @@ func TestNewScheduler(t *testing.T) {
 	})
 
 	// create new arbiter
-	manager := scheduler.NewManager(ctx, log,
-		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
-		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
-		scheduler.NewManagerSource("system", false, nil, "private", "public"),
+	manager := bus.NewManager(ctx, log,
+		bus.NewManagerSource("agent", false, nil, "private", "public"),
+		bus.NewManagerSource("meta", false, nil, "private", "public"),
+		bus.NewManagerSource("system", false, nil, "private", "public"),
 	)
 	agentSource := bus.NewFlatMap(ctx, log, true, "agent", manager)
 	metaSource := bus.NewFlatMap(ctx, log, true, "meta", manager)

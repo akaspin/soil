@@ -83,10 +83,10 @@ WantedBy=default.target
 
 	// Build supervisor chain
 
-	manager := scheduler.NewManager(ctx, log,
-		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
-		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
-		scheduler.NewManagerSource("system", false, nil, "private", "public"),
+	manager := bus.NewManager(ctx, log,
+		bus.NewManagerSource("agent", false, nil, "private", "public"),
+		bus.NewManagerSource("meta", false, nil, "private", "public"),
+		bus.NewManagerSource("system", false, nil, "private", "public"),
 	)
 	source1 := bus.NewFlatMap(ctx, log, true, "meta", manager)
 	source2 := bus.NewFlatMap(ctx, log, true, "agent", manager)

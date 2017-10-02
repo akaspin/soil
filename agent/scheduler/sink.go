@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
+	"github.com/akaspin/soil/agent/bus"
 )
 
 type Sink struct {
@@ -13,11 +14,11 @@ type Sink struct {
 	log *logx.Log
 
 	evaluator *Evaluator
-	manager   *Manager
+	manager   *bus.Manager
 	state     *SinkState
 }
 
-func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *Manager) (r *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *bus.Manager) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler", "sink", "pods"),

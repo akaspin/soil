@@ -72,12 +72,12 @@ func (c *Agent) Run(args ...string) (err error) {
 	// public announcers
 	publicNodeAnnouncer := public.NewNodeAnnouncer(c.log, backend.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
 
-	manager := scheduler.NewManager(ctx, c.log,
-		scheduler.NewManagerSource("agent", false, manifest.Constraint{
+	manager := bus.NewManager(ctx, c.log,
+		bus.NewManagerSource("agent", false, manifest.Constraint{
 			"${agent.drain}": "!= true",
 		}, "private", "public"),
-		scheduler.NewManagerSource("system", false, nil, "private", "public"),
-		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
+		bus.NewManagerSource("system", false, nil, "private", "public"),
+		bus.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 
 	apiStatusNodeGet := api.NewStatusNodeGet(c.log)

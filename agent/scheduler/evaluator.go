@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
 	"sync"
@@ -16,6 +17,8 @@ type Evaluator struct {
 	state  *EvaluatorState
 	nextCh chan *Evaluation
 }
+
+
 
 func NewEvaluator(ctx context.Context, log *logx.Log) (e *Evaluator) {
 	e = &Evaluator{
@@ -33,23 +36,19 @@ func (e *Evaluator) Open() (err error) {
 	}
 	defer conn.Close()
 
+	var paths []string
 	files, err := conn.ListUnitFilesByPatterns([]string{}, []string{"pod-*.service"})
 	if err != nil {
 		return
 	}
-	var res []*allocation.Pod
-	for _, record := range files {
-		e.log.Debugf("restoring allocation from %s", record.Path)
-		var alloc *allocation.Pod
-		var allocErr error
-		if alloc, allocErr = allocation.NewFromFS(record.Path, allocation.DefaultSystemDPaths()); allocErr != nil {
-			e.log.Warningf("can't restore allocation from %s", record.Path)
-			continue
-		}
-		res = append(res, alloc)
-		e.log.Infof("restored allocation %v", alloc.Header)
+	for _, f := range files {
+		paths = append(paths, f.Path)
 	}
-	e.state = NewEvaluatorState(res)
+	var recovered allocation.State
+	if recoveryErr := (&recovered).FromFS(allocation.DefaultSystemDPaths(), paths...); recoveryErr != nil {
+		e.log.Warningf("allocations are restored with failures %v", recoveryErr)
+	}
+	e.state = NewEvaluatorState(recovered)
 	err = e.Control.Open()
 	go e.loop()
 	return
@@ -61,7 +60,26 @@ func (e *Evaluator) Close() (err error) {
 	return
 }
 
-func (e *Evaluator) Submit(name string, pod *allocation.Pod) {
+
+func (e *Evaluator) GetConstraint(pod *manifest.Pod) manifest.Constraint {
+	return pod.GetConstraint()
+}
+
+func (e *Evaluator) Allocate(name string, pod *manifest.Pod, env map[string]string) {
+	var alloc *allocation.Pod
+	var err error
+	if alloc, err = allocation.NewFromManifest(pod, allocation.DefaultSystemDPaths(), env); err != nil {
+		e.log.Error(err)
+		return
+	}
+	e.SubmitAllocation(name, alloc)
+}
+
+func (e *Evaluator) Deallocate(name string) {
+	e.SubmitAllocation(name, nil)
+}
+
+func (e *Evaluator) SubmitAllocation(name string, pod *allocation.Pod) {
 	select {
 	case <-e.Control.Ctx().Done():
 		e.log.Warningf("reject submit %s : evaluator is closed", name)
@@ -74,6 +92,10 @@ func (e *Evaluator) Submit(name string, pod *allocation.Pod) {
 func (e *Evaluator) List() (res map[string]*allocation.Header) {
 	res = e.state.List()
 	return
+}
+
+func (e *Evaluator) GetState() allocation.State  {
+	return e.state.GetState()
 }
 
 func (e *Evaluator) loop() {

@@ -18,7 +18,7 @@ type EvaluatorState struct {
 	pending map[string]*allocation.Pod
 }
 
-func NewEvaluatorState(recovered []*allocation.Pod) (s *EvaluatorState) {
+func NewEvaluatorState(recovered allocation.State) (s *EvaluatorState) {
 	s = &EvaluatorState{
 		finished:   map[string]*allocation.Pod{},
 		inProgress: map[string]*allocation.Pod{},
@@ -75,6 +75,32 @@ func (s *EvaluatorState) List() (res map[string]*allocation.Header) {
 	for k, v := range res {
 		if v == nil {
 			delete(res, k)
+		}
+	}
+	return
+}
+
+func (s *EvaluatorState) GetState() (state allocation.State) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	mapped := map[string]*allocation.Pod{}
+
+	for _, what := range []map[string]*allocation.Pod{
+		s.pending, s.inProgress, s.finished,
+	} {
+		for k, v := range what {
+			if _, ok := mapped[k]; !ok {
+				if v == nil {
+					mapped[k] = nil
+					continue
+				}
+				mapped[k] = v
+			}
+		}
+	}
+	for _, v := range mapped {
+		if v != nil {
+			state = append(state, v)
 		}
 	}
 	return

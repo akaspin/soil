@@ -19,6 +19,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"github.com/akaspin/soil/agent/registry"
 )
 
 type AgentOptions struct {
@@ -119,7 +120,8 @@ func (c *Agent) Run(args ...string) (err error) {
 	)
 
 	evaluator := scheduler.NewEvaluator(ctx, c.log)
-	registrySink := scheduler.NewSink(ctx, c.log, evaluator, manager)
+	registrySink := scheduler.NewSink(ctx, c.log, evaluator,
+		registry.NewManagedEvaluator(manager, evaluator))
 
 	// public watchers
 	publicNodesWatcher := bus.NewPipe(ctx, c.log, "nodes", publicBackend, nil,

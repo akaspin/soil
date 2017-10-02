@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"github.com/akaspin/soil/agent/registry"
 )
 
 func TestNewScheduler(t *testing.T) {
@@ -33,11 +34,11 @@ func TestNewScheduler(t *testing.T) {
 		metaSource := bus.NewFlatMap(ctx, log, true, "meta", manager)
 		systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
-		executor := scheduler.NewEvaluator(ctx, log)
-		sink := scheduler.NewSink(ctx, log, executor, manager)
+		evaluator := scheduler.NewEvaluator(ctx, log)
+		sink := scheduler.NewSink(ctx, log, evaluator, registry.NewManagedEvaluator(manager, evaluator))
 		sv := supervisor.NewChain(ctx,
 			supervisor.NewChain(ctx,
-				supervisor.NewGroup(ctx, executor, manager),
+				supervisor.NewGroup(ctx, evaluator, manager),
 				sink,
 			),
 			supervisor.NewGroup(ctx, agentSource, metaSource, systemSource),
@@ -91,11 +92,11 @@ func TestNewScheduler(t *testing.T) {
 	metaSource := bus.NewFlatMap(ctx, log, true, "meta", manager)
 	systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
-	executor := scheduler.NewEvaluator(ctx, log)
-	sink := scheduler.NewSink(ctx, log, executor, manager)
+	evaluator := scheduler.NewEvaluator(ctx, log)
+	sink := scheduler.NewSink(ctx, log, evaluator, registry.NewManagedEvaluator(manager, evaluator))
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,
-			supervisor.NewGroup(ctx, executor, manager),
+			supervisor.NewGroup(ctx, evaluator, manager),
 			sink,
 		),
 		supervisor.NewGroup(ctx, agentSource, metaSource, systemSource),

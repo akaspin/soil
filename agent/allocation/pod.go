@@ -42,6 +42,16 @@ type Pod struct {
 	Resources []*Resource
 }
 
+func NewPod(systemPaths SystemDPaths) (p *Pod) {
+	p = &Pod{
+		UnitFile: &UnitFile{
+			SystemPaths: systemPaths,
+		},
+		Header: &Header{},
+	}
+	return
+}
+
 func NewFromManifest(m *manifest.Pod, paths SystemDPaths, env map[string]string) (p *Pod, err error) {
 	agentMark, _ := hashstructure.Hash(env, nil)
 	p = &Pod{
@@ -122,6 +132,28 @@ func NewFromFS(path string, systemPaths SystemDPaths) (res *Pod, err error) {
 		}
 	}
 	for _, b := range res.Blobs {
+		if err = b.Read(); err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (p *Pod) FromFS(path string) (err error) {
+	p.UnitFile.Path = path
+	if err = p.UnitFile.Read(); err != nil {
+		return
+	}
+	if p.Units, p.Blobs, p.Resources, err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
+		return
+	}
+
+	for _, u := range p.Units {
+		if err = u.UnitFile.Read(); err != nil {
+			return
+		}
+	}
+	for _, b := range p.Blobs {
 		if err = b.Read(); err != nil {
 			return
 		}

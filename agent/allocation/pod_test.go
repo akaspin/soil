@@ -145,7 +145,8 @@ func TestNewFromFS(t *testing.T) {
 		Local:   "testdata/etc",
 		Runtime: "testdata",
 	}
-	alloc, err := allocation.NewFromFS("testdata/pod-test-1.service", paths)
+	alloc := allocation.NewPod(paths)
+	err := alloc.FromFS("testdata/pod-test-1.service")
 	assert.NoError(t, err)
 	assert.Equal(t, &allocation.Pod{
 		Header: &allocation.Header{

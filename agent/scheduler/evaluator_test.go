@@ -128,7 +128,7 @@ WantedBy=default.target
 				},
 			},
 		}
-		evaluator.Submit("pod-1", alloc)
+		evaluator.SubmitAllocation("pod-1", alloc)
 		time.Sleep(time.Second)
 
 		assert.NoError(t, assertUnits(
@@ -147,7 +147,7 @@ WantedBy=default.target
 		}, evaluator.List())
 	})
 	t.Run("destroy non-existent", func(t *testing.T) {
-		evaluator.Submit("pod-2", nil)
+		evaluator.SubmitAllocation("pod-2", nil)
 		time.Sleep(time.Second)
 		assert.NoError(t, assertUnits(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
@@ -165,7 +165,7 @@ WantedBy=default.target
 		}, evaluator.List())
 	})
 	t.Run("destroy pod-1", func(t *testing.T) {
-		evaluator.Submit("pod-1", nil)
+		evaluator.SubmitAllocation("pod-1", nil)
 		time.Sleep(time.Second)
 		assert.NoError(t, assertUnits(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},

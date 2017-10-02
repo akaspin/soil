@@ -4,33 +4,34 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/agent/registry"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
-	"github.com/akaspin/soil/agent/bus"
 )
 
 type Sink struct {
 	*supervisor.Control
 	log *logx.Log
 
-	evaluator *Evaluator
-	manager   *bus.Manager
+	stateHolder allocation.StateHolder
+	managedEvaluators []registry.ManagedEvaluator
+
 	state     *SinkState
 }
 
-func NewSink(ctx context.Context, log *logx.Log, evaluator *Evaluator, manager *bus.Manager) (r *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, stateHolder allocation.StateHolder, managedEvaluators ...registry.ManagedEvaluator) (r *Sink) {
 	r = &Sink{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("scheduler", "sink", "pods"),
-		evaluator: evaluator,
-		manager:   manager,
+		stateHolder: stateHolder,
+		managedEvaluators: managedEvaluators,
 	}
 	return
 }
 
 func (s *Sink) Open() (err error) {
 	dirty := map[string]string{}
-	for _, recovered := range s.evaluator.List() {
+	for _, recovered := range s.stateHolder.GetState() {
 		dirty[recovered.Name] = recovered.Namespace
 	}
 	s.state = NewSinkState([]string{"private", "public"}, dirty)
@@ -45,28 +46,28 @@ func (s *Sink) ConsumeRegistry(namespace string, pods manifest.Registry) {
 
 	changes := s.state.SyncNamespace(namespace, pods)
 	for name, pod := range changes {
-		s.submitToEvaluator(name, pod)
+		s.submitToEvaluators(name, pod)
 	}
 	s.log.Infof("done: %s", namespace)
 	return
 }
 
-func (s *Sink) submitToEvaluator(name string, pod *manifest.Pod) (err error) {
-	if pod == nil {
-		go s.manager.DeregisterResource(name, func() {
-			s.evaluator.Submit(name, nil)
-		})
-		return
-	}
-	s.manager.RegisterResource(name, pod.Namespace, pod.GetConstraint(), func(reason error, env map[string]string, mark uint64) {
-		s.log.Debugf("received %v from manager for %s", reason, name)
-		var alloc *allocation.Pod
-		if pod != nil && reason == nil {
-			if alloc, err = allocation.NewFromManifest(pod, allocation.DefaultSystemDPaths(), env); err != nil {
-				return
-			}
+func (s *Sink) submitToEvaluators(name string, pod *manifest.Pod) (err error) {
+	for _, me := range s.managedEvaluators {
+		if pod == nil {
+			me.Manager.DeregisterResource(name, func() {
+				me.Evaluator.Deallocate(name)
+			})
+			return
 		}
-		s.evaluator.Submit(name, alloc)
-	})
+		me.Manager.RegisterResource(name, pod.Namespace, me.Evaluator.GetConstraint(pod), func(reason error, env map[string]string, mark uint64) {
+			s.log.Debugf("received %v from manager for %s", reason, name)
+			if reason == nil {
+				me.Evaluator.Allocate(name, pod, env)
+			} else {
+				me.Evaluator.Deallocate(name)
+			}
+		})
+	}
 	return
 }

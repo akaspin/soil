@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"github.com/akaspin/soil/agent/registry"
 )
 
 func TestRegistrySink(t *testing.T) {
@@ -93,7 +94,7 @@ WantedBy=default.target
 	systemSource := bus.NewFlatMap(ctx, log, true, "system", manager)
 
 	evaluator := scheduler.NewEvaluator(ctx, log)
-	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, manager)
+	sink := scheduler.NewSink(ctx, logx.GetLog("test"), evaluator, registry.NewManagedEvaluator(manager, evaluator))
 
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,

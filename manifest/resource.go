@@ -26,7 +26,16 @@ func (r *Resource) Id(podName string) (res string) {
 	return
 }
 
-func (r *Resource) GetConstraint(podName string) (res Constraint) {
+// GetRequestConstraint returns constraint required to request resource allocation
+func (r *Resource) GetRequestConstraint() (res Constraint) {
+	res = Constraint{
+		fmt.Sprintf("${resource_request.allow.%s}", r.Type): "true",
+	}
+	return
+}
+
+// GetAllocatedConstraint returns required constraint for provision with allocated resource
+func (r *Resource) GetAllocatedConstraint(podName string) (res Constraint) {
 	res = Constraint{}
 	if r.Required {
 		res[fmt.Sprintf("${%s.allocated}", r.Id(podName))] = "true"

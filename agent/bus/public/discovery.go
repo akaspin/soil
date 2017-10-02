@@ -30,6 +30,6 @@ func (p *DiscoveryPipe) process(message bus.Message) (res bus.Message) {
 		}
 		data[value.Id] = value.Advertise
 	}
-	res = bus.NewMessage(message.GetPrefix(), data)
+	res = bus.NewMessage(message.GetProducer(), data)
 	return
 }

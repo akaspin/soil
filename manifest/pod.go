@@ -8,6 +8,8 @@ import (
 
 const (
 	defaultPodTarget = "multi-user.target"
+	PrivateNamespace = "private"
+	PublicNamespace  = "public"
 )
 
 type Pod struct {
@@ -27,15 +29,6 @@ func DefaultPod(namespace string) (p *Pod) {
 		Target:    defaultPodTarget,
 		Runtime:   true,
 	}
-	return
-}
-
-func (p *Pod) GetConstraint() (res Constraint) {
-	var resourceConstraint []Constraint
-	for _, resource := range p.Resources {
-		resourceConstraint = append(resourceConstraint, resource.GetConstraint(p.Name))
-	}
-	res = p.Constraint.Merge(resourceConstraint...)
 	return
 }
 
@@ -69,6 +62,16 @@ func (p *Pod) parseAst(raw *ast.ObjectItem) (err error) {
 
 func (p *Pod) Mark() (res uint64) {
 	res, _ = hashstructure.Hash(p, nil)
+	return
+}
+
+// Returns Pod Constraint with additional Resource Allocation constraints
+func (p *Pod) GetResourceAllocationConstraint() (res Constraint) {
+	var resourceConstraint []Constraint
+	for _, resource := range p.Resources {
+		resourceConstraint = append(resourceConstraint, resource.GetAllocatedConstraint(p.Name))
+	}
+	res = p.Constraint.Merge(resourceConstraint...)
 	return
 }
 

@@ -26,3 +26,13 @@ func (s *State) FromFS(systemPaths SystemDPaths, paths ...string) (err error) {
 	}
 	return
 }
+
+func (s State) Find(name string) (res *Header) {
+	for _, alloc := range s {
+		if alloc.Name == name {
+			res = alloc.Header
+			break
+		}
+	}
+	return
+}

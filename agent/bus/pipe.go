@@ -43,7 +43,7 @@ type BoundedPipe struct {
 	consumers []MessageConsumer
 }
 
-func NewPipe(ctx context.Context, log *logx.Log, prefix string, producer BindableProducer, fn func(message Message) Message, consumers ...MessageConsumer) (p *BoundedPipe) {
+func NewBoundedPipe(ctx context.Context, log *logx.Log, prefix string, producer BindableProducer, fn func(message Message) Message, consumers ...MessageConsumer) (p *BoundedPipe) {
 	p = &BoundedPipe{
 		Control:   supervisor.NewControl(ctx),
 		log:       log.GetLog("pipe", prefix),

@@ -111,34 +111,6 @@ func NewFromManifest(m *manifest.Pod, paths SystemDPaths, env map[string]string)
 	return
 }
 
-func NewFromFS(path string, systemPaths SystemDPaths) (res *Pod, err error) {
-	res = &Pod{
-		UnitFile: &UnitFile{
-			SystemPaths: systemPaths,
-			Path:        path,
-		},
-		Header: &Header{},
-	}
-	if err = res.UnitFile.Read(); err != nil {
-		return
-	}
-	if res.Units, res.Blobs, res.Resources, err = res.Header.Unmarshal(res.UnitFile.Source, systemPaths); err != nil {
-		return
-	}
-
-	for _, u := range res.Units {
-		if err = u.UnitFile.Read(); err != nil {
-			return
-		}
-	}
-	for _, b := range res.Blobs {
-		if err = b.Read(); err != nil {
-			return
-		}
-	}
-	return
-}
-
 func (p *Pod) FromFS(path string) (err error) {
 	p.UnitFile.Path = path
 	if err = p.UnitFile.Read(); err != nil {

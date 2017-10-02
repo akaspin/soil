@@ -3,9 +3,9 @@
 package allocation_test
 
 import (
-	"testing"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestState_FromFS(t *testing.T) {

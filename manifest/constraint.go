@@ -80,7 +80,7 @@ func (c Constraint) Check(env map[string]string) (err error) {
 		leftV := Interpolate(left, env)
 		rightV := Interpolate(right, env)
 		if !check(leftV, rightV) {
-			err = fmt.Errorf("constraint failed %s != %s (%s:%s)", leftV, rightV, left, right)
+			err = fmt.Errorf(`constraint failed: "%s":"%s" ("%s":"%s")`, leftV, rightV, left, right)
 			return
 		}
 	}

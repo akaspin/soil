@@ -25,8 +25,7 @@ func NewSinkState(namespaces []string, dirty map[string]string) (s *SinkState) {
 	return
 }
 
-// SyncNamespace syncs pods definitions in specific namespace.
-// Returns actual changes
+// SyncNamespace syncs registry in specific namespace and returns actual changes
 func (s *SinkState) SyncNamespace(namespace string, pods manifest.Registry) (changes map[string]*manifest.Pod) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

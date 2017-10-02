@@ -1,11 +1,11 @@
 // +build ide test_systemd
 
-package scheduler_test
+package provision_test
 
 import (
 	"fmt"
 	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/fixture"
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/stretchr/testify/assert"
@@ -30,12 +30,12 @@ func TestWantsInstruction_Execute(t *testing.T) {
 	assert.NoError(t, unitFile.Read())
 
 	t.Run("disable", func(t *testing.T) {
-		assert.NoError(t, scheduler.NewDisableUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, provision.NewDisableUnitInstruction(unitFile).Execute(conn))
 		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/test-1-0.service")
 		assert.Error(t, err)
 	})
 	t.Run("enable", func(t *testing.T) {
-		assert.NoError(t, scheduler.NewEnableUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, provision.NewEnableUnitInstruction(unitFile).Execute(conn))
 		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/test-1-0.service")
 		assert.NoError(t, err)
 	})
@@ -58,7 +58,7 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 	assert.NoError(t, unitFile.Read())
 
 	testCommand := func(command string, state string) (err error) {
-		c := scheduler.NewCommandInstruction(0, unitFile, command)
+		c := provision.NewCommandInstruction(0, unitFile, command)
 		if err = c.Execute(conn); err != nil {
 			return
 		}
@@ -111,17 +111,17 @@ func TestFSInstruction_Execute(t *testing.T) {
 	assert.NoError(t, unitFile.Read())
 
 	t.Run("delete", func(t *testing.T) {
-		assert.NoError(t, scheduler.NewCommandInstruction(0, unitFile, "stop").Execute(conn))
-		assert.NoError(t, scheduler.NewDisableUnitInstruction(unitFile).Execute(conn))
-		assert.NoError(t, scheduler.NewDeleteUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, provision.NewCommandInstruction(0, unitFile, "stop").Execute(conn))
+		assert.NoError(t, provision.NewDisableUnitInstruction(unitFile).Execute(conn))
+		assert.NoError(t, provision.NewDeleteUnitInstruction(unitFile).Execute(conn))
 		_, err := os.Stat(unitFile.Path)
 		assert.Error(t, err)
 	})
 	t.Run("write", func(t *testing.T) {
-		assert.NoError(t, scheduler.NewWriteUnitInstruction(unitFile).Execute(conn))
-		_, err := os.Stat(unitFile.Path)
+		assert.NoError(t, provision.NewWriteUnitInstruction(unitFile).Execute(conn))
+		_, err = os.Stat(unitFile.Path)
 		assert.NoError(t, err)
-		assert.NoError(t, scheduler.NewCommandInstruction(0, unitFile, "start").Execute(conn))
+		assert.NoError(t, provision.NewCommandInstruction(0, unitFile, "start").Execute(conn))
 	})
 
 }

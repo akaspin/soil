@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
+	"testing"
 )
 
 type Systemd struct {
@@ -130,6 +132,31 @@ func (s *Systemd) DestroyPod(name ...string) (err error) {
 func (s *Systemd) Cleanup() (err error) {
 	err = s.DestroyPod("*")
 	return
+}
+
+func (s *Systemd) AssertUnits(t *testing.T, names []string, states map[string]string) {
+	t.Helper()
+	conn, err := dbus.New()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+	defer conn.Close()
+	l, err := conn.ListUnitsByPatterns([]string{}, names)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+	res := map[string]string{}
+	for _, u := range l {
+		res[u.Name] = u.ActiveState
+	}
+	if !reflect.DeepEqual(states, res) {
+		t.Errorf("not equal (expected)%v != (actual)%v", states, res)
+		t.Fail()
+	}
 }
 
 func (s *Systemd) ListPods() (res map[string]string, err error) {

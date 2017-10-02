@@ -36,6 +36,6 @@ func (n *statusNodeProcessor) Process(ctx context.Context, u *url.URL, v interfa
 }
 
 func (n *statusNodeProcessor) ConsumeMessage(message bus.Message) {
-	n.data.Store(message.GetPrefix(), message.GetPayload())
+	n.data.Store(message.GetProducer(), message.GetPayload())
 	n.log.Debugf("stored: %v", message)
 }

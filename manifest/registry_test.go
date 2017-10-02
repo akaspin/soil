@@ -62,11 +62,6 @@ func TestRegistry_UnmarshalFiles(t *testing.T) {
 				},
 			},
 		})
-		assert.Equal(t, pods[0].GetConstraint(), manifest.Constraint{
-			"${resource.port.second.8080.allocated}": "true",
-			"${resource.counter.second.1.allocated}": "true",
-			"${meta.consul}":                         "true",
-		})
 	})
 	t.Run("intro", func(t *testing.T) {
 		var pods manifest.Registry

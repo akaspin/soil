@@ -19,25 +19,41 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 			"pod-4": "public",
 		},
 	)
-	t.Run("private", func(t *testing.T) {
+	t.Run("0 sync private", func(t *testing.T) {
 		var ingest manifest.Registry
-		err := ingest.UnmarshalFiles("private", "testdata/sink_state_test_1.hcl")
+		err := ingest.UnmarshalFiles(manifest.PrivateNamespace, "testdata/sink_state_test_0.hcl")
 		assert.NoError(t, err)
-		changes := state.SyncNamespace("private", ingest)
+		changes := state.SyncNamespace(manifest.PrivateNamespace, ingest)
 		assert.Equal(t, map[string]*manifest.Pod{
-			"pod-2": nil,
 			"pod-1": ingest[0],
+			"pod-2": nil,
 		}, changes)
 	})
-	t.Run("public", func(t *testing.T) {
-		var ingestPublic manifest.Registry
-		err := ingestPublic.UnmarshalFiles("public", "testdata/sink_state_test_2.hcl")
+	t.Run("1 sync public", func(t *testing.T) {
+		var ingest manifest.Registry
+		err := ingest.UnmarshalFiles(manifest.PublicNamespace, "testdata/sink_state_test_1.hcl")
 		assert.NoError(t, err)
-		changes := state.SyncNamespace("public", ingestPublic)
+		changes := state.SyncNamespace(manifest.PublicNamespace, ingest)
 		assert.Equal(t, map[string]*manifest.Pod{
+			"pod-3": ingest[1],
 			"pod-4": nil,
-			"pod-3": ingestPublic[1],
 		}, changes)
+	})
+	t.Run("2 remove pod-1 from private", func(t *testing.T) {
+		var ingest manifest.Registry
+		err := ingest.UnmarshalFiles(manifest.PrivateNamespace, "testdata/sink_state_test_2.hcl")
+		assert.NoError(t, err)
+		changes := state.SyncNamespace(manifest.PrivateNamespace, ingest)
+		assert.Len(t, changes, 1)
+		assert.Equal(t, changes["pod-1"].Namespace, manifest.PublicNamespace)
+	})
+	t.Run("3 add pod-1 to private", func(t *testing.T) {
+		var ingest manifest.Registry
+		err := ingest.UnmarshalFiles(manifest.PrivateNamespace, "testdata/sink_state_test_3.hcl")
+		assert.NoError(t, err)
+		changes := state.SyncNamespace(manifest.PrivateNamespace, ingest)
+		assert.Len(t, changes, 1)
+		assert.Equal(t, changes["pod-1"].Namespace, manifest.PrivateNamespace)
 	})
 
 }

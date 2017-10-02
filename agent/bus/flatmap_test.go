@@ -3,51 +3,65 @@
 package bus_test
 
 import (
-	"context"
-	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
-	"sync/atomic"
+	"sync"
 	"testing"
-	"time"
 )
 
-type dummyConsumer struct {
-	changes int32
+type testDummyConsumer struct {
+	mu      sync.Mutex
+	records []map[string]string
 }
 
-func (c *dummyConsumer) ConsumeMessage(message bus.Message) {
-	atomic.AddInt32(&c.changes, 1)
+func (c *testDummyConsumer) ConsumeMessage(message bus.Message) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.records = append(c.records, message.GetPayload())
 }
 
-func TestMapMetadata(t *testing.T) {
+func TestFlatMap_Set(t *testing.T) {
+	t.Run("strict", func(t *testing.T) {
+		cons1 := &testDummyConsumer{}
 
-	cons1 := &dummyConsumer{}
-	cons2 := &dummyConsumer{}
-	a := bus.NewFlatMap(context.Background(), logx.GetLog("test"), true, "meta",
-		cons1, cons2)
-	a.Open()
+		prod := bus.NewFlatMap(true, "meta", cons1)
+		prod.Set(map[string]string{
+			"1": "1",
+		})
+		assert.Equal(t, cons1.records, []map[string]string{
+			{"1": "1"},
+		})
+		prod.Set(map[string]string{
+			"2": "2",
+		})
+		assert.Equal(t, cons1.records, []map[string]string{
+			{"1": "1"},
+			{"2": "2"},
+		})
+		prod.Set(map[string]string{})
+		assert.Equal(t, cons1.records, []map[string]string{
+			{"1": "1"},
+			{"2": "2"},
+			{},
+		})
 
-	time.Sleep(time.Millisecond * 100)
-	assert.Equal(t, int32(0), atomic.LoadInt32(&cons1.changes))
-	assert.Equal(t, int32(0), atomic.LoadInt32(&cons2.changes))
-
-	a.Set(map[string]string{
-		"first":  "1",
-		"second": "3",
 	})
+	t.Run("non-strict", func(t *testing.T) {
+		cons1 := &testDummyConsumer{}
 
-	time.Sleep(time.Millisecond * 100)
-	assert.Equal(t, int32(1), atomic.LoadInt32(&cons1.changes))
-	assert.Equal(t, int32(1), atomic.LoadInt32(&cons2.changes))
-
-	a.Set(map[string]string{
-		"first": "2",
+		prod := bus.NewFlatMap(false, "meta", cons1)
+		prod.Set(map[string]string{
+			"1": "1",
+		})
+		assert.Equal(t, cons1.records, []map[string]string{
+			{"1": "1"},
+		})
+		prod.Set(map[string]string{
+			"2": "2",
+		})
+		assert.Equal(t, cons1.records, []map[string]string{
+			{"1": "1"},
+			{"1": "1", "2": "2"},
+		})
 	})
-	time.Sleep(time.Millisecond * 300)
-	assert.Equal(t, int32(2), atomic.LoadInt32(&cons1.changes))
-	assert.Equal(t, int32(2), atomic.LoadInt32(&cons2.changes))
-
-	a.Close()
-	a.Wait()
 }

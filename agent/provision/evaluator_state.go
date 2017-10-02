@@ -1,4 +1,4 @@
-package scheduler
+package provision
 
 import (
 	"github.com/akaspin/soil/agent/allocation"
@@ -51,32 +51,6 @@ func (s *EvaluatorState) Commit(name string) (next []*Evaluation) {
 	}
 	delete(s.inProgress, name)
 	next = s.next()
-	return
-}
-
-func (s *EvaluatorState) List() (res map[string]*allocation.Header) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	res = map[string]*allocation.Header{}
-
-	for _, what := range []map[string]*allocation.Pod{
-		s.pending, s.inProgress, s.finished,
-	} {
-		for k, v := range what {
-			if _, ok := res[k]; !ok {
-				if v == nil {
-					res[k] = nil
-					continue
-				}
-				res[k] = v.Header
-			}
-		}
-	}
-	for k, v := range res {
-		if v == nil {
-			delete(res, k)
-		}
-	}
 	return
 }
 

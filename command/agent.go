@@ -10,6 +10,8 @@ import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/bus/backend"
 	"github.com/akaspin/soil/agent/bus/public"
+	"github.com/akaspin/soil/agent/metrics"
+	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -19,7 +21,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"github.com/akaspin/soil/agent/registry"
 )
 
 type AgentOptions struct {
@@ -73,21 +74,30 @@ func (c *Agent) Run(args ...string) (err error) {
 	// public announcers
 	publicNodeAnnouncer := public.NewNodeAnnouncer(c.log, backend.NewEphemeralOperator(publicBackend, "nodes"), c.Id)
 
-	manager := bus.NewManager(ctx, c.log,
-		bus.NewManagerSource("agent", false, manifest.Constraint{
+	provisionManager := scheduler.NewManager(ctx, c.log, "provision",
+		scheduler.NewManagerSource("agent", false, manifest.Constraint{
 			"${agent.drain}": "!= true",
 		}, "private", "public"),
-		bus.NewManagerSource("system", false, nil, "private", "public"),
-		bus.NewManagerSource("meta", false, nil, "private", "public"),
+		scheduler.NewManagerSource("system", false, nil, "private", "public"),
+		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 	)
 
 	apiStatusNodeGet := api.NewStatusNodeGet(c.log)
 	apiStatusNodesGet := api.NewStatusNodesGet(c.log)
 	apiRegistryGet := api.NewRegistryPodsGet(c.log)
 
-	agentProducer := bus.NewFlatMap(ctx, c.log, false, "agent",
-		manager,
+	agentProducer := bus.NewFlatMap(false, "agent",
+		provisionManager,
 		publicNodeAnnouncer,
+		apiStatusNodeGet.Processor().(bus.MessageConsumer),
+	)
+	// private metadata
+	metaProducer := bus.NewFlatMap(true, "meta",
+		provisionManager,
+		apiStatusNodeGet.Processor().(bus.MessageConsumer),
+	)
+	systemProducer := bus.NewFlatMap(true, "system",
+		provisionManager,
 		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)
 
@@ -109,37 +119,27 @@ func (c *Agent) Run(args ...string) (err error) {
 		api.NewRegistryPodsDelete(publicRegistryPodsOperator),
 	)
 
-	// private metadata
-	metaProducer := bus.NewFlatMap(ctx, c.log, true, "meta",
-		manager,
-		apiStatusNodeGet.Processor().(bus.MessageConsumer),
-	)
-	systemProducer := bus.NewFlatMap(ctx, c.log, true, "system",
-		manager,
-		apiStatusNodeGet.Processor().(bus.MessageConsumer),
-	)
-
-	evaluator := scheduler.NewEvaluator(ctx, c.log)
-	registrySink := scheduler.NewSink(ctx, c.log, evaluator,
-		registry.NewManagedEvaluator(manager, evaluator))
+	provisionEvaluator := provision.NewEvaluator(ctx, c.log, &metrics.BlackHole{})
+	sink := scheduler.NewSink(ctx, c.log,
+		provisionEvaluator,
+		scheduler.NewManagedEvaluator(provisionManager, provisionEvaluator))
 
 	// public watchers
-	publicNodesWatcher := bus.NewPipe(ctx, c.log, "nodes", publicBackend, nil,
+	publicNodesWatcher := bus.NewBoundedPipe(ctx, c.log, "nodes", publicBackend, nil,
 		apiStatusNodesGet.Processor().(bus.MessageConsumer),
 		public.NewDiscoveryPipe(c.log, apiRouter),
 	)
-	publicRegistryWatcher := bus.NewPipe(ctx, c.log, "registry/pods", publicBackend, nil,
+	publicRegistryWatcher := bus.NewBoundedPipe(ctx, c.log, "registry/pods", publicBackend, nil,
 		public.NewRegistryWatcher(c.log,
-			registrySink,
-			apiRegistryGet.Processor().(bus.RegistryConsumer),
+			sink,
+			apiRegistryGet.Processor().(scheduler.RegistryConsumer),
 		))
 
 	// SV
 	agentSV := supervisor.NewChain(ctx,
 		publicBackend,
-		supervisor.NewGroup(ctx, evaluator, manager),
-		supervisor.NewGroup(ctx, agentProducer, metaProducer, systemProducer),
-		registrySink,
+		supervisor.NewGroup(ctx, provisionEvaluator, provisionManager),
+		sink,
 		publicNodesWatcher,
 		publicRegistryWatcher,
 		api_server.NewServer(ctx, c.log, c.Address, apiRouter),
@@ -159,8 +159,8 @@ func (c *Agent) Run(args ...string) (err error) {
 	})
 
 	c.reload(systemProducer, metaProducer,
-		registrySink,
-		apiRegistryGet.Processor().(bus.RegistryConsumer),
+		sink,
+		apiRegistryGet.Processor().(scheduler.RegistryConsumer),
 	)
 
 LOOP:
@@ -174,8 +174,8 @@ LOOP:
 				break LOOP
 			case syscall.SIGHUP:
 				c.log.Infof("reload received")
-				c.reload(systemProducer, metaProducer, registrySink,
-					apiRegistryGet.Processor().(bus.RegistryConsumer))
+				c.reload(systemProducer, metaProducer, sink,
+					apiRegistryGet.Processor().(scheduler.RegistryConsumer))
 			}
 		case <-ctx.Done():
 			break LOOP
@@ -187,7 +187,7 @@ LOOP:
 	return
 }
 
-func (c *Agent) reload(systemSetter, metaSetter bus.Setter, registryConsumers ...bus.RegistryConsumer) (err error) {
+func (c *Agent) reload(systemSetter, metaSetter bus.Setter, registryConsumers ...scheduler.RegistryConsumer) {
 	// read config
 	config := agent.DefaultConfig()
 	for _, meta := range c.Meta {
@@ -211,8 +211,8 @@ func (c *Agent) reload(systemSetter, metaSetter bus.Setter, registryConsumers ..
 	if err := private.UnmarshalFiles("private", c.ConfigPath...); err != nil {
 		c.log.Warningf("error reading private registry %s", err)
 	}
-	for _, registryConsumers := range registryConsumers {
-		registryConsumers.ConsumeRegistry("private", private)
+	for _, registryConsumer := range registryConsumers {
+		registryConsumer.ConsumeRegistry("private", private)
 	}
 	return
 }

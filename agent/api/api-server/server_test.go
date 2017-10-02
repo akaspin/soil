@@ -64,9 +64,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestRouter_ConsumeMessage(t *testing.T) {
-	//t.SkipNow()
 	log := logx.GetLog("test")
-	ctx := context.Background()
 
 	router1 := api_server.NewRouter(log,
 		api_server.GET("/v1/route", &jsonEndpoint{"node-1"}),
@@ -80,7 +78,7 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 	ts2 := httptest.NewServer(router2)
 	defer ts1.Close()
 
-	nodesProducer := bus.NewFlatMap(ctx, log, true, "nodes", router1, router2)
+	nodesProducer := bus.NewFlatMap(true, "nodes", router1, router2)
 	nodesProducer.Set(map[string]string{
 		"node-1": ts1.Listener.Addr().String(),
 		"node-2": ts2.Listener.Addr().String(),

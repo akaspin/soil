@@ -32,22 +32,18 @@ func (c *testConsumer) ConsumeMessage(message bus.Message) {
 	}()
 }
 
-func TestSimplePipe_Sync(t *testing.T) {
-	ctx := context.Background()
-	log := logx.GetLog("test")
-
+func TestSimplePipe_ConsumeMessage(t *testing.T) {
 	cons1 := newTestConsumer()
 	cons2 := newTestConsumer()
 
 	pipe := bus.NewSimplePipe(func(message bus.Message) (res bus.Message) {
 		payload := message.GetPayload()
 		delete(payload, "a")
-		res = bus.NewMessage(message.GetPrefix(), payload)
+		res = bus.NewMessage(message.GetProducer(), payload)
 		return
 	}, cons1, cons2)
 
-	producer := bus.NewFlatMap(ctx, log, true, "test", pipe)
-	assert.NoError(t, producer.Open())
+	producer := bus.NewFlatMap(true, "test", pipe)
 
 	time.Sleep(time.Millisecond * 100)
 
@@ -63,7 +59,4 @@ func TestSimplePipe_Sync(t *testing.T) {
 	assert.Equal(t, cons2.messages, []bus.Message{
 		bus.NewMessage("test", map[string]string{"b": "2"}),
 	})
-
-	producer.Close()
-	producer.Wait()
 }

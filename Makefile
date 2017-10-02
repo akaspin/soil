@@ -15,6 +15,7 @@ PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./... | grep -v /vendo
 
 V=$(shell git describe --always --tags --dirty)
 GOOPTS=-installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
+GO_IMAGE=golang:1.9.1
 
 GOBIN ?= $(GOPATH)/bin
 
@@ -30,7 +31,7 @@ sources: $(SRC) $(SRC_TEST) ## go vet and fmt
 ### Test
 ###
 
-test: test-unit test-cluster test-systemd
+test: test-unit test-cluster test-systemd ## Run all tests
 
 ###
 ### Test Unit
@@ -58,7 +59,7 @@ test-systemd: testdata/systemd/.vagrant-ok
 		-v /etc/systemd/system:/etc/systemd/system \
 		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 		-v /vagrant:/go/src/github.com/akaspin/soil \
-		golang:1.9 go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
+		$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel

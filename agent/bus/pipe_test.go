@@ -10,8 +10,8 @@ import (
 )
 
 func TestSimplePipe_ConsumeMessage(t *testing.T) {
-	cons1 := &testDummyConsumer{}
-	cons2 := &testDummyConsumer{}
+	cons1 := &testConsumer{}
+	cons2 := &testConsumer{}
 
 	pipe := bus.NewSimplePipe(func(message bus.Message) (res bus.Message) {
 		payload := message.GetPayload()
@@ -31,9 +31,9 @@ func TestSimplePipe_ConsumeMessage(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	assert.Equal(t, cons1.records, []map[string]string{
-		{"b":"2"},
+		{"b": "2"},
 	})
 	assert.Equal(t, cons2.records, []map[string]string{
-		{"b":"2"},
+		{"b": "2"},
 	})
 }

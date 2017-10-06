@@ -1,12 +1,12 @@
 pod "first" {
   constraint {
-    "${meta.first}" = "true"
+    "${meta.1}" = "1"
   }
 }
 
 pod "second" {
   constraint {
-    "${meta.second}" = "true"
+    "${meta.1}" = "1"
   }
   resource "port" "8080" {
 

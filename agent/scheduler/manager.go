@@ -62,7 +62,7 @@ func (m *Manager) RegisterResource(name, namespace string, constraint manifest.C
 		mark:       ^uint64(0),
 	}
 	m.managed[name] = entity
-	m.log.Infof(`"%s" (namespace: %s, constraint: %v) is registered`, name, namespace, constraint)
+	m.log.Infof(`registered: "%s" (namespace: %s, constraint: %v)`, name, namespace, constraint)
 	m.notifyResource(name, entity)
 	m.mu.Unlock()
 }
@@ -73,7 +73,7 @@ func (m *Manager) UnregisterResource(name string, notifyFn func()) {
 	delete(m.managed, name)
 	m.mu.Unlock()
 	notifyFn()
-	m.log.Infof(`"%s" is unregistered`, name)
+	m.log.Infof(`unregistered: "%s"`, name)
 }
 
 // ConsumeMessage takes data from one of sources and evaluates all cached data

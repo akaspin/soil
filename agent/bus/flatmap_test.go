@@ -9,12 +9,12 @@ import (
 	"testing"
 )
 
-type testDummyConsumer struct {
+type testConsumer struct {
 	mu      sync.Mutex
 	records []map[string]string
 }
 
-func (c *testDummyConsumer) ConsumeMessage(message bus.Message) {
+func (c *testConsumer) ConsumeMessage(message bus.Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.records = append(c.records, message.GetPayload())
@@ -22,7 +22,7 @@ func (c *testDummyConsumer) ConsumeMessage(message bus.Message) {
 
 func TestFlatMap_Set(t *testing.T) {
 	t.Run("strict", func(t *testing.T) {
-		cons1 := &testDummyConsumer{}
+		cons1 := &testConsumer{}
 
 		prod := bus.NewFlatMap(true, "meta", cons1)
 		prod.Set(map[string]string{
@@ -47,7 +47,7 @@ func TestFlatMap_Set(t *testing.T) {
 
 	})
 	t.Run("non-strict", func(t *testing.T) {
-		cons1 := &testDummyConsumer{}
+		cons1 := &testConsumer{}
 
 		prod := bus.NewFlatMap(false, "meta", cons1)
 		prod.Set(map[string]string{

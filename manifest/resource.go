@@ -22,7 +22,7 @@ func defaultResource() (r *Resource) {
 }
 
 func (r *Resource) Id(podName string) (res string) {
-	res = fmt.Sprintf("resource.%s.%s.%s", r.Type, podName, r.Name)
+	res = fmt.Sprintf("%s.%s.%s", r.Type, podName, r.Name)
 	return
 }
 
@@ -38,7 +38,7 @@ func (r *Resource) GetRequestConstraint() (res Constraint) {
 func (r *Resource) GetAllocatedConstraint(podName string) (res Constraint) {
 	res = Constraint{}
 	if r.Required {
-		res[fmt.Sprintf("${%s.allocated}", r.Id(podName))] = "true"
+		res[fmt.Sprintf("${resource.%s.allocated}", r.Id(podName))] = "true"
 	}
 	return
 }

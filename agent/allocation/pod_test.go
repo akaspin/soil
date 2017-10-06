@@ -103,11 +103,19 @@ func TestNewFromManifest(t *testing.T) {
 		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemDPaths(), env3)
 		assert.NoError(t, err)
 		assert.Equal(t, res, &allocation.Pod{
-			Header: &allocation.Header{Name: "pod-1", PodMark: 0x9a28bd64306688d3, AgentMark: 0x820f28b4d5dcbfd9, Namespace: "private"},
+			Header: &allocation.Header{
+				Name:      "pod-1",
+				PodMark:   0x9a28bd64306688d3,
+				AgentMark: 0x820f28b4d5dcbfd9,
+				Namespace: "private",
+			},
 			UnitFile: &allocation.UnitFile{
-				SystemPaths: allocation.SystemDPaths{Local: "/etc/systemd/system", Runtime: "/run/systemd/system"},
-				Path:        "/run/systemd/system/pod-private-pod-1.service",
-				Source:      "### POD pod-1 {\"AgentMark\":9371754106728529881,\"Namespace\":\"private\",\"PodMark\":11108336718915733715}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				SystemPaths: allocation.SystemDPaths{
+					Local:   "/etc/systemd/system",
+					Runtime: "/run/systemd/system",
+				},
+				Path:   "/run/systemd/system/pod-private-pod-1.service",
+				Source: "### POD pod-1 {\"AgentMark\":9371754106728529881,\"Namespace\":\"private\",\"PodMark\":11108336718915733715}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 			},
 			Units: nil,
 			Blobs: nil,

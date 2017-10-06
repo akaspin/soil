@@ -23,26 +23,26 @@ func TestNewFromManifest(t *testing.T) {
 
 		m := pods[0]
 		var res *allocation.Pod
-		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemDPaths(), env)
+		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env)
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: &allocation.Header{Name: "pod-1", PodMark: 0xd328921b2e6ae0f9, AgentMark: 0x623669d2cde83725, Namespace: "private"},
 			UnitFile: &allocation.UnitFile{
-				SystemPaths: allocation.DefaultSystemDPaths(),
+				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-1.service",
 				Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":15215571986511749369}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
 			Units: []*allocation.Unit{
 				{
 					UnitFile: &allocation.UnitFile{
-						SystemPaths: allocation.DefaultSystemDPaths(),
+						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/unit-1.service",
 						Source:      "# true"},
 					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 				{
 					UnitFile: &allocation.UnitFile{
-						SystemPaths: allocation.DefaultSystemDPaths(),
+						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/unit-2.service",
 						Source:      "# true 10090666253179731817"},
 					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
@@ -59,25 +59,25 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, err)
 		m := pods[0]
 		var res *allocation.Pod
-		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemDPaths(), env)
+		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env)
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: &allocation.Header{Name: "pod-2", PodMark: 0x628d5becdd4e102b, AgentMark: 0x623669d2cde83725, Namespace: "private"},
 			UnitFile: &allocation.UnitFile{
-				SystemPaths: allocation.DefaultSystemDPaths(),
+				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-2.service", Source: "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":7101433260316430379}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=pod-2-unit-1.service private-unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
 			Units: []*allocation.Unit{
 				{
 					UnitFile: &allocation.UnitFile{
-						SystemPaths: allocation.DefaultSystemDPaths(),
+						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/pod-2-unit-1.service",
 						Source:      "# true multi-user.target"},
 					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 				{
 					UnitFile: &allocation.UnitFile{
-						SystemPaths: allocation.DefaultSystemDPaths(),
+						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/private-unit-2.service",
 						Source:      "# true 10090666253179731817"},
 					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
@@ -100,7 +100,7 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, err)
 		m := pods[0]
 		var res *allocation.Pod
-		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemDPaths(), env3)
+		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env3)
 		assert.NoError(t, err)
 		assert.Equal(t, res, &allocation.Pod{
 			Header: &allocation.Header{
@@ -110,7 +110,7 @@ func TestNewFromManifest(t *testing.T) {
 				Namespace: "private",
 			},
 			UnitFile: &allocation.UnitFile{
-				SystemPaths: allocation.SystemDPaths{
+				SystemPaths: allocation.SystemPaths{
 					Local:   "/etc/systemd/system",
 					Runtime: "/run/systemd/system",
 				},
@@ -149,7 +149,7 @@ func TestNewFromManifest(t *testing.T) {
 
 func TestNewFromFS(t *testing.T) {
 
-	paths := allocation.SystemDPaths{
+	paths := allocation.SystemPaths{
 		Local:   "testdata/etc",
 		Runtime: "testdata",
 	}

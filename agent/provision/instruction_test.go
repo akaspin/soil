@@ -24,7 +24,7 @@ func TestWantsInstruction_Execute(t *testing.T) {
 	defer conn.Close()
 
 	unitFile := &allocation.UnitFile{
-		SystemPaths: allocation.DefaultSystemDPaths(),
+		SystemPaths: allocation.DefaultSystemPaths(),
 		Path:        "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
@@ -52,7 +52,7 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 	defer conn.Close()
 
 	unitFile := &allocation.UnitFile{
-		SystemPaths: allocation.DefaultSystemDPaths(),
+		SystemPaths: allocation.DefaultSystemPaths(),
 		Path:        "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
@@ -105,7 +105,7 @@ func TestFSInstruction_Execute(t *testing.T) {
 	defer conn.Close()
 
 	unitFile := &allocation.UnitFile{
-		SystemPaths: allocation.DefaultSystemDPaths(),
+		SystemPaths: allocation.DefaultSystemPaths(),
 		Path:        "/run/systemd/system/test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())

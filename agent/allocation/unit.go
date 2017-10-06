@@ -23,12 +23,12 @@ func (u *Unit) MarshalHeader(w io.Writer, encoder *json.Encoder) (err error) {
 }
 
 type UnitFile struct {
-	SystemPaths SystemDPaths
+	SystemPaths SystemPaths
 	Path        string
 	Source      string
 }
 
-func NewUnitFile(unitName string, paths SystemDPaths, runtime bool) (f *UnitFile) {
+func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f *UnitFile) {
 	basePath := paths.Local
 	if runtime {
 		basePath = paths.Runtime

@@ -14,15 +14,17 @@ import (
 type Evaluator struct {
 	*supervisor.Control
 	log      *logx.Log
+	systemPaths allocation.SystemPaths
 	reporter metrics.Reporter
 
 	state *EvaluatorState
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, reporter metrics.Reporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, reporter metrics.Reporter) (e *Evaluator) {
 	e = &Evaluator{
 		Control:  supervisor.NewControl(ctx),
 		log:      log.GetLog("provision", "evaluator"),
+		systemPaths: systemPaths,
 		reporter: reporter,
 	}
 	return
@@ -44,7 +46,7 @@ func (e *Evaluator) Open() (err error) {
 		paths = append(paths, f.Path)
 	}
 	var recovered allocation.State
-	if recoveryErr := (&recovered).FromFS(allocation.DefaultSystemDPaths(), paths...); recoveryErr != nil {
+	if recoveryErr := (&recovered).FromFS(e.systemPaths, paths...); recoveryErr != nil {
 		e.log.Warningf("allocations are restored with failures %v", recoveryErr)
 	}
 	e.state = NewEvaluatorState(recovered)
@@ -74,7 +76,7 @@ func (e *Evaluator) GetState() allocation.State {
 func (e *Evaluator) Allocate(name string, pod *manifest.Pod, env map[string]string) {
 	var alloc *allocation.Pod
 	var err error
-	if alloc, err = allocation.NewFromManifest(pod, allocation.DefaultSystemDPaths(), env); err != nil {
+	if alloc, err = allocation.NewFromManifest(pod, e.systemPaths, env); err != nil {
 		e.log.Error(err)
 		return
 	}

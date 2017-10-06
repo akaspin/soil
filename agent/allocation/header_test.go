@@ -24,7 +24,7 @@ func TestHeader(t *testing.T) {
 				Permanent: true,
 			},
 			UnitFile: &allocation.UnitFile{
-				SystemPaths: allocation.DefaultSystemDPaths(),
+				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/etc/systemd/system/unit-1.service",
 			},
 		},
@@ -33,7 +33,7 @@ func TestHeader(t *testing.T) {
 				Permanent: false,
 			},
 			UnitFile: &allocation.UnitFile{
-				SystemPaths: allocation.DefaultSystemDPaths(),
+				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/etc/systemd/system/unit-2.service",
 			},
 		},
@@ -82,7 +82,7 @@ func TestHeader(t *testing.T) {
 	})
 	t.Run("unmarshal", func(t *testing.T) {
 		header := &allocation.Header{}
-		units, blobs, resources, err := header.Unmarshal(src, allocation.DefaultSystemDPaths())
+		units, blobs, resources, err := header.Unmarshal(src, allocation.DefaultSystemPaths())
 		assert.NoError(t, err)
 		assert.Equal(t, units, expectUnits)
 		assert.Equal(t, blobs, expectBlobs)

@@ -9,7 +9,7 @@ import (
 )
 
 func TestState_FromFS(t *testing.T) {
-	paths := allocation.SystemDPaths{
+	paths := allocation.SystemPaths{
 		Local:   "testdata/etc",
 		Runtime: "testdata",
 	}

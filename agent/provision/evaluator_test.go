@@ -26,7 +26,7 @@ func TestEvaluator_GetState(t *testing.T) {
 
 	ctx := context.Background()
 	reporter := metrics.NewDummy("test")
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), reporter)
+	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), reporter)
 
 	assert.NoError(t, evaluator.Open())
 	time.Sleep(time.Second)
@@ -59,7 +59,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 
 	ctx := context.Background()
 	reporter := metrics.NewDummy("test")
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), reporter)
+	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), reporter)
 	assert.NoError(t, evaluator.Open())
 
 	time.Sleep(time.Millisecond * 500)
@@ -166,7 +166,7 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 		metaSource := bus.NewFlatMap(true, "meta", manager)
 		systemSource := bus.NewFlatMap(true, "system", manager)
 
-		evaluator := provision.NewEvaluator(ctx, log, reporter)
+		evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(),reporter)
 		sink := scheduler.NewSink(ctx, log, evaluator, scheduler.NewManagedEvaluator(manager, evaluator))
 		sv := supervisor.NewChain(ctx,
 			supervisor.NewChain(ctx,
@@ -250,7 +250,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	metaSource := bus.NewFlatMap(true, "meta", manager)
 	systemSource := bus.NewFlatMap(true, "system", manager)
 
-	evaluator := provision.NewEvaluator(ctx, log, reporter)
+	evaluator := provision.NewEvaluator(ctx, log,allocation.DefaultSystemPaths(), reporter)
 	sink := scheduler.NewSink(ctx, log, evaluator, scheduler.NewManagedEvaluator(manager, evaluator))
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,

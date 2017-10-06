@@ -21,6 +21,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"github.com/akaspin/soil/agent/allocation"
 )
 
 type AgentOptions struct {
@@ -62,6 +63,7 @@ func (c *Agent) Bind(cc *cobra.Command) {
 func (c *Agent) Run(args ...string) (err error) {
 	ctx := context.Background()
 	c.log = logx.GetLog("root")
+	systemPaths := allocation.DefaultSystemPaths()
 
 	// bind signals
 	signalChan := make(chan os.Signal, 1)
@@ -119,7 +121,7 @@ func (c *Agent) Run(args ...string) (err error) {
 		api.NewRegistryPodsDelete(publicRegistryPodsOperator),
 	)
 
-	provisionEvaluator := provision.NewEvaluator(ctx, c.log, &metrics.BlackHole{})
+	provisionEvaluator := provision.NewEvaluator(ctx, c.log, systemPaths, &metrics.BlackHole{})
 	sink := scheduler.NewSink(ctx, c.log,
 		provisionEvaluator,
 		scheduler.NewManagedEvaluator(provisionManager, provisionEvaluator))

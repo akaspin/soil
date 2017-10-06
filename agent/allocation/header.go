@@ -21,7 +21,7 @@ func (h *Header) Mark() (res uint64) {
 	return
 }
 
-func (h *Header) Unmarshal(src string, paths SystemDPaths) (units []*Unit, blobs []*Blob, resources []*Resource, err error) {
+func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs []*Blob, resources []*Resource, err error) {
 	split := strings.Split(src, "\n")
 	// extract header
 	var jsonSrc string

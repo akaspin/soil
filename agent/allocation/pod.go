@@ -21,18 +21,6 @@ WantedBy=${pod.target}
 	dirSystemDRuntime = "/run/systemd/system"
 )
 
-type SystemDPaths struct {
-	Local   string
-	Runtime string
-}
-
-func DefaultSystemDPaths() SystemDPaths {
-	return SystemDPaths{
-		Local:   dirSystemDLocal,
-		Runtime: dirSystemDRuntime,
-	}
-}
-
 // Pod represents pod allocated on agent
 type Pod struct {
 	*Header
@@ -42,7 +30,7 @@ type Pod struct {
 	Resources []*Resource
 }
 
-func NewPod(systemPaths SystemDPaths) (p *Pod) {
+func NewPod(systemPaths SystemPaths) (p *Pod) {
 	p = &Pod{
 		UnitFile: &UnitFile{
 			SystemPaths: systemPaths,
@@ -52,7 +40,7 @@ func NewPod(systemPaths SystemDPaths) (p *Pod) {
 	return
 }
 
-func NewFromManifest(m *manifest.Pod, paths SystemDPaths, env map[string]string) (p *Pod, err error) {
+func NewFromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) (p *Pod, err error) {
 	agentMark, _ := hashstructure.Hash(env, nil)
 	p = &Pod{
 		Header: &Header{

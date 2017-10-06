@@ -5,34 +5,13 @@ package bus_test
 import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
-	"sync"
 	"testing"
 	"time"
 )
 
-type testConsumer struct {
-	mu       *sync.Mutex
-	messages []bus.Message
-}
-
-func newTestConsumer() (c *testConsumer) {
-	c = &testConsumer{
-		mu: &sync.Mutex{},
-	}
-	return
-}
-
-func (c *testConsumer) ConsumeMessage(message bus.Message) {
-	go func() {
-		c.mu.Lock()
-		defer c.mu.Unlock()
-		c.messages = append(c.messages, message)
-	}()
-}
-
 func TestSimplePipe_ConsumeMessage(t *testing.T) {
-	cons1 := newTestConsumer()
-	cons2 := newTestConsumer()
+	cons1 := &testDummyConsumer{}
+	cons2 := &testDummyConsumer{}
 
 	pipe := bus.NewSimplePipe(func(message bus.Message) (res bus.Message) {
 		payload := message.GetPayload()
@@ -51,10 +30,10 @@ func TestSimplePipe_ConsumeMessage(t *testing.T) {
 	})
 	time.Sleep(time.Millisecond * 100)
 
-	assert.Equal(t, cons1.messages, []bus.Message{
-		bus.NewMessage("test", map[string]string{"b": "2"}),
+	assert.Equal(t, cons1.records, []map[string]string{
+		{"b":"2"},
 	})
-	assert.Equal(t, cons2.messages, []bus.Message{
-		bus.NewMessage("test", map[string]string{"b": "2"}),
+	assert.Equal(t, cons2.records, []map[string]string{
+		{"b":"2"},
 	})
 }

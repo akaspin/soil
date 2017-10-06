@@ -26,14 +26,18 @@ func TestEvaluator_GetState(t *testing.T) {
 
 	ctx := context.Background()
 	reporter := metrics.NewDummy("test")
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), reporter)
 
+	systemPaths := allocation.DefaultSystemPaths()
+	var state allocation.State
+	assert.NoError(t, state.Discover(systemPaths, allocation.DefaultDbusDiscoveryFunc))
+
+	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), systemPaths, state, reporter)
 	assert.NoError(t, evaluator.Open())
 	time.Sleep(time.Second)
 
 	assert.Len(t, reporter.Data, 0)
 
-	state := evaluator.GetState()
+	state = evaluator.GetState()
 	assert.Len(t, state, 2)
 	assert.Equal(t, state.Find("test-1"), &allocation.Header{
 		Name:      "test-1",
@@ -59,7 +63,11 @@ func TestEvaluator_Allocate(t *testing.T) {
 
 	ctx := context.Background()
 	reporter := metrics.NewDummy("test")
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), reporter)
+
+	var state allocation.State
+	assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
+
+	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), state, reporter)
 	assert.NoError(t, evaluator.Open())
 
 	time.Sleep(time.Millisecond * 500)
@@ -166,8 +174,11 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 		metaSource := bus.NewFlatMap(true, "meta", manager)
 		systemSource := bus.NewFlatMap(true, "system", manager)
 
-		evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(),reporter)
-		sink := scheduler.NewSink(ctx, log, evaluator, scheduler.NewManagedEvaluator(manager, evaluator))
+		var state allocation.State
+		assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
+		evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, reporter)
+		sink := scheduler.NewSink(ctx, log, state,
+			scheduler.NewManagedEvaluator(manager, evaluator))
 		sv := supervisor.NewChain(ctx,
 			supervisor.NewChain(ctx,
 				supervisor.NewGroup(ctx, evaluator, manager),
@@ -250,8 +261,12 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	metaSource := bus.NewFlatMap(true, "meta", manager)
 	systemSource := bus.NewFlatMap(true, "system", manager)
 
-	evaluator := provision.NewEvaluator(ctx, log,allocation.DefaultSystemPaths(), reporter)
-	sink := scheduler.NewSink(ctx, log, evaluator, scheduler.NewManagedEvaluator(manager, evaluator))
+	var state allocation.State
+	assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
+
+	evaluator := provision.NewEvaluator(ctx, log,allocation.DefaultSystemPaths(), state, reporter)
+	sink := scheduler.NewSink(ctx, log, state,
+		scheduler.NewManagedEvaluator(manager, evaluator))
 	sv := supervisor.NewChain(ctx,
 		supervisor.NewChain(ctx,
 			supervisor.NewGroup(ctx, evaluator, manager),

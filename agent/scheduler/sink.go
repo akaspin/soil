@@ -18,30 +18,22 @@ type Sink struct {
 	*supervisor.Control
 	log *logx.Log
 
-	stateHolder       allocation.StateHolder
 	managedEvaluators []ManagedEvaluator
 
 	state *SinkState
 }
 
-func NewSink(ctx context.Context, log *logx.Log, stateHolder allocation.StateHolder, managedEvaluators ...ManagedEvaluator) (r *Sink) {
-	r = &Sink{
+func NewSink(ctx context.Context, log *logx.Log, state allocation.State, managedEvaluators ...ManagedEvaluator) (s *Sink) {
+	s = &Sink{
 		Control:           supervisor.NewControl(ctx),
 		log:               log.GetLog("scheduler", "sink"),
-		stateHolder:       stateHolder,
 		managedEvaluators: managedEvaluators,
 	}
-	return
-}
-
-func (s *Sink) Open() (err error) {
 	dirty := map[string]string{}
-	for _, recovered := range s.stateHolder.GetState() {
+	for _, recovered := range state {
 		dirty[recovered.Name] = recovered.Namespace
 	}
 	s.state = NewSinkState([]string{"private", "public"}, dirty)
-	err = s.Control.Open()
-	s.log.Debugf("open")
 	return
 }
 

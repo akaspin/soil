@@ -63,7 +63,12 @@ func (c *Agent) Bind(cc *cobra.Command) {
 func (c *Agent) Run(args ...string) (err error) {
 	ctx := context.Background()
 	c.log = logx.GetLog("root")
+
 	systemPaths := allocation.DefaultSystemPaths()
+	var state allocation.State
+	if recoveryErr := state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
+		c.log.Errorf("recovered with failure: %v", recoveryErr)
+	}
 
 	// bind signals
 	signalChan := make(chan os.Signal, 1)
@@ -121,9 +126,8 @@ func (c *Agent) Run(args ...string) (err error) {
 		api.NewRegistryPodsDelete(publicRegistryPodsOperator),
 	)
 
-	provisionEvaluator := provision.NewEvaluator(ctx, c.log, systemPaths, &metrics.BlackHole{})
-	sink := scheduler.NewSink(ctx, c.log,
-		provisionEvaluator,
+	provisionEvaluator := provision.NewEvaluator(ctx, c.log, systemPaths, state, &metrics.BlackHole{})
+	sink := scheduler.NewSink(ctx, c.log, state,
 		scheduler.NewManagedEvaluator(provisionManager, provisionEvaluator))
 
 	// public watchers

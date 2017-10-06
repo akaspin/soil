@@ -6,24 +6,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
-	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
 	"sort"
 	"sync"
 	"testing"
 	"time"
 )
-
-type testStateHolder struct{}
-
-func (*testStateHolder) GetState() allocation.State {
-	return nil
-}
 
 type testEvRecord struct {
 	name string
@@ -155,7 +147,7 @@ func TestSink_TwoManagedEvaluators(t *testing.T) {
 
 	manager1 := scheduler.NewManager(ctx, log, "1", sources...)
 	manager2 := scheduler.NewManager(ctx, log, "2", sources...)
-	sink := scheduler.NewSink(ctx, log, &testStateHolder{},
+	sink := scheduler.NewSink(ctx, log, nil,
 		scheduler.NewManagedEvaluator(manager1, evaluator1),
 		scheduler.NewManagedEvaluator(manager2, evaluator2),
 	)
@@ -231,7 +223,7 @@ func TestSink_Stacked(t *testing.T) {
 	resMan := scheduler.NewManager(ctx, log, "res", sources...)
 	resEv := newTestDownstreamEvaluator(provMan)
 
-	sink := scheduler.NewSink(ctx, log, &testStateHolder{},
+	sink := scheduler.NewSink(ctx, log, nil,
 		scheduler.NewManagedEvaluator(resMan, resEv),
 		scheduler.NewManagedEvaluator(provMan, provEv),
 	)
@@ -267,7 +259,6 @@ func TestSink_Stacked(t *testing.T) {
 
 		assert.Equal(t, resEv.names, []string{"second", "third"})
 		assert.Equal(t, provEv.names, []string{"first", "second", "third"})
-		pretty.Log(provEv.records)
 	})
 	t.Run("2 disable third", func(t *testing.T) {
 		metaProducer.Set(map[string]string{
@@ -277,7 +268,6 @@ func TestSink_Stacked(t *testing.T) {
 
 		assert.Equal(t, resEv.names, []string{"second"})
 		assert.Equal(t, provEv.names, []string{"first", "second"})
-		pretty.Log(provEv.records)
 	})
 
 	sv.Close()

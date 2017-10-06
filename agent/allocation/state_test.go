@@ -14,7 +14,7 @@ func TestState_FromFS(t *testing.T) {
 		Runtime: "testdata",
 	}
 	var state allocation.State
-	err := (&state).FromFS(paths, "testdata/pod-test-1.service")
+	err := state.Discover(paths, allocation.GetZeroDiscoveryFunc("testdata/pod-test-1.service"))
 	assert.NoError(t, err)
 	assert.Len(t, state, 1)
 }

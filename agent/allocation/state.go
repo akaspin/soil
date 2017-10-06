@@ -1,18 +1,15 @@
 package allocation
 
-import "fmt"
-
-type StateHolder interface {
-	GetState() State
-}
+import (
+	"fmt"
+)
 
 // Allocations state
 type State []*Pod
 
-// Recover state from files
-func (s *State) FromFS(systemPaths SystemPaths, paths ...string) (err error) {
+func (s *State) Discover(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
+	paths, err := discoveryFunc()
 	var failures []error
-
 	for _, path := range paths {
 		pod := NewPod(systemPaths)
 		if parseErr := pod.FromFS(path); parseErr != nil {
@@ -24,6 +21,7 @@ func (s *State) FromFS(systemPaths SystemPaths, paths ...string) (err error) {
 	if len(failures) > 0 {
 		err = fmt.Errorf("%v", failures)
 	}
+	return
 	return
 }
 

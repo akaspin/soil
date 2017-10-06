@@ -20,38 +20,19 @@ type Evaluator struct {
 	state *EvaluatorState
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, reporter metrics.Reporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, state allocation.State, reporter metrics.Reporter) (e *Evaluator) {
 	e = &Evaluator{
 		Control:  supervisor.NewControl(ctx),
 		log:      log.GetLog("provision", "evaluator"),
 		systemPaths: systemPaths,
 		reporter: reporter,
+		state:NewEvaluatorState(state),
 	}
 	return
 }
 
 func (e *Evaluator) Open() (err error) {
-	conn, err := dbus.New()
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-
-	var paths []string
-	files, err := conn.ListUnitFilesByPatterns([]string{}, []string{"pod-*.service"})
-	if err != nil {
-		return
-	}
-	for _, f := range files {
-		paths = append(paths, f.Path)
-	}
-	var recovered allocation.State
-	if recoveryErr := (&recovered).FromFS(e.systemPaths, paths...); recoveryErr != nil {
-		e.log.Warningf("allocations are restored with failures %v", recoveryErr)
-	}
-	e.state = NewEvaluatorState(recovered)
 	err = e.Control.Open()
-	//go e.loop()
 	e.log.Debug("opened")
 	return
 }

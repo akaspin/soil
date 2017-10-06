@@ -1,4 +1,4 @@
-/// +build ide test_unit
+// +build ide test_unit
 
 package scheduler_test
 

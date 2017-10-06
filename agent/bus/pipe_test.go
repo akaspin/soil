@@ -3,8 +3,6 @@
 package bus_test
 
 import (
-	"context"
-	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
 	"sync"

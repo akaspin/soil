@@ -79,3 +79,32 @@ func TestManifest_JSON(t *testing.T) {
 	data1, err := json.Marshal(pod)
 	assert.Equal(t, string(data), string(data1))
 }
+
+func TestPod_GetResource(t *testing.T) {
+	var registry manifest.Registry
+	err := registry.UnmarshalFiles("private", "testdata/test_pod_GetConstraint.hcl")
+	assert.NoError(t, err)
+
+	t.Run("0 request constraint", func(t *testing.T) {
+		assert.Equal(t, manifest.Constraint{
+			"${__resource.request.namespace.private}":"true",
+			"${__resource.request.type.port}":"true",
+			"${__resource.request.type.counter}":"true",
+			"${meta.consul}":"true",
+		}, registry[0].GetResourceRequestConstraint())
+		assert.Equal(t, manifest.Constraint{
+			"${meta.consul}":"true",
+			"${__resource.request.allow}":"false",
+		}, registry[1].GetResourceRequestConstraint())
+	})
+	t.Run("0 allocation constraint", func(t *testing.T) {
+		assert.Equal(t, manifest.Constraint{
+			"${resource.port.first.8080.allocated}":"true",
+			"${resource.counter.first.1.allocated}":"true",
+			"${meta.consul}":"true",
+		}, registry[0].GetResourceAllocationConstraint())
+		assert.Equal(t, manifest.Constraint{
+			"${meta.consul}":"true",
+		}, registry[1].GetResourceAllocationConstraint())
+	})
+}

@@ -4,6 +4,7 @@ import (
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/hashstructure"
+	"fmt"
 )
 
 const (
@@ -65,13 +66,37 @@ func (p *Pod) Mark() (res uint64) {
 	return
 }
 
+// GetResourceRequestConstraint returns constraint for Resource Evaluator
+func (p *Pod) GetResourceRequestConstraint() (res Constraint) {
+	res = p.Constraint
+	if len(p.Resources) == 0 {
+		res = res.Merge(Constraint{
+			"${__resource.request.allow}": "false",
+		})
+		return
+	}
+	requests := []Constraint{
+		{fmt.Sprintf("${%s.request.namespace.%s}", ClosedResourcePrefix, p.Namespace): "true"},
+	}
+	for _, resource := range p.Resources {
+		requests = append(requests, resource.GetRequestConstraint())
+	}
+	res = res.Merge(requests...)
+	return
+}
+
 // Returns Pod Constraint with additional Resource Allocation constraints
 func (p *Pod) GetResourceAllocationConstraint() (res Constraint) {
-	var resourceConstraint []Constraint
-	for _, resource := range p.Resources {
-		resourceConstraint = append(resourceConstraint, resource.GetAllocatedConstraint(p.Name))
+	res = p.Constraint
+	if len(p.Resources) > 0 {
+		resourceConstraint := []Constraint{
+			//{"__resource.allocate": "true"},
+		}
+		for _, resource := range p.Resources {
+			resourceConstraint = append(resourceConstraint, resource.GetAllocationConstraint(p.Name))
+		}
+		res = p.Constraint.Merge(resourceConstraint...)
 	}
-	res = p.Constraint.Merge(resourceConstraint...)
 	return
 }
 

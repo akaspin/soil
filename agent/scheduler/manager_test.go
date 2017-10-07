@@ -63,9 +63,9 @@ func TestManager_RegisterResource(t *testing.T) {
 			"${drain.state}": "!= true",
 		}, "private", "public"),
 	)
-	meta := bus.NewFlatMap(true, "meta", manager)
-	withDot := bus.NewFlatMap(true, "with.dot", manager)
-	drain := bus.NewFlatMap(true, "drain", manager)
+	meta := bus.NewStrictMapUpstream("meta", manager)
+	withDot := bus.NewStrictMapUpstream("with.dot", manager)
+	drain := bus.NewStrictMapUpstream("drain", manager)
 
 	sv := supervisor.NewChain(ctx, manager)
 	assert.NoError(t, sv.Open())
@@ -202,9 +202,9 @@ func TestManager_OverlapSources(t *testing.T) {
 		scheduler.NewManagerSource("meta.private", false, nil, manifest.PrivateNamespace),
 		scheduler.NewManagerSource("meta.public", false, nil, manifest.PublicNamespace),
 	)
-	metaMap := bus.NewFlatMap(true, "meta", manager)
-	privateMap := bus.NewFlatMap(true, "meta.private", manager)
-	publicMap := bus.NewFlatMap(true, "meta.public", manager)
+	metaMap := bus.NewStrictMapUpstream("meta", manager)
+	privateMap := bus.NewStrictMapUpstream("meta.private", manager)
+	publicMap := bus.NewStrictMapUpstream("meta.public", manager)
 
 	sv := supervisor.NewChain(ctx, manager)
 	assert.NoError(t, sv.Open())

@@ -33,7 +33,7 @@ func newResource(podName string, request *manifest.Resource, env map[string]stri
 		Values:  map[string]string{},
 	}
 	// try to read values from bag
-	if bag, ok := env["resource."+request.Id(podName)+"._resource_values"]; ok {
+	if bag, ok := env[request.GetValuesKey(podName)]; ok {
 		json.NewDecoder(strings.NewReader(bag)).Decode(&r.Values)
 	}
 	return

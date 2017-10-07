@@ -115,9 +115,10 @@ func (e *testDownstreamEvaluator) submit(name string, pod *manifest.Pod) {
 		for _, p := range e.pods {
 			e.names = append(e.names, p.Name)
 			for _, r := range p.Resources {
-				data[fmt.Sprintf("%s.allocated", r.Id(p.Name))] = "true"
+				data[fmt.Sprintf("%s.%s.allocated", r.Type, r.GetId(p.Name))] = "true"
 			}
 		}
+		sort.Strings(e.names)
 		e.consumer.ConsumeMessage(bus.NewMessage("resource", data))
 	}()
 }
@@ -151,8 +152,8 @@ func TestSink_TwoManagedEvaluators(t *testing.T) {
 		scheduler.NewManagedEvaluator(manager1, evaluator1),
 		scheduler.NewManagedEvaluator(manager2, evaluator2),
 	)
-	metaProducer := bus.NewFlatMap(true, "meta", manager1, manager2)
-	resourceProducer := bus.NewFlatMap(true, "resource", manager1, manager2)
+	metaProducer := bus.NewStrictMapUpstream("meta", manager1, manager2)
+	resourceProducer := bus.NewStrictMapUpstream("resource", manager1, manager2)
 
 	sv := supervisor.NewChain(ctx,
 		manager1, manager2, sink,
@@ -227,7 +228,7 @@ func TestSink_Stacked(t *testing.T) {
 		scheduler.NewManagedEvaluator(resMan, resEv),
 		scheduler.NewManagedEvaluator(provMan, provEv),
 	)
-	metaProducer := bus.NewFlatMap(true, "meta", resMan, provMan)
+	metaProducer := bus.NewStrictMapUpstream("meta", resMan, provMan)
 
 	sv := supervisor.NewChain(ctx,
 		resMan, provMan, sink,

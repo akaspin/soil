@@ -23,23 +23,23 @@ type Manager struct {
 	records map[string]*managedRecord
 	managed map[string]*managedEntity
 
-	dirtyNamespaces     map[string]struct{}
-	interpolatableCache map[string]string
-	containableCache    map[string]string
+	dirtyNamespaces map[string]struct{}
+	interpolatable  map[string]string
+	containable     map[string]string
 }
 
 func NewManager(ctx context.Context, log *logx.Log, name string, sources ...ManagerSource) (m *Manager) {
 	m = &Manager{
-		Control:             supervisor.NewControl(ctx),
-		log:                 log.GetLog("scheduler", "manager", name),
-		name:                name,
-		drain:               false,
-		sources:             map[string]ManagerSource{},
-		records:             map[string]*managedRecord{},
-		managed:             map[string]*managedEntity{},
-		dirtyNamespaces:     map[string]struct{}{},
-		interpolatableCache: map[string]string{},
-		containableCache:    map[string]string{},
+		Control:         supervisor.NewControl(ctx),
+		log:             log.GetLog("scheduler", "manager", name),
+		name:            name,
+		drain:           false,
+		sources:         map[string]ManagerSource{},
+		records:         map[string]*managedRecord{},
+		managed:         map[string]*managedEntity{},
+		dirtyNamespaces: map[string]struct{}{},
+		interpolatable:  map[string]string{},
+		containable:     map[string]string{},
 	}
 	for _, source := range sources {
 		m.sources[source.producer] = source
@@ -96,17 +96,17 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 	}
 
 	m.log.Tracef(`updating caches (dirty: %v)`, m.dirtyNamespaces)
-	m.interpolatableCache = map[string]string{}
-	m.containableCache = map[string]string{}
+	m.interpolatable = map[string]string{}
+	m.containable = map[string]string{}
 	m.dirtyNamespaces = map[string]struct{}{}
 	for sourcePrefix, source := range m.sources {
 		if source.required != nil || m.records[sourcePrefix].clean {
 			// add fields if active
 			for k, v := range m.records[sourcePrefix].message.GetPayload() {
 				key := sourcePrefix + "." + k
-				m.containableCache[key] = v
+				m.containable[key] = v
 				if !source.constraintOnly {
-					m.interpolatableCache[key] = v
+					m.interpolatable[key] = v
 				}
 			}
 			continue
@@ -115,7 +115,7 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 			m.dirtyNamespaces[ns] = struct{}{}
 		}
 	}
-	m.log.Tracef("caches updated (dirty: %v): %v", m.dirtyNamespaces, m.containableCache)
+	m.log.Tracef("caches updated (dirty: %v): %v", m.dirtyNamespaces, m.containable)
 	for n, managed := range m.managed {
 		m.notifyResource(n, managed)
 	}
@@ -123,12 +123,12 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 }
 
 func (m *Manager) notifyResource(name string, entity *managedEntity) {
-	m.log.Tracef(`evaluating "%s" with constraint %v against %v`, name, entity.constraint, m.containableCache)
+	m.log.Tracef(`evaluating "%s" with constraint %v against %v`, name, entity.constraint, m.containable)
 
 	var checkErr error
 	for _, source := range m.sources {
 		if source.required != nil {
-			if checkErr = source.required.Check(m.containableCache); checkErr != nil {
+			if checkErr = source.required.Check(m.containable); checkErr != nil {
 				entity.notifyFn(checkErr, bus.NewMessage(m.name, nil))
 				m.log.Warningf(`"%s" failed required check: %v`, name, checkErr)
 				return
@@ -137,12 +137,12 @@ func (m *Manager) notifyResource(name string, entity *managedEntity) {
 	}
 
 	if _, ok := m.dirtyNamespaces[entity.namespace]; !ok {
-		if checkErr = entity.constraint.Check(m.containableCache); checkErr != nil {
+		if checkErr = entity.constraint.Check(m.containable); checkErr != nil {
 			entity.notifyFn(checkErr, bus.NewMessage(m.name, nil))
 			m.log.Debugf(`"%s" failed check: %v`, name, checkErr)
 			return
 		}
-		entity.notifyFn(nil, bus.NewMessage(m.name, m.interpolatableCache))
+		entity.notifyFn(nil, bus.NewMessage(m.name, m.interpolatable))
 		m.log.Debugf(`"%s" passed all constraint checks`, name)
 	}
 }

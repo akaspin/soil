@@ -6,6 +6,13 @@ import (
 	"github.com/hashicorp/hcl/hcl/ast"
 )
 
+const (
+	OpenResourcePrefix   = "resource"
+	ClosedResourcePrefix = "__resource"
+	ResourceRequestPrefix = "__resource.request"
+	ResourceValuesPrefix = "__resource.values"
+)
+
 // Resources are referenced by ${resource.<Type>.<pod>.name}
 type Resource struct {
 	Name     string `hcl:"-"`
@@ -21,25 +28,29 @@ func defaultResource() (r *Resource) {
 	return
 }
 
-func (r *Resource) Id(podName string) (res string) {
-	res = fmt.Sprintf("%s.%s.%s", r.Type, podName, r.Name)
+func (r *Resource) GetId(podName string) (res string) {
+	res = fmt.Sprintf("%s.%s", podName, r.Name)
 	return
 }
 
-// GetRequestConstraint returns constraint required to request resource allocation
 func (r *Resource) GetRequestConstraint() (res Constraint) {
 	res = Constraint{
-		fmt.Sprintf("${resource_request.allow.%s}", r.Type): "true",
+		fmt.Sprintf("${%s.type.%s}", ResourceRequestPrefix, r.Type): "true",
 	}
 	return
 }
 
-// GetAllocatedConstraint returns required constraint for provision with allocated resource
-func (r *Resource) GetAllocatedConstraint(podName string) (res Constraint) {
+// GetAllocationConstraint returns required constraint for provision with allocated resource
+func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	res = Constraint{}
 	if r.Required {
-		res[fmt.Sprintf("${resource.%s.allocated}", r.Id(podName))] = "true"
+		res[fmt.Sprintf("${%s.%s.%s.allocated}", OpenResourcePrefix, r.Type, r.GetId(podName))] = "true"
 	}
+	return
+}
+
+func (r *Resource) GetValuesKey(podName string) (res string) {
+	res = fmt.Sprintf("%s.%s.%s", ResourceValuesPrefix, r.Type, r.GetId(podName))
 	return
 }
 

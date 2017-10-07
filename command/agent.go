@@ -93,17 +93,17 @@ func (c *Agent) Run(args ...string) (err error) {
 	apiStatusNodesGet := api.NewStatusNodesGet(c.log)
 	apiRegistryGet := api.NewRegistryPodsGet(c.log)
 
-	agentProducer := bus.NewFlatMap(false, "agent",
+	agentProducer := bus.NewMapUpstream("agent",
 		provisionManager,
 		publicNodeAnnouncer,
 		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)
 	// private metadata
-	metaProducer := bus.NewFlatMap(true, "meta",
+	metaProducer := bus.NewStrictMapUpstream("meta",
 		provisionManager,
 		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)
-	systemProducer := bus.NewFlatMap(true, "system",
+	systemProducer := bus.NewStrictMapUpstream("system",
 		provisionManager,
 		apiStatusNodeGet.Processor().(bus.MessageConsumer),
 	)

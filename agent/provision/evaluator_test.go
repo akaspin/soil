@@ -170,9 +170,9 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 			scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 			scheduler.NewManagerSource("system", false, nil, "private", "public"),
 		)
-		agentSource := bus.NewFlatMap(true, "agent", manager)
-		metaSource := bus.NewFlatMap(true, "meta", manager)
-		systemSource := bus.NewFlatMap(true, "system", manager)
+		agentSource := bus.NewStrictMapUpstream("agent", manager)
+		metaSource := bus.NewStrictMapUpstream("meta", manager)
+		systemSource := bus.NewStrictMapUpstream("system", manager)
 
 		var state allocation.State
 		assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
@@ -257,9 +257,9 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		scheduler.NewManagerSource("meta", false, nil, "private", "public"),
 		scheduler.NewManagerSource("system", false, nil, "private", "public"),
 	)
-	agentSource := bus.NewFlatMap(true, "agent", manager)
-	metaSource := bus.NewFlatMap(true, "meta", manager)
-	systemSource := bus.NewFlatMap(true, "system", manager)
+	agentSource := bus.NewStrictMapUpstream("agent", manager)
+	metaSource := bus.NewStrictMapUpstream("meta", manager)
+	systemSource := bus.NewStrictMapUpstream("system", manager)
 
 	var state allocation.State
 	assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))

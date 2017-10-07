@@ -1,6 +1,6 @@
-// +build ide test_unit
 
 package allocation_test
+// +build ide test_unit
 
 import (
 	"github.com/akaspin/soil/agent/allocation"
@@ -27,7 +27,11 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
-			Header: &allocation.Header{Name: "pod-1", PodMark: 0xd328921b2e6ae0f9, AgentMark: 0x623669d2cde83725, Namespace: "private"},
+			Header: &allocation.Header{
+				Name: "pod-1",
+				PodMark: 0xd328921b2e6ae0f9,
+				AgentMark: 0x623669d2cde83725,
+				Namespace: "private"},
 			UnitFile: &allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-1.service",
@@ -92,8 +96,8 @@ func TestNewFromManifest(t *testing.T) {
 		env3 := map[string]string{
 			"meta.consul":                                  "true",
 			"system.pod_exec":                              "ExecStart=/usr/bin/sleep inf",
-			"resource.port.pod-1.8080._resource_values":    `{"value":"8080"}`,
-			"resource.counter.pod-1.main._resource_values": `{"value":"1"}`,
+			"__resource.values.port.pod-1.8080":    `{"value":"8080"}`,
+			"__resource.values.counter.pod-1.main": `{"value":"1"}`,
 		}
 		var pods manifest.Registry
 		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_2.hcl")
@@ -102,11 +106,11 @@ func TestNewFromManifest(t *testing.T) {
 		var res *allocation.Pod
 		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env3)
 		assert.NoError(t, err)
-		assert.Equal(t, res, &allocation.Pod{
+		assert.Equal(t, &allocation.Pod{
 			Header: &allocation.Header{
 				Name:      "pod-1",
 				PodMark:   0x9a28bd64306688d3,
-				AgentMark: 0x820f28b4d5dcbfd9,
+				AgentMark: 17463285198094330196,
 				Namespace: "private",
 			},
 			UnitFile: &allocation.UnitFile{
@@ -115,7 +119,7 @@ func TestNewFromManifest(t *testing.T) {
 					Runtime: "/run/systemd/system",
 				},
 				Path:   "/run/systemd/system/pod-private-pod-1.service",
-				Source: "### POD pod-1 {\"AgentMark\":9371754106728529881,\"Namespace\":\"private\",\"PodMark\":11108336718915733715}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				Source: "### POD pod-1 {\"AgentMark\":17463285198094330196,\"Namespace\":\"private\",\"PodMark\":11108336718915733715}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 			},
 			Units: nil,
 			Blobs: nil,
@@ -143,7 +147,7 @@ func TestNewFromManifest(t *testing.T) {
 					Values: map[string]string{"value": "1"},
 				},
 			},
-		})
+		}, res)
 	})
 }
 

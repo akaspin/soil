@@ -5,6 +5,7 @@ import (
 	"github.com/akaspin/cut"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
+	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
@@ -21,7 +22,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"github.com/akaspin/soil/agent/allocation"
 )
 
 type AgentOptions struct {
@@ -65,8 +65,8 @@ func (c *Agent) Run(args ...string) (err error) {
 	c.log = logx.GetLog("root")
 
 	systemPaths := allocation.DefaultSystemPaths()
-	var state allocation.State
-	if recoveryErr := state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
+	var state allocation.Recovery
+	if recoveryErr := state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
 		c.log.Errorf("recovered with failure: %v", recoveryErr)
 	}
 

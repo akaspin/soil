@@ -7,18 +7,25 @@ import (
 )
 
 const (
-	OpenResourcePrefix   = "resource"
-	ClosedResourcePrefix = "__resource"
-	ResourceRequestPrefix = "__resource.request"
-	ResourceValuesPrefix = "__resource.values"
+	openResourcePrefix    = "resource"
+	resourceRequestPrefix = "__resource.request"
+	resourceValuesPrefix  = "__resource.values"
 )
 
-// Resources are referenced by ${resource.<Type>.<pod>.name}
+// Resources are referenced by ${resource.<kind>.<pod>.name}
 type Resource struct {
-	Name     string `hcl:"-"`
-	Type     string `hcl:"-"`
+
+	// Resource name unique within pod
+	Name string `hcl:"-"`
+
+	// Resource type
+	Kind string `hcl:"-"`
+
+	// Add "resource.<Type>.<PodName>.<Name>" = "true" to pod allocation constraint
 	Required bool
-	Config   map[string]interface{} `hcl:"-"`
+
+	// Request config
+	Config map[string]interface{} `hcl:"-"`
 }
 
 func defaultResource() (r *Resource) {
@@ -28,29 +35,31 @@ func defaultResource() (r *Resource) {
 	return
 }
 
-func (r *Resource) GetId(podName string) (res string) {
+// GetID resource ID
+func (r *Resource) GetID(podName string) (res string) {
 	res = fmt.Sprintf("%s.%s", podName, r.Name)
 	return
 }
 
+// Returns "__resource.request.<kind>.allow": "true"
 func (r *Resource) GetRequestConstraint() (res Constraint) {
 	res = Constraint{
-		fmt.Sprintf("${%s.type.%s}", ResourceRequestPrefix, r.Type): "true",
+		fmt.Sprintf("${%s.kind.%s}", resourceRequestPrefix, r.Kind): "true",
 	}
 	return
 }
 
-// GetAllocationConstraint returns required constraint for provision with allocated resource
+// Returns required constraint for provision with allocated resource
 func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	res = Constraint{}
 	if r.Required {
-		res[fmt.Sprintf("${%s.%s.%s.allocated}", OpenResourcePrefix, r.Type, r.GetId(podName))] = "true"
+		res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Kind, r.GetID(podName))] = "true"
 	}
 	return
 }
 
 func (r *Resource) GetValuesKey(podName string) (res string) {
-	res = fmt.Sprintf("%s.%s.%s", ResourceValuesPrefix, r.Type, r.GetId(podName))
+	res = fmt.Sprintf("%s.%s.%s", resourceValuesPrefix, r.Kind, r.GetID(podName))
 	return
 }
 
@@ -59,7 +68,7 @@ func (r *Resource) parseAst(raw *ast.ObjectItem) (err error) {
 		err = fmt.Errorf(`resource should be "type" "name"`)
 		return
 	}
-	r.Type = raw.Keys[0].Token.Value().(string)
+	r.Kind = raw.Keys[0].Token.Value().(string)
 	r.Name = raw.Keys[1].Token.Value().(string)
 	if err = hcl.DecodeObject(r, raw); err != nil {
 		return
@@ -69,6 +78,6 @@ func (r *Resource) parseAst(raw *ast.ObjectItem) (err error) {
 	}
 	delete(r.Config, "required")
 	delete(r.Config, "name")
-	delete(r.Config, "type")
+	delete(r.Config, "kind")
 	return
 }

@@ -43,8 +43,8 @@ func (e *testSimpleEvaluator) GetConstraint(pod *manifest.Pod) (res manifest.Con
 	return
 }
 
-func (e *testSimpleEvaluator) Allocate(name string, pod *manifest.Pod, env map[string]string) {
-	e.submit(name, pod, env)
+func (e *testSimpleEvaluator) Allocate(pod *manifest.Pod, env map[string]string) {
+	e.submit(pod.Name, pod, env)
 }
 
 func (e *testSimpleEvaluator) Deallocate(name string) {
@@ -93,8 +93,8 @@ func (e *testDownstreamEvaluator) GetConstraint(pod *manifest.Pod) (res manifest
 	return
 }
 
-func (e *testDownstreamEvaluator) Allocate(name string, pod *manifest.Pod, env map[string]string) {
-	e.submit(name, pod)
+func (e *testDownstreamEvaluator) Allocate(pod *manifest.Pod, env map[string]string) {
+	e.submit(pod.Name, pod)
 }
 
 func (e *testDownstreamEvaluator) Deallocate(name string) {
@@ -115,7 +115,7 @@ func (e *testDownstreamEvaluator) submit(name string, pod *manifest.Pod) {
 		for _, p := range e.pods {
 			e.names = append(e.names, p.Name)
 			for _, r := range p.Resources {
-				data[fmt.Sprintf("%s.%s.allocated", r.Type, r.GetId(p.Name))] = "true"
+				data[fmt.Sprintf("%s.%s.allocated", r.Kind, r.GetID(p.Name))] = "true"
 			}
 		}
 		sort.Strings(e.names)

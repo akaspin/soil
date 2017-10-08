@@ -1,26 +1,25 @@
 package bus
 
 import (
-	"sync"
 	"github.com/mitchellh/hashstructure"
+	"sync"
 	"sync/atomic"
 )
 
 type MapUpstream struct {
-	name string
+	name      string
 	consumers []MessageConsumer
-	mu     sync.Mutex
-	cache map[string]string
-	mark uint64
+	mu        sync.Mutex
+	cache     map[string]string
+	mark      uint64
 }
-
 
 func NewMapUpstream(name string, consumers ...MessageConsumer) (u *MapUpstream) {
 	u = &MapUpstream{
-		name: name,
+		name:      name,
 		consumers: consumers,
-		cache: map[string]string{},
-		mark: ^uint64(0),
+		cache:     map[string]string{},
+		mark:      ^uint64(0),
 	}
 	return
 }
@@ -71,16 +70,16 @@ func (u *MapUpstream) notifyAll(message Message) {
 
 type StrictMapUpstream struct {
 	consumers []MessageConsumer
-	name string
-	mu     sync.Mutex
-	mark uint64
+	name      string
+	mu        sync.Mutex
+	mark      uint64
 }
 
 func NewStrictMapUpstream(name string, consumers ...MessageConsumer) (p *StrictMapUpstream) {
 	p = &StrictMapUpstream{
-		name: name,
+		name:      name,
 		consumers: consumers,
-		mark: ^uint64(0),
+		mark:      ^uint64(0),
 	}
 	return
 }

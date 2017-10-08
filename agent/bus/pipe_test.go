@@ -9,13 +9,13 @@ import (
 )
 
 func TestSimplePipe_ConsumeMessage(t *testing.T) {
-	c1 := &bus.TestConsumer{}
-	c2 := &bus.TestConsumer{}
+	c1 := &bus.DummyConsumer{}
+	c2 := &bus.DummyConsumer{}
 
 	pipe := bus.NewSimplePipe(func(message bus.Message) (res bus.Message) {
 		payload := message.GetPayload()
 		delete(payload, "a")
-		res = bus.NewMessage(message.GetProducer(), payload)
+		res = bus.NewMessage(message.GetPrefix(), payload)
 		return
 	}, c1, c2)
 

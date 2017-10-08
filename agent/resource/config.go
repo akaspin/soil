@@ -2,11 +2,11 @@ package resource
 
 import "github.com/mitchellh/hashstructure"
 
-// Config represents one resource configuration
+// Config represents one resource in Agent configuration
 type Config struct {
-	Type       string
-	Name       string
-	Properties map[string]interface{}
+	Nature     string                 // Worker nature
+	Kind       string                 // Declared type
+	Properties map[string]interface{} // Properties
 }
 
 func (c *Config) IsEqual(config *Config) (res bool) {
@@ -14,4 +14,8 @@ func (c *Config) IsEqual(config *Config) (res bool) {
 	rightHash, _ := hashstructure.Hash(config, nil)
 	res = leftHash == rightHash
 	return
+}
+
+// Static external configuration propagated to all workers and executors
+type EvaluatorConfig struct {
 }

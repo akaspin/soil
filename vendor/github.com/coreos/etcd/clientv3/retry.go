@@ -58,10 +58,16 @@ func (c *Client) newRetryWrapper(isStop retryStopErrFunc) retryRpcFunc {
 			case <-c.ctx.Done():
 				return c.ctx.Err()
 			}
+			pinned := c.balancer.pinned()
 			err := f(rpcCtx)
 			if err == nil {
 				return nil
 			}
+			if logger.V(4) {
+				logger.Infof("clientv3/retry: error %v on pinned endpoint %s", err, pinned)
+			}
+			// mark this before endpoint switch is triggered
+			c.balancer.endpointError(pinned, err)
 			notify := c.balancer.ConnectNotify()
 			if s, ok := status.FromError(err); ok && s.Code() == codes.Unavailable {
 				c.balancer.next()
@@ -83,11 +89,14 @@ func (c *Client) newRetryWrapper(isStop retryStopErrFunc) retryRpcFunc {
 func (c *Client) newAuthRetryWrapper() retryRpcFunc {
 	return func(rpcCtx context.Context, f rpcFunc) error {
 		for {
+			pinned := c.balancer.pinned()
 			err := f(rpcCtx)
 			if err == nil {
 				return nil
 			}
-
+			if logger.V(4) {
+				logger.Infof("clientv3/auth-retry: error %v on pinned endpoint %s", err, pinned)
+			}
 			// always stop retry on etcd errors other than invalid auth token
 			if rpctypes.Error(err) == rpctypes.ErrInvalidAuthToken {
 				gterr := c.getToken(rpcCtx)
@@ -96,7 +105,6 @@ func (c *Client) newAuthRetryWrapper() retryRpcFunc {
 				}
 				continue
 			}
-
 			return err
 		}
 	}

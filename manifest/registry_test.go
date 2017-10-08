@@ -43,19 +43,19 @@ func TestRegistry_UnmarshalFiles(t *testing.T) {
 				Resources: []*manifest.Resource{
 					{
 						Name:     "8080",
-						Type:     "port",
+						Kind:     "port",
 						Required: true,
 						Config:   map[string]interface{}{"fixed": "8080"},
 					},
 					{
 						Name:     "1",
-						Type:     "counter",
+						Kind:     "counter",
 						Required: true,
 						Config:   map[string]interface{}{"count": "3"},
 					},
 					{
 						Name:     "2",
-						Type:     "counter",
+						Kind:     "counter",
 						Required: false,
 						Config:   map[string]interface{}{"count": "1", "a": "b"},
 					},

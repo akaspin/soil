@@ -8,7 +8,7 @@ import (
 )
 
 func TestMapUpstream_Set(t *testing.T) {
-	cons2 := &bus.TestConsumer{}
+	cons2 := &bus.DummyConsumer{}
 
 	prod := bus.NewMapUpstream("meta", cons2)
 	prod.Set(map[string]string{
@@ -47,7 +47,7 @@ func TestMapUpstream_Set(t *testing.T) {
 
 func TestFlatMap_Set(t *testing.T) {
 	t.Run("strict", func(t *testing.T) {
-		cons2 := &bus.TestConsumer{}
+		cons2 := &bus.DummyConsumer{}
 
 		prod := bus.NewStrictMapUpstream("meta", cons2)
 		prod.Set(map[string]string{

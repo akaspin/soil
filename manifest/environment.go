@@ -4,6 +4,8 @@ import (
 	"regexp"
 )
 
+const hiddenPrefix = "__"
+
 var (
 	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_\-.]+}`)
 )
@@ -11,8 +13,7 @@ var (
 func ExtractEnv(v string) (res []string) {
 	res1 := envRe.FindAllString(v, -1)
 	for _, r := range res1 {
-		r1 := r[2 : len(r)-1]
-		res = append(res, r1)
+		res = append(res, r[2:len(r)-1])
 	}
 	return
 }

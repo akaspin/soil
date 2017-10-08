@@ -1,6 +1,6 @@
+// +build ide test_unit
 
 package allocation_test
-// +build ide test_unit
 
 import (
 	"github.com/akaspin/soil/agent/allocation"
@@ -28,8 +28,8 @@ func TestNewFromManifest(t *testing.T) {
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: &allocation.Header{
-				Name: "pod-1",
-				PodMark: 0xd328921b2e6ae0f9,
+				Name:      "pod-1",
+				PodMark:   0xd328921b2e6ae0f9,
 				AgentMark: 0x623669d2cde83725,
 				Namespace: "private"},
 			UnitFile: &allocation.UnitFile{
@@ -94,8 +94,8 @@ func TestNewFromManifest(t *testing.T) {
 	})
 	t.Run("with resources", func(t *testing.T) {
 		env3 := map[string]string{
-			"meta.consul":                                  "true",
-			"system.pod_exec":                              "ExecStart=/usr/bin/sleep inf",
+			"meta.consul":                          "true",
+			"system.pod_exec":                      "ExecStart=/usr/bin/sleep inf",
 			"__resource.values.port.pod-1.8080":    `{"value":"8080"}`,
 			"__resource.values.counter.pod-1.main": `{"value":"1"}`,
 		}
@@ -109,7 +109,7 @@ func TestNewFromManifest(t *testing.T) {
 		assert.Equal(t, &allocation.Pod{
 			Header: &allocation.Header{
 				Name:      "pod-1",
-				PodMark:   0x9a28bd64306688d3,
+				PodMark:   12593169462593272090,
 				AgentMark: 17463285198094330196,
 				Namespace: "private",
 			},
@@ -119,7 +119,7 @@ func TestNewFromManifest(t *testing.T) {
 					Runtime: "/run/systemd/system",
 				},
 				Path:   "/run/systemd/system/pod-private-pod-1.service",
-				Source: "### POD pod-1 {\"AgentMark\":17463285198094330196,\"Namespace\":\"private\",\"PodMark\":11108336718915733715}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				Source: "### POD pod-1 {\"AgentMark\":17463285198094330196,\"Namespace\":\"private\",\"PodMark\":12593169462593272090}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 			},
 			Units: nil,
 			Blobs: nil,
@@ -127,7 +127,7 @@ func TestNewFromManifest(t *testing.T) {
 				{
 					Request: &manifest.Resource{
 						Name:     "8080",
-						Type:     "port",
+						Kind:     "port",
 						Required: true,
 						Config: map[string]interface{}{
 							"fixed": int(8080),
@@ -138,7 +138,7 @@ func TestNewFromManifest(t *testing.T) {
 				{
 					Request: &manifest.Resource{
 						Name:     "main",
-						Type:     "counter",
+						Kind:     "counter",
 						Required: true,
 						Config: map[string]interface{}{
 							"count": int(3),

@@ -28,8 +28,8 @@ func TestEvaluator_GetState(t *testing.T) {
 	reporter := metrics.NewDummy("test")
 
 	systemPaths := allocation.DefaultSystemPaths()
-	var state allocation.State
-	assert.NoError(t, state.Discover(systemPaths, allocation.DefaultDbusDiscoveryFunc))
+	var state allocation.Recovery
+	assert.NoError(t, state.FromFilesystem(systemPaths, allocation.DefaultDbusDiscoveryFunc))
 
 	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), systemPaths, state, reporter)
 	assert.NoError(t, evaluator.Open())
@@ -64,8 +64,8 @@ func TestEvaluator_Allocate(t *testing.T) {
 	ctx := context.Background()
 	reporter := metrics.NewDummy("test")
 
-	var state allocation.State
-	assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
+	var state allocation.Recovery
+	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
 	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), state, reporter)
 	assert.NoError(t, evaluator.Open())
@@ -77,7 +77,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 		err := registry.UnmarshalFiles("private", "testdata/evaluator_test_Allocate_0.hcl")
 		assert.NoError(t, err)
 
-		evaluator.Allocate("pod-1", registry[0], map[string]string{
+		evaluator.Allocate(registry[0], map[string]string{
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 		time.Sleep(time.Millisecond * 500)
@@ -104,7 +104,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 		var registry manifest.Registry
 		err := registry.UnmarshalFiles("private", "testdata/evaluator_test_Allocate_1.hcl")
 		assert.NoError(t, err)
-		evaluator.Allocate("pod-1", registry[0], map[string]string{
+		evaluator.Allocate(registry[0], map[string]string{
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 		time.Sleep(time.Millisecond * 500)
@@ -174,8 +174,8 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 		metaSource := bus.NewStrictMapUpstream("meta", manager)
 		systemSource := bus.NewStrictMapUpstream("system", manager)
 
-		var state allocation.State
-		assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
+		var state allocation.Recovery
+		assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 		evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, reporter)
 		sink := scheduler.NewSink(ctx, log, state,
 			scheduler.NewManagedEvaluator(manager, evaluator))
@@ -261,10 +261,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	metaSource := bus.NewStrictMapUpstream("meta", manager)
 	systemSource := bus.NewStrictMapUpstream("system", manager)
 
-	var state allocation.State
-	assert.NoError(t, state.Discover(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
+	var state allocation.Recovery
+	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
-	evaluator := provision.NewEvaluator(ctx, log,allocation.DefaultSystemPaths(), state, reporter)
+	evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, reporter)
 	sink := scheduler.NewSink(ctx, log, state,
 		scheduler.NewManagedEvaluator(manager, evaluator))
 	sv := supervisor.NewChain(ctx,

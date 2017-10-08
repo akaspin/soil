@@ -3,7 +3,6 @@ package manifest
 import (
 	"fmt"
 	"math/big"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -23,58 +22,37 @@ const (
 // Right field can also begins with compare operation: "<", ">" or "~" (in).
 type Constraint map[string]string
 
-// Extract constraint fields by namespaces
-func (c Constraint) ExtractFields() (res map[string][]string) {
-	res = map[string][]string{}
-	collected := map[string]struct{}{}
-	for k, v := range c {
-		for _, f := range ExtractEnv(k + v) {
-			collected[f] = struct{}{}
-		}
-	}
-	for k := range collected {
-		split := strings.SplitN(k, ".", 2)
-		if len(split) == 2 {
-			res[split[0]] = append(res[split[0]], split[1])
-		}
-	}
-	for _, v := range res {
-		sort.Strings(v)
-	}
-	return
-}
-
-// Merge returns constraint merged with given fields
+// Merge returns constraint merged with given constraints
 func (c Constraint) Merge(constraint ...Constraint) (res Constraint) {
 	res = Constraint{}
 	for _, cons := range append(constraint, c) {
-		for k, v := range cons {
-			res[k] = v
+		for left, right := range cons {
+			res[left] = right
 		}
 	}
 	return
 }
 
-// Ignore returns constraint without pairs which contains variables with given names
-func (c Constraint) Ignore(name ...string) (res Constraint) {
+// FilterOut returns Constraint without pairs which contains references with given prefixes
+func (c Constraint) FilterOut(prefix ...string) (res Constraint) {
 	res = Constraint{}
-	var findRes []string
+	var fields []string
 LOOP:
-	for k, v := range c {
-		findRes = envRe.FindAllString(k+" "+v, -1)
-		for _, chunk := range findRes {
-			chunk = chunk[2 : len(chunk)-1]
-			for _, candidate := range name {
-				if candidate == chunk {
+	for left, right := range c {
+		fields = ExtractEnv(left + right)
+		for _, p := range prefix {
+			for _, field := range fields {
+				if strings.HasPrefix(field, p) {
 					continue LOOP
 				}
 			}
-			res[k] = v
 		}
+		res[left] = right
 	}
 	return
 }
 
+// Check constraint against given environment
 func (c Constraint) Check(env map[string]string) (err error) {
 	for left, right := range c {
 		leftV := Interpolate(left, env)

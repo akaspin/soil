@@ -13,20 +13,20 @@ import (
 
 type Evaluator struct {
 	*supervisor.Control
-	log      *logx.Log
+	log         *logx.Log
 	systemPaths allocation.SystemPaths
-	reporter metrics.Reporter
+	reporter    metrics.Reporter
 
 	state *EvaluatorState
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, state allocation.State, reporter metrics.Reporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, state allocation.Recovery, reporter metrics.Reporter) (e *Evaluator) {
 	e = &Evaluator{
-		Control:  supervisor.NewControl(ctx),
-		log:      log.GetLog("provision", "evaluator"),
+		Control:     supervisor.NewControl(ctx),
+		log:         log.GetLog("provision", "evaluator"),
 		systemPaths: systemPaths,
-		reporter: reporter,
-		state:NewEvaluatorState(state),
+		reporter:    reporter,
+		state:       NewEvaluatorState(state),
 	}
 	return
 }
@@ -50,18 +50,18 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 	return
 }
 
-func (e *Evaluator) GetState() allocation.State {
+func (e *Evaluator) GetState() allocation.Recovery {
 	return e.state.GetState()
 }
 
-func (e *Evaluator) Allocate(name string, pod *manifest.Pod, env map[string]string) {
+func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
 	var alloc *allocation.Pod
 	var err error
 	if alloc, err = allocation.NewFromManifest(pod, e.systemPaths, env); err != nil {
 		e.log.Error(err)
 		return
 	}
-	e.submitAllocation(name, alloc)
+	e.submitAllocation(pod.Name, alloc)
 }
 
 func (e *Evaluator) Deallocate(name string) {

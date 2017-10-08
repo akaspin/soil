@@ -122,25 +122,24 @@ func TestConstraint_Check(t *testing.T) {
 	})
 }
 
-func TestConstraint_Ignore(t *testing.T) {
+func TestConstraint_FilterOut(t *testing.T) {
 	constraint := manifest.Constraint{
 		"${meta.a}":                       "true",
 		"${resource.counter.a.allocated}": "true",
 		"${resource.port.8080.allocated}": "true",
 	}
-	t.Run("none", func(t *testing.T) {
-		res := constraint.Ignore("none.found")
+	t.Run("non-existent", func(t *testing.T) {
+		res := constraint.FilterOut("none")
 		assert.Equal(t, res, manifest.Constraint{
 			"${meta.a}":                       "true",
 			"${resource.counter.a.allocated}": "true",
 			"${resource.port.8080.allocated}": "true",
 		})
 	})
-	t.Run("all resource", func(t *testing.T) {
-		res := constraint.Ignore("resource.counter.a.allocated", "resource.port.8080.allocated")
+	t.Run("resource", func(t *testing.T) {
+		res := constraint.FilterOut("resource.")
 		assert.Equal(t, res, manifest.Constraint{
 			"${meta.a}": "true",
 		})
-
 	})
 }

@@ -20,7 +20,7 @@ type Manager struct {
 	mu      sync.RWMutex
 	drain   bool
 	sources map[string]ManagerSource
-	records map[string]*managedRecord
+	records map[string]bus.Message
 	managed map[string]*managedEntity
 
 	dirtyNamespaces map[string]struct{}
@@ -35,7 +35,7 @@ func NewManager(ctx context.Context, log *logx.Log, name string, sources ...Mana
 		name:            name,
 		drain:           false,
 		sources:         map[string]ManagerSource{},
-		records:         map[string]*managedRecord{},
+		records:         map[string]bus.Message{},
 		managed:         map[string]*managedEntity{},
 		dirtyNamespaces: map[string]struct{}{},
 		interpolatable:  map[string]string{},
@@ -43,7 +43,7 @@ func NewManager(ctx context.Context, log *logx.Log, name string, sources ...Mana
 	}
 	for _, source := range sources {
 		m.sources[source.producer] = source
-		m.records[source.producer] = newManagedRecord(bus.NewMessage(source.producer, map[string]string{}), false)
+		m.records[source.producer] = bus.NewMessage(source.producer, nil)
 		for _, ns := range source.namespaces {
 			m.dirtyNamespaces[ns] = struct{}{}
 		}
@@ -81,29 +81,29 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 	m.mu.Lock()
 	m.log.Tracef("got message %v (dirty: %v)", message, m.dirtyNamespaces)
 
-	ingest := newManagedRecord(message, true)
-	old := m.records[message.GetProducer()]
-	if ingest.isEqual(old) {
-		m.log.Tracef(`skipping update: equal ingest: %v(new) == %v(old)`, ingest, old)
+	var ok bool
+
+	old, ok := m.records[message.GetPrefix()]
+	if ok && old.GetMark() == message.GetMark() && old.IsEmpty() == message.IsEmpty() {
+		m.log.Tracef(`skipping update: equal ingest: %v(new) == %v(old)`, message, old)
 		m.mu.Unlock()
 		return
 	}
-	m.records[message.GetProducer()] = ingest
-	if _, ok := m.sources[message.GetProducer()]; !ok {
+	if _, ok = m.sources[message.GetPrefix()]; !ok {
 		m.log.Warningf(`skipping update: can not found source "%s"`)
 		m.mu.Unlock()
 		return
 	}
+
+	m.records[message.GetPrefix()] = message
 
 	m.log.Tracef(`updating caches (dirty: %v)`, m.dirtyNamespaces)
 	m.interpolatable = map[string]string{}
 	m.containable = map[string]string{}
 	m.dirtyNamespaces = map[string]struct{}{}
 	for sourcePrefix, source := range m.sources {
-		if source.required != nil || m.records[sourcePrefix].clean {
-			// add fields if active
-			for k, v := range m.records[sourcePrefix].message.GetPayload() {
-				key := sourcePrefix + "." + k
+		if source.required != nil || !m.records[sourcePrefix].IsEmpty() {
+			for key, v := range m.records[sourcePrefix].Expand() {
 				m.containable[key] = v
 				if !source.constraintOnly {
 					m.interpolatable[key] = v
@@ -153,24 +153,6 @@ type managedEntity struct {
 	notifyFn   func(reason error, message bus.Message)
 	checkErr   error
 	mark       uint64
-}
-
-type managedRecord struct {
-	message bus.Message
-	clean   bool
-}
-
-func newManagedRecord(message bus.Message, clean bool) (r *managedRecord) {
-	r = &managedRecord{
-		message: message,
-		clean:   clean,
-	}
-	return
-}
-
-func (r *managedRecord) isEqual(right *managedRecord) (res bool) {
-	res = right == nil || r.message.GetMark() == right.message.GetMark() && r.clean == right.clean
-	return
 }
 
 type ManagerSource struct {

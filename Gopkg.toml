@@ -1,5 +1,6 @@
 required = [
-    "github.com/coreos/etcd"
+    "github.com/coreos/etcd",
+    "github.com/kr/pretty",
 ]
 
 [[constraint]]
@@ -61,3 +62,11 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/ryanuber/columnize"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/mitchellh/copystructure"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/kr/pretty"

@@ -18,7 +18,7 @@ type EvaluatorState struct {
 	pending map[string]*allocation.Pod
 }
 
-func NewEvaluatorState(recovered allocation.State) (s *EvaluatorState) {
+func NewEvaluatorState(recovered allocation.Recovery) (s *EvaluatorState) {
 	s = &EvaluatorState{
 		finished:   map[string]*allocation.Pod{},
 		inProgress: map[string]*allocation.Pod{},
@@ -54,7 +54,7 @@ func (s *EvaluatorState) Commit(name string) (next []*Evaluation) {
 	return
 }
 
-func (s *EvaluatorState) GetState() (state allocation.State) {
+func (s *EvaluatorState) GetState() (state allocation.Recovery) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	mapped := map[string]*allocation.Pod{}

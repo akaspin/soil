@@ -87,24 +87,24 @@ func TestPod_GetResource(t *testing.T) {
 
 	t.Run("0 request constraint", func(t *testing.T) {
 		assert.Equal(t, manifest.Constraint{
-			"${__resource.request.namespace.private}":"true",
-			"${__resource.request.type.port}":"true",
-			"${__resource.request.type.counter}":"true",
-			"${meta.consul}":"true",
+			"${__resource.request.allow}":        "true",
+			"${__resource.request.kind.port}":    "true",
+			"${__resource.request.kind.counter}": "true",
+			"${meta.consul}":                     "true",
 		}, registry[0].GetResourceRequestConstraint())
 		assert.Equal(t, manifest.Constraint{
-			"${meta.consul}":"true",
-			"${__resource.request.allow}":"false",
+			"${meta.consul}":              "true",
+			"${__resource.request.allow}": "false",
 		}, registry[1].GetResourceRequestConstraint())
 	})
 	t.Run("0 allocation constraint", func(t *testing.T) {
 		assert.Equal(t, manifest.Constraint{
-			"${resource.port.first.8080.allocated}":"true",
-			"${resource.counter.first.1.allocated}":"true",
-			"${meta.consul}":"true",
+			"${resource.port.first.8080.allocated}": "true",
+			"${resource.counter.first.1.allocated}": "true",
+			"${meta.consul}":                        "true",
 		}, registry[0].GetResourceAllocationConstraint())
 		assert.Equal(t, manifest.Constraint{
-			"${meta.consul}":"true",
+			"${meta.consul}": "true",
 		}, registry[1].GetResourceAllocationConstraint())
 	})
 }

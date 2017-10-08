@@ -40,7 +40,7 @@ func newResource(podName string, request *manifest.Resource, env map[string]stri
 }
 
 func (r *Resource) marshalHeader(w io.Writer, encoder *json.Encoder) (err error) {
-	if _, err = fmt.Fprintf(w, "### RESOURCE %s %s ", r.Request.Type, r.Request.Name); err != nil {
+	if _, err = fmt.Fprintf(w, "### RESOURCE %s %s ", r.Request.Kind, r.Request.Name); err != nil {
 		return
 	}
 	err = encoder.Encode(resourceHeader{
@@ -51,10 +51,10 @@ func (r *Resource) marshalHeader(w io.Writer, encoder *json.Encoder) (err error)
 }
 
 func (r *Resource) unmarshalHeader(line string) (err error) {
-	if _, err = fmt.Sscanf(line, resourceHeaderPrefix+" %s %s ", &r.Request.Type, &r.Request.Name); err != nil {
+	if _, err = fmt.Sscanf(line, resourceHeaderPrefix+" %s %s ", &r.Request.Kind, &r.Request.Name); err != nil {
 		return
 	}
-	jsonV := strings.TrimPrefix(line, fmt.Sprintf(resourceHeaderPrefix+" %s %s ", r.Request.Type, r.Request.Name))
+	jsonV := strings.TrimPrefix(line, fmt.Sprintf(resourceHeaderPrefix+" %s %s ", r.Request.Kind, r.Request.Name))
 	var receiver resourceHeader
 	err = json.NewDecoder(strings.NewReader(jsonV)).Decode(&receiver)
 	r.Request.Config = receiver.Request

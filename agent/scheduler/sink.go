@@ -23,7 +23,7 @@ type Sink struct {
 	state *SinkState
 }
 
-func NewSink(ctx context.Context, log *logx.Log, state allocation.State, managedEvaluators ...ManagedEvaluator) (s *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, state allocation.Recovery, managedEvaluators ...ManagedEvaluator) (s *Sink) {
 	s = &Sink{
 		Control:           supervisor.NewControl(ctx),
 		log:               log.GetLog("scheduler", "sink"),
@@ -75,7 +75,7 @@ func (s *Sink) submitToEvaluators(name string, pod *manifest.Pod) (err error) {
 					me.evaluator.Deallocate(name)
 					return
 				}
-				me.evaluator.Allocate(name, pod, message.GetPayload())
+				me.evaluator.Allocate(pod, message.GetPayload())
 			})
 		}(me, pod)
 	}

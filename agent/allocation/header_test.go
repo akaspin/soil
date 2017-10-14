@@ -19,7 +19,7 @@ func TestHeader(t *testing.T) {
 `
 	expectUnits := []*allocation.Unit{
 		{
-			Transition: &manifest.Transition{
+			Transition: manifest.Transition{
 				Create:    "start",
 				Permanent: true,
 			},
@@ -29,7 +29,7 @@ func TestHeader(t *testing.T) {
 			},
 		},
 		{
-			Transition: &manifest.Transition{
+			Transition: manifest.Transition{
 				Permanent: false,
 			},
 			UnitFile: &allocation.UnitFile{

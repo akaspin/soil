@@ -78,7 +78,7 @@ func NewFromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) 
 	for _, u := range m.Units {
 		unitName := manifest.Interpolate(u.Name, baseEnv)
 		pu := &Unit{
-			Transition: &u.Transition,
+			Transition: u.Transition,
 			UnitFile:   NewUnitFile(unitName, paths, m.Runtime),
 		}
 		pu.Source = manifest.Interpolate(u.Source, baseEnv, baseSourceEnv, fileHashes, env)
@@ -124,7 +124,7 @@ func (p *Pod) FromFS(path string) (err error) {
 func (p *Pod) GetPodUnit() (res *Unit) {
 	res = &Unit{
 		UnitFile: p.UnitFile,
-		Transition: &manifest.Transition{
+		Transition: manifest.Transition{
 			Create:    "start",
 			Update:    "restart",
 			Destroy:   "stop",

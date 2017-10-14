@@ -11,7 +11,7 @@ import (
 
 type Unit struct {
 	*UnitFile
-	*manifest.Transition `json:",squash"`
+	manifest.Transition `json:",squash"`
 }
 
 func (u *Unit) MarshalHeader(w io.Writer, encoder *json.Encoder) (err error) {

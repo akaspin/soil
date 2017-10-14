@@ -42,14 +42,14 @@ func TestNewFromManifest(t *testing.T) {
 						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/unit-1.service",
 						Source:      "# true"},
-					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 				{
 					UnitFile: &allocation.UnitFile{
 						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/unit-2.service",
 						Source:      "# true 10090666253179731817"},
-					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 			},
 			Blobs: []*allocation.Blob{
@@ -77,14 +77,14 @@ func TestNewFromManifest(t *testing.T) {
 						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/pod-2-unit-1.service",
 						Source:      "# true multi-user.target"},
-					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 				{
 					UnitFile: &allocation.UnitFile{
 						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/private-unit-2.service",
 						Source:      "# true 10090666253179731817"},
-					Transition: &manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 			},
 			Blobs: []*allocation.Blob{
@@ -195,7 +195,7 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 				},
-				Transition: &manifest.Transition{
+				Transition: manifest.Transition{
 					Create:    "start",
 					Update:    "restart",
 					Destroy:   "stop",
@@ -214,7 +214,7 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `,
 				},
-				Transition: &manifest.Transition{
+				Transition: manifest.Transition{
 					Create:    "start",
 					Update:    "restart",
 					Destroy:   "stop",

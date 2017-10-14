@@ -37,7 +37,7 @@ func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs 
 				UnitFile: &UnitFile{
 					SystemPaths: paths,
 				},
-				Transition: &manifest.Transition{},
+				Transition: manifest.Transition{},
 			}
 			if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.UnitFile.Path, &jsonSrc); err != nil {
 				return

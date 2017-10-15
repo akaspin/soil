@@ -23,7 +23,7 @@ WantedBy=${pod.target}
 
 // Pod represents pod allocated on agent
 type Pod struct {
-	*Header
+	Header
 	*UnitFile
 	Units     []*Unit
 	Blobs     []*Blob
@@ -35,15 +35,21 @@ func NewPod(systemPaths SystemPaths) (p *Pod) {
 		UnitFile: &UnitFile{
 			SystemPaths: systemPaths,
 		},
-		Header: &Header{},
+		Header: Header{},
 	}
+	return
+}
+
+func (p *Pod) FromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) (err error) {
+	//agentMark, _ := hashstructure.Hash(env, nil)
+
 	return
 }
 
 func NewFromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) (p *Pod, err error) {
 	agentMark, _ := hashstructure.Hash(env, nil)
 	p = &Pod{
-		Header: &Header{
+		Header: Header{
 			Name:      m.Name,
 			PodMark:   m.Mark(),
 			AgentMark: agentMark,

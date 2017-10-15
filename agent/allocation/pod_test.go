@@ -27,7 +27,7 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
-			Header: &allocation.Header{
+			Header: allocation.Header{
 				Name:      "pod-1",
 				PodMark:   0xd328921b2e6ae0f9,
 				AgentMark: 0x623669d2cde83725,
@@ -67,7 +67,7 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
-			Header: &allocation.Header{Name: "pod-2", PodMark: 0x628d5becdd4e102b, AgentMark: 0x623669d2cde83725, Namespace: "private"},
+			Header: allocation.Header{Name: "pod-2", PodMark: 0x628d5becdd4e102b, AgentMark: 0x623669d2cde83725, Namespace: "private"},
 			UnitFile: &allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-2.service", Source: "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":7101433260316430379}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=pod-2-unit-1.service private-unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
@@ -107,7 +107,7 @@ func TestNewFromManifest(t *testing.T) {
 		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env3)
 		assert.NoError(t, err)
 		assert.Equal(t, &allocation.Pod{
-			Header: &allocation.Header{
+			Header: allocation.Header{
 				Name:      "pod-1",
 				PodMark:   12593169462593272090,
 				AgentMark: 17463285198094330196,
@@ -161,7 +161,7 @@ func TestNewFromFS(t *testing.T) {
 	err := alloc.FromFS("testdata/pod-test-1.service")
 	assert.NoError(t, err)
 	assert.Equal(t, &allocation.Pod{
-		Header: &allocation.Header{
+		Header: allocation.Header{
 			Name:      "test-1",
 			PodMark:   123,
 			AgentMark: 456,

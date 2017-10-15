@@ -39,13 +39,13 @@ func TestEvaluator_GetState(t *testing.T) {
 
 	state = evaluator.GetState()
 	assert.Len(t, state, 2)
-	assert.Equal(t, state.Find("test-1"), &allocation.Header{
+	assert.Equal(t, state.Find("test-1"), allocation.Header{
 		Name:      "test-1",
 		PodMark:   0x7b,
 		AgentMark: 0x1c8,
 		Namespace: "private",
 	})
-	assert.Equal(t, state.Find("test-2"), &allocation.Header{
+	assert.Equal(t, state.Find("test-2"), allocation.Header{
 		Name:      "test-2",
 		PodMark:   0x7b,
 		AgentMark: 0x1c8,
@@ -89,7 +89,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 				"unit-1.service":            "active",
 			})
 		assert.Equal(t, evaluator.GetState().Find("pod-1"),
-			&allocation.Header{
+			allocation.Header{
 				Name:      "pod-1",
 				PodMark:   0x2e20553fc77ff55f,
 				AgentMark: 0xca6eebba95f6926b,
@@ -115,7 +115,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 				"unit-1.service":            "active",
 			})
 		assert.Equal(t, evaluator.GetState().Find("pod-1"),
-			&allocation.Header{
+			allocation.Header{
 				Name:      "pod-1",
 				PodMark:   0x5625baf03ad69cfa,
 				AgentMark: 0xca6eebba95f6926b,

@@ -24,7 +24,7 @@ func (s *Recovery) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() 
 	return
 }
 
-func (s Recovery) Find(name string) (res *Header) {
+func (s Recovery) Find(name string) (res Header) {
 	for _, alloc := range s {
 		if alloc.Name == name {
 			res = alloc.Header

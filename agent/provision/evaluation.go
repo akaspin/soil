@@ -145,7 +145,7 @@ func planUnitDestroy(what *allocation.Unit) (res []Instruction) {
 	return
 }
 
-func planUnitDeploy(what *allocation.UnitFile, permanent bool, command string) (res []Instruction) {
+func planUnitDeploy(what allocation.UnitFile, permanent bool, command string) (res []Instruction) {
 	res = append(res, NewWriteUnitInstruction(what), planUnitPerm(what, permanent))
 	if command != "" {
 		res = append(res, NewCommandInstruction(phaseDeployCommand, what, command))
@@ -153,7 +153,7 @@ func planUnitDeploy(what *allocation.UnitFile, permanent bool, command string) (
 	return
 }
 
-func planUnitPerm(what *allocation.UnitFile, permanent bool) (res Instruction) {
+func planUnitPerm(what allocation.UnitFile, permanent bool) (res Instruction) {
 	if permanent {
 		res = NewEnableUnitInstruction(what)
 		return

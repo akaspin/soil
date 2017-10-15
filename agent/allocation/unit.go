@@ -10,7 +10,7 @@ import (
 )
 
 type Unit struct {
-	*UnitFile
+	UnitFile
 	manifest.Transition `json:",squash"`
 }
 
@@ -28,12 +28,12 @@ type UnitFile struct {
 	Source      string
 }
 
-func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f *UnitFile) {
+func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f UnitFile) {
 	basePath := paths.Local
 	if runtime {
 		basePath = paths.Runtime
 	}
-	f = &UnitFile{
+	f = UnitFile{
 		SystemPaths: paths,
 		Path:        filepath.Join(basePath, unitName),
 	}

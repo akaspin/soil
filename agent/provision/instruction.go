@@ -26,10 +26,10 @@ type Instruction interface {
 type baseUnitInstruction struct {
 	phase    int
 	explain  string
-	unitFile *allocation.UnitFile
+	unitFile allocation.UnitFile
 }
 
-func newBaseInstruction(phase int, explain string, unitFile *allocation.UnitFile) *baseUnitInstruction {
+func newBaseInstruction(phase int, explain string, unitFile allocation.UnitFile) *baseUnitInstruction {
 	return &baseUnitInstruction{
 		phase:    phase,
 		explain:  explain,
@@ -50,7 +50,7 @@ type WriteUnitInstruction struct {
 	*baseUnitInstruction
 }
 
-func NewWriteUnitInstruction(unitFile *allocation.UnitFile) *WriteUnitInstruction {
+func NewWriteUnitInstruction(unitFile allocation.UnitFile) *WriteUnitInstruction {
 	return &WriteUnitInstruction{
 		newBaseInstruction(phaseDeployFS, "write-unit", unitFile),
 	}
@@ -69,7 +69,7 @@ type DeleteUnitInstruction struct {
 	*baseUnitInstruction
 }
 
-func NewDeleteUnitInstruction(unitFile *allocation.UnitFile) *DeleteUnitInstruction {
+func NewDeleteUnitInstruction(unitFile allocation.UnitFile) *DeleteUnitInstruction {
 	return &DeleteUnitInstruction{newBaseInstruction(phaseDestroyUnits, "delete-unit", unitFile)}
 }
 
@@ -86,7 +86,7 @@ type EnableUnitInstruction struct {
 	*baseUnitInstruction
 }
 
-func NewEnableUnitInstruction(unitFile *allocation.UnitFile) *EnableUnitInstruction {
+func NewEnableUnitInstruction(unitFile allocation.UnitFile) *EnableUnitInstruction {
 	return &EnableUnitInstruction{newBaseInstruction(phaseDeployPerm, "enable-unit", unitFile)}
 }
 
@@ -99,7 +99,7 @@ type DisableUnitInstruction struct {
 	*baseUnitInstruction
 }
 
-func NewDisableUnitInstruction(unitFile *allocation.UnitFile) *DisableUnitInstruction {
+func NewDisableUnitInstruction(unitFile allocation.UnitFile) *DisableUnitInstruction {
 	return &DisableUnitInstruction{newBaseInstruction(phaseDeployPerm, "disable-unit", unitFile)}
 }
 
@@ -113,7 +113,7 @@ type CommandInstruction struct {
 	command string
 }
 
-func NewCommandInstruction(phase int, unitFile *allocation.UnitFile, command string) *CommandInstruction {
+func NewCommandInstruction(phase int, unitFile allocation.UnitFile, command string) *CommandInstruction {
 	return &CommandInstruction{
 		baseUnitInstruction: newBaseInstruction(phase, command, unitFile),
 		command:             command,

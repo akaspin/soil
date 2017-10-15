@@ -23,7 +23,7 @@ func TestHeader(t *testing.T) {
 				Create:    "start",
 				Permanent: true,
 			},
-			UnitFile: &allocation.UnitFile{
+			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/etc/systemd/system/unit-1.service",
 			},
@@ -32,7 +32,7 @@ func TestHeader(t *testing.T) {
 			Transition: manifest.Transition{
 				Permanent: false,
 			},
-			UnitFile: &allocation.UnitFile{
+			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/etc/systemd/system/unit-2.service",
 			},

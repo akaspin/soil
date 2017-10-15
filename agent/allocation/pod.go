@@ -24,7 +24,7 @@ WantedBy=${pod.target}
 // Pod represents pod allocated on agent
 type Pod struct {
 	Header
-	*UnitFile
+	UnitFile
 	Units     []*Unit
 	Blobs     []*Blob
 	Resources []*Resource
@@ -32,7 +32,7 @@ type Pod struct {
 
 func NewPod(systemPaths SystemPaths) (p *Pod) {
 	p = &Pod{
-		UnitFile: &UnitFile{
+		UnitFile: UnitFile{
 			SystemPaths: systemPaths,
 		},
 		Header: Header{},

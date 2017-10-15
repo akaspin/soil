@@ -11,8 +11,8 @@ type Unit struct {
 	Source     string
 }
 
-func defaultUnit() (u *Unit) {
-	u = &Unit{
+func defaultUnit() (u Unit) {
+	u = Unit{
 		Transition: Transition{
 			Create:  "start",
 			Update:  "restart",

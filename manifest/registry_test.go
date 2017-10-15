@@ -32,7 +32,7 @@ func TestRegistry_UnmarshalFiles(t *testing.T) {
 				Runtime:    false,
 				Target:     "multi-user.target",
 				Constraint: map[string]string{"${meta.consul}": "true"},
-				Units: []*manifest.Unit{
+				Units: []manifest.Unit{
 					{
 						Transition: manifest.Transition{Create: "start", Update: "restart", Destroy: "stop", Permanent: false},
 						Name:       "second-1.service",
@@ -40,7 +40,7 @@ func TestRegistry_UnmarshalFiles(t *testing.T) {
 					},
 				},
 				Blobs: nil,
-				Resources: []*manifest.Resource{
+				Resources: []manifest.Resource{
 					{
 						Name:     "8080",
 						Kind:     "port",

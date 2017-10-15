@@ -57,7 +57,7 @@ func (w *Worker) Configure(config Config) {
 }
 
 // Allocate resources by specific pod
-func (w *Worker) Submit(podName string, requests []*manifest.Resource) {
+func (w *Worker) Submit(podName string, requests []manifest.Resource) {
 	w.log.Tracef("submit: %s:%v", podName, requests)
 
 }

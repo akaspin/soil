@@ -28,8 +28,8 @@ type Resource struct {
 	Config map[string]interface{} `hcl:"-"`
 }
 
-func defaultResource() (r *Resource) {
-	r = &Resource{
+func defaultResource() (r Resource) {
+	r = Resource{
 		Required: true,
 	}
 	return

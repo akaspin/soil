@@ -125,7 +125,7 @@ func TestNewFromManifest(t *testing.T) {
 			Blobs: nil,
 			Resources: []*allocation.Resource{
 				{
-					Request: &manifest.Resource{
+					Request: manifest.Resource{
 						Name:     "8080",
 						Kind:     "port",
 						Required: true,
@@ -136,7 +136,7 @@ func TestNewFromManifest(t *testing.T) {
 					Values: map[string]string{"value": "8080"},
 				},
 				{
-					Request: &manifest.Resource{
+					Request: manifest.Resource{
 						Name:     "main",
 						Kind:     "counter",
 						Required: true,

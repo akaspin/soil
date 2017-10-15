@@ -20,7 +20,7 @@ func TestWorker_Configure(t *testing.T) {
 		{
 			PodName: "1",
 			Resource: &allocation.Resource{
-				Request: &manifest.Resource{
+				Request: manifest.Resource{
 					Kind: "dummy1",
 					Name: "res-1",
 					Config: map[string]interface{}{
@@ -35,7 +35,7 @@ func TestWorker_Configure(t *testing.T) {
 		{
 			PodName: "2",
 			Resource: &allocation.Resource{
-				Request: &manifest.Resource{
+				Request: manifest.Resource{
 					Kind: "dummy1",
 					Name: "res-2",
 					Config: map[string]interface{}{},

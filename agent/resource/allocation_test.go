@@ -14,7 +14,7 @@ func TestAllocation_Clone(t *testing.T) {
 	alloc := &resource.Allocation{
 		PodName: "pod-1",
 		Resource: &allocation.Resource{
-			Request: &manifest.Resource{
+			Request: manifest.Resource{
 				Kind: "kind-1",
 				Name: "res-1",
 				Config: map[string]interface{}{

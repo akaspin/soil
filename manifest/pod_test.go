@@ -21,7 +21,7 @@ func TestManifest(t *testing.T) {
 				Name:      "first",
 				Runtime:   true,
 				Target:    "multi-user.target",
-				Units: []*manifest.Unit{
+				Units: []manifest.Unit{
 					{
 						Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: true},
 						Name:       "first-1.service",
@@ -33,7 +33,7 @@ func TestManifest(t *testing.T) {
 						Source:     "[Service]\n# ${NONEXISTENT}\nExecStart=/usr/bin/sleep inf\n",
 					},
 				},
-				Blobs: []*manifest.Blob{
+				Blobs: []manifest.Blob{
 					{Name: "/etc/vpn/users/env", Permissions: 420, Leave: false, Source: "My file\n"},
 				},
 				Resources: nil,
@@ -44,7 +44,7 @@ func TestManifest(t *testing.T) {
 				Runtime:    false,
 				Target:     "multi-user.target",
 				Constraint: manifest.Constraint{"${meta.consul}": "true"},
-				Units: []*manifest.Unit{
+				Units: []manifest.Unit{
 					{
 						Transition: manifest.Transition{Create: "start", Update: "restart", Destroy: "stop", Permanent: false},
 						Name:       "second-1.service",

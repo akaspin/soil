@@ -132,7 +132,7 @@ func (e *Evaluator) handleConfigs(configs []Config) {
 }
 
 func (e *Evaluator) handleAlloc(name string, pod *manifest.Pod) {
-	byType := map[string][]*manifest.Resource{}
+	byType := map[string][]manifest.Resource{}
 	if pod != nil {
 		for _, r := range pod.Resources {
 			byType[r.Kind] = append(byType[r.Kind], r)

@@ -14,7 +14,7 @@ const resourceHeaderPrefix = "### RESOURCE"
 type Resource struct {
 
 	// Requested resource
-	Request *manifest.Resource
+	Request manifest.Resource
 
 	// Allocated values are in "resource.type.pod-name.resource-name._"
 	Values map[string]string
@@ -22,12 +22,12 @@ type Resource struct {
 
 func defaultResource() (r *Resource) {
 	r = &Resource{
-		Request: &manifest.Resource{},
+		Request: manifest.Resource{},
 	}
 	return
 }
 
-func newResource(podName string, request *manifest.Resource, env map[string]string) (r *Resource) {
+func newResource(podName string, request manifest.Resource, env map[string]string) (r *Resource) {
 	r = &Resource{
 		Request: request,
 		Values:  map[string]string{},

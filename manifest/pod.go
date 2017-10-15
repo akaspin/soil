@@ -19,9 +19,9 @@ type Pod struct {
 	Runtime    bool
 	Target     string
 	Constraint Constraint
-	Units      []*Unit
-	Blobs      []*Blob
-	Resources  []*Resource
+	Units      []Unit
+	Blobs      []Blob
+	Resources  []Resource
 }
 
 func DefaultPod(namespace string) (p *Pod) {

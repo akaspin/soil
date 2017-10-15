@@ -18,7 +18,7 @@ func TestDummyExecutor_Allocate(t *testing.T) {
 	executor.Allocate(&resource.Allocation{
 		PodName: "pod-1",
 		Resource: &allocation.Resource{
-			Request: &manifest.Resource{
+			Request: manifest.Resource{
 				Kind: "kind-1",
 				Name: "res-1",
 				Config: map[string]interface{}{

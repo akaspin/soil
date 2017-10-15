@@ -13,8 +13,8 @@ type Blob struct {
 	Source      string
 }
 
-func defaultBlob() (b *Blob) {
-	b = &Blob{
+func defaultBlob() (b Blob) {
+	b = Blob{
 		Permissions: 0644,
 	}
 	return

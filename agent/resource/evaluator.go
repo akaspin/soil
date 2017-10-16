@@ -9,8 +9,6 @@ import (
 	"github.com/akaspin/supervisor"
 )
 
-
-
 // Resource evaluator
 type Evaluator struct {
 	*supervisor.Control
@@ -21,7 +19,7 @@ type Evaluator struct {
 
 	workers map[string]*Worker // worker
 
-	configChan     chan []Config
+	configChan     chan []ExecutorConfig
 	allocateChan   chan *manifest.Pod
 	deallocateChan chan string
 }
@@ -35,21 +33,22 @@ func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConf
 		consumer: consumer,
 		workers:  map[string]*Worker{},
 
-		configChan:     make(chan []Config),
+		configChan:     make(chan []ExecutorConfig),
 		allocateChan:   make(chan *manifest.Pod),
 		deallocateChan: make(chan string),
 	}
-	byType := map[string][]*Allocation{}
+	byKind := map[string][]Alloc{}
 	for _, alloc := range state {
 		for _, r := range alloc.Resources {
-			rType := r.Request.Kind
-			byType[rType] = append(byType[rType], &Allocation{
-				PodName:  alloc.Name,
-				Resource: r,
+			rKind := r.Request.Kind
+			byKind[rKind] = append(byKind[rKind], Alloc{
+				PodName: alloc.Name,
+				Request: r.Request.Clone(),
+				Values:  bus.NewMessage(r.Request.GetID(alloc.Name), r.Values),
 			})
 		}
 	}
-	for name, a := range byType {
+	for name, a := range byKind {
 		e.workers[name] = NewWorker(e.Control.Ctx(), e.log, name, e.workerConfig, a)
 		e.log.Debugf(`worker "%s" created: %v`, name, a)
 	}
@@ -62,7 +61,7 @@ func (e *Evaluator) Open() (err error) {
 	return
 }
 
-func (e *Evaluator) Configure(configs ...Config) {
+func (e *Evaluator) Configure(configs ...ExecutorConfig) {
 	select {
 	case <-e.Control.Ctx().Done():
 	case e.configChan <- configs:
@@ -105,8 +104,8 @@ func (e *Evaluator) loop() {
 	}
 }
 
-func (e *Evaluator) handleConfigs(configs []Config) {
-	byName := map[string]Config{}
+func (e *Evaluator) handleConfigs(configs []ExecutorConfig) {
+	byName := map[string]ExecutorConfig{}
 	for _, c := range configs {
 		byName[c.Kind] = c
 	}
@@ -120,7 +119,7 @@ func (e *Evaluator) handleConfigs(configs []Config) {
 
 	for name, config := range byName {
 		if w, ok := e.workers[name]; ok {
-			e.log.Debugf(`sending config to worker "%s": %v"`, name, config)
+			e.log.Debugf(`sending ExecutorConfig to worker "%s": %v"`, name, config)
 			w.Configure(config)
 			continue
 		}

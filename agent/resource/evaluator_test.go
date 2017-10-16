@@ -34,14 +34,14 @@ func TestNewEvaluator(t *testing.T) {
 
 	assert.NoError(t, evaluator.Open())
 
-	config := []resource.Config{
+	config := []resource.ExecutorConfig{
 		{
 			Kind:   "fake1",
-			Nature: "test",
+			Nature: "dummy",
 		},
 		{
 			Kind:   "fake2",
-			Nature: "test",
+			Nature: "dummy",
 		},
 	}
 	evaluator.Configure(config...)

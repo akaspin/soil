@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
+	"github.com/mitchellh/copystructure"
 )
 
 const (
@@ -35,6 +36,12 @@ func defaultResource() (r Resource) {
 	return
 }
 
+func (r Resource) Clone() (res Resource) {
+	res1, _ := copystructure.Copy(r)
+	res = res1.(Resource)
+	return
+}
+
 // GetID resource ID
 func (r *Resource) GetID(podName string) (res string) {
 	res = fmt.Sprintf("%s.%s", podName, r.Name)
@@ -58,6 +65,7 @@ func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	return
 }
 
+// Returns `__resource.values.<kind>.<pod>.<name>`
 func (r *Resource) GetValuesKey(podName string) (res string) {
 	res = fmt.Sprintf("%s.%s.%s", resourceValuesPrefix, r.Kind, r.GetID(podName))
 	return

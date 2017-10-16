@@ -1,6 +1,8 @@
 package bus
 
-import "github.com/mitchellh/hashstructure"
+import (
+	"github.com/mitchellh/hashstructure"
+)
 
 // Message
 type Message struct {
@@ -9,7 +11,7 @@ type Message struct {
 	mark    uint64
 }
 
-// Create new message with cloned payload. Use <nil> payload to create empty message.
+// Create new message non-expiring with cloned payload. Use <nil> payload to create empty message.
 func NewMessage(prefix string, payload map[string]string) (m Message) {
 	m = Message{
 		prefix: prefix,
@@ -75,16 +77,6 @@ func (m Message) Expand() (res map[string]string) {
 	}
 	for k, v := range m.payload {
 		res[m.prefix+"."+k] = v
-	}
-	return
-}
-
-// Get clone of message
-func (m Message) Clone() (res Message) {
-	m = Message{
-		prefix:  m.prefix,
-		payload: CloneMap(m.payload),
-		mark:    m.mark,
 	}
 	return
 }

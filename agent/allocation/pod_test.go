@@ -22,8 +22,8 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, err)
 
 		m := pods[0]
-		var res *allocation.Pod
-		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env)
+		res := allocation.NewPod(allocation.DefaultSystemPaths())
+		err = res.FromManifest(m, env)
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
@@ -62,8 +62,8 @@ func TestNewFromManifest(t *testing.T) {
 		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_1.hcl")
 		assert.NoError(t, err)
 		m := pods[0]
-		var res *allocation.Pod
-		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env)
+		res := allocation.NewPod(allocation.DefaultSystemPaths())
+		err = res.FromManifest(m, env)
 		assert.NoError(t, err)
 
 		assert.Equal(t, res, &allocation.Pod{
@@ -103,8 +103,8 @@ func TestNewFromManifest(t *testing.T) {
 		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_2.hcl")
 		assert.NoError(t, err)
 		m := pods[0]
-		var res *allocation.Pod
-		res, err = allocation.NewFromManifest(m, allocation.DefaultSystemPaths(), env3)
+		res := allocation.NewPod(allocation.DefaultSystemPaths())
+		err = res.FromManifest(m, env3)
 		assert.NoError(t, err)
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{
@@ -158,7 +158,7 @@ func TestNewFromFS(t *testing.T) {
 		Runtime: "testdata",
 	}
 	alloc := allocation.NewPod(paths)
-	err := alloc.FromFS("testdata/pod-test-1.service")
+	err := alloc.FromFilesystem("testdata/pod-test-1.service")
 	assert.NoError(t, err)
 	assert.Equal(t, &allocation.Pod{
 		Header: allocation.Header{

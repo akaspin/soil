@@ -54,32 +54,6 @@ func (s *EvaluatorState) Commit(name string) (next []*Evaluation) {
 	return
 }
 
-func (s *EvaluatorState) GetState() (state allocation.Recovery) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	mapped := map[string]*allocation.Pod{}
-
-	for _, what := range []map[string]*allocation.Pod{
-		s.pending, s.inProgress, s.finished,
-	} {
-		for k, v := range what {
-			if _, ok := mapped[k]; !ok {
-				if v == nil {
-					mapped[k] = nil
-					continue
-				}
-				mapped[k] = v
-			}
-		}
-	}
-	for _, v := range mapped {
-		if v != nil {
-			state = append(state, v)
-		}
-	}
-	return
-}
-
 func (s *EvaluatorState) next() (next []*Evaluation) {
 LOOP:
 	for pendingName, pending := range s.pending {

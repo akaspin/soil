@@ -12,7 +12,7 @@ func (s *Recovery) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() 
 	var failures []error
 	for _, path := range paths {
 		pod := NewPod(systemPaths)
-		if parseErr := pod.FromFS(path); parseErr != nil {
+		if parseErr := pod.FromFilesystem(path); parseErr != nil {
 			failures = append(failures, parseErr)
 			continue
 		}

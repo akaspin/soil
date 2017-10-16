@@ -15,7 +15,7 @@ type DummyExecutor struct {
 
 func NewDummyExecutor(log *logx.Log, kind string, consumer bus.MessageConsumer) (e *DummyExecutor) {
 	e = &DummyExecutor{
-		log:      log.GetLog("resource", "executor", kind),
+		log:      log.GetLog("resource", "Executor", kind),
 		kind:     kind,
 		consumer: consumer,
 	}
@@ -26,9 +26,9 @@ func (e *DummyExecutor) Close() error {
 	return nil
 }
 
-func (e *DummyExecutor) Allocate(request *Allocation) {
-	e.log.Tracef("allocate: %s %v %v", request.GetId(), request.Request.Config, request.Values)
-	id := request.GetId()
+func (e *DummyExecutor) Allocate(request Alloc) {
+	e.log.Tracef("allocate: %s %v %v", request.GetID(), request.Request.Config, request.Values)
+	id := request.GetID()
 	payload := map[string]string{
 		"allocated": "true",
 	}

@@ -18,56 +18,17 @@ import (
 	"time"
 )
 
-func TestEvaluator_GetState(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
-	defer sd.Cleanup()
-	assert.NoError(t, sd.DeployPod("test-1", 3))
-	assert.NoError(t, sd.DeployPod("test-2", 3))
-
-	ctx := context.Background()
-	reporter := metrics.NewDummy("test")
-
-	systemPaths := allocation.DefaultSystemPaths()
-	var state allocation.Recovery
-	assert.NoError(t, state.FromFilesystem(systemPaths, allocation.DefaultDbusDiscoveryFunc))
-
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), systemPaths, state, reporter)
-	assert.NoError(t, evaluator.Open())
-	time.Sleep(time.Second)
-
-	assert.Len(t, reporter.Data, 0)
-
-	state = evaluator.GetState()
-	assert.Len(t, state, 2)
-	assert.Equal(t, state.Find("test-1"), allocation.Header{
-		Name:      "test-1",
-		PodMark:   0x7b,
-		AgentMark: 0x1c8,
-		Namespace: "private",
-	})
-	assert.Equal(t, state.Find("test-2"), allocation.Header{
-		Name:      "test-2",
-		PodMark:   0x7b,
-		AgentMark: 0x1c8,
-		Namespace: "private",
-	})
-
-	assert.NoError(t, evaluator.Close())
-	assert.NoError(t, evaluator.Wait())
-}
-
 func TestEvaluator_Allocate(t *testing.T) {
 	sd := fixture.NewSystemd("/run/systemd/system", "pod-private")
 	sd.Cleanup()
 	defer sd.Cleanup()
 
 	ctx := context.Background()
-	reporter := metrics.NewDummy("test")
 
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), state, reporter)
+	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), state, &metrics.BlackHole{})
 	assert.NoError(t, evaluator.Open())
 
 	time.Sleep(time.Millisecond * 500)
@@ -82,23 +43,19 @@ func TestEvaluator_Allocate(t *testing.T) {
 		})
 		time.Sleep(time.Millisecond * 500)
 
-		sd.AssertUnits(t,
+		sd.AssertUnitStates(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			})
-		assert.Equal(t, evaluator.GetState().Find("pod-1"),
-			allocation.Header{
-				Name:      "pod-1",
-				PodMark:   0x2e20553fc77ff55f,
-				AgentMark: 0xca6eebba95f6926b,
-				Namespace: "private",
-			})
-		assert.Equal(t, map[string]interface{}{
-			"count:provision.evaluations:[]": int64(1),
-			"count:provision.failures:[]":    int64(0),
-		}, reporter.Data)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{
+				"/run/systemd/system/pod-private-pod-1.service": 0xc43253a8821be2b,
+				"/run/systemd/system/unit-1.service":            0xbca69ea672e79d81,
+			},
+		)
 	})
 	t.Run("1 update pod-1", func(t *testing.T) {
 		var registry manifest.Registry
@@ -108,47 +65,46 @@ func TestEvaluator_Allocate(t *testing.T) {
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t,
+		sd.AssertUnitStates(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			})
-		assert.Equal(t, evaluator.GetState().Find("pod-1"),
-			allocation.Header{
-				Name:      "pod-1",
-				PodMark:   0x5625baf03ad69cfa,
-				AgentMark: 0xca6eebba95f6926b,
-				Namespace: "private",
-			})
-		assert.Equal(t, map[string]interface{}{
-			"count:provision.evaluations:[]": int64(2),
-			"count:provision.failures:[]":    int64(0),
-		}, reporter.Data)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{
+				"/run/systemd/system/pod-private-pod-1.service": 0x28525a605380724b,
+				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
+			},
+		)
 	})
 	t.Run("2 destroy non-existent", func(t *testing.T) {
 		evaluator.Deallocate("pod-2")
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t,
+		sd.AssertUnitStates(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			})
-		assert.Equal(t, map[string]interface{}{
-			"count:provision.evaluations:[]": int64(2),
-			"count:provision.failures:[]":    int64(0),
-		}, reporter.Data)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{
+				"/run/systemd/system/pod-private-pod-1.service": 0x28525a605380724b,
+				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
+			},
+		)
 	})
 	t.Run("3 destroy pod-1", func(t *testing.T) {
 		evaluator.Deallocate("pod-1")
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, []string{"pod-private-pod-1.service", "unit-1.service"},
+		sd.AssertUnitStates(t, []string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{})
-		assert.Equal(t, map[string]interface{}{
-			"count:provision.evaluations:[]": int64(3),
-			"count:provision.failures:[]":    int64(0),
-		}, reporter.Data)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{},
+		)
 	})
 
 	assert.NoError(t, evaluator.Close())
@@ -161,7 +117,6 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 
 	ctx := context.Background()
 	log := logx.GetLog("test")
-	reporter := metrics.NewDummy("test")
 
 	runOnce := func(t *testing.T) {
 		t.Helper()
@@ -176,7 +131,7 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 
 		var state allocation.Recovery
 		assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
-		evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, reporter)
+		evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, &metrics.BlackHole{})
 		sink := scheduler.NewSink(ctx, log, state,
 			scheduler.NewManagedEvaluator(manager, evaluator))
 		sv := supervisor.NewChain(ctx,
@@ -187,7 +142,6 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 		)
 		assert.NoError(t, sv.Open())
 
-		// premature init arbiters
 		metaSource.Set(map[string]string{
 			"first_private":  "1",
 			"second_private": "1",
@@ -212,7 +166,7 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 
 		time.Sleep(time.Millisecond * 1000)
 
-		sd.AssertUnits(t,
+		sd.AssertUnitStates(t,
 			[]string{
 				"pod-private-first.service",
 				"pod-private-second.service",
@@ -230,17 +184,33 @@ func TestEvaluator_SinkRestart(t *testing.T) {
 				"third-1.service":            "active",
 			},
 		)
+		sd.AssertUnitHashes(t,
+			[]string{
+				"pod-private-first.service",
+				"pod-private-second.service",
+				"pod-public-third.service",
+				"first-1.service",
+				"second-1.service",
+				"third-1.service",
+			},
+			map[string]uint64{
+				"/run/systemd/system/pod-private-second.service": 0xd80dbdb828d2560a,
+				"/run/systemd/system/third-1.service":            0xdcdd742d1352ae8e,
+				"/run/systemd/system/pod-private-first.service":  0x2f1e0cdd2dddc667,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-public-third.service":   0x9dd961b3cb2c5880,
+			},
+		)
 
 		assert.NoError(t, sv.Close())
 		assert.NoError(t, sv.Wait())
 	}
 	t.Run("0 first run", func(t *testing.T) {
 		runOnce(t)
-		assert.Equal(t, reporter.Data["count:provision.evaluations:[]"], int64(3))
 	})
 	t.Run("1 second run", func(t *testing.T) {
 		runOnce(t)
-		assert.Equal(t, reporter.Data["count:provision.evaluations:[]"], int64(3))
 	})
 }
 
@@ -250,7 +220,6 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 
 	ctx := context.Background()
 	log := logx.GetLog("test")
-	reporter := metrics.NewDummy("test")
 
 	manager := scheduler.NewManager(ctx, log, "test",
 		scheduler.NewManagerSource("agent", false, nil, "private", "public"),
@@ -264,7 +233,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
-	evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, reporter)
+	evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, &metrics.BlackHole{})
 	sink := scheduler.NewSink(ctx, log, state,
 		scheduler.NewManagedEvaluator(manager, evaluator))
 	sv := supervisor.NewChain(ctx,
@@ -303,12 +272,19 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
 				"first-1.service":            "active",
 				"second-1.service":           "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				"/run/systemd/system/pod-private-first.service":  0x2f1e0cdd2dddc667,
+				"/run/systemd/system/pod-private-second.service": 0xd80dbdb828d2560a,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	t.Run("1 deploy public", func(t *testing.T) {
@@ -317,7 +293,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PublicNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
@@ -326,6 +302,16 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 				"second-1.service":           "active",
 				"third-1.service":            "active",
 			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				"/run/systemd/system/pod-private-first.service":  0x2f1e0cdd2dddc667,
+				"/run/systemd/system/pod-private-second.service": 0xd80dbdb828d2560a,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				// new
+				"/run/systemd/system/pod-public-third.service": 0x9dd961b3cb2c5880,
+				"/run/systemd/system/third-1.service":          0xdcdd742d1352ae8e,
+			})
 	})
 	t.Run("2 change constraints of public third", func(t *testing.T) {
 		var registry manifest.Registry
@@ -333,12 +319,19 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PublicNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
 				"first-1.service":            "active",
 				"second-1.service":           "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				"/run/systemd/system/pod-private-first.service":  0x2f1e0cdd2dddc667,
+				"/run/systemd/system/pod-private-second.service": 0xd80dbdb828d2560a,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	t.Run("3 remove private first", func(t *testing.T) {
@@ -347,10 +340,15 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				"/run/systemd/system/pod-private-second.service": 0xd80dbdb828d2560a,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	t.Run("4 add first_public to meta", func(t *testing.T) {
@@ -360,12 +358,21 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"second_private": "1",
 		})
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-public-first.service":   "active",
 				"first-1.service":            "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				// pods are changed
+				"/run/systemd/system/pod-public-first.service":   0x9f24f379a7845013,
+				"/run/systemd/system/pod-private-second.service": 0x99da87008a6d05f2,
+				// units are not changed
+				"/run/systemd/system/first-1.service":  0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service": 0x6ac69815b89bddee,
 			})
 	})
 	t.Run("5 add private first", func(t *testing.T) {
@@ -374,12 +381,22 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-private-first.service":  "active",
 				"first-1.service":            "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				// first pod now is private
+				"/run/systemd/system/pod-private-first.service": 0xa067f24f9caeb5d,
+				// second pod is not changed
+				"/run/systemd/system/pod-private-second.service": 0x99da87008a6d05f2,
+				// units are not changed
+				"/run/systemd/system/first-1.service":  0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service": 0x6ac69815b89bddee,
 			})
 	})
 	t.Run("6 change first_private in meta", func(t *testing.T) {
@@ -389,10 +406,17 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"second_private": "1",
 		})
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				// second pod is changed
+				"/run/systemd/system/pod-private-second.service": 0x2b61532a72875e85,
+				// units are not changed
+				"/run/systemd/system/second-1.service": 0x6ac69815b89bddee,
 			})
 	})
 	t.Run("7 remove private first from registry", func(t *testing.T) {
@@ -401,12 +425,19 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-public-first.service":   "active",
 				"first-1.service":            "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				"/run/systemd/system/pod-public-first.service":   0x5c593f7c22807a92,
+				"/run/systemd/system/pod-private-second.service": 0x2b61532a72875e85,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	t.Run("8 simulate reload with changed registry and meta", func(t *testing.T) {
@@ -420,12 +451,19 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, err)
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnits(t, allUnitNames,
+		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-private-first.service":  "active",
 				"first-1.service":            "active",
+			})
+		sd.AssertUnitHashes(t, allUnitNames,
+			map[string]uint64{
+				"/run/systemd/system/pod-private-first.service":  0xa067f24f9caeb5d,
+				"/run/systemd/system/pod-private-second.service": 0x99da87008a6d05f2,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	assert.NoError(t, sv.Close())

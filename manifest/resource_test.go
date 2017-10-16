@@ -13,6 +13,9 @@ func TestResource(t *testing.T) {
 		Kind:     "port",
 		Name:     "8080",
 		Required: true,
+		Config: map[string]interface{}{
+			"a": 1,
+		},
 	}
 	podName := "test"
 
@@ -31,5 +34,11 @@ func TestResource(t *testing.T) {
 	})
 	t.Run("values key", func(t *testing.T) {
 		assert.Equal(t, "__resource.values.port.test.8080", res.GetValuesKey(podName))
+	})
+	t.Run("clone", func(t *testing.T) {
+		res1 := res.Clone()
+		assert.Equal(t, res, res1)
+		res1.Config["a"] = 2
+		assert.NotEqual(t, res, res1)
 	})
 }

@@ -50,14 +50,9 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 	return
 }
 
-func (e *Evaluator) GetState() allocation.Recovery {
-	return e.state.GetState()
-}
-
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
-	var alloc *allocation.Pod
-	var err error
-	if alloc, err = allocation.NewFromManifest(pod, e.systemPaths, env); err != nil {
+	alloc := allocation.NewPod(e.systemPaths)
+	if err := alloc.FromManifest(pod, env); err != nil {
 		e.log.Error(err)
 		return
 	}
@@ -103,6 +98,7 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	}
 	failures = append(failures, e.executePhase(phase, conn)...)
 
+	e.log.Debugf("plan done: %s:%s (failures:%v)", evaluation, evaluation.plan, failures)
 	e.log.Infof("evaluation done: %s (failures:%v)", evaluation, failures)
 	e.reporter.Count("provision.evaluations", 1)
 	e.reporter.Count("provision.failures", int64(len(failures)))

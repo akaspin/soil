@@ -52,14 +52,7 @@ clean-test-cluster:
 ###
 
 test-systemd: testdata/systemd/.vagrant-ok
-	docker -H 127.0.0.1:2475 run --rm --name=test \
-		-v /run/soil:/run/soil \
-		-v /var/lib/soil:/var/lib/soil \
-		-v /run/systemd/system:/run/systemd/system \
-		-v /etc/systemd/system:/etc/systemd/system \
-		-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
-		-v /vagrant:/go/src/github.com/akaspin/soil \
-		$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
+	docker -H 127.0.0.1:2475 run --rm --name=test -v /run/soil:/run/soil -v /var/lib/soil:/var/lib/soil -v /run/systemd/system:/run/systemd/system -v /etc/systemd/system:/etc/systemd/system -v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket -v /vagrant:/go/src/github.com/akaspin/soil $(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(PACKAGES)
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel

@@ -1,22 +1,23 @@
 package resource
 
 import (
-	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/copystructure"
 )
 
-// Resource allocation
-type Allocation struct {
+type Alloc struct {
 	PodName string
-	*allocation.Resource
+	Request manifest.Resource
+	Values  bus.Message
 }
 
-func (a *Allocation) GetId() string {
+func (a Alloc) GetID() string {
 	return a.Request.GetID(a.PodName)
 }
 
-func (a *Allocation) Clone() (res *Allocation) {
+func (a Alloc) Clone() (res Alloc) {
 	res1, _ := copystructure.Copy(a)
-	res = res1.(*Allocation)
+	res = res1.(Alloc)
 	return
 }

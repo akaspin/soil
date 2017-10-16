@@ -103,10 +103,11 @@ func (m *Manager) ConsumeMessage(message bus.Message) {
 	m.dirtyNamespaces = map[string]struct{}{}
 	for sourcePrefix, source := range m.sources {
 		if source.required != nil || !m.records[sourcePrefix].IsEmpty() {
-			for key, v := range m.records[sourcePrefix].Expand() {
-				m.containable[key] = v
+			for key, v := range m.records[sourcePrefix].GetPayload() {
+				fullKey := sourcePrefix + "." + key
+				m.containable[fullKey] = v
 				if !source.constraintOnly {
-					m.interpolatable[key] = v
+					m.interpolatable[fullKey] = v
 				}
 			}
 			continue

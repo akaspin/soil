@@ -7,7 +7,6 @@ import (
 	"github.com/akaspin/soil/manifest"
 )
 
-
 type Worker struct {
 	ctx             context.Context
 	cancelFunc      context.CancelFunc
@@ -32,11 +31,11 @@ func NewWorker(ctx context.Context, log *logx.Log, name string, config Evaluator
 		evaluatorConfig: config,
 
 		// current allocations
-		state:           map[string]*Alloc{},
+		state: map[string]*Alloc{},
 		// dirty state
-		dirty:           map[string]struct{}{},
-		configChan:      make(chan ExecutorConfig, 1),
-		valuesChan:      make(chan bus.Message, 1),
+		dirty:      map[string]struct{}{},
+		configChan: make(chan ExecutorConfig, 1),
+		valuesChan: make(chan bus.Message, 1),
 	}
 	w.ctx, w.cancelFunc = context.WithCancel(ctx)
 	for _, alloc := range recovered {

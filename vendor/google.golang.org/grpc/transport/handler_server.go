@@ -388,7 +388,7 @@ func (ht *serverHandlerTransport) runStream() {
 }
 
 func (ht *serverHandlerTransport) Drain() {
-	panic("Drain() is not implemented")
+	panic("Divert() is not implemented")
 }
 
 // mapRecvMsgError returns the non-nil err into the appropriate

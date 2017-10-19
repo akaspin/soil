@@ -9,8 +9,15 @@ import (
 	"os"
 )
 
+type NodeConfig struct {
+	Id string `hcl:"id" json:"id"`
+}
+
 // Agent - specific config
 type Config struct {
+	Agent struct {
+		Id string
+	}
 	Meta   map[string]string `hcl:"meta" json:"meta"`
 	System map[string]string `hcl:"system" json:"system"`
 }
@@ -25,7 +32,20 @@ func DefaultConfig() (c *Config) {
 	return
 }
 
-func (c *Config) Unmarshal(r io.Reader) (err error) {
+func (c *Config) Unmarshal(readers ...io.Reader) (err error) {
+	var failures []error
+	for _, reader := range readers {
+		if failure := c.unmarshal(reader); failure != nil {
+			failures = append(failures, failure)
+		}
+	}
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
+	}
+	return
+}
+
+func (c *Config) unmarshal(r io.Reader) (err error) {
 	var buf bytes.Buffer
 	if _, err = io.Copy(&buf, r); err != nil {
 		return
@@ -61,7 +81,7 @@ func (c *Config) Read(path ...string) (err error) {
 				return
 			}
 			defer f.Close()
-			err = c.Unmarshal(f)
+			err = c.unmarshal(f)
 			return
 		}(p)
 		if readErr != nil {

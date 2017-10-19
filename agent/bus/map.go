@@ -87,7 +87,7 @@ func NewStrictMapUpstream(name string, consumers ...MessageConsumer) (p *StrictM
 // Set specific keys
 func (u *StrictMapUpstream) Set(data map[string]string) {
 	message := NewMessage(u.name, data)
-	if atomic.SwapUint64(&u.mark, message.GetMark()) != message.GetMark() {
+	if atomic.SwapUint64(&u.mark, message.GetPayloadMark()) != message.GetPayloadMark() {
 		for _, consumer := range u.consumers {
 			consumer.ConsumeMessage(message)
 		}

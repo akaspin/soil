@@ -1,13 +1,12 @@
-id = "localhost-1"
+agent {
+  id = "1"
+}
 
 meta {
   "consul" = "true"
   "consul-client" = "true"
   "field" = "all,consul"
 }
-
-exec = "ExecStart=/usr/bin/sleep inf"
-
 
 // private pod
 pod "one-1" {

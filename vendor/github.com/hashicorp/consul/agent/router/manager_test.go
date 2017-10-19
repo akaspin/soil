@@ -388,7 +388,7 @@ func TestManager_RemoveServer(t *testing.T) {
 		t.Fatalf("Expected %d+%d=%d servers", m.NumServers(), len(removedServers), maxServers)
 	}
 
-	// Drain the remaining servers from the middle
+	// Divert the remaining servers from the middle
 	for i := m.NumServers(); i > 0; i-- {
 		server := m.FindServer()
 		m.NotifyFailedServer(server)

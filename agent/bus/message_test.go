@@ -29,28 +29,6 @@ func TestMessage_IsEmpty(t *testing.T) {
 	assert.True(t, message.IsEmpty())
 }
 
-func TestMessage_IsSimple(t *testing.T) {
-	t.Run("simple", func(t *testing.T) {
-		message := bus.NewMessage("test", map[string]string{
-			"": "1",
-		})
-		assert.True(t, message.IsSimple())
-	})
-	t.Run("one key", func(t *testing.T) {
-		message := bus.NewMessage("test", map[string]string{
-			"1": "1",
-		})
-		assert.False(t, message.IsSimple())
-	})
-	t.Run("two keys", func(t *testing.T) {
-		message := bus.NewMessage("test", map[string]string{
-			"1": "1",
-			"2": "1",
-		})
-		assert.False(t, message.IsSimple())
-	})
-}
-
 func TestMessage_GetPayload(t *testing.T) {
 	payload := map[string]string{
 		"1": "1",
@@ -60,28 +38,5 @@ func TestMessage_GetPayload(t *testing.T) {
 	assert.NotEqual(t, msg.GetPayload(), payload)
 	assert.Equal(t, msg.GetPayload(), map[string]string{
 		"1": "1",
-	})
-}
-
-func TestMessage_Expand(t *testing.T) {
-	t.Run("usual", func(t *testing.T) {
-		msg := bus.NewMessage("test", map[string]string{
-			"1": "1",
-			"2": "1",
-		})
-		assert.Equal(t, map[string]string{
-			"test.1": "1",
-			"test.2": "1",
-		}, msg.Expand())
-	})
-	t.Run("empty", func(t *testing.T) {
-		msg := bus.NewMessage("test", map[string]string{
-			"1": "1",
-			"2": "1",
-		})
-		assert.Equal(t, map[string]string{
-			"test.1": "1",
-			"test.2": "1",
-		}, msg.Expand())
 	})
 }

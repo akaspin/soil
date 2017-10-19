@@ -155,7 +155,7 @@ func (s *Systemd) AssertUnitStates(t *testing.T, names []string, states map[stri
 		res[u.Name] = u.ActiveState
 	}
 	if !reflect.DeepEqual(states, res) {
-		t.Errorf("not equal (expected)%v != (actual)%v", states, res)
+		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
 		t.Fail()
 	}
 }
@@ -186,7 +186,7 @@ func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[stri
 		res[u.Path] = string(data)
 	}
 	if !reflect.DeepEqual(states, res) {
-		t.Errorf("not equal (expected)%v != (actual)%v", states, res)
+		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
 		t.Fail()
 	}
 }

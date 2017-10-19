@@ -31,18 +31,6 @@ func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.Sys
 	return
 }
 
-func (e *Evaluator) Open() (err error) {
-	err = e.Control.Open()
-	e.log.Debug("opened")
-	return
-}
-
-func (e *Evaluator) Close() (err error) {
-	err = e.Control.Close()
-	e.log.Debug("closed")
-	return
-}
-
 // GetConstraint returns defined pod constraints with constraints for
 // required resources.
 func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
@@ -78,7 +66,7 @@ func (e *Evaluator) fanOut(next []*Evaluation) {
 
 func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	var failures []error
-	e.log.Debugf("begin: %s", evaluation)
+	e.log.Tracef("begin: %s", evaluation)
 	conn, err := dbus.New()
 	if err != nil {
 		e.log.Error(err)
@@ -100,8 +88,6 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 
 	e.log.Debugf("plan done: %s:%s (failures:%v)", evaluation, evaluation.plan, failures)
 	e.log.Infof("evaluation done: %s (failures:%v)", evaluation, failures)
-	e.reporter.Count("provision.evaluations", 1)
-	e.reporter.Count("provision.failures", int64(len(failures)))
 	next := e.state.Commit(evaluation.Name())
 	e.fanOut(next)
 	return

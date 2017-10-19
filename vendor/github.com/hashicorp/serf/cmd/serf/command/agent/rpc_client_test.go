@@ -389,7 +389,7 @@ func TestRPCClientMonitor(t *testing.T) {
 		t.Fatalf("should have backlog")
 	}
 
-	// Drain the rest of the messages as we know it
+	// Divert the rest of the messages as we know it
 	drainEventCh(eventCh)
 
 	// Join a bad thing to generate more events

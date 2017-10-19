@@ -6,37 +6,39 @@ import (
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"io"
-	"os"
 )
 
 type Registry []*Pod
 
 func (r *Registry) UnmarshalFiles(namespace string, paths ...string) (err error) {
 	var failures []error
-	for _, path := range paths {
-		failures = append(failures, func(configPath string) (err error) {
-			f, err := os.Open(configPath)
-			if err != nil {
-				return
-			}
-			defer f.Close()
-			err = r.Unmarshal(namespace, f)
-			return
-		}(path))
+	cr, failure := NewConfigReader(paths...)
+	if failure != nil {
+		failures = append(failures, failure)
 	}
-	var filtered []error
-	for _, failure := range failures {
-		if failure != nil {
-			filtered = append(filtered, failure)
-		}
+	if failure = r.Unmarshal(namespace, cr.GetReaders()...); failure != nil {
+		failures = append(failures, failure)
 	}
-	if len(filtered) > 0 {
-		err = fmt.Errorf("%v", filtered)
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
 	}
 	return
 }
 
-func (r *Registry) Unmarshal(namespace string, reader io.Reader) (err error) {
+func (r *Registry) Unmarshal(namespace string, reader ...io.Reader) (err error) {
+	var failures []error
+	for _, raw := range reader {
+		if failure := r.unmarshal(namespace, raw); failure != nil {
+			failures = append(failures, failure)
+		}
+	}
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
+	}
+	return
+}
+
+func (r *Registry) unmarshal(namespace string, reader io.Reader) (err error) {
 	var buf bytes.Buffer
 	if _, err = io.Copy(&buf, reader); err != nil {
 		return

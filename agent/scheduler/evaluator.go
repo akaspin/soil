@@ -17,14 +17,14 @@ type Evaluator interface {
 	Deallocate(name string)
 }
 
-type ManagedEvaluator struct {
-	manager   *Manager
+type BoundedEvaluator struct {
+	binder    ConstraintBinder
 	evaluator Evaluator
 }
 
-func NewManagedEvaluator(manager *Manager, evaluator Evaluator) (m ManagedEvaluator) {
-	m = ManagedEvaluator{
-		manager:   manager,
+func NewBoundedEvaluator(binder ConstraintBinder, evaluator Evaluator) (e BoundedEvaluator) {
+	e = BoundedEvaluator{
+		binder:    binder,
 		evaluator: evaluator,
 	}
 	return

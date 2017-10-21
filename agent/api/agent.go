@@ -2,7 +2,6 @@ package api
 
 import (
 	"github.com/akaspin/soil/agent/api/api-server"
-	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/proto"
 	"net/http"
 	"os"
@@ -29,21 +28,17 @@ func NewAgentStopPut(signalChan chan os.Signal) (e *api_server.Endpoint) {
 		}))
 }
 
-func NewAgentDrainPut(setter bus.Setter) (e *api_server.Endpoint) {
+func NewAgentDrainPut(fn func(on bool)) (e *api_server.Endpoint) {
 	e = api_server.NewEndpoint(http.MethodPut, proto.V1AgentDrain, NewWrapper(func() (err error) {
-		setter.Set(map[string]string{
-			"drain": "true",
-		})
+		fn(true)
 		return
 	}))
 	return
 }
 
-func NewAgentDrainDelete(setter bus.Setter) (e *api_server.Endpoint) {
+func NewAgentDrainDelete(fn func(on bool)) (e *api_server.Endpoint) {
 	e = api_server.NewEndpoint(http.MethodDelete, proto.V1AgentDrain, NewWrapper(func() (err error) {
-		setter.Set(map[string]string{
-			"drain": "false",
-		})
+		fn(false)
 		return
 	}))
 	return

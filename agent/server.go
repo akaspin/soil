@@ -58,6 +58,11 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	apiRouter := api_server.NewRouter(s.log,
 		// status
 		api.NewStatusPingGet(),
+
+		// agent
+		api.NewAgentReloadPut(s.Configure),
+		api.NewAgentDrainPut(provisionDrainPipe.Divert),
+		api.NewAgentDrainDelete(provisionDrainPipe.Divert),
 	)
 
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, systemPaths, state, &metrics.BlackHole{})

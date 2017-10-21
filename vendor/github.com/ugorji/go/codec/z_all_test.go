@@ -29,49 +29,83 @@ import "testing"
 // 	os.Exit(exitcode)
 // }
 
+func testGroupResetFlags() {
+	testUseMust = false
+	testCanonical = false
+	testUseMust = false
+	testInternStr = false
+	testUseIoEncDec = -1
+	testStructToArray = false
+	testCheckCircRef = false
+	testUseReset = false
+	testMaxInitLen = 0
+	testUseIoWrapper = false
+	testNumRepeatString = 8
+}
+
 func testSuite(t *testing.T, f func(t *testing.T)) {
 	// find . -name "*_test.go" | xargs grep -e 'flag.' | cut -d '&' -f 2 | cut -d ',' -f 1 | grep -e '^test'
 	// Disregard the following: testVerbose, testInitDebug, testSkipIntf, testJsonIndent (Need a test for it)
 
 	testReinit() // so flag.Parse() is called first, and never called again
 
-	testUseMust = false
-	testCanonical = false
-	testUseMust = false
-	testInternStr = false
-	testUseIoEncDec = false
-	testStructToArray = false
-	testWriteNoSymbols = false
-	testCheckCircRef = false
-	testJsonHTMLCharsAsIs = false
-	testUseReset = false
-	testMaxInitLen = 0
-	testJsonIndent = 0
+	testDecodeOptions = DecodeOptions{}
+	testEncodeOptions = EncodeOptions{}
+
+	testGroupResetFlags()
+
 	testReinit()
 	t.Run("optionsFalse", f)
-
-	testMaxInitLen = 10
-	testJsonIndent = 8
-	testReinit()
-	t.Run("initLen10-jsonSpaces", f)
-
-	testReinit()
-	testMaxInitLen = 10
-	testJsonIndent = -1
-	testReinit()
-	t.Run("initLen10-jsonTabs", f)
 
 	testCanonical = true
 	testUseMust = true
 	testInternStr = true
-	testUseIoEncDec = true
+	testUseIoEncDec = 0
 	testStructToArray = true
-	testWriteNoSymbols = true
 	testCheckCircRef = true
-	testJsonHTMLCharsAsIs = true
 	testUseReset = true
+	testDecodeOptions.MapValueReset = true
 	testReinit()
 	t.Run("optionsTrue", f)
+
+	testUseIoWrapper = true
+	testReinit()
+	t.Run("optionsTrue-ioWrapper", f)
+
+	testUseIoEncDec = -1
+
+	testDepth = 6
+	testReinit()
+	t.Run("optionsTrue-deepstruct", f)
+
+	// make buffer small enough so that we have to re-fill multiple times.
+	testSkipRPCTests = true
+	testUseIoEncDec = 128
+	// testDecodeOptions.ReaderBufferSize = 128
+	// testEncodeOptions.WriterBufferSize = 128
+	testReinit()
+	t.Run("optionsTrue-bufio", f)
+	// testDecodeOptions.ReaderBufferSize = 0
+	// testEncodeOptions.WriterBufferSize = 0
+	testUseIoEncDec = -1
+	testSkipRPCTests = false
+
+	testNumRepeatString = 32
+	testReinit()
+	t.Run("optionsTrue-largestrings", f)
+
+	// The following here MUST be tested individually, as they create
+	// side effects i.e. the decoded value is different.
+	// testDecodeOptions.MapValueReset = true // ok - no side effects
+	// testDecodeOptions.InterfaceReset = true // error??? because we do deepEquals to verify
+	// testDecodeOptions.ErrorIfNoField = true // error, as expected, as fields not there
+	// testDecodeOptions.ErrorIfNoArrayExpand = true // no error, but no error case either
+	// testDecodeOptions.PreferArrayOverSlice = true // error??? because slice != array.
+	// .... however, update deepEqual to take this option
+	// testReinit()
+	// t.Run("optionsTrue-resetOptions", f)
+
+	testGroupResetFlags()
 }
 
 /*
@@ -84,6 +118,7 @@ find . -name "$z" | xargs grep -e '^func Test' | \
 func testCodecGroup(t *testing.T) {
 	// println("running testcodecsuite")
 	// <setup code>
+
 	t.Run("TestBincCodecsTable", TestBincCodecsTable)
 	t.Run("TestBincCodecsMisc", TestBincCodecsMisc)
 	t.Run("TestBincCodecsEmbeddedPointer", TestBincCodecsEmbeddedPointer)
@@ -132,4 +167,100 @@ func testCodecGroup(t *testing.T) {
 	// <tear-down code>
 }
 
-func TestCodecSuite(t *testing.T) { testSuite(t, testCodecGroup) }
+func testJsonGroup(t *testing.T) {
+	t.Run("TestJsonCodecsTable", TestJsonCodecsTable)
+	t.Run("TestJsonCodecsMisc", TestJsonCodecsMisc)
+	t.Run("TestJsonCodecsEmbeddedPointer", TestJsonCodecsEmbeddedPointer)
+	t.Run("TestJsonCodecChan", TestJsonCodecChan)
+	t.Run("TestJsonStdEncIntf", TestJsonStdEncIntf)
+	t.Run("TestJsonMammoth", TestJsonMammoth)
+	t.Run("TestJsonRaw", TestJsonRaw)
+	t.Run("TestJsonRpcGo", TestJsonRpcGo)
+	t.Run("TestJsonLargeInteger", TestJsonLargeInteger)
+	t.Run("TestJsonDecodeNonStringScalarInStringContext", TestJsonDecodeNonStringScalarInStringContext)
+	t.Run("TestJsonEncodeIndent", TestJsonEncodeIndent)
+}
+
+func testBincGroup(t *testing.T) {
+	t.Run("TestBincCodecsTable", TestBincCodecsTable)
+	t.Run("TestBincCodecsMisc", TestBincCodecsMisc)
+	t.Run("TestBincCodecsEmbeddedPointer", TestBincCodecsEmbeddedPointer)
+	t.Run("TestBincStdEncIntf", TestBincStdEncIntf)
+	t.Run("TestBincMammoth", TestBincMammoth)
+	t.Run("TestBincRaw", TestBincRaw)
+	t.Run("TestSimpleRpcGo", TestSimpleRpcGo)
+	t.Run("TestBincUnderlyingType", TestBincUnderlyingType)
+}
+
+func testCborGroup(t *testing.T) {
+	t.Run("TestCborCodecsTable", TestCborCodecsTable)
+	t.Run("TestCborCodecsMisc", TestCborCodecsMisc)
+	t.Run("TestCborCodecsEmbeddedPointer", TestCborCodecsEmbeddedPointer)
+	t.Run("TestCborMapEncodeForCanonical", TestCborMapEncodeForCanonical)
+	t.Run("TestCborCodecChan", TestCborCodecChan)
+	t.Run("TestCborStdEncIntf", TestCborStdEncIntf)
+	t.Run("TestCborMammoth", TestCborMammoth)
+	t.Run("TestCborRaw", TestCborRaw)
+	t.Run("TestCborRpcGo", TestCborRpcGo)
+}
+
+func TestCodecSuite(t *testing.T) {
+	testSuite(t, testCodecGroup)
+
+	testGroupResetFlags()
+
+	oldIndent, oldCharsAsis, oldPreferFloat := testJsonH.Indent, testJsonH.HTMLCharsAsIs, testJsonH.PreferFloat
+
+	testMaxInitLen = 10
+	testJsonH.Indent = 8
+	testJsonH.HTMLCharsAsIs = true
+	// testJsonH.PreferFloat = true
+	testReinit()
+	t.Run("json-spaces-htmlcharsasis-initLen10", testJsonGroup)
+
+	testMaxInitLen = 10
+	testJsonH.Indent = -1
+	testJsonH.HTMLCharsAsIs = false
+	// testJsonH.PreferFloat = false
+	testReinit()
+	t.Run("json-tabs-initLen10", testJsonGroup)
+
+	testJsonH.Indent, testJsonH.HTMLCharsAsIs, testJsonH.PreferFloat = oldIndent, oldCharsAsis, oldPreferFloat
+
+	oldIndefLen := testCborH.IndefiniteLength
+
+	testCborH.IndefiniteLength = true
+	testReinit()
+	t.Run("cbor-indefinitelength", testCborGroup)
+
+	testCborH.IndefiniteLength = oldIndefLen
+
+	oldSymbols := testBincH.getBasicHandle().AsSymbols
+
+	testBincH.getBasicHandle().AsSymbols = AsSymbolNone
+	testReinit()
+	t.Run("binc-no-symbols", testBincGroup)
+
+	testBincH.getBasicHandle().AsSymbols = AsSymbolAll
+	testReinit()
+	t.Run("binc-all-symbols", testBincGroup)
+
+	testBincH.getBasicHandle().AsSymbols = oldSymbols
+
+	testGroupResetFlags()
+}
+
+// func TestCodecSuite(t *testing.T) { testSuite2(t, testCodecGroup2) }
+// func testCodecGroup2(t *testing.T) {
+// 	t.Run("TestJsonCodecsTable", TestJsonCodecsTable)
+// 	t.Run("TestJsonCodecsMisc", TestJsonCodecsMisc)
+// }
+// func testSuite2(t *testing.T, f func(t *testing.T)) {
+// 	testUseIoEncDec = true
+// 	testDecodeOptions = DecodeOptions{}
+// 	testEncodeOptions = EncodeOptions{}
+// 	testDecodeOptions.ReaderBufferSize = 128
+// 	testEncodeOptions.WriterBufferSize = 128
+// 	testReinit()
+// 	t.Run("optionsTrue-bufio", f)
+// }

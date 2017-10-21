@@ -21,7 +21,7 @@ func TestManifest(t *testing.T) {
 				Name:      "first",
 				Runtime:   true,
 				Target:    "multi-user.target",
-				Units: []*manifest.Unit{
+				Units: []manifest.Unit{
 					{
 						Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: true},
 						Name:       "first-1.service",
@@ -33,7 +33,7 @@ func TestManifest(t *testing.T) {
 						Source:     "[Service]\n# ${NONEXISTENT}\nExecStart=/usr/bin/sleep inf\n",
 					},
 				},
-				Blobs: []*manifest.Blob{
+				Blobs: []manifest.Blob{
 					{Name: "/etc/vpn/users/env", Permissions: 420, Leave: false, Source: "My file\n"},
 				},
 				Resources: nil,
@@ -44,7 +44,7 @@ func TestManifest(t *testing.T) {
 				Runtime:    false,
 				Target:     "multi-user.target",
 				Constraint: manifest.Constraint{"${meta.consul}": "true"},
-				Units: []*manifest.Unit{
+				Units: []manifest.Unit{
 					{
 						Transition: manifest.Transition{Create: "start", Update: "restart", Destroy: "stop", Permanent: false},
 						Name:       "second-1.service",
@@ -78,4 +78,33 @@ func TestManifest_JSON(t *testing.T) {
 	err = json.Unmarshal(data, &pod)
 	data1, err := json.Marshal(pod)
 	assert.Equal(t, string(data), string(data1))
+}
+
+func TestPod_GetResource(t *testing.T) {
+	var registry manifest.Registry
+	err := registry.UnmarshalFiles("private", "testdata/test_pod_GetConstraint.hcl")
+	assert.NoError(t, err)
+
+	t.Run("0 request constraint", func(t *testing.T) {
+		assert.Equal(t, manifest.Constraint{
+			"${__resource.request.allow}":        "true",
+			"${__resource.request.kind.port}":    "true",
+			"${__resource.request.kind.counter}": "true",
+			"${meta.consul}":                     "true",
+		}, registry[0].GetResourceRequestConstraint())
+		assert.Equal(t, manifest.Constraint{
+			"${meta.consul}":              "true",
+			"${__resource.request.allow}": "false",
+		}, registry[1].GetResourceRequestConstraint())
+	})
+	t.Run("0 allocation constraint", func(t *testing.T) {
+		assert.Equal(t, manifest.Constraint{
+			"${resource.port.first.8080.allocated}": "true",
+			"${resource.counter.first.1.allocated}": "true",
+			"${meta.consul}":                        "true",
+		}, registry[0].GetResourceAllocationConstraint())
+		assert.Equal(t, manifest.Constraint{
+			"${meta.consul}": "true",
+		}, registry[1].GetResourceAllocationConstraint())
+	})
 }

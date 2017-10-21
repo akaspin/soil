@@ -78,7 +78,7 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 	ts2 := httptest.NewServer(router2)
 	defer ts1.Close()
 
-	nodesProducer := bus.NewFlatMap(true, "nodes", router1, router2)
+	nodesProducer := bus.NewStrictMapUpstream("nodes", router1, router2)
 	nodesProducer.Set(map[string]string{
 		"node-1": ts1.Listener.Addr().String(),
 		"node-2": ts2.Listener.Addr().String(),

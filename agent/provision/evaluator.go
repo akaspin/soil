@@ -13,33 +13,21 @@ import (
 
 type Evaluator struct {
 	*supervisor.Control
-	log      *logx.Log
+	log         *logx.Log
 	systemPaths allocation.SystemPaths
-	reporter metrics.Reporter
+	reporter    metrics.Reporter
 
 	state *EvaluatorState
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, state allocation.State, reporter metrics.Reporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, state allocation.Recovery, reporter metrics.Reporter) (e *Evaluator) {
 	e = &Evaluator{
-		Control:  supervisor.NewControl(ctx),
-		log:      log.GetLog("provision", "evaluator"),
+		Control:     supervisor.NewControl(ctx),
+		log:         log.GetLog("provision", "evaluator"),
 		systemPaths: systemPaths,
-		reporter: reporter,
-		state:NewEvaluatorState(state),
+		reporter:    reporter,
+		state:       NewEvaluatorState(state),
 	}
-	return
-}
-
-func (e *Evaluator) Open() (err error) {
-	err = e.Control.Open()
-	e.log.Debug("opened")
-	return
-}
-
-func (e *Evaluator) Close() (err error) {
-	err = e.Control.Close()
-	e.log.Debug("closed")
 	return
 }
 
@@ -50,18 +38,13 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 	return
 }
 
-func (e *Evaluator) GetState() allocation.State {
-	return e.state.GetState()
-}
-
-func (e *Evaluator) Allocate(name string, pod *manifest.Pod, env map[string]string) {
-	var alloc *allocation.Pod
-	var err error
-	if alloc, err = allocation.NewFromManifest(pod, e.systemPaths, env); err != nil {
+func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
+	alloc := allocation.NewPod(e.systemPaths)
+	if err := alloc.FromManifest(pod, env); err != nil {
 		e.log.Error(err)
 		return
 	}
-	e.submitAllocation(name, alloc)
+	e.submitAllocation(pod.Name, alloc)
 }
 
 func (e *Evaluator) Deallocate(name string) {
@@ -83,7 +66,7 @@ func (e *Evaluator) fanOut(next []*Evaluation) {
 
 func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	var failures []error
-	e.log.Debugf("begin: %s", evaluation)
+	e.log.Tracef("begin: %s", evaluation)
 	conn, err := dbus.New()
 	if err != nil {
 		e.log.Error(err)
@@ -103,9 +86,8 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	}
 	failures = append(failures, e.executePhase(phase, conn)...)
 
+	e.log.Debugf("plan done: %s:%s (failures:%v)", evaluation, evaluation.plan, failures)
 	e.log.Infof("evaluation done: %s (failures:%v)", evaluation, failures)
-	e.reporter.Count("provision.evaluations", 1)
-	e.reporter.Count("provision.failures", int64(len(failures)))
 	next := e.state.Commit(evaluation.Name())
 	e.fanOut(next)
 	return

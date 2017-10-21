@@ -19,20 +19,20 @@ func TestHeader(t *testing.T) {
 `
 	expectUnits := []*allocation.Unit{
 		{
-			Transition: &manifest.Transition{
+			Transition: manifest.Transition{
 				Create:    "start",
 				Permanent: true,
 			},
-			UnitFile: &allocation.UnitFile{
+			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/etc/systemd/system/unit-1.service",
 			},
 		},
 		{
-			Transition: &manifest.Transition{
+			Transition: manifest.Transition{
 				Permanent: false,
 			},
-			UnitFile: &allocation.UnitFile{
+			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/etc/systemd/system/unit-2.service",
 			},
@@ -47,8 +47,8 @@ func TestHeader(t *testing.T) {
 	}
 	expectResources := []*allocation.Resource{
 		{
-			Request: &manifest.Resource{
-				Type: "port",
+			Request: manifest.Resource{
+				Kind: "port",
 				Name: "8080",
 				Config: map[string]interface{}{
 					"fixed": float64(8080),
@@ -60,8 +60,8 @@ func TestHeader(t *testing.T) {
 			},
 		},
 		{
-			Request: &manifest.Resource{
-				Type:   "counter",
+			Request: manifest.Resource{
+				Kind:   "counter",
 				Name:   "1",
 				Config: map[string]interface{}{},
 			},

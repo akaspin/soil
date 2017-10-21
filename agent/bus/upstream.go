@@ -7,3 +7,8 @@ type Setter interface {
 type Deleter interface {
 	Delete(key ...string)
 }
+
+type Upstream interface {
+	Setter
+	Deleter
+}

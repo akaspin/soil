@@ -34,10 +34,10 @@ func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs 
 	for _, line := range split[1:] {
 		if strings.HasPrefix(line, "### UNIT") {
 			u := &Unit{
-				UnitFile: &UnitFile{
+				UnitFile: UnitFile{
 					SystemPaths: paths,
 				},
-				Transition: &manifest.Transition{},
+				Transition: manifest.Transition{},
 			}
 			if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.UnitFile.Path, &jsonSrc); err != nil {
 				return

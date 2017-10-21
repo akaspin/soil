@@ -23,8 +23,8 @@ WantedBy=${pod.target}
 
 // Pod represents pod allocated on agent
 type Pod struct {
-	*Header
-	*UnitFile
+	Header
+	UnitFile
 	Units     []*Unit
 	Blobs     []*Blob
 	Resources []*Resource
@@ -32,25 +32,23 @@ type Pod struct {
 
 func NewPod(systemPaths SystemPaths) (p *Pod) {
 	p = &Pod{
-		UnitFile: &UnitFile{
+		UnitFile: UnitFile{
 			SystemPaths: systemPaths,
 		},
-		Header: &Header{},
+		Header: Header{},
 	}
 	return
 }
 
-func NewFromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) (p *Pod, err error) {
+func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 	agentMark, _ := hashstructure.Hash(env, nil)
-	p = &Pod{
-		Header: &Header{
-			Name:      m.Name,
-			PodMark:   m.Mark(),
-			AgentMark: agentMark,
-			Namespace: m.Namespace,
-		},
-		UnitFile: NewUnitFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), paths, m.Runtime),
+	p.Header = Header{
+		Name:      m.Name,
+		PodMark:   m.Mark(),
+		AgentMark: agentMark,
+		Namespace: m.Namespace,
 	}
+	p.UnitFile = NewUnitFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), p.SystemPaths, m.Runtime)
 	baseEnv := map[string]string{
 		"pod.name":      m.Name,
 		"pod.namespace": m.Namespace,
@@ -78,8 +76,8 @@ func NewFromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) 
 	for _, u := range m.Units {
 		unitName := manifest.Interpolate(u.Name, baseEnv)
 		pu := &Unit{
-			Transition: &u.Transition,
-			UnitFile:   NewUnitFile(unitName, paths, m.Runtime),
+			Transition: u.Transition,
+			UnitFile:   NewUnitFile(unitName, p.SystemPaths, m.Runtime),
 		}
 		pu.Source = manifest.Interpolate(u.Source, baseEnv, baseSourceEnv, fileHashes, env)
 		p.Units = append(p.Units, pu)
@@ -95,11 +93,10 @@ func NewFromManifest(m *manifest.Pod, paths SystemPaths, env map[string]string) 
 	p.Source += manifest.Interpolate(podUnitTemplate, baseEnv, baseSourceEnv, map[string]string{
 		"pod.units": strings.Join(unitNames, " "),
 	}, env)
-
 	return
 }
 
-func (p *Pod) FromFS(path string) (err error) {
+func (p *Pod) FromFilesystem(path string) (err error) {
 	p.UnitFile.Path = path
 	if err = p.UnitFile.Read(); err != nil {
 		return
@@ -124,7 +121,7 @@ func (p *Pod) FromFS(path string) (err error) {
 func (p *Pod) GetPodUnit() (res *Unit) {
 	res = &Unit{
 		UnitFile: p.UnitFile,
-		Transition: &manifest.Transition{
+		Transition: manifest.Transition{
 			Create:    "start",
 			Update:    "restart",
 			Destroy:   "stop",

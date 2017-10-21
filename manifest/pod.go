@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"fmt"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"github.com/mitchellh/hashstructure"
@@ -18,9 +19,9 @@ type Pod struct {
 	Runtime    bool
 	Target     string
 	Constraint Constraint
-	Units      []*Unit
-	Blobs      []*Blob
-	Resources  []*Resource
+	Units      []Unit
+	Blobs      []Blob
+	Resources  []Resource
 }
 
 func DefaultPod(namespace string) (p *Pod) {
@@ -65,13 +66,60 @@ func (p *Pod) Mark() (res uint64) {
 	return
 }
 
-// Returns Pod Constraint with additional Resource Allocation constraints
-func (p *Pod) GetResourceAllocationConstraint() (res Constraint) {
-	var resourceConstraint []Constraint
-	for _, resource := range p.Resources {
-		resourceConstraint = append(resourceConstraint, resource.GetAllocatedConstraint(p.Name))
+/*
+Returns Constraint for Resource Request. Returned Constraint includes Pod
+and resource request constraints. All manually declared pairs with "resource.*"
+and "__*" variables will be excluded. For example Pod which requires "port" and
+"counter" resources will return following:
+
+	// Not changed
+	* "${meta.test}" = "1"
+
+	// defined manually
+	- "${resource.port.pod-one.8080.allocated}" = "true"
+	- "${__resource.request.kind.port.allow}" = "true"
+
+	// added by resource kind
+	+ "${__resource.request.kind.port.allow}" = "true"
+	+ "${__resource.request.kind.counter.allow}" = "true"
+
+	// added to allow requests
+	+ "${__resource.request.allow}" = "true"
+
+For Pods without resources "resources.*" and "__.*" will be also excluded. Only
+one extra constraint will be added:
+
+	+ "${__resource.request.allow}" = "false"
+*/
+func (p *Pod) GetResourceRequestConstraint() (res Constraint) {
+	res = p.Constraint.FilterOut(openResourcePrefix, hiddenPrefix)
+	if len(p.Resources) == 0 {
+		res = res.Merge(Constraint{
+			fmt.Sprintf("${%s.allow}", resourceRequestPrefix): "false",
+		})
+		return
 	}
-	res = p.Constraint.Merge(resourceConstraint...)
+	requests := []Constraint{
+		{fmt.Sprintf("${%s.allow}", resourceRequestPrefix): "true"},
+	}
+	for _, resource := range p.Resources {
+		requests = append(requests, resource.GetRequestConstraint())
+	}
+	res = res.Merge(requests...)
+	return
+}
+
+// Returns Pod Constraint with additional Resource Allocation constraints. All
+// manually defined hidden constraints will be excluded.
+func (p *Pod) GetResourceAllocationConstraint() (res Constraint) {
+	res = p.Constraint.FilterOut(hiddenPrefix)
+	if len(p.Resources) > 0 {
+		resourceConstraint := []Constraint{}
+		for _, resource := range p.Resources {
+			resourceConstraint = append(resourceConstraint, resource.GetAllocationConstraint(p.Name))
+		}
+		res = p.Constraint.Merge(resourceConstraint...)
+	}
 	return
 }
 

@@ -1,3 +1,4 @@
 .consul_data_*
+.test*
 .vagrant*
 /dist

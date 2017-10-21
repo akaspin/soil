@@ -1,8 +1,11 @@
 package manifest
 
 import (
+	"encoding/json"
 	"regexp"
 )
+
+const hiddenPrefix = "__"
 
 var (
 	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_\-.]+}`)
@@ -11,8 +14,7 @@ var (
 func ExtractEnv(v string) (res []string) {
 	res1 := envRe.FindAllString(v, -1)
 	for _, r := range res1 {
-		r1 := r[2 : len(r)-1]
-		res = append(res, r1)
+		res = append(res, r[2:len(r)-1])
 	}
 	return
 }
@@ -27,5 +29,14 @@ func Interpolate(v string, env ...map[string]string) (res string) {
 		}
 		return arg
 	})
+	return
+}
+
+func MapToJson(v map[string]string) (res string, err error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
+	res = string(data)
 	return
 }

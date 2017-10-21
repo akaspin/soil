@@ -15,9 +15,14 @@ func makeAllocations(t *testing.T, path string) (recovered []*allocation.Pod) {
 		t.Fail()
 	}
 	for _, pod := range pods {
-		alloc, _ := allocation.NewFromManifest(pod, allocation.DefaultSystemPaths(), map[string]string{
+		alloc := allocation.NewPod(allocation.DefaultSystemPaths())
+		err = alloc.FromManifest(pod, map[string]string{
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
+		if err != nil {
+			t.Error(err)
+			t.Fail()
+		}
 		recovered = append(recovered, alloc)
 	}
 	return

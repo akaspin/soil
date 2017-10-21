@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/coreos/go-systemd/dbus"
 	"github.com/coreos/go-systemd/unit"
+	"github.com/mitchellh/hashstructure"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -134,7 +135,7 @@ func (s *Systemd) Cleanup() (err error) {
 	return
 }
 
-func (s *Systemd) AssertUnits(t *testing.T, names []string, states map[string]string) {
+func (s *Systemd) AssertUnitStates(t *testing.T, names []string, states map[string]string) {
 	t.Helper()
 	conn, err := dbus.New()
 	if err != nil {
@@ -154,36 +155,71 @@ func (s *Systemd) AssertUnits(t *testing.T, names []string, states map[string]st
 		res[u.Name] = u.ActiveState
 	}
 	if !reflect.DeepEqual(states, res) {
-		t.Errorf("not equal (expected)%v != (actual)%v", states, res)
+		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
 		t.Fail()
 	}
 }
 
-func (s *Systemd) ListPods() (res map[string]string, err error) {
+func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[string]string) {
+	t.Helper()
 	conn, err := dbus.New()
 	if err != nil {
+		t.Error(err)
+		t.Fail()
 		return
 	}
 	defer conn.Close()
-
-	fs, err := conn.ListUnitFilesByPatterns([]string{}, []string{s.Prefix + "-*.service"})
+	l, err := conn.ListUnitFilesByPatterns([]string{}, names)
 	if err != nil {
+		t.Error(err)
+		t.Fail()
 		return
 	}
-	res = map[string]string{}
-	for _, f := range fs {
-		body, readErr := ioutil.ReadFile(f.Path)
-		if readErr != nil {
-			continue
+	res := map[string]string{}
+	for _, u := range l {
+		var data []byte
+		if data, err = ioutil.ReadFile(u.Path); err != nil {
+			t.Error(err)
+			t.Fail()
+			return
 		}
-		var name string
-		var parseErr error
-		if _, parseErr = fmt.Sscanf(string(body), "### POD %s ", &name); parseErr != nil {
-			continue
-		}
-		res[name] = f.Path
+		res[u.Path] = string(data)
 	}
-	return
+	if !reflect.DeepEqual(states, res) {
+		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
+		t.Fail()
+	}
+}
+
+func (s *Systemd) AssertUnitHashes(t *testing.T, names []string, states map[string]uint64) {
+	t.Helper()
+	conn, err := dbus.New()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+	defer conn.Close()
+	l, err := conn.ListUnitFilesByPatterns([]string{}, names)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+		return
+	}
+	res := map[string]uint64{}
+	for _, u := range l {
+		var data []byte
+		if data, err = ioutil.ReadFile(u.Path); err != nil {
+			t.Error(err)
+			t.Fail()
+			return
+		}
+		res[u.Path], _ = hashstructure.Hash(data, nil)
+	}
+	if !reflect.DeepEqual(states, res) {
+		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
+		t.Fail()
+	}
 }
 
 func (s *Systemd) destroyPod(conn *dbus.Conn, path string, src []byte) (err error) {
@@ -201,9 +237,7 @@ func (s *Systemd) destroyPod(conn *dbus.Conn, path string, src []byte) (err erro
 
 	conn.DisableUnitFiles(unitNames, isRuntime)
 	for _, u := range unitNames {
-		// ch := make(chan string)
 		conn.StopUnit(u, "replace", nil)
-		//<-ch
 	}
 
 	files1, err := conn.ListUnitFilesByPatterns([]string{}, unitNames)

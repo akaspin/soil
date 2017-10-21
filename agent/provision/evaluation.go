@@ -42,8 +42,24 @@ func (e *Evaluation) Plan() (res []Instruction) {
 	return
 }
 
-func (e *Evaluation) String() string {
-	return fmt.Sprintf("%s:%s", e.name, e.plan)
+func (e *Evaluation) String() (res string) {
+	res = e.name + ":"
+	if e.Left != nil {
+		res += fmt.Sprintf("[%x:%x]", e.Left.PodMark, e.Left.AgentMark)
+	} else {
+		res += "nil"
+	}
+	res += "->"
+	if e.Right != nil {
+		res += fmt.Sprintf("[%x:%x]", e.Right.PodMark, e.Right.AgentMark)
+	} else {
+		res += "nil"
+	}
+	return
+}
+
+func (e *Evaluation) Explain() string {
+	return fmt.Sprintf("%s", e.plan)
 }
 
 func (e *Evaluation) planPhases() (res []Instruction) {
@@ -145,7 +161,7 @@ func planUnitDestroy(what *allocation.Unit) (res []Instruction) {
 	return
 }
 
-func planUnitDeploy(what *allocation.UnitFile, permanent bool, command string) (res []Instruction) {
+func planUnitDeploy(what allocation.UnitFile, permanent bool, command string) (res []Instruction) {
 	res = append(res, NewWriteUnitInstruction(what), planUnitPerm(what, permanent))
 	if command != "" {
 		res = append(res, NewCommandInstruction(phaseDeployCommand, what, command))
@@ -153,7 +169,7 @@ func planUnitDeploy(what *allocation.UnitFile, permanent bool, command string) (
 	return
 }
 
-func planUnitPerm(what *allocation.UnitFile, permanent bool) (res Instruction) {
+func planUnitPerm(what allocation.UnitFile, permanent bool) (res Instruction) {
 	if permanent {
 		res = NewEnableUnitInstruction(what)
 		return

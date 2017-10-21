@@ -1,34 +1,55 @@
 package bus
 
-import "github.com/mitchellh/hashstructure"
+import (
+	"github.com/mitchellh/hashstructure"
+)
 
 // Message
 type Message struct {
-	producer string            // Producer name
-	payload  map[string]string // Message payload
+	prefix  string            // Producer name
+	payload map[string]string // Message payload
+	mark    uint64
 }
 
-func NewMessage(producerName string, payload map[string]string) (m Message) {
+// Create new message non-expiring with cloned payload. Use <nil> payload to create empty message.
+func NewMessage(prefix string, payload map[string]string) (m Message) {
 	m = Message{
-		producer: producerName,
-		payload:  map[string]string{},
+		prefix: prefix,
 	}
 	if payload != nil {
 		m.payload = CloneMap(payload)
 	}
+	m.mark, _ = hashstructure.Hash(m.payload, nil)
 	return
 }
 
-func (m Message) GetProducer() string {
-	return m.producer
+// Get message prefix
+func (m Message) GetPrefix() string {
+	return m.prefix
 }
 
+// Get message payload
 func (m Message) GetPayload() map[string]string {
+	if m.payload == nil {
+		return map[string]string{}
+	}
 	return m.payload
 }
 
-func (m Message) GetMark() (res uint64) {
-	res, _ = hashstructure.Hash(m.payload, nil)
+// Get message payload hash
+func (m Message) GetPayloadMark() (res uint64) {
+	res = m.mark
+	return
+}
+
+// Is message payload equal to <nil>
+func (m Message) IsEmpty() (res bool) {
+	res = m.payload == nil
+	return
+}
+
+func (m Message) IsEqual(ingest Message) (res bool) {
+	res = m.prefix == ingest.prefix && m.mark == ingest.mark
 	return
 }
 

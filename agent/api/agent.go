@@ -9,10 +9,10 @@ import (
 	"syscall"
 )
 
-func NewAgentReloadPut(signalChan chan os.Signal) (e *api_server.Endpoint) {
+func NewAgentReloadPut(fn func()) (e *api_server.Endpoint) {
 	return api_server.NewEndpoint(http.MethodPut, proto.V1AgentReload,
 		NewWrapper(func() (err error) {
-			signalChan <- syscall.SIGHUP
+			fn()
 			return
 		}))
 }

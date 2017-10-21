@@ -1,4 +1,6 @@
-id = "agent-1"
+agent {
+  id = "agent-1"
+}
 
 meta {
   "consul" = "true"

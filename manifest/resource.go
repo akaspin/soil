@@ -4,42 +4,70 @@ import (
 	"fmt"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
+	"github.com/mitchellh/copystructure"
 )
 
-// Resources are referenced by ${resource.<Type>.<pod>.name}
+const (
+	openResourcePrefix    = "resource"
+	resourceRequestPrefix = "__resource.request"
+	resourceValuesPrefix  = "__resource.values"
+)
+
+// Resources are referenced by ${resource.<kind>.<pod>.name}
 type Resource struct {
-	Name     string `hcl:"-"`
-	Type     string `hcl:"-"`
+
+	// Resource name unique within pod
+	Name string `hcl:"-"`
+
+	// Resource type
+	Kind string `hcl:"-"`
+
+	// Add "resource.<Type>.<PodName>.<Name>" = "true" to pod allocation constraint
 	Required bool
-	Config   map[string]interface{} `hcl:"-"`
+
+	// Request config
+	Config map[string]interface{} `hcl:"-"`
 }
 
-func defaultResource() (r *Resource) {
-	r = &Resource{
+func defaultResource() (r Resource) {
+	r = Resource{
 		Required: true,
 	}
 	return
 }
 
-func (r *Resource) Id(podName string) (res string) {
-	res = fmt.Sprintf("%s.%s.%s", r.Type, podName, r.Name)
+func (r Resource) Clone() (res Resource) {
+	res1, _ := copystructure.Copy(r)
+	res = res1.(Resource)
 	return
 }
 
-// GetRequestConstraint returns constraint required to request resource allocation
+// GetID resource ID
+func (r *Resource) GetID(podName string) (res string) {
+	res = fmt.Sprintf("%s.%s", podName, r.Name)
+	return
+}
+
+// Returns "resource.request.<kind>.allow": "true"
 func (r *Resource) GetRequestConstraint() (res Constraint) {
 	res = Constraint{
-		fmt.Sprintf("${resource_request.allow.%s}", r.Type): "true",
+		fmt.Sprintf("${%s.kind.%s}", resourceRequestPrefix, r.Kind): "true",
 	}
 	return
 }
 
-// GetAllocatedConstraint returns required constraint for provision with allocated resource
-func (r *Resource) GetAllocatedConstraint(podName string) (res Constraint) {
+// Returns required constraint for provision with allocated resource
+func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	res = Constraint{}
 	if r.Required {
-		res[fmt.Sprintf("${resource.%s.allocated}", r.Id(podName))] = "true"
+		res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Kind, r.GetID(podName))] = "true"
 	}
+	return
+}
+
+// Returns `resource.<kind>.<pod>.<name>.__values_json`
+func (r *Resource) GetValuesKey(podName string) (res string) {
+	res = fmt.Sprintf("%s.%s.%s", resourceValuesPrefix, r.Kind, r.GetID(podName))
 	return
 }
 
@@ -48,7 +76,7 @@ func (r *Resource) parseAst(raw *ast.ObjectItem) (err error) {
 		err = fmt.Errorf(`resource should be "type" "name"`)
 		return
 	}
-	r.Type = raw.Keys[0].Token.Value().(string)
+	r.Kind = raw.Keys[0].Token.Value().(string)
 	r.Name = raw.Keys[1].Token.Value().(string)
 	if err = hcl.DecodeObject(r, raw); err != nil {
 		return
@@ -58,6 +86,6 @@ func (r *Resource) parseAst(raw *ast.ObjectItem) (err error) {
 	}
 	delete(r.Config, "required")
 	delete(r.Config, "name")
-	delete(r.Config, "type")
+	delete(r.Config, "kind")
 	return
 }

@@ -43,6 +43,8 @@ type GlobalFlags struct {
 	Endpoints          []string
 	DialTimeout        time.Duration
 	CommandTimeOut     time.Duration
+	KeepAliveTime      time.Duration
+	KeepAliveTimeout   time.Duration
 
 	TLS transport.TLSInfo
 
@@ -90,13 +92,22 @@ func initDisplayFromCmd(cmd *cobra.Command) {
 	}
 }
 
-func mustClientFromCmd(cmd *cobra.Command) *clientv3.Client {
+type clientConfig struct {
+	endpoints        []string
+	dialTimeout      time.Duration
+	keepAliveTime    time.Duration
+	keepAliveTimeout time.Duration
+	scfg             *secureCfg
+	acfg             *authCfg
+}
+
+func clientConfigFromCmd(cmd *cobra.Command) *clientConfig {
 	fs := cmd.InheritedFlags()
 	flags.SetPflagsFromEnv("ETCDCTL", fs)
 
-	debug, derr := cmd.Flags().GetBool("debug")
-	if derr != nil {
-		ExitWithError(ExitError, derr)
+	debug, err := cmd.Flags().GetBool("debug")
+	if err != nil {
+		ExitWithError(ExitError, err)
 	}
 	if debug {
 		clientv3.SetLogger(grpclog.NewLoggerV2WithVerbosity(os.Stderr, os.Stderr, os.Stderr, 4))
@@ -105,21 +116,30 @@ func mustClientFromCmd(cmd *cobra.Command) *clientv3.Client {
 		})
 	}
 
-	endpoints, err := endpointsFromCmd(cmd)
+	cfg := &clientConfig{}
+	cfg.endpoints, err = endpointsFromCmd(cmd)
 	if err != nil {
 		ExitWithError(ExitError, err)
 	}
-	dialTimeout := dialTimeoutFromCmd(cmd)
-	sec := secureCfgFromCmd(cmd)
-	auth := authCfgFromCmd(cmd)
+
+	cfg.dialTimeout = dialTimeoutFromCmd(cmd)
+	cfg.keepAliveTime = keepAliveTimeFromCmd(cmd)
+	cfg.keepAliveTimeout = keepAliveTimeoutFromCmd(cmd)
+
+	cfg.scfg = secureCfgFromCmd(cmd)
+	cfg.acfg = authCfgFromCmd(cmd)
 
 	initDisplayFromCmd(cmd)
-
-	return mustClient(endpoints, dialTimeout, sec, auth)
+	return cfg
 }
 
-func mustClient(endpoints []string, dialTimeout time.Duration, scfg *secureCfg, acfg *authCfg) *clientv3.Client {
-	cfg, err := newClientCfg(endpoints, dialTimeout, scfg, acfg)
+func mustClientFromCmd(cmd *cobra.Command) *clientv3.Client {
+	cfg := clientConfigFromCmd(cmd)
+	return cfg.mustClient()
+}
+
+func (cc *clientConfig) mustClient() *clientv3.Client {
+	cfg, err := newClientCfg(cc.endpoints, cc.dialTimeout, cc.keepAliveTime, cc.keepAliveTimeout, cc.scfg, cc.acfg)
 	if err != nil {
 		ExitWithError(ExitBadArgs, err)
 	}
@@ -132,7 +152,7 @@ func mustClient(endpoints []string, dialTimeout time.Duration, scfg *secureCfg, 
 	return client
 }
 
-func newClientCfg(endpoints []string, dialTimeout time.Duration, scfg *secureCfg, acfg *authCfg) (*clientv3.Config, error) {
+func newClientCfg(endpoints []string, dialTimeout, keepAliveTime, keepAliveTimeout time.Duration, scfg *secureCfg, acfg *authCfg) (*clientv3.Config, error) {
 	// set tls if any one tls option set
 	var cfgtls *transport.TLSInfo
 	tlsinfo := transport.TLSInfo{}
@@ -157,9 +177,12 @@ func newClientCfg(endpoints []string, dialTimeout time.Duration, scfg *secureCfg
 	}
 
 	cfg := &clientv3.Config{
-		Endpoints:   endpoints,
-		DialTimeout: dialTimeout,
+		Endpoints:            endpoints,
+		DialTimeout:          dialTimeout,
+		DialKeepAliveTime:    keepAliveTime,
+		DialKeepAliveTimeout: keepAliveTimeout,
 	}
+
 	if cfgtls != nil {
 		clientTLS, err := cfgtls.ClientConfig()
 		if err != nil {
@@ -167,6 +190,7 @@ func newClientCfg(endpoints []string, dialTimeout time.Duration, scfg *secureCfg
 		}
 		cfg.TLS = clientTLS
 	}
+
 	// if key/cert is not given but user wants secure connection, we
 	// should still setup an empty tls configuration for gRPC to setup
 	// secure connection.
@@ -205,6 +229,22 @@ func dialTimeoutFromCmd(cmd *cobra.Command) time.Duration {
 		ExitWithError(ExitError, err)
 	}
 	return dialTimeout
+}
+
+func keepAliveTimeFromCmd(cmd *cobra.Command) time.Duration {
+	keepAliveTime, err := cmd.Flags().GetDuration("keepalive-time")
+	if err != nil {
+		ExitWithError(ExitError, err)
+	}
+	return keepAliveTime
+}
+
+func keepAliveTimeoutFromCmd(cmd *cobra.Command) time.Duration {
+	keepAliveTimeout, err := cmd.Flags().GetDuration("keepalive-timeout")
+	if err != nil {
+		ExitWithError(ExitError, err)
+	}
+	return keepAliveTimeout
 }
 
 func secureCfgFromCmd(cmd *cobra.Command) *secureCfg {

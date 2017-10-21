@@ -10,24 +10,20 @@ import (
 	"github.com/akaspin/supervisor"
 )
 
-type RegistryConsumer interface {
-	ConsumeRegistry(namespace string, payload manifest.Registry)
-}
-
 type Sink struct {
 	*supervisor.Control
 	log *logx.Log
 
-	managedEvaluators []ManagedEvaluator
+	boundedEvaluators []BoundedEvaluator
 
 	state *SinkState
 }
 
-func NewSink(ctx context.Context, log *logx.Log, state allocation.State, managedEvaluators ...ManagedEvaluator) (s *Sink) {
+func NewSink2(ctx context.Context, log *logx.Log, state allocation.Recovery, boundedEvaluators ...BoundedEvaluator) (s *Sink) {
 	s = &Sink{
 		Control:           supervisor.NewControl(ctx),
 		log:               log.GetLog("scheduler", "sink"),
-		managedEvaluators: managedEvaluators,
+		boundedEvaluators: boundedEvaluators,
 	}
 	dirty := map[string]string{}
 	for _, recovered := range state {
@@ -37,11 +33,10 @@ func NewSink(ctx context.Context, log *logx.Log, state allocation.State, managed
 	return
 }
 
-// SyncNamespace scheduler pods. Called by registry on initialization.
-func (s *Sink) ConsumeRegistry(namespace string, pods manifest.Registry) {
+func (s *Sink) ConsumeRegistry(namespace string, payload manifest.Registry) {
 	s.log.Debugf("begin: %s", namespace)
 
-	changes := s.state.SyncNamespace(namespace, pods)
+	changes := s.state.SyncNamespace(namespace, payload)
 	var report []string
 	for name, pod := range changes {
 		s.submitToEvaluators(name, pod)
@@ -52,30 +47,29 @@ func (s *Sink) ConsumeRegistry(namespace string, pods manifest.Registry) {
 		report = append(report, fmt.Sprintf(`%s(nil)`, name))
 	}
 	s.log.Infof("submitted changes: %v", report)
-	return
 }
 
-func (s *Sink) submitToEvaluators(name string, pod *manifest.Pod) (err error) {
-	s.log.Debugf("submitting %s to %d managers", name, len(s.managedEvaluators))
-	for _, me := range s.managedEvaluators {
-		go func(me ManagedEvaluator, pod *manifest.Pod) {
+func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) (err error) {
+	s.log.Debugf("submitting %s to %d arbiters", id, len(s.boundedEvaluators))
+	for _, me := range s.boundedEvaluators {
+		func(me BoundedEvaluator, pod *manifest.Pod) {
 			if pod == nil {
-				s.log.Tracef(`unregister "%s" from manager "%s"`, name, me.manager.name)
-				me.manager.UnregisterResource(name, func() {
-					me.evaluator.Deallocate(name)
+				s.log.Tracef(`unregister "%s"`, id)
+				me.binder.Unbind(id, func() {
+					me.evaluator.Deallocate(id)
 				})
 				return
 			}
 
-			s.log.Tracef(`register "%s" in manager "%s"`, name, me.manager.name)
+			s.log.Tracef(`register "%s"`, id)
 			constraint := me.evaluator.GetConstraint(pod)
-			me.manager.RegisterResource(name, pod.Namespace, constraint, func(reason error, message bus.Message) {
-				s.log.Tracef(`received %v from manager "%s" for "%s"`, reason, me.manager.name, name)
+			me.binder.Bind(id, constraint, func(reason error, message bus.Message) {
+				s.log.Tracef(`received %v for "%s"`, reason, id)
 				if reason != nil {
-					me.evaluator.Deallocate(name)
+					me.evaluator.Deallocate(id)
 					return
 				}
-				me.evaluator.Allocate(name, pod, message.GetPayload())
+				me.evaluator.Allocate(pod, message.GetPayload())
 			})
 		}(me, pod)
 	}

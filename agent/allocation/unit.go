@@ -10,8 +10,8 @@ import (
 )
 
 type Unit struct {
-	*UnitFile
-	*manifest.Transition `json:",squash"`
+	UnitFile
+	manifest.Transition `json:",squash"`
 }
 
 func (u *Unit) MarshalHeader(w io.Writer, encoder *json.Encoder) (err error) {
@@ -28,12 +28,12 @@ type UnitFile struct {
 	Source      string
 }
 
-func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f *UnitFile) {
+func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f UnitFile) {
 	basePath := paths.Local
 	if runtime {
 		basePath = paths.Runtime
 	}
-	f = &UnitFile{
+	f = UnitFile{
 		SystemPaths: paths,
 		Path:        filepath.Join(basePath, unitName),
 	}

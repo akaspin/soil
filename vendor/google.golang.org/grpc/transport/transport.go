@@ -635,7 +635,7 @@ type ServerTransport interface {
 	// RemoteAddr returns the remote network address.
 	RemoteAddr() net.Addr
 
-	// Divert notifies the client this ServerTransport stops accepting new RPCs.
+	// Drain notifies the client this ServerTransport stops accepting new RPCs.
 	Drain()
 }
 

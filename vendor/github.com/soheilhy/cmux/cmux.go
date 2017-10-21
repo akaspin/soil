@@ -150,7 +150,7 @@ func (m *cMux) Serve() error {
 
 		for _, sl := range m.sls {
 			close(sl.l.connc)
-			// Divert the connections enqueued for the listener.
+			// Drain the connections enqueued for the listener.
 			for c := range sl.l.connc {
 				_ = c.Close()
 			}

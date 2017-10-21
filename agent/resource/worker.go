@@ -19,29 +19,33 @@ type Worker struct {
 	state            map[string]*Alloc // key: pod.resource-kind
 	dirty            map[string]struct{}
 
-	configChan chan ExecutorConfig
-	valuesChan chan bus.Message
+	configChan  chan ExecutorConfig
+	requestChan chan workerRequest
+	valuesChan  chan bus.Message
 }
 
 // Create new worker with recovered allocations
-func NewWorker(ctx context.Context, log *logx.Log, name string, config EvaluatorConfig, recovered []Alloc) (w *Worker) {
+func NewWorker(ctx context.Context, log *logx.Log, name string, consumer bus.MessageConsumer, config EvaluatorConfig, recovered []Alloc) (w *Worker) {
 	w = &Worker{
 		log:             log.GetLog("resource", "worker", name),
 		name:            name,
 		evaluatorConfig: config,
+		consumer:        consumer,
 
 		// current allocations
 		state: map[string]*Alloc{},
-		// dirty state
-		dirty:      map[string]struct{}{},
-		configChan: make(chan ExecutorConfig, 1),
-		valuesChan: make(chan bus.Message, 1),
+		// dirtyWorkers state
+		dirty:       map[string]struct{}{},
+		configChan:  make(chan ExecutorConfig, 1),
+		requestChan: make(chan workerRequest, 1),
+		valuesChan:  make(chan bus.Message, 1),
 	}
 	w.ctx, w.cancelFunc = context.WithCancel(ctx)
 	for _, alloc := range recovered {
-		w.state[alloc.GetID()] = &alloc
-		w.dirty[alloc.GetID()] = struct{}{}
-		w.log.Debugf("recovered: %s", alloc.GetID())
+		cloned := alloc.Clone()
+		w.state[cloned.GetID()] = &cloned
+		w.dirty[cloned.GetID()] = struct{}{}
+		w.log.Debugf("recovered: %v", cloned)
 	}
 	go w.loop()
 
@@ -60,11 +64,16 @@ func (w *Worker) Configure(config ExecutorConfig) {
 // Allocate resources for specific pod
 func (w *Worker) Submit(podName string, requests []manifest.Resource) {
 	w.log.Tracef("submit: %s:%v", podName, requests)
-
+	select {
+	case <-w.ctx.Done():
+	case w.requestChan <- workerRequest{
+		podName:  podName,
+		requests: requests,
+	}:
+	}
 }
 
 // Consume message with values from worker. Message prefix should be resource id.
-// Empty message means that resource is deallocated.
 func (w *Worker) ConsumeMessage(message bus.Message) {
 	w.log.Tracef(`message consumed: %v`, message)
 	select {
@@ -80,32 +89,35 @@ func (w *Worker) Close() (err error) {
 
 func (w *Worker) loop() {
 	log := w.log.GetLog(w.log.Prefix(), append(w.log.Tags(), "loop")...)
-	log.Debugf("open")
+	log.Trace("open")
 LOOP:
 	for {
 		select {
 		case <-w.ctx.Done():
 			break LOOP
 		case config := <-w.configChan:
-			log.Tracef(`received ExecutorConfig: %v`, config)
+			log.Tracef(`config: %v`, config)
 			w.handleConfig(config)
+		case req := <-w.requestChan:
+			log.Tracef(`request %v`, req)
+			w.handleRequest(req.podName, req.requests)
 		case message := <-w.valuesChan:
-			log.Tracef(`received message: %v`, message)
+			log.Tracef(`message: %v`, message)
 			w.handleMessage(message)
 		}
 	}
-	log.Debugf("close")
+	log.Trace("close")
 }
 
 func (w *Worker) handleConfig(config ExecutorConfig) {
 	w.log.Tracef("config: %v", config)
 	if w.executorInstance == nil || !w.executorInstance.ExecutorConfig.IsEqual(config) {
-		w.log.Debugf("configure: %v", config)
+		w.log.Tracef("creating executor: %v", config)
 		if w.executorInstance != nil {
 			w.log.Tracef("closing executor instance")
 			w.executorInstance.Close()
 		}
-		// mark all as dirty
+		// mark all as dirtyWorkers
 		for k := range w.state {
 			w.dirty[k] = struct{}{}
 		}
@@ -114,18 +126,90 @@ func (w *Worker) handleConfig(config ExecutorConfig) {
 			w.log.Error(err)
 			return
 		}
-		for _, v := range w.state {
-			w.executorInstance.Executor.Allocate((*v).Clone())
+		w.log.Debugf(`executor created: %v`, config)
+		if len(w.state) > 0 {
+			for _, v := range w.state {
+				w.log.Tracef(`sending allocate request: %v`, v)
+				w.executorInstance.Executor.Allocate((*v).Clone())
+			}
+		} else {
+			w.notify()
 		}
-		w.log.Debugf("Executor created")
+		return
+	}
+	w.log.Debugf("skip reconfigure: config is equal: %v", config)
+}
+
+func (w *Worker) handleRequest(podName string, requests []manifest.Resource) {
+	names := map[string]struct{}{}
+	for _, req := range requests {
+		id := req.GetID(podName)
+		names[id] = struct{}{}
+		allocated, ok := w.state[id]
+		if !ok || allocated.NeedChange(req) {
+			// change
+			w.dirty[id] = struct{}{}
+			w.state[id] = &Alloc{
+				PodName: podName,
+				Request: req,
+				Values:  bus.NewMessage(id, nil),
+			}
+			w.log.Debugf(`submitting allocate: %v`, w.state[id])
+			w.executorInstance.Executor.Allocate((*w.state[id]).Clone())
+		} else {
+			w.log.Tracef(`skip submit %v: config is equal`, allocated)
+		}
+	}
+	for id, allocated := range w.state {
+		_, ok := names[id]
+		if allocated.PodName == podName && !ok {
+			w.log.Debugf(`submitting deallocate: %v`, allocated)
+			w.executorInstance.Executor.Deallocate(id)
+		}
 	}
 }
 
 func (w *Worker) handleMessage(message bus.Message) {
 	w.log.Tracef("message: %v", message)
-	delete(w.dirty, message.GetPrefix())
-	if alloc, ok := w.state[message.GetPrefix()]; ok {
-		alloc.Values = message
-		w.log.Tracef("updated: %v", message)
+	prefix := message.GetPrefix()
+	delete(w.dirty, prefix)
+	if !message.IsEmpty() {
+		var allocated *Alloc
+		var ok bool
+		if allocated, ok = w.state[message.GetPrefix()]; !ok {
+			w.log.Warningf("not found: %s", prefix)
+			return
+		}
+		allocated.Values = message
+		w.log.Debugf("updated: %v", message)
+	} else {
+		delete(w.state, prefix)
+		w.log.Debugf("removed: %v", message)
 	}
+	w.notify()
+}
+
+func (w *Worker) notify() {
+	if len(w.dirty) > 0 {
+		w.log.Debugf("skipping update: state is dirty %v", w.dirty)
+		return
+	}
+	var err error
+	data := map[string]string{}
+	for id, all := range w.state {
+		if data[id+".__values"], err = manifest.MapToJson(all.Values.GetPayload()); err != nil {
+			w.log.Error(err)
+			continue
+		}
+		for k, v := range all.Values.GetPayload() {
+			data[id+"."+k] = v
+		}
+	}
+	w.log.Debugf("notify: %v", data)
+	w.consumer.ConsumeMessage(bus.NewMessage(w.name, data))
+}
+
+type workerRequest struct {
+	podName  string
+	requests []manifest.Resource
 }

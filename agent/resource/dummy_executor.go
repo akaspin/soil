@@ -8,15 +8,16 @@ import (
 
 // Dummy Executor for testing purposes.
 type DummyExecutor struct {
-	log      *logx.Log
-	kind     string
+	log    *logx.Log
+	config ExecutorConfig
+
 	consumer bus.MessageConsumer
 }
 
-func NewDummyExecutor(log *logx.Log, kind string, consumer bus.MessageConsumer) (e *DummyExecutor) {
+func NewDummyExecutor(log *logx.Log, config ExecutorConfig, consumer bus.MessageConsumer) (e *DummyExecutor) {
 	e = &DummyExecutor{
-		log:      log.GetLog("resource", "Executor", kind),
-		kind:     kind,
+		log:      log.GetLog("resource", "executor", config.Nature, config.Kind),
+		config:   config,
 		consumer: consumer,
 	}
 	return
@@ -27,18 +28,21 @@ func (e *DummyExecutor) Close() error {
 }
 
 func (e *DummyExecutor) Allocate(request Alloc) {
-	e.log.Tracef("allocate: %s %v %v", request.GetID(), request.Request.Config, request.Values)
+	e.log.Debugf("allocate: %s %v %v", request.GetID(), request.Request.Config, request.Values)
 	id := request.GetID()
 	payload := map[string]string{
 		"allocated": "true",
 	}
+	for k, v := range e.config.Properties {
+		payload[k] = fmt.Sprint(v)
+	}
 	for k, v := range request.Request.Config {
 		payload[k] = fmt.Sprint(v)
 	}
-	e.consumer.ConsumeMessage(bus.NewMessage(id, payload))
+	go e.consumer.ConsumeMessage(bus.NewMessage(id, payload))
 }
 
 func (e *DummyExecutor) Deallocate(id string) {
-	e.log.Tracef("deallocate: %s", id)
-	e.consumer.ConsumeMessage(bus.NewMessage(id, nil))
+	e.log.Debugf("deallocate: %s", id)
+	go e.consumer.ConsumeMessage(bus.NewMessage(id, nil))
 }

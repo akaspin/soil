@@ -48,7 +48,7 @@ func (r *Resource) GetID(podName string) (res string) {
 	return
 }
 
-// Returns "__resource.request.<kind>.allow": "true"
+// Returns "resource.request.<kind>.allow": "true"
 func (r *Resource) GetRequestConstraint() (res Constraint) {
 	res = Constraint{
 		fmt.Sprintf("${%s.kind.%s}", resourceRequestPrefix, r.Kind): "true",
@@ -65,7 +65,7 @@ func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	return
 }
 
-// Returns `__resource.values.<kind>.<pod>.<name>`
+// Returns `resource.<kind>.<pod>.<name>.__values_json`
 func (r *Resource) GetValuesKey(podName string) (res string) {
 	res = fmt.Sprintf("%s.%s.%s", resourceValuesPrefix, r.Kind, r.GetID(podName))
 	return

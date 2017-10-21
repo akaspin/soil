@@ -8,11 +8,14 @@ import (
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/manifest"
 	"testing"
+	"time"
 )
 
 func TestDummyExecutor_Allocate(t *testing.T) {
 	cons1 := &bus.DummyConsumer{}
-	executor := resource.NewDummyExecutor(logx.GetLog("kind-1"), "kind-1", cons1)
+	executor := resource.NewDummyExecutor(logx.GetLog("kind-1"), resource.ExecutorConfig{
+		Kind: "kind-1",
+	}, cons1)
 
 	executor.Allocate(resource.Alloc{
 		PodName: "pod-1",
@@ -29,6 +32,7 @@ func TestDummyExecutor_Allocate(t *testing.T) {
 		}),
 	})
 
+	time.Sleep(time.Millisecond * 100)
 	cons1.AssertMessages(t,
 		bus.NewMessage("pod-1.res-1", map[string]string{
 			"allocated": "true",
@@ -38,6 +42,7 @@ func TestDummyExecutor_Allocate(t *testing.T) {
 	)
 
 	executor.Deallocate("pod-1.res-1")
+	time.Sleep(time.Millisecond * 100)
 	cons1.AssertMessages(t,
 		bus.NewMessage("pod-1.res-1", map[string]string{
 			"allocated": "true",

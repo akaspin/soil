@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"encoding/json"
 	"regexp"
 )
 
@@ -28,5 +29,14 @@ func Interpolate(v string, env ...map[string]string) (res string) {
 		}
 		return arg
 	})
+	return
+}
+
+func MapToJson(v map[string]string) (res string, err error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
+	res = string(data)
 	return
 }

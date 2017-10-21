@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	dummyExecutorType = "dummy"
+	dummyExecutorNature = "dummy"
+	rangeExecutorNature = "range"
 )
 
 // ExecutorConfig represents one resource in Agent configuration
@@ -49,15 +50,16 @@ type ExecutorInstance struct {
 
 func NewExecutorInstance(ctx context.Context, log *logx.Log, evaluatorConfig EvaluatorConfig, executorConfig ExecutorConfig, consumer bus.MessageConsumer) (i *ExecutorInstance, err error) {
 	i = &ExecutorInstance{
-		log:            log.GetLog("resource", "Executor", "instance", executorConfig.Nature, executorConfig.Kind),
+		log:            log.GetLog("resource", "executor", "instance", executorConfig.Nature, executorConfig.Kind),
 		ExecutorConfig: executorConfig,
 		consumer:       consumer,
 	}
 	i.ctx, i.cancel = context.WithCancel(ctx)
 
 	switch executorConfig.Nature {
-	case dummyExecutorType:
-		i.Executor = NewDummyExecutor(log, executorConfig.Kind, i)
+	case dummyExecutorNature:
+		i.Executor = NewDummyExecutor(log.GetLog("resource", "worker", executorConfig.Kind, executorConfig.Nature),
+			executorConfig, i)
 	default:
 		err = fmt.Errorf("unknown Executor nature: %v", executorConfig)
 	}
@@ -73,9 +75,27 @@ func (i *ExecutorInstance) ConsumeMessage(message bus.Message) {
 	go func() {
 		select {
 		case <-i.ctx.Done():
-			i.log.Tracef("ignoring %v: %v", i.ctx.Err())
+			i.log.Tracef("ignoring %v: %v", message, i.ctx.Err())
 		default:
 			i.consumer.ConsumeMessage(message)
 		}
 	}()
+}
+
+func NewExecutorMessage(id string, err error, values map[string]string) (res bus.Message) {
+	if err != nil {
+		res = bus.NewMessage(id, map[string]string{
+			"allocated": "false",
+			"failure": fmt.Sprint(err),
+		})
+		return
+	}
+	payload := map[string]string{
+		"allocated": "true",
+	}
+	for k, v := range values {
+		payload[k] = v
+	}
+	res = bus.NewMessage(id, payload)
+	return
 }

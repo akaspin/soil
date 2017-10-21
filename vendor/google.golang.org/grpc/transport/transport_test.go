@@ -1394,7 +1394,7 @@ func TestServerWithMisbehavedClient(t *testing.T) {
 		t.Fatalf("Failed to open stream: %v", err)
 	}
 	var sent int
-	// Divert the stream flow control window
+	// Drain the stream flow control window
 	cc.controlBuf.put(&dataFrame{s.id, false, make([]byte, http2MaxFrameLen), func() {}})
 	sent += http2MaxFrameLen
 	// Wait until the server creates the corresponding stream and receive some data.

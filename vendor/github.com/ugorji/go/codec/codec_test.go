@@ -42,11 +42,11 @@ import (
 
 func init() {
 	testPreInitFns = append(testPreInitFns, testInit)
-	fmt.Printf("sizeof: Decoder: %v, Encoder: %v, decNaked: %v\n",
-		reflect.TypeOf((*Decoder)(nil)).Elem().Size(),
-		reflect.TypeOf((*Encoder)(nil)).Elem().Size(),
-		reflect.TypeOf((*decNaked)(nil)).Elem().Size(),
-	)
+	// fmt.Printf("sizeof: Decoder: %v, Encoder: %v, decNaked: %v\n",
+	// 	reflect.TypeOf((*Decoder)(nil)).Elem().Size(),
+	// 	reflect.TypeOf((*Encoder)(nil)).Elem().Size(),
+	// 	reflect.TypeOf((*decNaked)(nil)).Elem().Size(),
+	// )
 }
 
 // make this a mapbyslice
@@ -64,12 +64,15 @@ const (
 	testVerifyForPython
 )
 
-const testSkipRPCTests = false
+// const testSkipRPCTests = false
 
 var (
 	testTableNumPrimitives int
 	testTableIdxTime       int
 	testTableNumMaps       int
+
+	// set this when running using bufio, etc
+	testSkipRPCTests = false
 )
 
 var (
@@ -329,7 +332,7 @@ func testVerifyVal(v interface{}, arg testVerifyArg) (v2 interface{}) {
 func testInit() {
 	gob.Register(new(TestStrucFlex))
 	if testInitDebug {
-		ts0 := newTestStrucFlex(2, false, !testSkipIntf, false)
+		ts0 := newTestStrucFlex(2, testNumRepeatString, false, !testSkipIntf, false)
 		logT(nil, "====> depth: %v, ts: %#v\n", 2, ts0)
 	}
 
@@ -346,17 +349,7 @@ func testInit() {
 		bh.CheckCircularRef = testCheckCircRef
 		bh.StructToArray = testStructToArray
 		bh.MaxInitLen = testMaxInitLen
-		// mostly doing this for binc
-		if testWriteNoSymbols {
-			bh.AsSymbols = AsSymbolNone
-		} else {
-			bh.AsSymbols = AsSymbolAll
-		}
 	}
-
-	testJsonH.Indent = int8(testJsonIndent)
-	testJsonH.HTMLCharsAsIs = testJsonHTMLCharsAsIs
-	testJsonH.PreferFloat = testJsonPreferFloat
 
 	testMsgpackH.RawToString = true
 
@@ -473,7 +466,7 @@ ugorji
 	table = append(table, primitives)
 	table = append(table, testMbsT(primitives))
 	table = append(table, maps...)
-	table = append(table, newTestStrucFlex(0, false, !testSkipIntf, false))
+	table = append(table, newTestStrucFlex(0, testNumRepeatString, false, !testSkipIntf, false))
 
 	tableVerify = make([]interface{}, len(table))
 	tableTestNilVerify = make([]interface{}, len(table))
@@ -694,7 +687,7 @@ func testCodecMiscOne(t *testing.T, h Handle) {
 	}
 
 	// func TestMsgpackDecodePtr(t *testing.T) {
-	ts := newTestStrucFlex(testDepth, false, !testSkipIntf, false)
+	ts := newTestStrucFlex(testDepth, testNumRepeatString, false, !testSkipIntf, false)
 	b, err = testMarshalErr(ts, h, t, "pointer-to-struct")
 	if len(b) < 40 {
 		logT(t, "------- Size must be > 40. Size: %d", len(b))
@@ -957,6 +950,11 @@ func testCodecRpcOne(t *testing.T, rr Rpc, h Handle, doRequest bool, exitSleepMs
 	if !recoverPanicToErr {
 		logT(t, "EXPECTED. set recoverPanicToErr=true, since rpc needs EOF")
 		failT(t)
+	}
+
+	if jsonH, ok := h.(*JsonHandle); ok && !jsonH.TermWhitespace {
+		jsonH.TermWhitespace = true
+		defer func() { jsonH.TermWhitespace = false }()
 	}
 	srv := rpc.NewServer()
 	srv.Register(testRpcInt)
@@ -1455,7 +1453,7 @@ func doTestMsgpackRpcSpecPythonClientToGoSvc(t *testing.T) {
 
 func doTestSwallowAndZero(t *testing.T, h Handle) {
 	testOnce.Do(testInitAll)
-	v1 := newTestStrucFlex(testDepth, false, false, false)
+	v1 := newTestStrucFlex(testDepth, testNumRepeatString, false, false, false)
 	var b1 []byte
 
 	e1 := NewEncoderBytes(&b1, h)
@@ -2110,6 +2108,70 @@ after the new line
 	}
 }
 
+func TestBufioDecReader(t *testing.T) {
+	// try to read 85 bytes in chunks of 7 at a time.
+	var s = strings.Repeat("01234'56789      ", 5)
+	// fmt.Printf("s: %s\n", s)
+	var r = strings.NewReader(s)
+	var br = &bufioDecReader{r: r, buf: make([]byte, 0, 13)}
+	b, err := ioutil.ReadAll(br)
+	if err != nil {
+		panic(err)
+	}
+	var s2 = string(b)
+	// fmt.Printf("s==s2: %v, len(s): %v, len(b): %v, len(s2): %v\n", s == s2, len(s), len(b), len(s2))
+	if s != s2 {
+		logT(t, "not equal: \ns:  %s\ns2: %s", s, s2)
+		failT(t)
+	}
+	// Now, test search functions for skip, readTo and readUntil
+	// readUntil ', readTo ', skip whitespace. 3 times in a loop, each time compare the token and/or outs
+	// readUntil: see: 56789
+	var out []byte
+	var token byte
+	br = &bufioDecReader{r: strings.NewReader(s), buf: make([]byte, 0, 7)}
+	// println()
+	for _, v2 := range [...]string{
+		`01234'`,
+		`56789      01234'`,
+		`56789      01234'`,
+		`56789      01234'`,
+	} {
+		out = br.readUntil(nil, '\'')
+		testDeepEqualErr(string(out), v2, t, "-")
+		// fmt.Printf("readUntil: out: `%s`\n", out)
+	}
+	br = &bufioDecReader{r: strings.NewReader(s), buf: make([]byte, 0, 7)}
+	// println()
+	for range [4]struct{}{} {
+		out = br.readTo(nil, &jsonNumSet)
+		testDeepEqualErr(string(out), `01234`, t, "-")
+		// fmt.Printf("readTo: out: `%s`\n", out)
+		out = br.readUntil(nil, '\'')
+		testDeepEqualErr(string(out), "'", t, "-")
+		// fmt.Printf("readUntil: out: `%s`\n", out)
+		out = br.readTo(nil, &jsonNumSet)
+		testDeepEqualErr(string(out), `56789`, t, "-")
+		// fmt.Printf("readTo: out: `%s`\n", out)
+		out = br.readUntil(nil, '0')
+		testDeepEqualErr(string(out), `      0`, t, "-")
+		// fmt.Printf("readUntil: out: `%s`\n", out)
+		br.UnreadByte()
+	}
+	br = &bufioDecReader{r: strings.NewReader(s), buf: make([]byte, 0, 7)}
+	// println()
+	for range [4]struct{}{} {
+		out = br.readUntil(nil, ' ')
+		testDeepEqualErr(string(out), `01234'56789 `, t, "-")
+		// fmt.Printf("readUntil: out: |%s|\n", out)
+		token = br.skip(&jsonCharWhitespaceSet)
+		testDeepEqualErr(token, byte('0'), t, "-")
+		// fmt.Printf("skip: token: '%c'\n", token)
+		br.UnreadByte()
+	}
+	// println()
+}
+
 // TODO:
 //   Add Tests for:
 //   - decoding empty list/map in stream into a nil slice/map
@@ -2127,3 +2189,20 @@ after the new line
 //
 //  Add negative tests for failure conditions:
 //   - bad input with large array length prefix
+//
+//  More tests:
+//  - length of containers (array, string, bytes, map):
+//    len = 0
+//    maxUint16 < len < maxuint32
+//    len > maxuint32
+//  - large numbers: in every range: up to maxuint8, maxuint16, maxuint32, maxuint64
+//    int64
+//    uint64
+//  - standard numbers:
+//    0, -1, 1, +inf, -inf, 0.0f, etc
+//  - (encode ext, encode raw ext, etc)
+//    (include extensions)
+//  - tracking:
+//    z.trb: track, stop track, check
+//  - test with diff: mapType and sliceType, and decodeNaked
+//  - decodeAsNil: for maps, slices, etc

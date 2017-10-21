@@ -445,7 +445,7 @@ func (r *Registry) Gather() ([]*dto.MetricFamily, error) {
 
 	r.mtx.RUnlock()
 
-	// Divert metricChan in case of premature return.
+	// Drain metricChan in case of premature return.
 	defer func() {
 		for _ = range metricChan {
 		}

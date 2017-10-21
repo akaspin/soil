@@ -45,16 +45,16 @@ import (
 var (
 	// jsonLiterals = [...]byte{'t', 'r', 'u', 'e', 'f', 'a', 'l', 's', 'e', 'n', 'u', 'l', 'l'}
 
-	jsonFloat64Pow10 = [...]float64{
-		1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
-		1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
-		1e20, 1e21, 1e22,
-	}
+	// jsonFloat64Pow10 = [...]float64{
+	// 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
+	// 	1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+	// 	1e20, 1e21, 1e22,
+	// }
 
-	jsonUint64Pow10 = [...]uint64{
-		1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
-		1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
-	}
+	// jsonUint64Pow10 = [...]uint64{
+	// 	1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
+	// 	1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
+	// }
 
 	// jsonTabs and jsonSpaces are used as caches for indents
 	jsonTabs, jsonSpaces string
@@ -63,6 +63,7 @@ var (
 	jsonCharSafeSet       bitset128
 	jsonCharWhitespaceSet bitset256
 	jsonNumSet            bitset256
+	// jsonIsFloatSet        bitset256
 
 	jsonU4Set [256]byte
 )
@@ -134,6 +135,10 @@ func init() {
 		default:
 			jsonU4Set[i] = jsonU4SetErrVal
 		}
+		// switch i = byte(j); i {
+		// case 'e', 'E', '.':
+		// 	jsonIsFloatSet.set(i)
+		// }
 	}
 	// jsonU4Set[255] = jsonU4SetErrVal
 }
@@ -158,48 +163,115 @@ type jsonEncDriver struct {
 //   - newline and indent are added before each ending,
 //     except there was no entry (so we can have {} or [])
 
-func (e *jsonEncDriver) sendContainerState(c containerState) {
-	// determine whether to output separators
-	switch c {
-	case containerMapKey:
-		if e.c != containerMapStart {
-			e.w.writen1(',')
-		}
-		if e.d {
-			e.writeIndent()
-		}
-	case containerMapValue:
-		if e.d {
-			e.w.writen2(':', ' ')
-		} else {
-			e.w.writen1(':')
-		}
-	case containerMapEnd:
-		if e.d {
-			e.dl--
-			if e.c != containerMapStart {
-				e.writeIndent()
-			}
-		}
-		e.w.writen1('}')
-	case containerArrayElem:
-		if e.c != containerArrayStart {
-			e.w.writen1(',')
-		}
-		if e.d {
-			e.writeIndent()
-		}
-	case containerArrayEnd:
-		if e.d {
-			e.dl--
-			if e.c != containerArrayStart {
-				e.writeIndent()
-			}
-		}
-		e.w.writen1(']')
+func (e *jsonEncDriver) WriteArrayStart(length int) {
+	if e.d {
+		e.dl++
 	}
-	e.c = c
+	e.w.writen1('[')
+	e.c = containerArrayStart
 }
+
+func (e *jsonEncDriver) WriteArrayElem() {
+	if e.c != containerArrayStart {
+		e.w.writen1(',')
+	}
+	if e.d {
+		e.writeIndent()
+	}
+	e.c = containerArrayElem
+}
+
+func (e *jsonEncDriver) WriteArrayEnd() {
+	if e.d {
+		e.dl--
+		if e.c != containerArrayStart {
+			e.writeIndent()
+		}
+	}
+	e.w.writen1(']')
+	e.c = containerArrayEnd
+}
+
+func (e *jsonEncDriver) WriteMapStart(length int) {
+	if e.d {
+		e.dl++
+	}
+	e.w.writen1('{')
+	e.c = containerMapStart
+}
+
+func (e *jsonEncDriver) WriteMapElemKey() {
+	if e.c != containerMapStart {
+		e.w.writen1(',')
+	}
+	if e.d {
+		e.writeIndent()
+	}
+	e.c = containerMapKey
+}
+
+func (e *jsonEncDriver) WriteMapElemValue() {
+	if e.d {
+		e.w.writen2(':', ' ')
+	} else {
+		e.w.writen1(':')
+	}
+	e.c = containerMapValue
+}
+
+func (e *jsonEncDriver) WriteMapEnd() {
+	if e.d {
+		e.dl--
+		if e.c != containerMapStart {
+			e.writeIndent()
+		}
+	}
+	e.w.writen1('}')
+	e.c = containerMapEnd
+}
+
+// func (e *jsonEncDriver) sendContainerState(c containerState) {
+// 	// determine whether to output separators
+// 	switch c {
+// 	case containerMapKey:
+// 		if e.c != containerMapStart {
+// 			e.w.writen1(',')
+// 		}
+// 		if e.d {
+// 			e.writeIndent()
+// 		}
+// 	case containerMapValue:
+// 		if e.d {
+// 			e.w.writen2(':', ' ')
+// 		} else {
+// 			e.w.writen1(':')
+// 		}
+// 	case containerMapEnd:
+// 		if e.d {
+// 			e.dl--
+// 			if e.c != containerMapStart {
+// 				e.writeIndent()
+// 			}
+// 		}
+// 		e.w.writen1('}')
+// 	case containerArrayElem:
+// 		if e.c != containerArrayStart {
+// 			e.w.writen1(',')
+// 		}
+// 		if e.d {
+// 			e.writeIndent()
+// 		}
+// 	case containerArrayEnd:
+// 		if e.d {
+// 			e.dl--
+// 			if e.c != containerArrayStart {
+// 				e.writeIndent()
+// 			}
+// 		}
+// 		e.w.writen1(']')
+// 	}
+// 	e.c = c
+// }
 
 func (e *jsonEncDriver) writeIndent() {
 	e.w.writen1('\n')
@@ -238,10 +310,11 @@ func (e *jsonEncDriver) EncodeFloat64(f float64) {
 
 func (e *jsonEncDriver) encodeFloat(f float64, numbits int) {
 	x := strconv.AppendFloat(e.b[:0], f, 'G', -1, numbits)
-	e.w.writeb(x)
-	if bytes.IndexByte(x, 'E') == -1 && bytes.IndexByte(x, '.') == -1 {
-		e.w.writen2('.', '0')
+	// if bytes.IndexByte(x, 'E') == -1 && bytes.IndexByte(x, '.') == -1 {
+	if !jsonIsFloatBytesB2(x) {
+		x = append(x, '.', '0')
 	}
+	e.w.writeb(x)
 }
 
 func (e *jsonEncDriver) EncodeInt(v int64) {
@@ -279,22 +352,6 @@ func (e *jsonEncDriver) EncodeRawExt(re *RawExt, en *Encoder) {
 	} else {
 		en.encode(re.Value)
 	}
-}
-
-func (e *jsonEncDriver) EncodeArrayStart(length int) {
-	if e.d {
-		e.dl++
-	}
-	e.w.writen1('[')
-	e.c = containerArrayStart
-}
-
-func (e *jsonEncDriver) EncodeMapStart(length int) {
-	if e.d {
-		e.dl++
-	}
-	e.w.writen1('{')
-	e.c = containerMapStart
 }
 
 func (e *jsonEncDriver) EncodeString(c charEncoding, v string) {
@@ -400,6 +457,16 @@ func (e *jsonEncDriver) quoteStr(s string) {
 	w.writen1('"')
 }
 
+func (e *jsonEncDriver) atEndOfEncode() {
+	if e.h.TermWhitespace {
+		if e.d {
+			e.w.writen1('\n')
+		} else {
+			e.w.writen1(' ')
+		}
+	}
+}
+
 type jsonDecDriver struct {
 	noBuiltInTypes
 	d *Decoder
@@ -434,34 +501,28 @@ func (d *jsonDecDriver) uncacheRead() {
 	}
 }
 
-func (d *jsonDecDriver) sendContainerState(c containerState) {
+func (d *jsonDecDriver) ReadMapStart() int {
 	if d.tok == 0 {
 		d.tok = d.r.skip(&jsonCharWhitespaceSet)
 	}
-	var xc uint8 // char expected
-	switch c {
-	case containerMapKey:
-		if d.c != containerMapStart {
-			xc = ','
-		}
-	case containerMapValue:
-		xc = ':'
-	case containerMapEnd:
-		xc = '}'
-	case containerArrayElem:
-		if d.c != containerArrayStart {
-			xc = ','
-		}
-	case containerArrayEnd:
-		xc = ']'
+	if d.tok != '{' {
+		d.d.errorf("json: expect char '%c' but got char '%c'", '{', d.tok)
 	}
-	if xc != 0 {
-		if d.tok != xc {
-			d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
-		}
-		d.tok = 0
+	d.tok = 0
+	d.c = containerMapStart
+	return -1
+}
+
+func (d *jsonDecDriver) ReadArrayStart() int {
+	if d.tok == 0 {
+		d.tok = d.r.skip(&jsonCharWhitespaceSet)
 	}
-	d.c = c
+	if d.tok != '[' {
+		d.d.errorf("json: expect char '%c' but got char '%c'", '[', d.tok)
+	}
+	d.tok = 0
+	d.c = containerArrayStart
+	return -1
 }
 
 func (d *jsonDecDriver) CheckBreak() bool {
@@ -470,6 +531,113 @@ func (d *jsonDecDriver) CheckBreak() bool {
 	}
 	return d.tok == '}' || d.tok == ']'
 }
+
+func (d *jsonDecDriver) ReadArrayElem() {
+	if d.tok == 0 {
+		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+	}
+	if d.c != containerArrayStart {
+		const xc uint8 = ','
+		if d.tok != xc {
+			d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+		}
+		d.tok = 0
+	}
+	d.c = containerArrayElem
+}
+
+func (d *jsonDecDriver) ReadArrayEnd() {
+	if d.tok == 0 {
+		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+	}
+	const xc uint8 = ']'
+	if d.tok != xc {
+		d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+	}
+	d.tok = 0
+	d.c = containerArrayEnd
+}
+
+func (d *jsonDecDriver) ReadMapElemKey() {
+	if d.tok == 0 {
+		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+	}
+	if d.c != containerMapStart {
+		const xc uint8 = ','
+		if d.tok != xc {
+			d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+		}
+		d.tok = 0
+	}
+	d.c = containerMapKey
+}
+
+func (d *jsonDecDriver) ReadMapElemValue() {
+	if d.tok == 0 {
+		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+	}
+	const xc uint8 = ':'
+	if d.tok != xc {
+		d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+	}
+	d.tok = 0
+	d.c = containerMapValue
+}
+
+func (d *jsonDecDriver) ReadMapEnd() {
+	if d.tok == 0 {
+		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+	}
+	const xc uint8 = '}'
+	if d.tok != xc {
+		d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+	}
+	d.tok = 0
+	d.c = containerMapEnd
+}
+
+// func (d *jsonDecDriver) readContainerState(c containerState, xc uint8, check bool) {
+// 	if d.tok == 0 {
+// 		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+// 	}
+// 	if check {
+// 		if d.tok != xc {
+// 			d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+// 		}
+// 		d.tok = 0
+// 	}
+// 	d.c = c
+// }
+
+// func (d *jsonDecDriver) sendContainerState(c containerState) {
+// 	if d.tok == 0 {
+// 		d.tok = d.r.skip(&jsonCharWhitespaceSet)
+// 	}
+// 	var xc uint8 // char expected
+// 	switch c {
+// 	case containerMapKey:
+// 		if d.c != containerMapStart {
+// 			xc = ','
+// 		}
+// 	case containerMapValue:
+// 		xc = ':'
+// 	case containerMapEnd:
+// 		xc = '}'
+// 	case containerArrayElem:
+// 		if d.c != containerArrayStart {
+// 			xc = ','
+// 		}
+// 	case containerArrayEnd:
+// 		xc = ']'
+// 	}
+// 	if xc != 0 {
+// 		if d.tok != xc {
+// 			d.d.errorf("json: expect char '%c' but got char '%c'", xc, d.tok)
+// 		}
+// 		d.tok = 0
+// 	}
+// 	d.c = c
+// }
 
 // func (d *jsonDecDriver) readLiteralIdx(fromIdx, toIdx uint8) {
 // 	bs := d.r.readx(int(toIdx - fromIdx))
@@ -523,30 +691,6 @@ func (d *jsonDecDriver) DecodeBool() bool {
 	}
 	d.d.errorf("json: decode bool: got first char %c", d.tok)
 	return false // "unreachable"
-}
-
-func (d *jsonDecDriver) ReadMapStart() int {
-	if d.tok == 0 {
-		d.tok = d.r.skip(&jsonCharWhitespaceSet)
-	}
-	if d.tok != '{' {
-		d.d.errorf("json: expect char '%c' but got char '%c'", '{', d.tok)
-	}
-	d.tok = 0
-	d.c = containerMapStart
-	return -1
-}
-
-func (d *jsonDecDriver) ReadArrayStart() int {
-	if d.tok == 0 {
-		d.tok = d.r.skip(&jsonCharWhitespaceSet)
-	}
-	if d.tok != '[' {
-		d.d.errorf("json: expect char '%c' but got char '%c'", '[', d.tok)
-	}
-	d.tok = 0
-	d.c = containerArrayStart
-	return -1
 }
 
 func (d *jsonDecDriver) ContainerType() (vt valueType) {
@@ -853,7 +997,7 @@ func (d *jsonDecDriver) DecodeNaked() {
 		if len(bs) == 0 {
 			d.d.errorf("json: decode number from empty string")
 			return
-		} else if d.h.PreferFloat || jsonIsFloatBytes(bs) { // bytes.IndexByte(bs, '.') != -1 ||...
+		} else if d.h.PreferFloat || jsonIsFloatBytesB3(bs) { // bytes.IndexByte(bs, '.') != -1 ||...
 			// } else if d.h.PreferFloat || bytes.ContainsAny(bs, ".eE") {
 			z.v = valueTypeFloat
 			z.f, err = strconv.ParseFloat(stringView(bs), 64)
@@ -937,7 +1081,16 @@ type JsonHandle struct {
 	// If not set, we will examine the characters of the number and decode as an
 	// integer type if it doesn't have any of the characters [.eE].
 	PreferFloat bool
+
+	// TermWhitespace says that we add a whitespace character
+	// at the end of an encoding.
+	//
+	// The whitespace is important, especially if using numbers in a context
+	// where multiple items are written to a stream.
+	TermWhitespace bool
 }
+
+func (h *JsonHandle) hasElemSeparators() bool { return true }
 
 func (h *JsonHandle) SetInterfaceExt(rt reflect.Type, tag uint64, ext InterfaceExt) (err error) {
 	return h.SetExt(rt, tag, &setExtWrapper{i: ext})
@@ -988,20 +1141,32 @@ func (d *jsonDecDriver) reset() {
 	// d.n.reset()
 }
 
-func jsonIsFloatBytes(bs []byte) bool {
-	for _, v := range bs {
-		if v == '.' || v == 'e' || v == 'E' {
-			return true
-		}
-	}
-	return false
+// func jsonIsFloatBytes(bs []byte) bool {
+// 	for _, v := range bs {
+// 		// if v == '.' || v == 'e' || v == 'E' {
+// 		if jsonIsFloatSet.isset(v) {
+// 			return true
+// 		}
+// 	}
+// 	return false
+// }
+
+func jsonIsFloatBytesB2(bs []byte) bool {
+	return bytes.IndexByte(bs, '.') != -1 ||
+		bytes.IndexByte(bs, 'E') != -1
 }
 
-var jsonEncodeTerminate = []byte{' '}
-
-func (h *JsonHandle) rpcEncodeTerminate() []byte {
-	return jsonEncodeTerminate
+func jsonIsFloatBytesB3(bs []byte) bool {
+	return bytes.IndexByte(bs, '.') != -1 ||
+		bytes.IndexByte(bs, 'E') != -1 ||
+		bytes.IndexByte(bs, 'e') != -1
 }
+
+// var jsonEncodeTerminate = []byte{' '}
+
+// func (h *JsonHandle) rpcEncodeTerminate() []byte {
+// 	return jsonEncodeTerminate
+// }
 
 var _ decDriver = (*jsonDecDriver)(nil)
 var _ encDriver = (*jsonEncDriver)(nil)

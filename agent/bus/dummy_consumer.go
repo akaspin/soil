@@ -31,3 +31,12 @@ func (c *DummyConsumer) AssertMessages(t *testing.T, expect ...Message) {
 	t.Helper()
 	assert.Equal(t, expect, c.messages)
 }
+
+func (c *DummyConsumer) AssertLastMessage(t *testing.T, expect Message) {
+	t.Helper()
+	if len(c.messages) == 0 {
+		assert.Equal(t, expect, nil)
+		return
+	}
+	assert.Equal(t, expect, c.messages[len(c.messages)-1])
+}

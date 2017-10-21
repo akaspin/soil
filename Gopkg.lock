@@ -4,8 +4,8 @@
 [[projects]]
   name = "github.com/RoaringBitmap/roaring"
   packages = ["."]
-  revision = "6abdf50bd57bff92f338feb8dd9f9ea7ec3ec797"
-  version = "v0.3.11"
+  revision = "b75a08d80b96d1e716bea4a222af534f4a6afeaa"
+  version = "v0.3.12"
 
 [[projects]]
   name = "github.com/akaspin/cut"
@@ -38,10 +38,9 @@
   version = "v1.3.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/coreos/etcd"
   packages = [".","alarm","auth","auth/authpb","client","clientv3","clientv3/concurrency","clientv3/leasing","clientv3/namespace","clientv3/naming","clientv3/ordering","compactor","discovery","embed","error","etcdmain","etcdserver","etcdserver/api","etcdserver/api/etcdhttp","etcdserver/api/v2http","etcdserver/api/v2http/httptypes","etcdserver/api/v2v3","etcdserver/api/v3client","etcdserver/api/v3election","etcdserver/api/v3election/v3electionpb","etcdserver/api/v3election/v3electionpb/gw","etcdserver/api/v3lock","etcdserver/api/v3lock/v3lockpb","etcdserver/api/v3lock/v3lockpb/gw","etcdserver/api/v3rpc","etcdserver/api/v3rpc/rpctypes","etcdserver/auth","etcdserver/etcdserverpb","etcdserver/etcdserverpb/gw","etcdserver/membership","etcdserver/stats","lease","lease/leasehttp","lease/leasepb","mvcc","mvcc/backend","mvcc/mvccpb","pkg/adt","pkg/contention","pkg/cors","pkg/cpuutil","pkg/crc","pkg/debugutil","pkg/fileutil","pkg/flags","pkg/httputil","pkg/idutil","pkg/ioutil","pkg/logutil","pkg/netutil","pkg/osutil","pkg/pathutil","pkg/pbutil","pkg/runtime","pkg/schedule","pkg/srv","pkg/tlsutil","pkg/transport","pkg/types","pkg/wait","proxy/grpcproxy","proxy/grpcproxy/adapter","proxy/grpcproxy/cache","proxy/httpproxy","proxy/tcpproxy","raft","raft/raftpb","rafthttp","snap","snap/snappb","store","version","wal","wal/walpb"]
-  revision = "40b6fcd7614a090c0be9e0be9f8856ad8b0efa89"
+  revision = "785a5a11edf826f8d3e3396c33bf38c717b6225e"
 
 [[projects]]
   name = "github.com/coreos/go-semver"
@@ -371,13 +370,13 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = ["bcrypt","blowfish","ssh/terminal"]
-  revision = "541b9d50ad47e36efd8fb423e938e59ff1691f68"
+  revision = "edd5e9b0879d13ee6970a50153d85b8fec9f7686"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = ["context","http2","http2/hpack","idna","internal/timeseries","lex/httplex","trace"]
-  revision = "aabf50738bcdd9b207582cbe796b59ed65d56680"
+  revision = "cd69bc3fc700721b709c3a59e16e24c67b58f6ff"
 
 [[projects]]
   branch = "master"
@@ -418,6 +417,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2733e8b37b7aa3567293f9ac7631c9d2998c93c80831e3b148a8e41f22f0dcb2"
+  inputs-digest = "7af32a00326f7819580162c8dedf27b7e290ca6e5f579eb0a3edcb0ed0a4f33d"
   solver-name = "gps-cdcl"
   solver-version = 1

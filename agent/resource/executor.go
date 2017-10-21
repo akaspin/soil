@@ -86,7 +86,7 @@ func NewExecutorMessage(id string, err error, values map[string]string) (res bus
 	if err != nil {
 		res = bus.NewMessage(id, map[string]string{
 			"allocated": "false",
-			"failure": fmt.Sprint(err),
+			"failure":   fmt.Sprint(err),
 		})
 		return
 	}

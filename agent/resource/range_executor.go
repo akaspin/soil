@@ -1,36 +1,35 @@
 package resource
 
 import (
+	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"sync"
 	"strconv"
-	"fmt"
+	"sync"
 )
 
 var (
-	executorOutOfRangeError = fmt.Errorf("out-of-range")
 	executorNotAvailableError = fmt.Errorf("not-available")
 )
 
 type RangeExecutor struct {
-	log *logx.Log
+	log      *logx.Log
 	consumer bus.MessageConsumer
-	min uint32
-	max uint32
+	min      uint32
+	max      uint32
 
-	mu sync.Mutex
-	state *roaring.Bitmap
+	mu          sync.Mutex
+	state       *roaring.Bitmap
 	allocations map[string]rangeExecutorAllocation
 }
 
-func NewRangeExecutor(log *logx.Log, config ExecutorConfig, consumer bus.MessageConsumer) (e *RangeExecutor, err error)  {
+func NewRangeExecutor(log *logx.Log, config ExecutorConfig, consumer bus.MessageConsumer) (e *RangeExecutor, err error) {
 	e = &RangeExecutor{
-		log: log,
-		consumer: consumer,
-		max: ^uint32(0),
-		state: roaring.New(),
+		log:         log,
+		consumer:    consumer,
+		max:         ^uint32(0),
+		state:       roaring.New(),
 		allocations: map[string]rangeExecutorAllocation{},
 	}
 	if v, ok := config.Properties["min"]; ok {
@@ -49,113 +48,68 @@ func (e *RangeExecutor) Close() error {
 
 func (e *RangeExecutor) Allocate(request Alloc) {
 	e.log.Tracef(`request: %v`, request)
-	var err error
 	var value uint32
-	var fixed bool
+	var recovered bool
 	id := request.GetID()
+
 	// try to recover value from allocated
 	if val, ok := request.Values.GetPayload()["value"]; ok {
-		var parsed uint64
-		parsed, err = strconv.ParseUint(val, 10, 32)
-		if err != nil {
-			e.log.Warningf(`[%s] can't parse value: %s`, id, val)
+		if parsed, err := strconv.ParseUint(val, 10, 32); err != nil {
+			e.log.Warningf(`can't parse value: %s:%s`, id, val)
 		} else {
-			value = uint32(parsed)
-			e.log.Tracef(`[%s] recovered value: %d`, id, value)
+			if value = uint32(parsed); value >= e.min && value <= e.max {
+				recovered = true
+				e.log.Tracef(`recovered value: %s:%d`, id, value)
+			} else {
+				e.log.Warningf(`recovered value exceeds limits: %s:%d:%d:%d`, id, e.min, value, e.max)
+			}
 		}
 	}
-	// try to parse config
-	if val, ok := request.Request.Config["value"]; ok {
-		parsed := uint32(val.(int))
-		fixed = true
-		if value != parsed {
-			e.log.Tracef(`[%s] not equal: %d(config) != %d(value)`, id, parsed, value)
-			value = parsed
+	go func(id string, value uint32, recovered bool) {
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		// alloc found
+		if state, ok := e.allocations[id]; ok {
+			e.log.Tracef(`found: %s:%v`, id, state)
+			if state.failure == nil {
+				e.log.Tracef(`already allocated: %s:%v`, id, state)
+				return
+			}
 		}
-		e.log.Tracef(`[%s] use fixed value: %d`, id, value)
-	}
-	go e.allocate(id, value, fixed)
+		// recovered
+		if recovered {
+			if ok := e.state.CheckedAdd(value); ok {
+				e.notify(id, rangeExecutorAllocation{value: value})
+				return
+			}
+		}
+		e.allocateValue(id)
+	}(id, value, recovered)
 }
 
 func (e *RangeExecutor) Deallocate(id string) {
-	e.log.Tracef(`[%s] deallocate`, id)
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if state, ok := e.allocations[id]; ok {
-		if state.failure == nil {
-			e.state.Remove(state.value)
-		}
-		delete(e.allocations, id)
-		e.consumer.ConsumeMessage(bus.NewMessage(id, nil))
-		for fid, falloc := range e.allocations {
-			if falloc.failure == executorNotAvailableError {
-				if falloc.fixed {
-					e.allocFixed(fid, falloc.value)
-				} else {
-					e.allocDynamic(fid)
+	go func(id string) {
+		e.mu.Lock()
+		defer e.mu.Unlock()
+		if state, ok := e.allocations[id]; ok {
+			if state.failure == nil {
+				e.state.Remove(state.value)
+			}
+			delete(e.allocations, id)
+			e.log.Debugf(`deallocated: %s:%v`, id, state)
+			e.consumer.ConsumeMessage(bus.NewMessage(id, nil))
+			for allocatedId, allocation := range e.allocations {
+				if allocation.failure != nil {
+					e.allocateValue(allocatedId)
 				}
 			}
-		}
-		return
-	}
-	e.log.Tracef(`[%s] deallocate: not found`, id)
-}
-
-func (e *RangeExecutor) allocate(id string, value uint32, fixed bool) {
-	e.log.Tracef(`[%s] allocate: %d %t`, id, value, fixed)
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	var state rangeExecutorAllocation
-	var ok bool
-
-	if state, ok = e.allocations[id]; ok {
-		e.log.Tracef(`[%s] allocation found: %v`, id, state)
-		if state.failure == nil && (!fixed || fixed && state.value == value) {
-			e.log.Tracef(`[%s] already allocated: %d`, id, value)
 			return
 		}
-		if fixed && state.failure == nil && state.value != value {
-			// migrate
-			e.log.Tracef(`[%s] migrate fixed: %d->%d`, id, state.value, value)
-			e.state.Remove(state.value)
-			e.allocFixed(id, value)
-			return
-		}
-		if fixed && state.failure != nil {
-			e.log.Tracef(`[%s] try allocate failed (%v): %d`, id, state.failure, value)
-			e.allocFixed(id, value)
-			return
-		}
-		return
-	}
-	if fixed {
-		e.allocFixed(id, value)
-	} else {
-		e.allocDynamic(id)
-	}
+		e.log.Tracef(`deallocate: not found: %s`, id)
+	}(id)
 }
 
-func (e *RangeExecutor) allocFixed(id string, value uint32) {
-	if value < e.min || value > e.max {
-		e.notify(id, rangeExecutorAllocation{
-			failure: executorOutOfRangeError,
-		})
-		return
-	}
-	if ok := e.state.CheckedAdd(value); ok {
-		e.notify(id, rangeExecutorAllocation{
-			value: value,
-		})
-		return
-	}
-	e.notify(id, rangeExecutorAllocation{
-		value: value,
-		fixed: true,
-		failure: executorNotAvailableError,
-	})
-}
-
-func (e *RangeExecutor) allocDynamic(id string) {
+func (e *RangeExecutor) allocateValue(id string) {
 	if ok := e.state.CheckedAdd(e.min); ok {
 		e.notify(id, rangeExecutorAllocation{
 			value: e.min,
@@ -182,13 +136,13 @@ func (e *RangeExecutor) allocDynamic(id string) {
 
 func (e *RangeExecutor) notify(id string, state rangeExecutorAllocation) {
 	e.allocations[id] = state
+	e.log.Debugf(`allocated %s:%d`, id, state.value)
 	e.consumer.ConsumeMessage(NewExecutorMessage(id, state.failure, map[string]string{
 		"value": fmt.Sprintf("%d", state.value),
 	}))
 }
 
 type rangeExecutorAllocation struct {
-	value uint32
-	fixed bool
+	value   uint32
 	failure error
 }

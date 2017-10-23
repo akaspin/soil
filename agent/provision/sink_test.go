@@ -26,7 +26,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	arbiter := scheduler.NewArbiter(ctx, log, "test", nil)
+	arbiter := scheduler.NewArbiter(ctx, log, "test", scheduler.ArbiterConfig{})
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 	evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, &metrics.BlackHole{})

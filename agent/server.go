@@ -46,11 +46,12 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	}
 
 	systemPaths := allocation.DefaultSystemPaths()
-	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision", manifest.Constraint{
-		"${agent.drain}": "!= true",
-	})
-	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("0", map[string]string{"agent.drain": "true"}))
-	provisionCompositePipe := bus.NewCompositePipe("0", provisionDrainPipe, "meta", "system")
+	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision",
+		scheduler.ArbiterConfig{
+			Required: manifest.Constraint{"${agent.drain}": "!= true"},
+		})
+	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	provisionCompositePipe := bus.NewCompositePipe("private", provisionDrainPipe, "meta", "system")
 
 	s.metaStorage = bus.NewStrictMapUpstream("meta", provisionCompositePipe)
 	s.systemStorage = bus.NewStrictMapUpstream("system", provisionCompositePipe)

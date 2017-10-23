@@ -1,3 +1,5 @@
+// +build ide test_unit
+
 package resource_test
 
 import (
@@ -8,19 +10,50 @@ import (
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/supervisor"
-	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func TestSink_Flow(t *testing.T) {
-	t.Skip()
+func TestSink_Flow_NoRecovery(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 	waitTime := time.Millisecond * 300
-	arbiter := scheduler.NewArbiter(ctx, log, "resource", nil)
-	arbiterCompositePipe := bus.NewCompositePipe("0", arbiter, "resource")
+	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})
+	arbiterCompositePipe := bus.NewCompositePipe("private", arbiter, "resource")
+
+	downstreamCons := &bus.DummyConsumer{}
+	checkCons := &bus.DummyConsumer{}
+	upstream := bus.NewSimplePipe(nil, arbiterCompositePipe, checkCons)
+
+	evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, nil, downstreamCons, upstream)
+	sink := scheduler.NewSink(ctx, log, nil, scheduler.NewBoundedEvaluator(
+		arbiter, evaluator,
+	))
+	sv := supervisor.NewChain(ctx,
+		supervisor.NewChain(ctx,
+			supervisor.NewGroup(ctx, evaluator, arbiter),
+			sink,
+		),
+	)
+	assert.NoError(t, sv.Open())
+
+	evaluator.Configure()
+	time.Sleep(waitTime)
+
+	checkCons.AssertMessages(t, bus.NewMessage("resource", map[string]string{}))
+	downstreamCons.AssertMessages(t, bus.NewMessage("resource", map[string]string{}))
+
+	sv.Close()
+	sv.Wait()
+}
+
+func TestSink_Flow(t *testing.T) {
+	ctx := context.Background()
+	log := logx.GetLog("test")
+	waitTime := time.Millisecond * 300
+	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})
+	arbiterCompositePipe := bus.NewCompositePipe("private", arbiter, "resource")
 
 	downstreamCons := &bus.DummyConsumer{}
 	checkCons := &bus.DummyConsumer{}
@@ -48,7 +81,7 @@ func TestSink_Flow(t *testing.T) {
 	)
 	assert.NoError(t, sv.Open())
 
-	t.Run("0 configure", func(t *testing.T) {
+	t.Run("0 configure with recovery", func(t *testing.T) {
 		evaluator.Configure([]resource.Config{
 			{
 				Nature: "dummy",
@@ -61,8 +94,23 @@ func TestSink_Flow(t *testing.T) {
 		}...)
 		time.Sleep(waitTime)
 
-		pretty.Log(checkCons)
-		pretty.Log(downstreamCons)
+		checkCons.AssertMessages(t,
+			bus.NewMessage("resource", map[string]string{
+				"request.fake1.allow": "true",
+				"request.fake2.allow": "true",
+			}),
+		)
+		downstreamCons.AssertMessages(t,
+			bus.NewMessage("resource", map[string]string{
+				"fake1.test-1.1.allocated": "true",
+				"fake1.test-1.1.fixed":     "8080",
+				"fake1.test-1.1.__values":  "{\"allocated\":\"true\",\"fixed\":\"8080\"}",
+				"fake1.test-1.2.allocated": "true",
+				"fake1.test-1.2.__values":  "{\"allocated\":\"true\"}",
+				"fake2.test-1.1.allocated": "true",
+				"fake2.test-1.1.__values":  "{\"allocated\":\"true\"}",
+			}),
+		)
 	})
 
 	sv.Close()

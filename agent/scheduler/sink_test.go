@@ -59,9 +59,13 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	arbiter1 := scheduler.NewArbiter(ctx, log, "a1", manifest.Constraint{
-		"${drain}": "!= true",
-	})
+	arbiter1 := scheduler.NewArbiter(ctx, log, "a1",
+		scheduler.ArbiterConfig{
+			Required: manifest.Constraint{
+				"${drain}": "!= true",
+			},
+		},
+	)
 	evaluator1 := &dummyEv{}
 	sink := scheduler.NewSink(ctx, log, nil, scheduler.NewBoundedEvaluator(arbiter1, evaluator1))
 	sv := supervisor.NewChain(ctx, arbiter1, sink)

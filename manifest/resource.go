@@ -9,8 +9,7 @@ import (
 
 const (
 	openResourcePrefix    = "resource"
-	resourceRequestPrefix = "__resource.request"
-	resourceValuesPrefix  = "__resource.values"
+	resourceRequestPrefix = "resource.request"
 )
 
 // Resources are referenced by ${resource.<kind>.<pod>.name}
@@ -67,7 +66,7 @@ func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 
 // Returns `resource.<kind>.<pod>.<name>.__values_json`
 func (r *Resource) GetValuesKey(podName string) (res string) {
-	res = fmt.Sprintf("%s.%s.%s", resourceValuesPrefix, r.Kind, r.GetID(podName))
+	res = fmt.Sprintf("%s.%s.%s.__values", openResourcePrefix, r.Kind, r.GetID(podName))
 	return
 }
 

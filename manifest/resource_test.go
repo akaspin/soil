@@ -24,7 +24,7 @@ func TestResource(t *testing.T) {
 	})
 	t.Run("request constraint", func(t *testing.T) {
 		assert.Equal(t, manifest.Constraint{
-			"${__resource.request.kind.port}": "true",
+			"${resource.request.kind.port}": "true",
 		}, res.GetRequestConstraint())
 	})
 	t.Run("allocation constraint", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestResource(t *testing.T) {
 		}, res.GetAllocationConstraint(podName))
 	})
 	t.Run("values key", func(t *testing.T) {
-		assert.Equal(t, "__resource.values.port.test.8080", res.GetValuesKey(podName))
+		assert.Equal(t, "resource.port.test.8080.__values", res.GetValuesKey(podName))
 	})
 	t.Run("clone", func(t *testing.T) {
 		res1 := res.Clone()

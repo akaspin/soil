@@ -16,14 +16,6 @@ weight: 100
 
 Equivalent to `SIGHUP` signal. Reloads Agent.
 
-## Stop
-
-|Method |Path|Result
-|-
-|`PUT` |`/v1/agent/stop`|application/json
-
-Equivalent to `SIGTERM` signal. Stops Agent.
-
 ## Drain
 
 |Method |Path|Result

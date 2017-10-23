@@ -54,6 +54,10 @@ pod "my-pod" {
 
 If pod contains one or more BLOBs their hashes will be available as `${blob.<blob-id>}`. There `blob-id` is escaped path. For example blob with path `/etc/my/blob.env` hash will be available in units as `${blob.etc-my-blob.env}`. `blob` variables can be referenced only in `unit->source`.
 
+## `resource`
+
+Any 
+
 ## `agent`
 
 Agent variables are accessible as `${agent.*}`.

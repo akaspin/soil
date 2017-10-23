@@ -22,7 +22,7 @@ func TestServer_Configure(t *testing.T) {
 	sd.Cleanup()
 	defer sd.Cleanup()
 
-	waitTime := time.Millisecond * 500
+	waitTime := time.Millisecond * 1000
 	os.RemoveAll("testdata/.test_server.hcl")
 	copyConfig := func(t *testing.T, config string) {
 		os.RemoveAll("testdata/.test_server.hcl")
@@ -120,10 +120,8 @@ func TestServer_Configure(t *testing.T) {
 		assert.NoError(t, err)
 		time.Sleep(waitTime)
 
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
-		})
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-		})
+		sd.AssertUnitStates(t, allUnitNames, map[string]string{})
+		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{})
 	})
 	t.Run("6 drain off", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://127.0.0.1%s/v1/agent/drain", serverOptions.Address), nil)
@@ -143,6 +141,19 @@ func TestServer_Configure(t *testing.T) {
 			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
 			"/run/systemd/system/unit-1.service":        0x7f15d00cb10c1836,
 			"/etc/systemd/system/unit-2.service":        0xfef5c98efe4f711f,
+		})
+	})
+	t.Run("7 with resource", func(t *testing.T) {
+		copyConfig(t, "server_test_7.hcl")
+		server.Configure()
+		time.Sleep(waitTime)
+		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+			"pod-private-1.service": "active",
+			"unit-1.service":        "active",
+		})
+		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
+			"/run/systemd/system/pod-private-1.service": 0x9e2aa3b3b95275df,
+			"/run/systemd/system/unit-1.service":        0x5ea112942f0c47e8,
 		})
 	})
 

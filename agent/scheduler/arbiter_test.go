@@ -44,7 +44,10 @@ func (e *dummyArbiterEntity) assertErrors(t *testing.T, errors []error) {
 
 func TestArbiter_ConsumeMessage(t *testing.T) {
 	arbiter := scheduler.NewArbiter(context.Background(), logx.GetLog("test"), "test",
-		manifest.Constraint{"${drain}": "!= true"})
+		scheduler.ArbiterConfig{
+			Required: manifest.Constraint{"${drain}": "!= true"},
+		},
+	)
 	entity1 := &dummyArbiterEntity{}
 	entity2 := &dummyArbiterEntity{}
 	entity3 := &dummyArbiterEntity{}

@@ -10,21 +10,6 @@ import (
 
 type Registry []*Pod
 
-func (r *Registry) UnmarshalFiles(namespace string, paths ...string) (err error) {
-	var failures []error
-	cr, failure := NewConfigReader(paths...)
-	if failure != nil {
-		failures = append(failures, failure)
-	}
-	if failure = r.Unmarshal(namespace, cr.GetReaders()...); failure != nil {
-		failures = append(failures, failure)
-	}
-	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
-	}
-	return
-}
-
 func (r *Registry) Unmarshal(namespace string, reader ...io.Reader) (err error) {
 	var failures []error
 	for _, raw := range reader {

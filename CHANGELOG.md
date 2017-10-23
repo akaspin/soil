@@ -1,5 +1,15 @@
 ## 0.4.0
 
+This release introduces resources.
+
+### Breaking changes
+
+* `/v1/status/ping`, `/v1/agent/reload` and `/v1/agent/drain` endpoints are 
+  available during refactoring.
+* Clustering is disabled.
+
+### Features
+
 ## 0.3.2 (06.10.2017)
 
 ### Features

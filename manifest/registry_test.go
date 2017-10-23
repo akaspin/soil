@@ -3,6 +3,7 @@
 package manifest_test
 
 import (
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -22,9 +23,10 @@ func TestRegistry_Unmarshal(t *testing.T) {
 
 func TestRegistry_UnmarshalFiles(t *testing.T) {
 	t.Run("0 with resources", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_registry_0.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/test_registry_0.hcl"))
+		assert.NoError(t, pods.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		assert.Equal(t, pods, manifest.Registry{
 			&manifest.Pod{
 				Namespace:  "private",
@@ -64,9 +66,10 @@ func TestRegistry_UnmarshalFiles(t *testing.T) {
 		})
 	})
 	t.Run("intro", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/files_1.hcl", "testdata/files_2.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/files_1.hcl", "testdata/files_2.hcl"))
+		assert.NoError(t, pods.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		assert.Len(t, pods, 3)
 	})
 }

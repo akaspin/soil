@@ -8,19 +8,23 @@ import (
 	"github.com/akaspin/supervisor"
 )
 
-type NotifyFn func(error, bus.Message)
-
 type arbiterEntity struct {
 	id         string
 	constraint manifest.Constraint
 	notifyFn   func(error, bus.Message)
 }
 
+type ArbiterConfig struct {
+	Required       manifest.Constraint
+	Declared       []string
+	ConstraintOnly []string
+}
+
 type Arbiter struct {
 	*supervisor.Control
-	log      *logx.Log
-	name     string
-	required manifest.Constraint
+	log    *logx.Log
+	name   string
+	config ArbiterConfig
 
 	state    bus.Message
 	entities map[string]arbiterEntity
@@ -30,11 +34,11 @@ type Arbiter struct {
 	unbindChan  chan arbiterEntity
 }
 
-func NewArbiter(ctx context.Context, log *logx.Log, name string, required manifest.Constraint) (a *Arbiter) {
+func NewArbiter(ctx context.Context, log *logx.Log, name string, config ArbiterConfig) (a *Arbiter) {
 	a = &Arbiter{
 		Control:     supervisor.NewControl(ctx),
 		log:         log.GetLog("arbiter", name),
-		required:    required,
+		config:      config,
 		state:       bus.NewMessage(name, nil),
 		entities:    map[string]arbiterEntity{},
 		messageChan: make(chan bus.Message),
@@ -119,8 +123,8 @@ func (a *Arbiter) notify(entity arbiterEntity) {
 	}
 	a.log.Tracef(`evaluating "%s"`, entity.id)
 
-	if a.required != nil {
-		if err := a.required.Check(a.state.GetPayload()); err != nil {
+	if a.config.Required != nil {
+		if err := a.config.Required.Check(a.state.GetPayload()); err != nil {
 			a.log.Warningf(`notifying "%s" (required): %v`, entity.id, err)
 			entity.notifyFn(err, bus.NewMessage(a.name, nil))
 			return

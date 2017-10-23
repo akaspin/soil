@@ -99,9 +99,7 @@ func (p *Pod) GetResourceRequestConstraint() (res Constraint) {
 		})
 		return
 	}
-	requests := []Constraint{
-		{fmt.Sprintf("${%s.allow}", resourceRequestPrefix): "true"},
-	}
+	requests := []Constraint{}
 	for _, resource := range p.Resources {
 		requests = append(requests, resource.GetRequestConstraint())
 	}

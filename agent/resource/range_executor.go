@@ -24,7 +24,7 @@ type RangeExecutor struct {
 	allocations map[string]rangeExecutorAllocation
 }
 
-func NewRangeExecutor(log *logx.Log, config ExecutorConfig, consumer bus.MessageConsumer) (e *RangeExecutor, err error) {
+func NewRangeExecutor(log *logx.Log, config Config, consumer bus.MessageConsumer) (e *RangeExecutor) {
 	e = &RangeExecutor{
 		log:         log,
 		consumer:    consumer,

@@ -22,7 +22,7 @@ type Evaluator struct {
 	dirtyWorkers map[string]struct{}
 	cache        map[string]bus.Message
 
-	configChan     chan []ExecutorConfig
+	configChan     chan []Config
 	allocateChan   chan *manifest.Pod
 	deallocateChan chan string
 	messageChan    chan bus.Message
@@ -40,7 +40,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConf
 		dirtyWorkers: map[string]struct{}{},
 		cache:        map[string]bus.Message{},
 
-		configChan:     make(chan []ExecutorConfig),
+		configChan:     make(chan []Config),
 		allocateChan:   make(chan *manifest.Pod),
 		deallocateChan: make(chan string),
 		messageChan:    make(chan bus.Message),
@@ -94,7 +94,7 @@ func (e *Evaluator) Deallocate(name string) {
 	}()
 }
 
-func (e *Evaluator) Configure(configs ...ExecutorConfig) {
+func (e *Evaluator) Configure(configs Configs) {
 	select {
 	case <-e.Control.Ctx().Done():
 		e.log.Warningf(`ignore configs %v: %v`, configs, e.Control.Ctx().Err())
@@ -164,8 +164,8 @@ func (e *Evaluator) notify() {
 	e.downstreamConsumer.ConsumeMessage(bus.NewMessage("resource", downstream))
 }
 
-func (e *Evaluator) handleConfigs(configs []ExecutorConfig) {
-	byName := map[string]ExecutorConfig{}
+func (e *Evaluator) handleConfigs(configs []Config) {
+	byName := map[string]Config{}
 	for _, c := range configs {
 		byName[c.Kind] = c
 	}

@@ -9,12 +9,12 @@ import (
 // Dummy Executor for testing purposes.
 type DummyExecutor struct {
 	log    *logx.Log
-	config ExecutorConfig
+	config Config
 
 	consumer bus.MessageConsumer
 }
 
-func NewDummyExecutor(log *logx.Log, config ExecutorConfig, consumer bus.MessageConsumer) (e *DummyExecutor) {
+func NewDummyExecutor(log *logx.Log, config Config, consumer bus.MessageConsumer) (e *DummyExecutor) {
 	e = &DummyExecutor{
 		log:      log.GetLog("resource", "executor", config.Nature, config.Kind),
 		config:   config,

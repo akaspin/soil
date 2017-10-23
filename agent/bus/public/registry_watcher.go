@@ -33,6 +33,6 @@ func (w *RegistryPipe) ConsumeMessage(message bus.Message) {
 		res = append(res, &pod)
 	}
 	for _, consumer := range w.consumers {
-		consumer.ConsumeRegistry("public", res)
+		consumer.ConsumeRegistry(res)
 	}
 }

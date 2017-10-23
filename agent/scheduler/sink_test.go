@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
@@ -54,25 +55,30 @@ func (e *dummyEv) Deallocate(name string) {
 	e.records[name] = append(e.records[name], dummyEvRecord{})
 }
 
-func TestSink2_ConsumeRegistry(t *testing.T) {
+func TestSink_ConsumeRegistry(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	arbiter1 := scheduler.NewArbiter(ctx, log, "a1", manifest.Constraint{
-		"${drain}": "!= true",
-	})
+	arbiter1 := scheduler.NewArbiter(ctx, log, "a1",
+		scheduler.ArbiterConfig{
+			Required: manifest.Constraint{
+				"${drain}": "!= true",
+			},
+		},
+	)
 	evaluator1 := &dummyEv{}
-	sink := scheduler.NewSink2(ctx, log, nil, scheduler.NewBoundedEvaluator(arbiter1, evaluator1))
+	sink := scheduler.NewSink(ctx, log, nil, scheduler.NewBoundedEvaluator(arbiter1, evaluator1))
 	sv := supervisor.NewChain(ctx, arbiter1, sink)
 	assert.NoError(t, sv.Open())
 
 	time.Sleep(time.Millisecond * 100)
 
 	t.Run("0 consume", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles("private", "testdata/sink_test_ConsumeRegistry_0.hcl")
-		assert.NoError(t, err)
-		sink.ConsumeRegistry("private", registry)
+		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
 		assert.Nil(t, evaluator1.records, "no allocations")
@@ -96,10 +102,11 @@ func TestSink2_ConsumeRegistry(t *testing.T) {
 		})
 	})
 	t.Run("2 modify third", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles("private", "testdata/sink_test_ConsumeRegistry_2.hcl")
-		assert.NoError(t, err)
-		sink.ConsumeRegistry("private", registry)
+		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
 		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
@@ -132,10 +139,11 @@ func TestSink2_ConsumeRegistry(t *testing.T) {
 		}, "no updates: inactive")
 	})
 	t.Run("4 remove third", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles("private", "testdata/sink_test_ConsumeRegistry_4.hcl")
-		assert.NoError(t, err)
-		sink.ConsumeRegistry("private", registry)
+		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
 		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{

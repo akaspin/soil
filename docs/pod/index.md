@@ -16,7 +16,7 @@ pod "my-pod" {
   constraint {
     "my" = "~ ${meta.groups}"
   }
-  
+  resource "port" "8080" {}
   unit "my-unit-1.service" {
     permanent = false
     create = "start"
@@ -52,6 +52,9 @@ All properties is optional. In fact you can define empty pod without anything.
 
 `constraint` `(map: {})`
 : Defines pod deployments [constraints]({{site.baseurl}}/pod/constraint).
+
+`resource` `(map: {})`
+: Resource requests.
 
 `unit` `(map: {})` 
 : Units definitions.
@@ -120,6 +123,10 @@ blob "/etc/my-pod/sample" {
 
 `leave` `(bool: false)` 
 : Leave BLOB on disk after destroy.
+
+## Resources
+
+TBD
 
 ## Mark
 

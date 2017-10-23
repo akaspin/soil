@@ -4,6 +4,7 @@ package allocation_test
 
 import (
 	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -17,14 +18,14 @@ func TestNewFromManifest(t *testing.T) {
 	}
 
 	t.Run("0 simple names", func(t *testing.T) {
+		var buffers lib.StaticBuffers
+		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_0.hcl"))
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_0.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
 
 		m := pods[0]
 		res := allocation.NewPod(allocation.DefaultSystemPaths())
-		err = res.FromManifest(m, env)
-		assert.NoError(t, err)
+		assert.NoError(t, res.FromManifest(m, env))
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: allocation.Header{
@@ -58,13 +59,14 @@ func TestNewFromManifest(t *testing.T) {
 		})
 	})
 	t.Run("interpolate names", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_1.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_1.hcl"))
+		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
+
 		m := pods[0]
 		res := allocation.NewPod(allocation.DefaultSystemPaths())
-		err = res.FromManifest(m, env)
-		assert.NoError(t, err)
+		assert.NoError(t, res.FromManifest(m, env))
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: allocation.Header{Name: "pod-2", PodMark: 0x628d5becdd4e102b, AgentMark: 0x623669d2cde83725, Namespace: "private"},
@@ -96,21 +98,24 @@ func TestNewFromManifest(t *testing.T) {
 		env3 := map[string]string{
 			"meta.consul":                          "true",
 			"system.pod_exec":                      "ExecStart=/usr/bin/sleep inf",
-			"__resource.values.port.pod-1.8080":    `{"value":"8080"}`,
-			"__resource.values.counter.pod-1.main": `{"value":"1"}`,
+			"resource.port.pod-1.8080.__values":    `{"value":"8080"}`,
+			"resource.counter.pod-1.main.__values": `{"value":"1"}`,
 		}
+
+		var buffers lib.StaticBuffers
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_2.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_2.hcl"))
+		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
+
 		m := pods[0]
 		res := allocation.NewPod(allocation.DefaultSystemPaths())
-		err = res.FromManifest(m, env3)
+		err := res.FromManifest(m, env3)
 		assert.NoError(t, err)
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{
 				Name:      "pod-1",
 				PodMark:   12593169462593272090,
-				AgentMark: 17463285198094330196,
+				AgentMark: 17576127034913539037,
 				Namespace: "private",
 			},
 			UnitFile: allocation.UnitFile{
@@ -119,7 +124,7 @@ func TestNewFromManifest(t *testing.T) {
 					Runtime: "/run/systemd/system",
 				},
 				Path:   "/run/systemd/system/pod-private-pod-1.service",
-				Source: "### POD pod-1 {\"AgentMark\":17463285198094330196,\"Namespace\":\"private\",\"PodMark\":12593169462593272090}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				Source: "### POD pod-1 {\"AgentMark\":17576127034913539037,\"Namespace\":\"private\",\"PodMark\":12593169462593272090}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 			},
 			Units: nil,
 			Blobs: nil,

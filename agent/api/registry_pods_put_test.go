@@ -10,6 +10,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/api/api-server"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/soil/proto"
 	"github.com/stretchr/testify/assert"
@@ -23,12 +24,13 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 	backend := newFixtureBackend()
 	processor := api.NewRegistryPodsPut(log, backend).Processor()
 
+	var buffers lib.StaticBuffers
 	var pods manifest.Registry
-	err := pods.UnmarshalFiles("public", "testdata/example-multi.hcl")
-	assert.NoError(t, err)
+	assert.NoError(t, buffers.ReadFiles("testdata/example-multi.hcl"))
+	assert.NoError(t, pods.Unmarshal("public", buffers.GetReaders()...))
 
 	req := proto.RegistryPodsPutRequest(pods)
-	_, err = processor.Process(context.Background(), nil, &req)
+	_, err := processor.Process(context.Background(), nil, &req)
 	assert.NoError(t, err)
 	assert.Equal(t, backend.states, []map[string]string{
 		map[string]string{
@@ -44,9 +46,10 @@ func TestNewRegistryPodsPut(t *testing.T) {
 	ts := httptest.NewServer(api_server.NewRouter(log, endpoint))
 	defer ts.Close()
 
+	var buffers lib.StaticBuffers
 	var pods manifest.Registry
-	err := pods.UnmarshalFiles("public", "testdata/example-multi.hcl")
-	assert.NoError(t, err)
+	assert.NoError(t, buffers.ReadFiles("testdata/example-multi.hcl"))
+	assert.NoError(t, pods.Unmarshal("public", buffers.GetReaders()...))
 
 	data, err := json.Marshal(&pods)
 	assert.NoError(t, err)

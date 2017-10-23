@@ -143,6 +143,19 @@ func TestServer_Configure(t *testing.T) {
 			"/etc/systemd/system/unit-2.service":        0xfef5c98efe4f711f,
 		})
 	})
+	t.Run("7 with resource", func(t *testing.T) {
+		copyConfig(t, "server_test_7.hcl")
+		server.Configure()
+		time.Sleep(waitTime)
+		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+			"pod-private-1.service": "active",
+			"unit-1.service":        "active",
+		})
+		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
+			"/run/systemd/system/pod-private-1.service": 0x9e2aa3b3b95275df,
+			"/run/systemd/system/unit-1.service":        0x5ea112942f0c47e8,
+		})
+	})
 
 	server.Close()
 	server.Wait()

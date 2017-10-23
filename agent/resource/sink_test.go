@@ -9,12 +9,12 @@ import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/lib"
+	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/akaspin/soil/lib"
-	"github.com/akaspin/soil/manifest"
 )
 
 func TestSink_Flow_NoRecovery(t *testing.T) {
@@ -40,7 +40,7 @@ func TestSink_Flow_NoRecovery(t *testing.T) {
 	)
 	assert.NoError(t, sv.Open())
 
-	evaluator.Configure()
+	evaluator.Configure(nil)
 	time.Sleep(waitTime)
 
 	checkCons.AssertMessages(t, bus.NewMessage("resource", map[string]string{}))
@@ -93,7 +93,7 @@ func TestSink_Flow(t *testing.T) {
 				Nature: "dummy",
 				Kind:   "fake2",
 			},
-		}...)
+		})
 		time.Sleep(waitTime)
 
 		checkCons.AssertMessages(t,

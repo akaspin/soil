@@ -94,7 +94,7 @@ func (e *Evaluator) Deallocate(name string) {
 	}()
 }
 
-func (e *Evaluator) Configure(configs ...Config) {
+func (e *Evaluator) Configure(configs Configs) {
 	select {
 	case <-e.Control.Ctx().Done():
 		e.log.Warningf(`ignore configs %v: %v`, configs, e.Control.Ctx().Err())

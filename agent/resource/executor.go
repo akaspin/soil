@@ -41,10 +41,12 @@ func NewExecutorInstance(ctx context.Context, log *logx.Log, evaluatorConfig Eva
 	}
 	i.ctx, i.cancel = context.WithCancel(ctx)
 
+	executorLog := log.GetLog("resource", "worker", executorConfig.Kind, executorConfig.Nature)
 	switch executorConfig.Nature {
 	case dummyExecutorNature:
-		i.Executor = NewDummyExecutor(log.GetLog("resource", "worker", executorConfig.Kind, executorConfig.Nature),
-			executorConfig, i)
+		i.Executor = NewDummyExecutor(executorLog, executorConfig, i)
+	case rangeExecutorNature:
+		i.Executor = NewRangeExecutor(executorLog, executorConfig, i)
 	default:
 		err = fmt.Errorf("unknown Executor nature: %v", executorConfig)
 	}

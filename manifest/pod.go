@@ -99,8 +99,7 @@ func (p *Pod) GetResourceRequestConstraint() (res Constraint) {
 		})
 		return
 	}
-	requests := []Constraint{
-	}
+	requests := []Constraint{}
 	for _, resource := range p.Resources {
 		requests = append(requests, resource.GetRequestConstraint())
 	}

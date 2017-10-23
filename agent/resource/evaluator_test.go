@@ -23,7 +23,7 @@ func TestEvaluator_Configure(t *testing.T) {
 		upstreamCons := &bus.DummyConsumer{}
 		evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, downstreamCons, upstreamCons)
 		assert.NoError(t, evaluator.Open())
-		evaluator.Configure(config...)
+		evaluator.Configure(config)
 		time.Sleep(time.Millisecond * 200)
 
 		downstreamCons.AssertMessages(t, downstream...)

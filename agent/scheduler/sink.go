@@ -33,20 +33,27 @@ func NewSink(ctx context.Context, log *logx.Log, state allocation.Recovery, boun
 	return
 }
 
-func (s *Sink) ConsumeRegistry(namespace string, payload manifest.Registry) {
-	s.log.Debugf("begin: %s", namespace)
-
-	changes := s.state.SyncNamespace(namespace, payload)
-	var report []string
-	for name, pod := range changes {
-		s.submitToEvaluators(name, pod)
-		if pod != nil {
-			report = append(report, fmt.Sprintf(`%s(ns:%s,mark:%d)`, name, pod.Namespace, pod.Mark()))
-			continue
-		}
-		report = append(report, fmt.Sprintf(`%s(nil)`, name))
+func (s *Sink) ConsumeRegistry(registry manifest.Registry) {
+	byNamespace := map[string]manifest.Registry{}
+	for _, pod := range registry {
+		byNamespace[pod.Namespace] = append(byNamespace[pod.Namespace], pod)
 	}
-	s.log.Infof("submitted changes: %v", report)
+
+	for ns, r := range byNamespace {
+		s.log.Debugf("submitting: %s", ns)
+		changes := s.state.SyncNamespace(ns, r)
+		var report []string
+		for name, pod := range changes {
+			s.submitToEvaluators(name, pod)
+			if pod != nil {
+				report = append(report, fmt.Sprintf(`%s(ns:%s,mark:%d)`, name, pod.Namespace, pod.Mark()))
+				continue
+			}
+			report = append(report, fmt.Sprintf(`%s(nil)`, name))
+		}
+		s.log.Infof("submitted changes: %v", report)
+	}
+
 }
 
 func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) (err error) {

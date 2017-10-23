@@ -74,7 +74,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 		var registry manifest.Registry
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
-		sink.ConsumeRegistry("private", registry)
+		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
 		assert.Nil(t, evaluator1.records, "no allocations")
@@ -102,7 +102,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 		var registry manifest.Registry
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
-		sink.ConsumeRegistry("private", registry)
+		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
 		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
@@ -139,7 +139,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 		var registry manifest.Registry
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
-		sink.ConsumeRegistry("private", registry)
+		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
 		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{

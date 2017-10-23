@@ -113,6 +113,6 @@ func (s *Server) Configure() {
 	}
 	s.metaStorage.Set(serverCfg.Meta)
 	s.systemStorage.Set(serverCfg.System)
-	s.privateRegistryConsumer.ConsumeRegistry(manifest.PrivateNamespace, registry)
+	s.privateRegistryConsumer.ConsumeRegistry(registry)
 	s.log.Debug("configure: done")
 }

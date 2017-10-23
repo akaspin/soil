@@ -50,7 +50,7 @@ func (r *Resource) GetID(podName string) (res string) {
 // Returns "resource.request.<kind>.allow": "true"
 func (r *Resource) GetRequestConstraint() (res Constraint) {
 	res = Constraint{
-		fmt.Sprintf("${%s.kind.%s}", resourceRequestPrefix, r.Kind): "true",
+		fmt.Sprintf("${%s.%s.allow}", resourceRequestPrefix, r.Kind): "true",
 	}
 	return
 }

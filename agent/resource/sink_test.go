@@ -1,4 +1,4 @@
-// +build ide test_unit
+// build ide test_unit
 
 package resource_test
 
@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"github.com/akaspin/soil/lib"
+	"github.com/akaspin/soil/manifest"
 )
 
 func TestSink_Flow_NoRecovery(t *testing.T) {
@@ -109,6 +111,20 @@ func TestSink_Flow(t *testing.T) {
 				"fake1.test-1.2.__values":  "{\"allocated\":\"true\"}",
 				"fake2.test-1.1.allocated": "true",
 				"fake2.test-1.1.__values":  "{\"allocated\":\"true\"}",
+			}),
+		)
+	})
+	t.Run("1 submit", func(t *testing.T) {
+		var buffers lib.StaticBuffers
+		var registry manifest.Registry
+		assert.NoError(t, buffers.ReadFiles("testdata/TestSink_Flow/1.hcl"))
+		assert.NoError(t, registry.Unmarshal("private", buffers.GetReaders()...))
+		sink.ConsumeRegistry(registry)
+		time.Sleep(waitTime)
+		downstreamCons.AssertLastMessage(t,
+			bus.NewMessage("resource", map[string]string{
+				"fake1.test-1.1.allocated": "true",
+				"fake1.test-1.1.__values":  "{\"allocated\":\"true\"}",
 			}),
 		)
 	})

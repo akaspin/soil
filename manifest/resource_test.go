@@ -24,7 +24,7 @@ func TestResource(t *testing.T) {
 	})
 	t.Run("request constraint", func(t *testing.T) {
 		assert.Equal(t, manifest.Constraint{
-			"${resource.request.kind.port}": "true",
+			"${resource.request.port.allow}": "true",
 		}, res.GetRequestConstraint())
 	})
 	t.Run("allocation constraint", func(t *testing.T) {

@@ -68,14 +68,19 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	s.systemStorage = bus.NewStrictMapUpstream("system", resourceCompositePipe, provisionCompositePipe)
 	s.agentStorage = bus.NewMapUpstream("agent", resourceCompositePipe, provisionCompositePipe)
 
+	drainFn := func(on bool) {
+		resourceDrainPipe.Divert(on)
+		provisionDrainPipe.Divert(on)
+	}
+
 	apiRouter := api_server.NewRouter(s.log,
 		// status
 		api.NewStatusPingGet(),
 
 		// agent
 		api.NewAgentReloadPut(s.Configure),
-		api.NewAgentDrainPut(provisionDrainPipe.Divert),
-		api.NewAgentDrainDelete(provisionDrainPipe.Divert),
+		api.NewAgentDrainPut(drainFn),
+		api.NewAgentDrainDelete(drainFn),
 	)
 
 	s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)

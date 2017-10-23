@@ -7,7 +7,6 @@ import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/manifest"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -22,7 +21,6 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 			"max": 8003,
 		},
 	}, cons)
-	assert.NoError(t, err)
 
 	t.Run("0 recovered in range", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{

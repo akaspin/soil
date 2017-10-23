@@ -56,7 +56,15 @@ If pod contains one or more BLOBs their hashes will be available as `${blob.<blo
 
 ## `resource`
 
-Any 
+All allocated resources can be referenced as `${resource.<kind>.<pod>.<resource>.*}`
+
+|Variable   |Areas
+|-
+|`allocated`:`{true,false}`    | `constraint`
+|`*`    | `constraint`, `unit->source`, `blob->source`
+|`failure`| `constraint`, `unit->source`, `blob->source`
+
+All resources are available within all pods on Agent. If resource can't be allocated it will be marked with `allocated`:`false` and `failure` with error.
 
 ## `agent`
 

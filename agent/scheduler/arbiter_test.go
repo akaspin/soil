@@ -10,10 +10,32 @@ import (
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
+	"regexp"
 	"sync"
 	"testing"
 	"time"
 )
+
+func TestRegex(t *testing.T) {
+	expr := regexp.MustCompile(`^resource\..+\.allocated$`)
+	var res []string
+	src := []string{
+		"pod.1.allocated",
+		"resource.allocated",
+		"resource.test.1.allocated",
+		"resource.test.1.value",
+	}
+	for _, s := range src {
+		if !expr.Match([]byte(s)) {
+			res = append(res, s)
+		}
+	}
+	assert.Equal(t, []string{
+		"pod.1.allocated",
+		"resource.allocated",
+		"resource.test.1.value",
+	}, res)
+}
 
 type dummyArbiterEntity struct {
 	mu       sync.Mutex

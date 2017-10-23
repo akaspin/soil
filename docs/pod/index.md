@@ -126,7 +126,15 @@ blob "/etc/my-pod/sample" {
 
 ## Resources
 
-TBD
+Pods can request resources on Agent.
+
+```hcl
+resource "port" "8080" {}
+```
+
+Agent will deploy pod only after all resources have been allocated. Resource request should have two fields: kind and name unique within Pod. Resource kinds can be configured in [Agent resources configuration]({{site.baseurl}}/agent/resources).
+
+Allocated resources are survives between host or Agent restarts.
 
 ## Mark
 

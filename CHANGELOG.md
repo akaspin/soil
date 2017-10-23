@@ -6,9 +6,11 @@ This release introduces resources.
 
 * `/v1/status/ping`, `/v1/agent/reload` and `/v1/agent/drain` endpoints are 
   available during refactoring.
-* Clustering is disabled.
+* Clustering is temporary disabled.
 
 ### Features
+
+* Resources
 
 ## 0.3.2 (06.10.2017)
 

@@ -1,5 +1,5 @@
 ---
-title: Deploy
+title: Deployment
 layout: default
 weight: 0
 ---

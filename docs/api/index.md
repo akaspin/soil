@@ -14,7 +14,7 @@ All API routes are prefixed with `/v1/`.
 
 ## Addressing and Ports
 
-Soil Agent binds to a specific set of addresses and ports. The HTTP API is served via the http address and port. This `address:port` must be accessible locally. If you bind to 127.0.0.1:7654, the API is only available from that host. If you bind to a private internal IP, the API will be available from within that network. If you bind to a public IP, the API will be available from the public Internet (not recommended).
+For HTTP API Soil Agent binds to a specific address and port. This `address:port` must be accessible locally. If you bind to 127.0.0.1:7654, the API is only available from that host. If you bind to a private internal IP, the API will be available from within that network. If you bind to a public IP, the API will be available from the public Internet (not recommended).
 
 The default port for the Soil Agent HTTP API is `7654`. This can be overridden via Soil Agent `--address` [flag](/soil/agent/configuration). Here is an example curl request to query a Soil Agent with the default configuration:
 

@@ -16,7 +16,6 @@ type arbiterEntity struct {
 
 type ArbiterConfig struct {
 	Required       manifest.Constraint
-	Declared       []string
 	ConstraintOnly []string
 }
 

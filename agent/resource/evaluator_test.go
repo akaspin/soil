@@ -17,7 +17,7 @@ func TestEvaluator_Configure(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	runTest := func(t *testing.T, config []resource.ExecutorConfig, state allocation.Recovery, downstream, upstream []bus.Message) {
+	runTest := func(t *testing.T, config []resource.Config, state allocation.Recovery, downstream, upstream []bus.Message) {
 		t.Helper()
 		downstreamCons := &bus.DummyConsumer{}
 		upstreamCons := &bus.DummyConsumer{}
@@ -40,7 +40,7 @@ func TestEvaluator_Configure(t *testing.T) {
 	})
 	t.Run("1 empty with configs", func(t *testing.T) {
 		runTest(t,
-			[]resource.ExecutorConfig{
+			[]resource.Config{
 				{
 					Kind:   "fake1",
 					Nature: "dummy",
@@ -74,7 +74,7 @@ func TestEvaluator_Configure(t *testing.T) {
 
 	t.Run("0 configs and allocations", func(t *testing.T) {
 		runTest(t,
-			[]resource.ExecutorConfig{
+			[]resource.Config{
 				{
 					Kind:   "fake1",
 					Nature: "dummy",
@@ -105,7 +105,7 @@ func TestEvaluator_Configure(t *testing.T) {
 	})
 	t.Run("0 configs and extra allocations", func(t *testing.T) {
 		runTest(t,
-			[]resource.ExecutorConfig{
+			[]resource.Config{
 				{
 					Kind:   "fake1",
 					Nature: "dummy",

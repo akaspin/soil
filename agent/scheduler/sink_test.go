@@ -62,7 +62,7 @@ func TestSink2_ConsumeRegistry(t *testing.T) {
 		"${drain}": "!= true",
 	})
 	evaluator1 := &dummyEv{}
-	sink := scheduler.NewSink2(ctx, log, nil, scheduler.NewBoundedEvaluator(arbiter1, evaluator1))
+	sink := scheduler.NewSink(ctx, log, nil, scheduler.NewBoundedEvaluator(arbiter1, evaluator1))
 	sv := supervisor.NewChain(ctx, arbiter1, sink)
 	assert.NoError(t, sv.Open())
 

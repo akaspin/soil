@@ -66,7 +66,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, systemPaths, state, &metrics.BlackHole{})
-	s.privateRegistryConsumer = scheduler.NewSink2(ctx, s.log, state,
+	s.privateRegistryConsumer = scheduler.NewSink(ctx, s.log, state,
 		scheduler.NewBoundedEvaluator(provisionArbiter, provisionEvaluator))
 
 	s.sv = supervisor.NewChain(ctx,

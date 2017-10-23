@@ -19,7 +19,7 @@ type Worker struct {
 	state            map[string]*Alloc // key: pod.resource-kind
 	dirty            map[string]struct{}
 
-	configChan  chan ExecutorConfig
+	configChan  chan Config
 	requestChan chan workerRequest
 	valuesChan  chan bus.Message
 }
@@ -36,7 +36,7 @@ func NewWorker(ctx context.Context, log *logx.Log, name string, consumer bus.Mes
 		state: map[string]*Alloc{},
 		// dirtyWorkers state
 		dirty:       map[string]struct{}{},
-		configChan:  make(chan ExecutorConfig, 1),
+		configChan:  make(chan Config, 1),
 		requestChan: make(chan workerRequest, 1),
 		valuesChan:  make(chan bus.Message, 1),
 	}
@@ -53,7 +53,7 @@ func NewWorker(ctx context.Context, log *logx.Log, name string, consumer bus.Mes
 }
 
 // Configure worker
-func (w *Worker) Configure(config ExecutorConfig) {
+func (w *Worker) Configure(config Config) {
 	w.log.Tracef("configure: %v", config)
 	select {
 	case <-w.ctx.Done():
@@ -109,7 +109,7 @@ LOOP:
 	log.Trace("close")
 }
 
-func (w *Worker) handleConfig(config ExecutorConfig) {
+func (w *Worker) handleConfig(config Config) {
 	w.log.Tracef("config: %v", config)
 	if w.executorInstance == nil || !w.executorInstance.ExecutorConfig.IsEqual(config) {
 		w.log.Tracef("creating executor: %v", config)

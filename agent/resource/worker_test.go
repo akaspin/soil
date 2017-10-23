@@ -47,7 +47,7 @@ func TestWorker_Submit(t *testing.T) {
 	worker := resource.NewWorker(ctx, log, "dummy1", cons1, resource.EvaluatorConfig{}, recovered)
 
 	t.Run("0 configure", func(t *testing.T) {
-		worker.Configure(resource.ExecutorConfig{
+		worker.Configure(resource.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 		})
@@ -187,7 +187,7 @@ func TestWorker_Submit(t *testing.T) {
 		)
 	})
 	t.Run("5 reconfigure", func(t *testing.T) {
-		worker.Configure(resource.ExecutorConfig{
+		worker.Configure(resource.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 			Properties: map[string]interface{}{
@@ -237,7 +237,7 @@ func TestWorker_Submit(t *testing.T) {
 		)
 	})
 	t.Run("5 reconfigure with equal config", func(t *testing.T) {
-		worker.Configure(resource.ExecutorConfig{
+		worker.Configure(resource.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 			Properties: map[string]interface{}{
@@ -302,7 +302,7 @@ func TestWorker_Configure(t *testing.T) {
 	t.Run("0 empty", func(t *testing.T) {
 		cons := &bus.DummyConsumer{}
 		worker := resource.NewWorker(context.Background(), logx.GetLog(""), "dummy1", cons, resource.EvaluatorConfig{}, nil)
-		worker.Configure(resource.ExecutorConfig{
+		worker.Configure(resource.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 		})

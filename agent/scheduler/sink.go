@@ -19,7 +19,7 @@ type Sink struct {
 	state *SinkState
 }
 
-func NewSink2(ctx context.Context, log *logx.Log, state allocation.Recovery, boundedEvaluators ...BoundedEvaluator) (s *Sink) {
+func NewSink(ctx context.Context, log *logx.Log, state allocation.Recovery, boundedEvaluators ...BoundedEvaluator) (s *Sink) {
 	s = &Sink{
 		Control:           supervisor.NewControl(ctx),
 		log:               log.GetLog("scheduler", "sink"),

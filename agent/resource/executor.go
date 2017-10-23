@@ -14,19 +14,7 @@ const (
 	rangeExecutorNature = "range"
 )
 
-// ExecutorConfig represents one resource in Agent configuration
-type ExecutorConfig struct {
-	Nature     string                 // Worker nature
-	Kind       string                 // Declared type
-	Properties map[string]interface{} // Properties
-}
 
-func (c *ExecutorConfig) IsEqual(config ExecutorConfig) (res bool) {
-	leftHash, _ := hashstructure.Hash(*c, nil)
-	rightHash, _ := hashstructure.Hash(config, nil)
-	res = leftHash == rightHash
-	return
-}
 
 // Executor
 type Executor interface {
@@ -44,11 +32,11 @@ type ExecutorInstance struct {
 	log      *logx.Log
 	consumer bus.MessageConsumer
 
-	ExecutorConfig ExecutorConfig
+	ExecutorConfig Config
 	Executor       Executor
 }
 
-func NewExecutorInstance(ctx context.Context, log *logx.Log, evaluatorConfig EvaluatorConfig, executorConfig ExecutorConfig, consumer bus.MessageConsumer) (i *ExecutorInstance, err error) {
+func NewExecutorInstance(ctx context.Context, log *logx.Log, evaluatorConfig EvaluatorConfig, executorConfig Config, consumer bus.MessageConsumer) (i *ExecutorInstance, err error) {
 	i = &ExecutorInstance{
 		log:            log.GetLog("resource", "executor", "instance", executorConfig.Nature, executorConfig.Kind),
 		ExecutorConfig: executorConfig,

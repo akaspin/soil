@@ -120,10 +120,8 @@ func TestServer_Configure(t *testing.T) {
 		assert.NoError(t, err)
 		time.Sleep(waitTime)
 
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
-		})
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-		})
+		sd.AssertUnitStates(t, allUnitNames, map[string]string{})
+		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{})
 	})
 	t.Run("6 drain off", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://127.0.0.1%s/v1/agent/drain", serverOptions.Address), nil)

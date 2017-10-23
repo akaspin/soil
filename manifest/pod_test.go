@@ -1,18 +1,20 @@
-// +build ide test_unit
+// build ide test_unit
 
 package manifest_test
 
 import (
 	"encoding/json"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestManifest(t *testing.T) {
+	var buffers lib.StaticBuffers
+	assert.NoError(t, buffers.ReadFiles("testdata/example-multi.hcl"))
 	var res manifest.Registry
-	err := res.UnmarshalFiles("private", "testdata/example-multi.hcl")
-	assert.NoError(t, err)
+	assert.NoError(t, res.Unmarshal("private", buffers.GetReaders()...))
 
 	t.Run("parse", func(t *testing.T) {
 		assert.Equal(t, res, manifest.Registry{
@@ -78,33 +80,4 @@ func TestManifest_JSON(t *testing.T) {
 	err = json.Unmarshal(data, &pod)
 	data1, err := json.Marshal(pod)
 	assert.Equal(t, string(data), string(data1))
-}
-
-func TestPod_GetResource(t *testing.T) {
-	var registry manifest.Registry
-	err := registry.UnmarshalFiles("private", "testdata/test_pod_GetConstraint.hcl")
-	assert.NoError(t, err)
-
-	t.Run("0 request constraint", func(t *testing.T) {
-		assert.Equal(t, manifest.Constraint{
-			"${__resource.request.allow}":        "true",
-			"${__resource.request.kind.port}":    "true",
-			"${__resource.request.kind.counter}": "true",
-			"${meta.consul}":                     "true",
-		}, registry[0].GetResourceRequestConstraint())
-		assert.Equal(t, manifest.Constraint{
-			"${meta.consul}":              "true",
-			"${__resource.request.allow}": "false",
-		}, registry[1].GetResourceRequestConstraint())
-	})
-	t.Run("0 allocation constraint", func(t *testing.T) {
-		assert.Equal(t, manifest.Constraint{
-			"${resource.port.first.8080.allocated}": "true",
-			"${resource.counter.first.1.allocated}": "true",
-			"${meta.consul}":                        "true",
-		}, registry[0].GetResourceAllocationConstraint())
-		assert.Equal(t, manifest.Constraint{
-			"${meta.consul}": "true",
-		}, registry[1].GetResourceAllocationConstraint())
-	})
 }

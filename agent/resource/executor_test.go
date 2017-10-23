@@ -9,7 +9,7 @@ import (
 )
 
 func TestExecutorConfig_IsEqual(t *testing.T) {
-	left := resource.ExecutorConfig{
+	left := resource.Config{
 		Nature: "test",
 		Kind:   "test",
 		Properties: map[string]interface{}{
@@ -17,7 +17,7 @@ func TestExecutorConfig_IsEqual(t *testing.T) {
 		},
 	}
 	t.Run("equal", func(t *testing.T) {
-		assert.True(t, left.IsEqual(resource.ExecutorConfig{
+		assert.True(t, left.IsEqual(resource.Config{
 			Nature: "test",
 			Kind:   "test",
 			Properties: map[string]interface{}{
@@ -26,7 +26,7 @@ func TestExecutorConfig_IsEqual(t *testing.T) {
 		}))
 	})
 	t.Run("equal-pointer", func(t *testing.T) {
-		assert.True(t, (&left).IsEqual(resource.ExecutorConfig{
+		assert.True(t, (&left).IsEqual(resource.Config{
 			Nature: "test",
 			Kind:   "test",
 			Properties: map[string]interface{}{
@@ -35,7 +35,7 @@ func TestExecutorConfig_IsEqual(t *testing.T) {
 		}))
 	})
 	t.Run("nature", func(t *testing.T) {
-		assert.False(t, (&left).IsEqual(resource.ExecutorConfig{
+		assert.False(t, (&left).IsEqual(resource.Config{
 			Nature: "test1",
 			Kind:   "test",
 			Properties: map[string]interface{}{
@@ -44,7 +44,7 @@ func TestExecutorConfig_IsEqual(t *testing.T) {
 		}))
 	})
 	t.Run("kind", func(t *testing.T) {
-		assert.False(t, (&left).IsEqual(resource.ExecutorConfig{
+		assert.False(t, (&left).IsEqual(resource.Config{
 			Nature: "test",
 			Kind:   "test1",
 			Properties: map[string]interface{}{
@@ -53,7 +53,7 @@ func TestExecutorConfig_IsEqual(t *testing.T) {
 		}))
 	})
 	t.Run("properties", func(t *testing.T) {
-		assert.False(t, (&left).IsEqual(resource.ExecutorConfig{
+		assert.False(t, (&left).IsEqual(resource.Config{
 			Nature: "test",
 			Kind:   "test",
 			Properties: map[string]interface{}{

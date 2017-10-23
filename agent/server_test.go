@@ -22,7 +22,7 @@ func TestServer_Configure(t *testing.T) {
 	sd.Cleanup()
 	defer sd.Cleanup()
 
-	waitTime := time.Millisecond * 500
+	waitTime := time.Millisecond * 1000
 	os.RemoveAll("testdata/.test_server.hcl")
 	copyConfig := func(t *testing.T, config string) {
 		os.RemoveAll("testdata/.test_server.hcl")

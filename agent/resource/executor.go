@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/mitchellh/hashstructure"
 	"io"
 )
 
@@ -13,8 +12,6 @@ const (
 	dummyExecutorNature = "dummy"
 	rangeExecutorNature = "range"
 )
-
-
 
 // Executor
 type Executor interface {

@@ -1,4 +1,4 @@
-// build ide test_unit
+// +build ide test_unit
 
 package manifest_test
 
@@ -68,11 +68,13 @@ func TestManifest(t *testing.T) {
 }
 
 func TestManifest_JSON(t *testing.T) {
+	var buffers lib.StaticBuffers
 	var pods manifest.Registry
-	err := pods.UnmarshalFiles("private", "testdata/json.hcl")
-	assert.NoError(t, err)
+	assert.NoError(t, buffers.ReadFiles("testdata/json.hcl"))
+	assert.NoError(t, pods.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
 	data, err := json.Marshal(pods[0])
+	assert.NoError(t, err)
 	assert.Equal(t, string(data), "{\"Namespace\":\"private\",\"Name\":\"first\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"${meta.one}\":\"one\",\"${meta.two}\":\"two\"},\"Units\":[{\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":true,\"Name\":\"first-1.service\",\"Source\":\"[Service]\\n# ${meta.consul}\\nExecStart=/usr/bin/sleep inf\\nExecStopPost=/usr/bin/systemctl stop first-2.service\\n\"},{\"Create\":\"\",\"Update\":\"start\",\"Destroy\":\"\",\"Permanent\":false,\"Name\":\"first-2.service\",\"Source\":\"[Service]\\n# ${NONEXISTENT}\\nExecStart=/usr/bin/sleep inf\\n\"}],\"Blobs\":[{\"Name\":\"/etc/vpn/users/env\",\"Permissions\":420,\"Leave\":false,\"Source\":\"My file\\n\"}],\"Resources\":null}")
 
 	// unmarshal

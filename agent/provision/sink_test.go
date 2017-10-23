@@ -11,6 +11,7 @@ import (
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
@@ -55,12 +56,14 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		"second-1.service",
 		"third-1.service",
 	}
-	waitTime := time.Millisecond * 400
+	waitTime := time.Millisecond * 700
 
 	t.Run("0 deploy private", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PrivateNamespace, "testdata/evaluator_test_SinkFlow_0.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_0.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(waitTime)
 		sd.AssertUnitStates(t, allUnitNames,
@@ -79,9 +82,11 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			})
 	})
 	t.Run("1 deploy public", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PublicNamespace, "testdata/evaluator_test_SinkFlow_1.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_1.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PublicNamespace, registry)
 		time.Sleep(waitTime)
 		sd.AssertUnitStates(t, allUnitNames,
@@ -105,9 +110,11 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			})
 	})
 	t.Run("2 change constraints of public third", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PublicNamespace, "testdata/evaluator_test_SinkFlow_2.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_2.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PublicNamespace, registry)
 		time.Sleep(waitTime)
 		sd.AssertUnitStates(t, allUnitNames,
@@ -126,9 +133,11 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			})
 	})
 	t.Run("3 remove private first", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PrivateNamespace, "testdata/evaluator_test_SinkFlow_3.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_3.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(waitTime)
 		sd.AssertUnitStates(t, allUnitNames,
@@ -168,9 +177,11 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			})
 	})
 	t.Run("5 add private first to registry", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PrivateNamespace, "testdata/evaluator_test_SinkFlow_5.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_5.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
 		sd.AssertUnitStates(t, allUnitNames,
@@ -213,9 +224,11 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			})
 	})
 	t.Run("7 remove private first from registry", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PrivateNamespace, "testdata/evaluator_test_SinkFlow_7.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_7.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
 		time.Sleep(time.Millisecond * 500)
 		sd.AssertUnitStates(t, allUnitNames,
@@ -240,11 +253,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.first_public":   "1",
 			"meta.second_private": "1",
 		}))
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles(manifest.PrivateNamespace, "testdata/evaluator_test_SinkFlow_8.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_8.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
+
 		sink.ConsumeRegistry(manifest.PrivateNamespace, registry)
-		time.Sleep(time.Millisecond * 500)
+		time.Sleep(waitTime)
 		sd.AssertUnitStates(t, allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",

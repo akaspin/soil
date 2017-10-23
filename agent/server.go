@@ -10,6 +10,7 @@ import (
 	"github.com/akaspin/soil/agent/metrics"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 )
@@ -95,18 +96,19 @@ func (s *Server) Wait() (err error) {
 
 func (s *Server) Configure() {
 	s.log.Infof("config: %v", s.options)
-	configReader, err := manifest.NewConfigReader(s.options.ConfigPath...)
-	if err != nil {
+	var buffers lib.StaticBuffers
+	if err := buffers.ReadFiles(s.options.ConfigPath...); err != nil {
 		s.log.Errorf("error reading configs: %v", err)
+
 	}
 	serverCfg := DefaultConfig()
 	serverCfg.Agent.Id = s.options.AgentId
 	serverCfg.Meta = bus.CloneMap(s.options.Meta)
-	if err = serverCfg.Unmarshal(configReader.GetReaders()...); err != nil {
+	if err := serverCfg.Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("error unmarshal configs: %v", err)
 	}
 	var registry manifest.Registry
-	if err = registry.Unmarshal(manifest.PrivateNamespace, configReader.GetReaders()...); err != nil {
+	if err := registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...); err != nil {
 		s.log.Errorf("error unmarshal pods: %v", err)
 	}
 	s.metaStorage.Set(serverCfg.Meta)

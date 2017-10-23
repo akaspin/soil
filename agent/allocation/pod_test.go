@@ -4,6 +4,7 @@ package allocation_test
 
 import (
 	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -17,14 +18,14 @@ func TestNewFromManifest(t *testing.T) {
 	}
 
 	t.Run("0 simple names", func(t *testing.T) {
+		var buffers lib.StaticBuffers
+		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_0.hcl"))
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_0.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
 
 		m := pods[0]
 		res := allocation.NewPod(allocation.DefaultSystemPaths())
-		err = res.FromManifest(m, env)
-		assert.NoError(t, err)
+		assert.NoError(t, res.FromManifest(m, env))
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: allocation.Header{
@@ -58,13 +59,14 @@ func TestNewFromManifest(t *testing.T) {
 		})
 	})
 	t.Run("interpolate names", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_1.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_1.hcl"))
+		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
+
 		m := pods[0]
 		res := allocation.NewPod(allocation.DefaultSystemPaths())
-		err = res.FromManifest(m, env)
-		assert.NoError(t, err)
+		assert.NoError(t, res.FromManifest(m, env))
 
 		assert.Equal(t, res, &allocation.Pod{
 			Header: allocation.Header{Name: "pod-2", PodMark: 0x628d5becdd4e102b, AgentMark: 0x623669d2cde83725, Namespace: "private"},
@@ -99,12 +101,15 @@ func TestNewFromManifest(t *testing.T) {
 			"__resource.values.port.pod-1.8080":    `{"value":"8080"}`,
 			"__resource.values.counter.pod-1.main": `{"value":"1"}`,
 		}
+
+		var buffers lib.StaticBuffers
 		var pods manifest.Registry
-		err := pods.UnmarshalFiles("private", "testdata/test_new_from_manifest_2.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_2.hcl"))
+		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
+
 		m := pods[0]
 		res := allocation.NewPod(allocation.DefaultSystemPaths())
-		err = res.FromManifest(m, env3)
+		err := res.FromManifest(m, env3)
 		assert.NoError(t, err)
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{

@@ -1,17 +1,17 @@
 package resource_test
 
 import (
-	"testing"
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/agent/allocation"
-	"github.com/stretchr/testify/assert"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/supervisor"
-	"time"
 	"github.com/kr/pretty"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
 func TestSink_Flow(t *testing.T) {
@@ -52,11 +52,11 @@ func TestSink_Flow(t *testing.T) {
 		evaluator.Configure([]resource.Config{
 			{
 				Nature: "dummy",
-				Kind: "fake1",
+				Kind:   "fake1",
 			},
 			{
 				Nature: "dummy",
-				Kind: "fake2",
+				Kind:   "fake2",
 			},
 		}...)
 		time.Sleep(waitTime)

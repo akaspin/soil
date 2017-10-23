@@ -1,11 +1,11 @@
 package lib
 
 import (
-	"io"
 	"bytes"
 	"fmt"
-	"os"
+	"io"
 	"io/ioutil"
+	"os"
 )
 
 type StaticBuffers [][]byte

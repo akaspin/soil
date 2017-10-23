@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/mitchellh/hashstructure"
@@ -54,7 +55,7 @@ func (e *dummyEv) Deallocate(name string) {
 	e.records[name] = append(e.records[name], dummyEvRecord{})
 }
 
-func TestSink2_ConsumeRegistry(t *testing.T) {
+func TestSink_ConsumeRegistry(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
@@ -69,9 +70,10 @@ func TestSink2_ConsumeRegistry(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	t.Run("0 consume", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles("private", "testdata/sink_test_ConsumeRegistry_0.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry("private", registry)
 		time.Sleep(time.Millisecond * 100)
 
@@ -96,9 +98,10 @@ func TestSink2_ConsumeRegistry(t *testing.T) {
 		})
 	})
 	t.Run("2 modify third", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles("private", "testdata/sink_test_ConsumeRegistry_2.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry("private", registry)
 		time.Sleep(time.Millisecond * 100)
 
@@ -132,9 +135,10 @@ func TestSink2_ConsumeRegistry(t *testing.T) {
 		}, "no updates: inactive")
 	})
 	t.Run("4 remove third", func(t *testing.T) {
+		var buffers lib.StaticBuffers
 		var registry manifest.Registry
-		err := registry.UnmarshalFiles("private", "testdata/sink_test_ConsumeRegistry_4.hcl")
-		assert.NoError(t, err)
+		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
+		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry("private", registry)
 		time.Sleep(time.Millisecond * 100)
 

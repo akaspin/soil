@@ -15,7 +15,7 @@ var (
 
 type RangeExecutor struct {
 	log      *logx.Log
-	consumer bus.MessageConsumer
+	consumer bus.Consumer
 	min      uint32
 	max      uint32
 
@@ -24,7 +24,7 @@ type RangeExecutor struct {
 	allocations map[string]rangeExecutorAllocation
 }
 
-func NewRangeExecutor(log *logx.Log, config Config, consumer bus.MessageConsumer) (e *RangeExecutor) {
+func NewRangeExecutor(log *logx.Log, config Config, consumer bus.Consumer) (e *RangeExecutor) {
 	e = &RangeExecutor{
 		log:         log,
 		consumer:    consumer,

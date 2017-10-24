@@ -13,7 +13,7 @@ type DiscoveryPipe struct {
 	*bus.SimplePipe
 }
 
-func NewDiscoveryPipe(log *logx.Log, consumer bus.MessageConsumer) (p *DiscoveryPipe) {
+func NewDiscoveryPipe(log *logx.Log, consumer bus.Consumer) (p *DiscoveryPipe) {
 	p = &DiscoveryPipe{
 		log: log.GetLog("pipe", "discovery"),
 	}

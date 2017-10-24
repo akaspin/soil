@@ -4,12 +4,10 @@ package bus
 type BindableProducer interface {
 
 	// RegisterConsumer registers consumer on BindableProducer
-	RegisterConsumer(name string, consumer MessageConsumer)
+	RegisterConsumer(name string, consumer Consumer)
 }
 
-// MessageConsumer consumes messages
-type MessageConsumer interface {
-
-	// ConsumeMessage called by producer on data change
+// Consumer consumes messages
+type Consumer interface {
 	ConsumeMessage(message Message)
 }

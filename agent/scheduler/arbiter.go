@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
+	"regexp"
 )
 
 type arbiterEntity struct {
@@ -16,7 +17,7 @@ type arbiterEntity struct {
 
 type ArbiterConfig struct {
 	Required       manifest.Constraint
-	ConstraintOnly []string
+	ConstraintOnly []*regexp.Regexp
 }
 
 type Arbiter struct {
@@ -26,6 +27,7 @@ type Arbiter struct {
 	config ArbiterConfig
 
 	state    bus.Message
+	env bus.Message
 	entities map[string]arbiterEntity
 
 	messageChan chan bus.Message
@@ -98,6 +100,7 @@ LOOP:
 				log.Debugf("skipping update: message is equal")
 			}
 			a.state = message
+			a.updateCache()
 			for _, entity := range a.entities {
 				a.notify(entity)
 			}
@@ -113,6 +116,24 @@ LOOP:
 			req.notifyFn(nil, bus.NewMessage(a.name, nil))
 		}
 	}
+}
+
+func (a *Arbiter) updateCache() {
+	if len(a.config.ConstraintOnly) == 0 {
+		a.env = bus.NewMessage(a.state.GetPrefix(), a.state.GetPayload())
+		return
+	}
+	env := map[string]string{}
+	LOOP:
+	for k, v := range a.state.GetPayload() {
+		for _, reg := range a.config.ConstraintOnly {
+			if reg.MatchString(k) {
+				continue LOOP
+			}
+			env[k] = v
+		}
+	}
+	a.env = bus.NewMessage(a.state.GetPrefix(), env)
 }
 
 func (a *Arbiter) notify(entity arbiterEntity) {
@@ -134,6 +155,6 @@ func (a *Arbiter) notify(entity arbiterEntity) {
 		entity.notifyFn(err, bus.NewMessage(a.name, nil))
 		return
 	}
-	a.log.Debugf(`notifying "%s": ok:%x`, entity.id, a.state.GetPayloadMark())
-	entity.notifyFn(nil, a.state)
+	a.log.Debugf(`notifying "%s": ok:%x`, entity.id, a.env.GetPayloadMark())
+	entity.notifyFn(nil, a.env)
 }

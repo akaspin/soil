@@ -76,8 +76,8 @@ func (b *LibKVBackend) Open() (err error) {
 	return
 }
 
-// RegisterConsumer Registers MessageConsumer with specific prefix
-func (b *LibKVBackend) RegisterConsumer(prefix string, consumer bus.MessageConsumer) {
+// RegisterConsumer Registers Consumer with specific prefix
+func (b *LibKVBackend) RegisterConsumer(prefix string, consumer bus.Consumer) {
 	go b.watchLoop(prefix, consumer)
 }
 
@@ -258,7 +258,7 @@ LOOP:
 	}
 }
 
-func (b *LibKVBackend) watchLoop(prefix string, consumer bus.MessageConsumer) {
+func (b *LibKVBackend) watchLoop(prefix string, consumer bus.Consumer) {
 	<-b.connDirtyCtx.Done()
 	if b.connErr != nil {
 		b.log.Errorf("%v: disabling consumer", b.connErr)

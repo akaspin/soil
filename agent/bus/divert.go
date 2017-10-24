@@ -6,7 +6,7 @@ import "sync"
 // When entering the mode pipe sends predefined message to downstream. Pipe
 // sends last consumed message when exit drain mode.
 type DivertPipe struct {
-	consumer MessageConsumer
+	consumer Consumer
 	inDrain  Message
 
 	mu          sync.Mutex
@@ -14,7 +14,7 @@ type DivertPipe struct {
 	isDiverting bool
 }
 
-func NewDivertPipe(consumer MessageConsumer, divert Message) (p *DivertPipe) {
+func NewDivertPipe(consumer Consumer, divert Message) (p *DivertPipe) {
 	p = &DivertPipe{
 		consumer: consumer,
 		inDrain:  divert,

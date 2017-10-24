@@ -15,8 +15,8 @@ type Evaluator struct {
 	log             *logx.Log
 	evaluatorConfig EvaluatorConfig
 
-	downstreamConsumer bus.MessageConsumer // (resource)
-	upstreamConsumer   bus.MessageConsumer // (__resource.request.<kind>)
+	downstreamConsumer bus.Consumer // (resource)
+	upstreamConsumer   bus.Consumer // (__resource.request.<kind>)
 
 	workers      map[string]*Worker
 	dirtyWorkers map[string]struct{}
@@ -28,7 +28,7 @@ type Evaluator struct {
 	messageChan    chan bus.Message
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConfig, state allocation.Recovery, downstream, upstream bus.MessageConsumer) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConfig, state allocation.Recovery, downstream, upstream bus.Consumer) (e *Evaluator) {
 	e = &Evaluator{
 		Control:            supervisor.NewControl(ctx),
 		log:                log.GetLog("resource", "evaluator"),

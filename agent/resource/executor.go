@@ -27,13 +27,13 @@ type ExecutorInstance struct {
 	ctx      context.Context
 	cancel   context.CancelFunc
 	log      *logx.Log
-	consumer bus.MessageConsumer
+	consumer bus.Consumer
 
 	ExecutorConfig Config
 	Executor       Executor
 }
 
-func NewExecutorInstance(ctx context.Context, log *logx.Log, evaluatorConfig EvaluatorConfig, executorConfig Config, consumer bus.MessageConsumer) (i *ExecutorInstance, err error) {
+func NewExecutorInstance(ctx context.Context, log *logx.Log, evaluatorConfig EvaluatorConfig, executorConfig Config, consumer bus.Consumer) (i *ExecutorInstance, err error) {
 	i = &ExecutorInstance{
 		log:            log.GetLog("resource", "executor", "instance", executorConfig.Nature, executorConfig.Kind),
 		ExecutorConfig: executorConfig,

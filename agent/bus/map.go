@@ -8,13 +8,13 @@ import (
 
 type MapUpstream struct {
 	name      string
-	consumers []MessageConsumer
+	consumers []Consumer
 	mu        sync.Mutex
 	cache     map[string]string
 	mark      uint64
 }
 
-func NewMapUpstream(name string, consumers ...MessageConsumer) (u *MapUpstream) {
+func NewMapUpstream(name string, consumers ...Consumer) (u *MapUpstream) {
 	u = &MapUpstream{
 		name:      name,
 		consumers: consumers,
@@ -69,13 +69,13 @@ func (u *MapUpstream) notifyAll(message Message) {
 }
 
 type StrictMapUpstream struct {
-	consumers []MessageConsumer
+	consumers []Consumer
 	name      string
 	mu        sync.Mutex
 	mark      uint64
 }
 
-func NewStrictMapUpstream(name string, consumers ...MessageConsumer) (p *StrictMapUpstream) {
+func NewStrictMapUpstream(name string, consumers ...Consumer) (p *StrictMapUpstream) {
 	p = &StrictMapUpstream{
 		name:      name,
 		consumers: consumers,

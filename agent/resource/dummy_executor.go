@@ -11,10 +11,10 @@ type DummyExecutor struct {
 	log    *logx.Log
 	config Config
 
-	consumer bus.MessageConsumer
+	consumer bus.Consumer
 }
 
-func NewDummyExecutor(log *logx.Log, config Config, consumer bus.MessageConsumer) (e *DummyExecutor) {
+func NewDummyExecutor(log *logx.Log, config Config, consumer bus.Consumer) (e *DummyExecutor) {
 	e = &DummyExecutor{
 		log:      log.GetLog("resource", "executor", config.Nature, config.Kind),
 		config:   config,

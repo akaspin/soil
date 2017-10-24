@@ -91,8 +91,9 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	s.sv = supervisor.NewChain(ctx,
-		supervisor.NewGroup(ctx, s.resourceEvaluator, resourceArbiter),
-		supervisor.NewGroup(ctx, provisionEvaluator, provisionArbiter),
+		supervisor.NewGroup(ctx, resourceArbiter, provisionArbiter),
+		s.resourceEvaluator,
+		provisionEvaluator,
 		s.privateRegistryConsumer.(supervisor.Component),
 		api_server.NewServer(ctx, s.log, s.options.Address, apiRouter),
 	)

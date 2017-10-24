@@ -9,7 +9,14 @@ import (
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
 	"sync"
+	"github.com/akaspin/soil/agent/bus"
 )
+
+type EvaluatorConfig struct {
+	SystemPaths allocation.SystemPaths
+	Recovery allocation.Recovery
+	StatusConsumer bus.Consumer
+}
 
 type Evaluator struct {
 	*supervisor.Control
@@ -89,6 +96,7 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	e.log.Debugf("plan done: %s:%s (failures:%v)", evaluation, evaluation.plan, failures)
 	e.log.Infof("evaluation done: %s (failures:%v)", evaluation, failures)
 	next := e.state.Commit(evaluation.Name())
+
 	e.fanOut(next)
 	return
 }

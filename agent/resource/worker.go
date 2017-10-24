@@ -13,7 +13,7 @@ type Worker struct {
 	log             *logx.Log
 	name            string
 	evaluatorConfig EvaluatorConfig
-	consumer        bus.MessageConsumer
+	consumer        bus.Consumer
 
 	executorInstance *ExecutorInstance
 	state            map[string]*Alloc // key: pod.resource-kind
@@ -25,7 +25,7 @@ type Worker struct {
 }
 
 // Create new worker with recovered allocations
-func NewWorker(ctx context.Context, log *logx.Log, name string, consumer bus.MessageConsumer, config EvaluatorConfig, recovered []Alloc) (w *Worker) {
+func NewWorker(ctx context.Context, log *logx.Log, name string, consumer bus.Consumer, config EvaluatorConfig, recovered []Alloc) (w *Worker) {
 	w = &Worker{
 		log:             log.GetLog("resource", "worker", name),
 		name:            name,

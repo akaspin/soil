@@ -81,6 +81,8 @@ func (b *LibKVBackend) RegisterConsumer(prefix string, consumer bus.Consumer) {
 	go b.watchLoop(prefix, consumer)
 }
 
+func (b *LibKVBackend) UnregisterConsumer(prefix string) {}
+
 // delete data
 func (b *LibKVBackend) deleteWithPrefix(prefix string, keys ...string) {
 	if !b.options.Enabled {

@@ -8,11 +8,11 @@ import (
 	"time"
 )
 
-func TestSimplePipe_ConsumeMessage(t *testing.T) {
+func TestTeePipe_ConsumeMessage(t *testing.T) {
 	c1 := &bus.DummyConsumer{}
 	c2 := &bus.DummyConsumer{}
 
-	pipe := bus.NewSimplePipe(func(message bus.Message) (res bus.Message) {
+	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
 		payload := message.GetPayload()
 		delete(payload, "a")
 		res = bus.NewMessage(message.GetPrefix(), payload)

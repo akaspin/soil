@@ -28,9 +28,9 @@ type Server struct {
 	options ServerOptions
 
 	sv                      supervisor.Component
-	metaStorage             bus.Setter
-	systemStorage           bus.Setter
-	agentStorage            bus.Setter
+
+	confPipe bus.Consumer
+
 	resourceEvaluator       *resource.Evaluator
 	privateRegistryConsumer scheduler.RegistryConsumer
 }
@@ -63,9 +63,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	provisionCompositePipe := bus.NewCompositePipe("private", provisionDrainPipe, "meta", "system", "resource")
 
-	s.metaStorage = bus.NewStrictMapUpstream("meta", resourceCompositePipe, provisionCompositePipe)
-	s.systemStorage = bus.NewStrictMapUpstream("system", resourceCompositePipe, provisionCompositePipe)
-	s.agentStorage = bus.NewMapUpstream("agent", resourceCompositePipe, provisionCompositePipe)
+	s.confPipe = bus.NewTeePipe(resourceCompositePipe, provisionCompositePipe)
 
 	drainFn := func(on bool) {
 		resourceDrainPipe.Divert(on)
@@ -140,8 +138,9 @@ func (s *Server) Configure() {
 	if err := registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal registry: %v", err)
 	}
-	s.metaStorage.Set(serverCfg.Meta)
-	s.systemStorage.Set(serverCfg.System)
+
+	s.confPipe.ConsumeMessage(bus.NewMessage("meta", serverCfg.Meta))
+	s.confPipe.ConsumeMessage(bus.NewMessage("system", serverCfg.System))
 	s.resourceEvaluator.Configure(resourceConfigs)
 	s.privateRegistryConsumer.ConsumeRegistry(registry)
 	s.log.Debug("configure: done")

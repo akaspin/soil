@@ -2,25 +2,24 @@ package bus
 
 import "sync"
 
-// Composite pipe collects messages from declared sources
+// Composite pipe
 type CompositePipe struct {
 	name       string
 	downstream Consumer
 	empty      Message
-
-	mu      sync.Mutex
-	sources map[string]Message
+	mu       sync.Mutex
+	declared map[string]Message
 }
 
-func NewCompositePipe(name string, downstream Consumer, source ...string) (p *CompositePipe) {
+func NewCompositePipe(name string, downstream Consumer, declared ...string) (p *CompositePipe) {
 	p = &CompositePipe{
 		name:       name,
 		downstream: downstream,
 		empty:      NewMessage(name, nil),
-		sources:    map[string]Message{},
+		declared:   map[string]Message{},
 	}
-	for _, m := range source {
-		p.sources[m] = NewMessage(m, nil)
+	for _, m := range declared {
+		p.declared[m] = NewMessage(m, nil)
 	}
 	return
 }
@@ -29,17 +28,16 @@ func (p *CompositePipe) ConsumeMessage(message Message) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if _, declared := p.sources[message.GetPrefix()]; !declared {
-		// not in sources
+	if _, declared := p.declared[message.GetPrefix()]; !declared {
 		return
 	}
-	p.sources[message.GetPrefix()] = message
+	p.declared[message.GetPrefix()] = message
 	if message.IsEmpty() {
 		p.downstream.ConsumeMessage(p.empty)
 		return
 	}
 	payload := map[string]string{}
-	for prefix, msg := range p.sources {
+	for prefix, msg := range p.declared {
 		if msg.IsEmpty() {
 			p.downstream.ConsumeMessage(p.empty)
 			return

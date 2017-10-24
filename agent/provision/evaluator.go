@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/metrics"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
@@ -21,19 +20,17 @@ type EvaluatorConfig struct {
 type Evaluator struct {
 	*supervisor.Control
 	log         *logx.Log
-	systemPaths allocation.SystemPaths
-	reporter    metrics.Reporter
+	config EvaluatorConfig
 
 	state *EvaluatorState
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, systemPaths allocation.SystemPaths, state allocation.Recovery, reporter metrics.Reporter) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, config EvaluatorConfig) (e *Evaluator) {
 	e = &Evaluator{
 		Control:     supervisor.NewControl(ctx),
 		log:         log.GetLog("provision", "evaluator"),
-		systemPaths: systemPaths,
-		reporter:    reporter,
-		state:       NewEvaluatorState(state),
+		config: config,
+		state:       NewEvaluatorState(config.Recovery),
 	}
 	return
 }
@@ -46,7 +43,7 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 }
 
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
-	alloc := allocation.NewPod(e.systemPaths)
+	alloc := allocation.NewPod(e.config.SystemPaths)
 	if err := alloc.FromManifest(pod, env); err != nil {
 		e.log.Error(err)
 		return

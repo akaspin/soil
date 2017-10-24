@@ -7,7 +7,6 @@ import (
 	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/metrics"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/agent/scheduler"
@@ -84,7 +83,10 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)
-	provisionEvaluator := provision.NewEvaluator(ctx, s.log, systemPaths, state, &metrics.BlackHole{})
+	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
+		SystemPaths: systemPaths,
+		Recovery: state,
+	})
 	s.privateRegistryConsumer = scheduler.NewSink(ctx, s.log, state,
 		scheduler.NewBoundedEvaluator(resourceArbiter, s.resourceEvaluator),
 		scheduler.NewBoundedEvaluator(provisionArbiter, provisionEvaluator),

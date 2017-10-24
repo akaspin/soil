@@ -6,7 +6,6 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
-	"github.com/akaspin/soil/agent/metrics"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/lib"
@@ -26,7 +25,10 @@ func TestEvaluator_Allocate(t *testing.T) {
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
-	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), allocation.DefaultSystemPaths(), state, &metrics.BlackHole{})
+	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), provision.EvaluatorConfig{
+		SystemPaths: allocation.DefaultSystemPaths(),
+		Recovery: state,
+	})
 	assert.NoError(t, evaluator.Open())
 
 	time.Sleep(time.Millisecond * 500)

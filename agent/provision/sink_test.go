@@ -7,7 +7,6 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/metrics"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
@@ -29,7 +28,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	arbiter := scheduler.NewArbiter(ctx, log, "test", scheduler.ArbiterConfig{})
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
-	evaluator := provision.NewEvaluator(ctx, log, allocation.DefaultSystemPaths(), state, &metrics.BlackHole{})
+	evaluator := provision.NewEvaluator(ctx, log, provision.EvaluatorConfig{
+		SystemPaths: allocation.DefaultSystemPaths(),
+		Recovery: state,
+	})
 	sink := scheduler.NewSink(ctx, log, state,
 		scheduler.NewBoundedEvaluator(arbiter, evaluator))
 	sv := supervisor.NewChain(ctx,

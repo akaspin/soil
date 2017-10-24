@@ -27,7 +27,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 
 	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), provision.EvaluatorConfig{
 		SystemPaths: allocation.DefaultSystemPaths(),
-		Recovery: state,
+		Recovery:    state,
 	})
 	assert.NoError(t, evaluator.Open())
 

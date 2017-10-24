@@ -3,7 +3,7 @@ package bus
 import "sync"
 
 type Storage struct {
-	name string
+	name       string
 	mu         sync.Mutex
 	consumed   map[string]Message
 	downstream []Consumer
@@ -11,8 +11,8 @@ type Storage struct {
 
 func NewStorage(name string, downstream ...Consumer) (s *Storage) {
 	s = &Storage{
-		name: name,
-		consumed: map[string]Message{},
+		name:       name,
+		consumed:   map[string]Message{},
 		downstream: downstream,
 	}
 	return
@@ -45,7 +45,7 @@ func (s *Storage) handle(message Message) {
 	payload := map[string]string{}
 	for p, m := range s.consumed {
 		for k, v := range m.GetPayload() {
-			payload[p + "." + k] = v
+			payload[p+"."+k] = v
 		}
 	}
 	msg := NewMessage(s.name, payload)
@@ -54,5 +54,3 @@ func (s *Storage) handle(message Message) {
 	}
 	return
 }
-
-

@@ -4,22 +4,22 @@ import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
+	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/coreos/go-systemd/dbus"
 	"sync"
-	"github.com/akaspin/soil/agent/bus"
 )
 
 type EvaluatorConfig struct {
-	SystemPaths allocation.SystemPaths
-	Recovery allocation.Recovery
-	StatusConsumer bus.Consumer
+	SystemPaths    allocation.SystemPaths
+	Recovery       allocation.Recovery // recovery state
+	StatusConsumer bus.Consumer        // consumer for "status.pod.*"
 }
 
 type Evaluator struct {
 	*supervisor.Control
-	log         *logx.Log
+	log    *logx.Log
 	config EvaluatorConfig
 
 	state *EvaluatorState
@@ -27,10 +27,10 @@ type Evaluator struct {
 
 func NewEvaluator(ctx context.Context, log *logx.Log, config EvaluatorConfig) (e *Evaluator) {
 	e = &Evaluator{
-		Control:     supervisor.NewControl(ctx),
-		log:         log.GetLog("provision", "evaluator"),
-		config: config,
-		state:       NewEvaluatorState(config.Recovery),
+		Control: supervisor.NewControl(ctx),
+		log:     log.GetLog("provision", "evaluator"),
+		config:  config,
+		state:   NewEvaluatorState(config.Recovery),
 	}
 	return
 }

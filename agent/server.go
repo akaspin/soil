@@ -85,7 +85,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
 		SystemPaths: systemPaths,
-		Recovery: state,
+		Recovery:    state,
 	})
 	s.privateRegistryConsumer = scheduler.NewSink(ctx, s.log, state,
 		scheduler.NewBoundedEvaluator(resourceArbiter, s.resourceEvaluator),

@@ -66,21 +66,6 @@ All allocated resources can be referenced as `${resource.<kind>.<pod>.<resource>
 
 All resources are available within all pods on Agent. If resource can't be allocated it will be marked with `allocated`:`false` and `failure` with error.
 
-## `agent`
-
-Agent variables are accessible as `${agent.*}`.
-
-|Variable   |Description
-|-
-|`id`| Agent ID
-|`advertise`| Advertise address
-|`version`| Soil Agent version
-|`api`|API Revision
-|`drain`|Drain mode.
-
-All `agent` variables can be referenced in in `constraint`, `unit->source` and `blob->source` areas
-
-
 ## `system`
 
 |Variable   |Description

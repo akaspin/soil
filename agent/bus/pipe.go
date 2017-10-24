@@ -22,4 +22,3 @@ func (p *SimplePipe) ConsumeMessage(message Message) {
 		consumer.ConsumeMessage(res)
 	}
 }
-

@@ -68,6 +68,9 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 	arbiter := scheduler.NewArbiter(context.Background(), logx.GetLog("test"), "test",
 		scheduler.ArbiterConfig{
 			Required: manifest.Constraint{"${drain}": "!= true"},
+			ConstraintOnly: []*regexp.Regexp{
+				regexp.MustCompile(`^status\.pod\..+`),
+			},
 		},
 	)
 	entity1 := &dummyArbiterEntity{}
@@ -76,7 +79,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 
 	assert.NoError(t, arbiter.Open())
 
-	t.Run("register", func(t *testing.T) {
+	t.Run("bind 1 and 2", func(t *testing.T) {
 		arbiter.Bind("1", manifest.Constraint{"${1}": "true"}, entity1.notify)
 		arbiter.Bind("2", manifest.Constraint{"${2}": "true"}, entity2.notify)
 		// assert no actions
@@ -106,7 +109,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 			fmt.Errorf(`constraint failed: "${2}":"true" ("${2}":"true")`),
 		})
 	})
-	t.Run("drain", func(t *testing.T) {
+	t.Run("drain on", func(t *testing.T) {
 		arbiter.ConsumeMessage(bus.NewMessage("", map[string]string{
 			"drain": "true",
 		}))
@@ -122,7 +125,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 			fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
 		})
 	})
-	t.Run("enable all", func(t *testing.T) {
+	t.Run("drain off", func(t *testing.T) {
 		arbiter.ConsumeMessage(bus.NewMessage("", map[string]string{
 			"1": "true",
 			"2": "true",
@@ -141,7 +144,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 			nil,
 		})
 	})
-	t.Run("register 3", func(t *testing.T) {
+	t.Run("bind 3", func(t *testing.T) {
 		arbiter.Bind("3", manifest.Constraint{"${2}": "true"}, entity3.notify)
 		time.Sleep(time.Millisecond * 100)
 		entity1.assertErrors(t, []error{
@@ -158,6 +161,57 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 		})
 		entity3.assertErrors(t, []error{
 			nil,
+		})
+	})
+	t.Run("unbind 1", func(t *testing.T) {
+		arbiter.Unbind("1", func() {
+			entity1.notify(fmt.Errorf("unbind"), bus.NewMessage("", nil))
+		})
+		time.Sleep(time.Millisecond * 100)
+		entity1.assertErrors(t, []error{
+			nil,
+			nil,
+			fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
+			nil,
+			fmt.Errorf("unbind"),
+		})
+	})
+	t.Run("bind 1 with status constraint", func(t *testing.T) {
+		arbiter.Bind("1", manifest.Constraint{
+			"${1}":            "true",
+			"${status.pod.1}": "ok",
+		}, entity1.notify)
+		time.Sleep(time.Millisecond * 100)
+		entity1.assertErrors(t, []error{
+			nil,
+			nil,
+			fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
+			nil,
+			fmt.Errorf("unbind"),
+			fmt.Errorf("constraint failed: \"${status.pod.1}\":\"ok\" (\"${status.pod.1}\":\"ok\")"),
+		})
+	})
+	t.Run("update with constraintOnly", func(t *testing.T) {
+		arbiter.ConsumeMessage(bus.NewMessage("private", map[string]string{
+			"1":            "true",
+			"2":            "true",
+			"3":            "true",
+			"status.pod.1": "ok",
+		}))
+		time.Sleep(time.Millisecond * 100)
+		entity1.assertErrors(t, []error{
+			nil,
+			nil,
+			fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
+			nil,
+			fmt.Errorf("unbind"),
+			fmt.Errorf("constraint failed: \"${status.pod.1}\":\"ok\" (\"${status.pod.1}\":\"ok\")"),
+			nil,
+		})
+		assert.Equal(t, entity1.messages[len(entity1.messages)-1].GetPayload(), map[string]string{
+			"1": "true",
+			"2": "true",
+			"3": "true",
 		})
 	})
 

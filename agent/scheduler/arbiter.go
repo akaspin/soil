@@ -27,7 +27,7 @@ type Arbiter struct {
 	config ArbiterConfig
 
 	state    bus.Message
-	env bus.Message
+	env      bus.Message
 	entities map[string]arbiterEntity
 
 	messageChan chan bus.Message
@@ -124,7 +124,7 @@ func (a *Arbiter) updateCache() {
 		return
 	}
 	env := map[string]string{}
-	LOOP:
+LOOP:
 	for k, v := range a.state.GetPayload() {
 		for _, reg := range a.config.ConstraintOnly {
 			if reg.MatchString(k) {

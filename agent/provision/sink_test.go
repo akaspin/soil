@@ -30,7 +30,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 	evaluator := provision.NewEvaluator(ctx, log, provision.EvaluatorConfig{
 		SystemPaths: allocation.DefaultSystemPaths(),
-		Recovery: state,
+		Recovery:    state,
 	})
 	sink := scheduler.NewSink(ctx, log, state,
 		scheduler.NewBoundedEvaluator(arbiter, evaluator))

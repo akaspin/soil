@@ -26,7 +26,7 @@ func TestSink_Flow_NoRecovery(t *testing.T) {
 
 	downstreamCons := &bus.DummyConsumer{}
 	checkCons := &bus.DummyConsumer{}
-	upstream := bus.NewSimplePipe(nil, arbiterCompositePipe, checkCons)
+	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
 	evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, nil, downstreamCons, upstream)
 	sink := scheduler.NewSink(ctx, log, nil, scheduler.NewBoundedEvaluator(
@@ -59,7 +59,7 @@ func TestSink_Flow(t *testing.T) {
 
 	downstreamCons := &bus.DummyConsumer{}
 	checkCons := &bus.DummyConsumer{}
-	upstream := bus.NewSimplePipe(nil, arbiterCompositePipe, checkCons)
+	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(

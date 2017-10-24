@@ -10,14 +10,14 @@ import (
 
 type DiscoveryPipe struct {
 	log *logx.Log
-	*bus.SimplePipe
+	*bus.FnPipe
 }
 
 func NewDiscoveryPipe(log *logx.Log, consumer bus.Consumer) (p *DiscoveryPipe) {
 	p = &DiscoveryPipe{
 		log: log.GetLog("pipe", "discovery"),
 	}
-	p.SimplePipe = bus.NewSimplePipe(p.process, consumer)
+	p.FnPipe = bus.NewFnPipe(p.process, consumer)
 	return
 }
 

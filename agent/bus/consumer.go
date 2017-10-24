@@ -1,10 +1,12 @@
 package bus
 
-// BindableProducer after its Open
-type BindableProducer interface {
+type Producer interface {
 
-	// RegisterConsumer registers consumer on BindableProducer
+	// Register consumer on Producer
 	RegisterConsumer(name string, consumer Consumer)
+
+	// Unregister consumer from Producer
+	UnregisterConsumer(name string)
 }
 
 // Consumer consumes messages

@@ -1,4 +1,6 @@
-## 0.4.0
+## 0.4.1
+
+## 0.4.0 (26.10.2017)
 
 This release introduces resources.
 

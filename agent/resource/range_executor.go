@@ -53,7 +53,7 @@ func (e *RangeExecutor) Allocate(request Alloc) {
 	id := request.GetID()
 
 	// try to recover value from allocated
-	if val, ok := request.Values.GetPayload()["value"]; ok {
+	if val, ok := request.Values.GetPayloadMap()["value"]; ok {
 		if parsed, err := strconv.ParseUint(val, 10, 32); err != nil {
 			e.log.Warningf(`can't parse value: %s:%s`, id, val)
 		} else {

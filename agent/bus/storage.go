@@ -25,7 +25,7 @@ func (s *Storage) ConsumeMessage(message Message) {
 }
 
 func (s *Storage) handle(message Message) {
-	prefix := message.GetPrefix()
+	prefix := message.GetID()
 	old, ok := s.consumed[prefix]
 	if ok {
 		if old.IsEqual(message) {
@@ -44,7 +44,7 @@ func (s *Storage) handle(message Message) {
 	}
 	payload := map[string]string{}
 	for p, m := range s.consumed {
-		for k, v := range m.GetPayload() {
+		for k, v := range m.GetPayloadMap() {
 			payload[p+"."+k] = v
 		}
 	}

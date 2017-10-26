@@ -8,25 +8,24 @@ import (
 	"time"
 )
 
-func TestTeePipe_ConsumeMessage(t *testing.T) {
+func TestFnPipe_ConsumeMessage(t *testing.T) {
 	c1 := &bus.DummyConsumer{}
 	c2 := &bus.DummyConsumer{}
 
 	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
-		payload := message.GetPayload()
+		payload := message.GetPayloadMap()
 		delete(payload, "a")
-		res = bus.NewMessage(message.GetPrefix(), payload)
+		res = bus.NewMessage(message.GetID(), payload)
 		return
 	}, c1, c2)
 
-	producer := bus.NewStrictMapUpstream("test", pipe)
 
-	time.Sleep(time.Millisecond * 100)
-
-	producer.Set(map[string]string{
+	pipe.ConsumeMessage(bus.NewMessage("test", map[string]string{
 		"a": "1",
 		"b": "2",
-	})
+	}))
+	time.Sleep(time.Millisecond * 100)
+
 	time.Sleep(time.Millisecond * 100)
 
 	c1.AssertPayloads(t, []map[string]string{

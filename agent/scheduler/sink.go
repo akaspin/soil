@@ -76,7 +76,7 @@ func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) (err error) {
 					me.evaluator.Deallocate(id)
 					return
 				}
-				me.evaluator.Allocate(pod, message.GetPayload())
+				me.evaluator.Allocate(pod, message.GetPayloadMap())
 			})
 		}(me, pod)
 	}

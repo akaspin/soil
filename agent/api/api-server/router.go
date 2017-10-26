@@ -90,8 +90,8 @@ func (r *Router) ConsumeMessage(message bus.Message) {
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()
-		r.nodes = message.GetPayload()
-		r.log.Debugf("synced nodes: %v", message.GetPayload())
+		r.nodes = message.GetPayloadMap()
+		r.log.Debugf("synced nodes: %v", message.GetPayloadMap())
 	}()
 }
 

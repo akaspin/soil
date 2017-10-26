@@ -28,10 +28,10 @@ func (p *CompositePipe) ConsumeMessage(message Message) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if _, declared := p.declared[message.GetPrefix()]; !declared {
+	if _, declared := p.declared[message.GetID()]; !declared {
 		return
 	}
-	p.declared[message.GetPrefix()] = message
+	p.declared[message.GetID()] = message
 	if message.IsEmpty() {
 		p.downstream.ConsumeMessage(p.empty)
 		return
@@ -42,7 +42,7 @@ func (p *CompositePipe) ConsumeMessage(message Message) {
 			p.downstream.ConsumeMessage(p.empty)
 			return
 		}
-		for k, v := range msg.GetPayload() {
+		for k, v := range msg.GetPayloadMap() {
 			payload[prefix+"."+k] = v
 		}
 	}

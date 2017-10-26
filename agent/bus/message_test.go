@@ -35,8 +35,8 @@ func TestMessage_GetPayload(t *testing.T) {
 	}
 	msg := bus.NewMessage("test", payload)
 	payload["2"] = "2"
-	assert.NotEqual(t, msg.GetPayload(), payload)
-	assert.Equal(t, msg.GetPayload(), map[string]string{
+	assert.NotEqual(t, msg.GetPayloadMap(), payload)
+	assert.Equal(t, msg.GetPayloadMap(), map[string]string{
 		"1": "1",
 	})
 }

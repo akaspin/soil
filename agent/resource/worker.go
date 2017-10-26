@@ -171,12 +171,12 @@ func (w *Worker) handleRequest(podName string, requests []manifest.Resource) {
 
 func (w *Worker) handleMessage(message bus.Message) {
 	w.log.Tracef("message: %v", message)
-	prefix := message.GetPrefix()
+	prefix := message.GetID()
 	delete(w.dirty, prefix)
 	if !message.IsEmpty() {
 		var allocated *Alloc
 		var ok bool
-		if allocated, ok = w.state[message.GetPrefix()]; !ok {
+		if allocated, ok = w.state[message.GetID()]; !ok {
 			w.log.Warningf("not found: %s", prefix)
 			return
 		}
@@ -197,11 +197,11 @@ func (w *Worker) notify() {
 	var err error
 	data := map[string]string{}
 	for id, all := range w.state {
-		if data[id+".__values"], err = manifest.MapToJson(all.Values.GetPayload()); err != nil {
+		if data[id+".__values"], err = manifest.MapToJson(all.Values.GetPayloadMap()); err != nil {
 			w.log.Error(err)
 			continue
 		}
-		for k, v := range all.Values.GetPayload() {
+		for k, v := range all.Values.GetPayloadMap() {
 			data[id+"."+k] = v
 		}
 	}

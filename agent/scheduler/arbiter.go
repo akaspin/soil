@@ -120,12 +120,12 @@ LOOP:
 
 func (a *Arbiter) updateCache() {
 	if len(a.config.ConstraintOnly) == 0 {
-		a.env = bus.NewMessage(a.state.GetPrefix(), a.state.GetPayload())
+		a.env = bus.NewMessage(a.state.GetID(), a.state.GetPayloadMap())
 		return
 	}
 	env := map[string]string{}
 LOOP:
-	for k, v := range a.state.GetPayload() {
+	for k, v := range a.state.GetPayloadMap() {
 		for _, reg := range a.config.ConstraintOnly {
 			if reg.MatchString(k) {
 				continue LOOP
@@ -133,7 +133,7 @@ LOOP:
 			env[k] = v
 		}
 	}
-	a.env = bus.NewMessage(a.state.GetPrefix(), env)
+	a.env = bus.NewMessage(a.state.GetID(), env)
 }
 
 func (a *Arbiter) notify(entity arbiterEntity) {
@@ -144,13 +144,13 @@ func (a *Arbiter) notify(entity arbiterEntity) {
 	a.log.Tracef(`evaluating "%s"`, entity.id)
 
 	if a.config.Required != nil {
-		if err := a.config.Required.Check(a.state.GetPayload()); err != nil {
+		if err := a.config.Required.Check(a.state.GetPayloadMap()); err != nil {
 			a.log.Warningf(`notifying "%s" (required): %v`, entity.id, err)
 			entity.notifyFn(err, bus.NewMessage(a.name, nil))
 			return
 		}
 	}
-	if err := entity.constraint.Check(a.state.GetPayload()); err != nil {
+	if err := entity.constraint.Check(a.state.GetPayloadMap()); err != nil {
 		a.log.Debugf(`notifying "%s": %v`, entity.id, err)
 		entity.notifyFn(err, bus.NewMessage(a.name, nil))
 		return

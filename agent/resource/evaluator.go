@@ -137,7 +137,7 @@ func (e *Evaluator) loop() {
 }
 
 func (e *Evaluator) handleMessage(message bus.Message) {
-	kind := message.GetPrefix()
+	kind := message.GetID()
 	if _, ok := e.workers[kind]; !ok {
 		e.log.Warningf(`ignore %v: worker "%s" not found`, message, kind)
 		return
@@ -156,7 +156,7 @@ func (e *Evaluator) notify() {
 	downstream := map[string]string{}
 	for k, v := range e.cache {
 		upstream[`request.`+k+`.allow`] = "true"
-		for item, value := range v.GetPayload() {
+		for item, value := range v.GetPayloadMap() {
 			downstream[k+"."+item] = value
 		}
 	}

@@ -22,7 +22,7 @@ func (c *DummyConsumer) AssertPayloads(t *testing.T, expect []map[string]string)
 	t.Helper()
 	var res []map[string]string
 	for _, message := range c.messages {
-		res = append(res, message.GetPayload())
+		res = append(res, message.GetPayloadMap())
 	}
 	assert.Equal(t, expect, res)
 }

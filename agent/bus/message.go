@@ -2,38 +2,47 @@ package bus
 
 import (
 	"github.com/mitchellh/hashstructure"
+	"github.com/mitchellh/copystructure"
+	"encoding/json"
 )
 
 // Message
 type Message struct {
-	prefix  string            // Producer name
-	payload map[string]string // Message payload
+	id      string      // Producer id
+	payload interface{} // Message payload
 	mark    uint64
 }
 
 // Create new message non-expiring with cloned payload. Use <nil> payload to create empty message.
-func NewMessage(prefix string, payload map[string]string) (m Message) {
+func NewMessage(id string, payload interface{}) (m Message) {
 	m = Message{
-		prefix: prefix,
+		id: id,
 	}
 	if payload != nil {
-		m.payload = CloneMap(payload)
+		m.payload, _ = copystructure.Copy(payload)
 	}
 	m.mark, _ = hashstructure.Hash(m.payload, nil)
 	return
 }
 
-// Get message prefix
-func (m Message) GetPrefix() string {
-	return m.prefix
+// Get message ID
+func (m Message) GetID() string {
+	return m.id
 }
 
-// Get message payload
-func (m Message) GetPayload() map[string]string {
-	if m.payload == nil {
-		return map[string]string{}
+// Get message payload as map[string]string. This method returns empty map if payload is <nil> or type is differs.
+func (m Message) GetPayloadMap() (res map[string]string) {
+	res, ok := m.payload.(map[string]string)
+	if m.payload == nil || !ok {
+		res = map[string]string{}
+		return
 	}
-	return m.payload
+	return
+}
+
+func (m Message) GetPayloadJSON() (res []byte) {
+	res, _ = json.Marshal(m.payload)
+	return
 }
 
 // Get message payload hash
@@ -49,7 +58,7 @@ func (m Message) IsEmpty() (res bool) {
 }
 
 func (m Message) IsEqual(ingest Message) (res bool) {
-	res = m.prefix == ingest.prefix && m.mark == ingest.mark
+	res = m.id == ingest.id && m.mark == ingest.mark
 	return
 }
 

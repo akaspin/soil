@@ -27,7 +27,7 @@ type Server struct {
 	log     *logx.Log
 	options ServerOptions
 
-	sv                      supervisor.Component
+	sv supervisor.Component
 
 	confPipe bus.Consumer
 

@@ -17,6 +17,3 @@ func (p *TeePipe) ConsumeMessage(message Message) {
 		downstream.ConsumeMessage(message)
 	}
 }
-
-
-

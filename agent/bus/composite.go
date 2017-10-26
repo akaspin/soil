@@ -7,8 +7,8 @@ type CompositePipe struct {
 	name       string
 	downstream Consumer
 	empty      Message
-	mu       sync.Mutex
-	declared map[string]Message
+	mu         sync.Mutex
+	declared   map[string]Message
 }
 
 func NewCompositePipe(name string, downstream Consumer, declared ...string) (p *CompositePipe) {

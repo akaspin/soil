@@ -34,6 +34,7 @@ deps: Gopkg.toml					## update vendor
 test: test-unit test-systemd 		## run all tests
 
 clean-test: clean-test-systemd		## clean test artifacts
+	find . -name ".test_*" -exec rm -rf {} \;
 
 test-unit: $(SRC) $(SRC_TEST)		## run unit tests
 	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)

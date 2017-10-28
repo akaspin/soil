@@ -79,6 +79,12 @@ type Builder struct {
 // NewBuilder returns a new configuration builder based on the given command
 // line flags.
 func NewBuilder(flags Flags) (*Builder, error) {
+	// We expect all flags to be parsed and flags.Args to be empty.
+	// Therefore, we bail if we find unparsed args.
+	if len(flags.Args) > 0 {
+		return nil, fmt.Errorf("config: Unknown extra arguments: %v", flags.Args)
+	}
+
 	newSource := func(name string, v interface{}) Source {
 		b, err := json.MarshalIndent(v, "", "    ")
 		if err != nil {
@@ -387,6 +393,26 @@ func (b *Builder) Build() (rt RuntimeConfig, err error) {
 		}
 	}
 
+	// expand dns recursors
+	uniq := map[string]bool{}
+	dnsRecursors := []string{}
+	for _, r := range c.DNSRecursors {
+		x, err := template.Parse(r)
+		if err != nil {
+			return RuntimeConfig{}, fmt.Errorf("Invalid DNS recursor template %q: %s", r, err)
+		}
+		for _, addr := range strings.Fields(x) {
+			if strings.HasPrefix(addr, "unix://") {
+				return RuntimeConfig{}, fmt.Errorf("DNS Recursors cannot be unix sockets: %s", addr)
+			}
+			if uniq[addr] {
+				continue
+			}
+			uniq[addr] = true
+			dnsRecursors = append(dnsRecursors, addr)
+		}
+	}
+
 	// Create the default set of tagged addresses.
 	if c.TaggedAddresses == nil {
 		c.TaggedAddresses = make(map[string]string)
@@ -525,7 +551,7 @@ func (b *Builder) Build() (rt RuntimeConfig, err error) {
 		DNSOnlyPassing:        b.boolVal(c.DNS.OnlyPassing),
 		DNSPort:               dnsPort,
 		DNSRecursorTimeout:    b.durationVal("recursor_timeout", c.DNS.RecursorTimeout),
-		DNSRecursors:          c.DNSRecursors,
+		DNSRecursors:          dnsRecursors,
 		DNSServiceTTL:         dnsServiceTTL,
 		DNSUDPAnswerLimit:     b.intVal(c.DNS.UDPAnswerLimit),
 
@@ -704,6 +730,11 @@ func (b *Builder) Validate(rt RuntimeConfig) error {
 	for _, a := range rt.DNSAddrs {
 		if _, ok := a.(*net.UnixAddr); ok {
 			return fmt.Errorf("DNS address cannot be a unix socket")
+		}
+	}
+	for _, a := range rt.DNSRecursors {
+		if ipaddr.IsAny(a) {
+			return fmt.Errorf("DNS recursor address cannot be 0.0.0.0, :: or [::]")
 		}
 	}
 	if rt.Bootstrap && !rt.ServerMode {

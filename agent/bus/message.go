@@ -1,9 +1,9 @@
 package bus
 
 import (
-	"github.com/mitchellh/hashstructure"
-	"github.com/mitchellh/copystructure"
 	"encoding/json"
+	"github.com/mitchellh/copystructure"
+	"github.com/mitchellh/hashstructure"
 )
 
 // Message

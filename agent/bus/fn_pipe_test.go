@@ -19,7 +19,6 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 		return
 	}, c1, c2)
 
-
 	pipe.ConsumeMessage(bus.NewMessage("test", map[string]string{
 		"a": "1",
 		"b": "2",

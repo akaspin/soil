@@ -23,14 +23,14 @@ func TestFirstLast(t *testing.T) {
 		t.FailNow()
 	}
 	i := 1 << 5
-	for ; i < (1 << 17); i += 1 {
+	for ; i < (1 << 17); i++ {
 		bm.AddInt(i)
 		if 2 != bm.Minimum() {
 			t.Errorf("bad minimum")
 			t.FailNow()
 		}
 		if uint32(i) != bm.Maximum() {
-			t.Errorf("bad maximum", i, bm.Maximum())
+			t.Errorf("bad maximum")
 			t.FailNow()
 		}
 	}
@@ -40,7 +40,7 @@ func TestFirstLast(t *testing.T) {
 		t.FailNow()
 	}
 	if uint32(i-1) != bm.Maximum() {
-		t.Errorf("bad maximum", i, bm.Maximum())
+		t.Errorf("bad maximum")
 		t.FailNow()
 	}
 }

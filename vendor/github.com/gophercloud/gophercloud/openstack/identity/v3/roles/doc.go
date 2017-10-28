@@ -1,0 +1,62 @@
+/*
+Package roles provides information and interaction with the roles API
+resource for the OpenStack Identity service.
+
+Example to List Roles
+
+	listOpts := roles.ListOpts{
+		DomainID: "default",
+	}
+
+	allPages, err := roles.List(identityClient, listOpts).AllPages()
+	if err != nil {
+		panic(err)
+	}
+
+	allRoles, err := roles.ExtractRoles(allPages)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, role := range allRoles {
+		fmt.Printf("%+v\n", role)
+	}
+
+Example to Create a Role
+
+	createOpts := roles.CreateOpts{
+		Name:             "read-only-admin",
+		DomainID:         "default",
+		Extra: map[string]interface{}{
+			"description": "this role grants read-only privilege cross tenant",
+		}
+	}
+
+	role, err := roles.Create(identityClient, createOpts).Extract()
+	if err != nil {
+		panic(err)
+	}
+
+
+Example to List Role Assignments
+
+	listOpts := roles.ListAssignmentsOpts{
+		UserID:         "97061de2ed0647b28a393c36ab584f39",
+		ScopeProjectID: "9df1a02f5eb2416a9781e8b0c022d3ae",
+	}
+
+	allPages, err := roles.ListAssignments(identityClient, listOpts).AllPages()
+	if err != nil {
+		panic(err)
+	}
+
+	allRoles, err := roles.ExtractRoleAssignments(allPages)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, role := range allRoles {
+		fmt.Printf("%+v\n", role)
+	}
+*/
+package roles

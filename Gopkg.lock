@@ -170,6 +170,12 @@
   version = "v0.2.1"
 
 [[projects]]
+  name = "github.com/eapache/go-resiliency"
+  packages = ["retrier"]
+  revision = "6800482f2c813e689c88b7ed3282262385011890"
+  version = "v1.0.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/elazarl/go-bindata-assetfs"
   packages = ["."]
@@ -512,9 +518,15 @@
 
 [[projects]]
   name = "github.com/shirou/gopsutil"
-  packages = ["host","internal/common","process"]
+  packages = ["cpu","host","internal/common","mem","net","process"]
   revision = "6e221c482653ef05c9f6a7bf71ddceea0e40bac5"
   version = "v2.17.09"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/shirou/w32"
+  packages = ["."]
+  revision = "bb4de0191aa41b5507caa14b0650cdbddcd9280b"
 
 [[projects]]
   branch = "master"
@@ -523,10 +535,10 @@
   revision = "16d81199ba8a9cca9e4cdc5137564e0b2195d0d7"
 
 [[projects]]
+  branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "7b2c5ac9fc04fc5efafb60700713d4fa609b777b"
-  version = "v0.0.1"
+  revision = "b3426bbac13d7110c4d8fce456ea0012f79f3b8b"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -615,6 +627,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "4579681dc28570d66a9290be098e733090a55d3324701fb8da21c71dc425f846"
+  inputs-digest = "48b066aca4aad601ceb4ee2bdb8236f48192a733fbdc0ed121bcaf6da4dfb630"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -155,8 +155,13 @@ func (e *Evaluator) notify() {
 	upstream := map[string]string{}
 	downstream := map[string]string{}
 	for k, v := range e.cache {
+		var chunk map[string]string
+		if err := v.Payload().Unmarshal(&chunk); err != nil {
+			e.log.Error(err)
+			continue
+		}
 		upstream[`request.`+k+`.allow`] = "true"
-		for item, value := range v.GetPayloadMap() {
+		for item, value := range chunk {
 			downstream[k+"."+item] = value
 		}
 	}

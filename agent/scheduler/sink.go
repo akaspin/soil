@@ -56,7 +56,7 @@ func (s *Sink) ConsumeRegistry(registry manifest.Registry) {
 
 }
 
-func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) (err error) {
+func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) {
 	s.log.Debugf("submitting %s to %d arbiters", id, len(s.boundedEvaluators))
 	for _, me := range s.boundedEvaluators {
 		func(me BoundedEvaluator, pod *manifest.Pod) {
@@ -76,7 +76,11 @@ func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) (err error) {
 					me.evaluator.Deallocate(id)
 					return
 				}
-				me.evaluator.Allocate(pod, message.GetPayloadMap())
+				var env map[string]string
+				if err := message.Payload().Unmarshal(&env); err != nil {
+					s.log.Error(err)
+				}
+				me.evaluator.Allocate(pod, env)
 			})
 		}(me, pod)
 	}

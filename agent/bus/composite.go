@@ -1,19 +1,24 @@
 package bus
 
-import "sync"
+import (
+	"github.com/akaspin/logx"
+	"sync"
+)
 
 // Composite pipe
 type CompositePipe struct {
 	name       string
+	log        *logx.Log
 	downstream Consumer
 	empty      Message
 	mu         sync.Mutex
 	declared   map[string]Message
 }
 
-func NewCompositePipe(name string, downstream Consumer, declared ...string) (p *CompositePipe) {
+func NewCompositePipe(name string, log *logx.Log, downstream Consumer, declared ...string) (p *CompositePipe) {
 	p = &CompositePipe{
 		name:       name,
+		log:        log.GetLog("pipe", "composite", name),
 		downstream: downstream,
 		empty:      NewMessage(name, nil),
 		declared:   map[string]Message{},
@@ -32,17 +37,23 @@ func (p *CompositePipe) ConsumeMessage(message Message) {
 		return
 	}
 	p.declared[message.GetID()] = message
-	if message.IsEmpty() {
+	if message.Payload().IsEmpty() {
 		p.downstream.ConsumeMessage(p.empty)
 		return
 	}
 	payload := map[string]string{}
 	for prefix, msg := range p.declared {
-		if msg.IsEmpty() {
+		if msg.Payload().IsEmpty() {
 			p.downstream.ConsumeMessage(p.empty)
 			return
 		}
-		for k, v := range msg.GetPayloadMap() {
+		var chunk map[string]string
+		err := msg.Payload().Unmarshal(&chunk)
+		if err != nil {
+			p.log.Error(err)
+			continue
+		}
+		for k, v := range chunk {
 			payload[prefix+"."+k] = v
 		}
 	}

@@ -173,7 +173,7 @@ func (w *Worker) handleMessage(message bus.Message) {
 	w.log.Tracef("message: %v", message)
 	prefix := message.GetID()
 	delete(w.dirty, prefix)
-	if !message.IsEmpty() {
+	if !message.Payload().IsEmpty() {
 		var allocated *Alloc
 		var ok bool
 		if allocated, ok = w.state[message.GetID()]; !ok {
@@ -197,11 +197,19 @@ func (w *Worker) notify() {
 	var err error
 	data := map[string]string{}
 	for id, all := range w.state {
-		if data[id+".__values"], err = manifest.MapToJson(all.Values.GetPayloadMap()); err != nil {
+		var dataJson []byte
+		if dataJson, err = all.Values.Payload().JSON(); err != nil {
 			w.log.Error(err)
 			continue
 		}
-		for k, v := range all.Values.GetPayloadMap() {
+		data[id+".__values"] = string(dataJson)
+
+		var chunk map[string]string
+		if err = all.Values.Payload().Unmarshal(&chunk); err != nil {
+			w.log.Error(err)
+			continue
+		}
+		for k, v := range chunk {
 			data[id+"."+k] = v
 		}
 	}

@@ -1,15 +1,16 @@
-// +build ide test_unit
+// build ide test_unit
 
 package bus_test
 
 import (
+	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"testing"
 )
 
 func TestCompositePipe_ConsumeMessage(t *testing.T) {
 	dummy := &bus.DummyConsumer{}
-	pipe := bus.NewCompositePipe("test", dummy, "1", "2")
+	pipe := bus.NewCompositePipe("test", logx.GetLog("test"), dummy, "1", "2")
 
 	t.Run("1", func(t *testing.T) {
 		pipe.ConsumeMessage(bus.NewMessage("1", map[string]string{

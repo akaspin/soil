@@ -4,6 +4,7 @@ package bus_test
 
 import (
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
@@ -13,9 +14,11 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 	c2 := &bus.DummyConsumer{}
 
 	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
-		payload := message.GetPayloadMap()
-		delete(payload, "a")
-		res = bus.NewMessage(message.GetID(), payload)
+		var chunk map[string]string
+		err := message.Payload().Unmarshal(&chunk)
+		assert.NoError(t, err)
+		delete(chunk, "a")
+		res = bus.NewMessage(message.GetID(), chunk)
 		return
 	}, c1, c2)
 

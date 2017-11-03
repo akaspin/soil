@@ -208,11 +208,15 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 			fmt.Errorf("constraint failed: \"${status.pod.1}\":\"ok\" (\"${status.pod.1}\":\"ok\")"),
 			nil,
 		})
-		assert.Equal(t, entity1.messages[len(entity1.messages)-1].GetPayloadMap(), map[string]string{
+		lastMsg := entity1.messages[len(entity1.messages)-1]
+		var chunk map[string]string
+		assert.NoError(t, lastMsg.Payload().Unmarshal(&chunk))
+
+		assert.Equal(t, map[string]string{
 			"1": "true",
 			"2": "true",
 			"3": "true",
-		})
+		}, chunk)
 	})
 
 	arbiter.Close()

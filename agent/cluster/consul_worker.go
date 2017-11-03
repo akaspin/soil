@@ -94,26 +94,30 @@ func (w *ConsulWorker) handleStoreOps(ops []WorkerStoreOp) {
 	var keys []string
 	for _, op := range ops {
 		keys = append(keys, op.Message.GetID())
-		if op.Message.IsEmpty() {
+		if op.Message.Payload().IsEmpty() {
 			kvOps = append(kvOps, &api.KVTxnOp{
 				Verb: api.KVDelete,
 				Key:  op.Message.GetID(),
 			})
 			continue
 		}
+		valJson, err := op.Message.Payload().JSON()
+		if err != nil {
+			w.fail(err)
+		}
 		if op.WithTTL {
 			kvOps = append(kvOps, &api.KVTxnOp{
 				Verb:    api.KVLock,
 				Key:     op.Message.GetID(),
 				Session: w.sessionID,
-				Value:   op.Message.GetPayloadJSON(),
+				Value:   valJson,
 			})
 			continue
 		}
 		kvOps = append(kvOps, &api.KVTxnOp{
 			Verb:  api.KVSet,
 			Key:   op.Message.GetID(),
-			Value: op.Message.GetPayloadJSON(),
+			Value: valJson,
 		})
 	}
 	ok, _, _, txnErr := w.conn.KV().Txn(kvOps, (&api.QueryOptions{}).WithContext(w.ctx))

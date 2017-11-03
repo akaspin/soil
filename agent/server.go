@@ -53,7 +53,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
 	})
 	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	resourceCompositePipe := bus.NewCompositePipe("private", resourceDrainPipe, "meta", "system", "resource")
+	resourceCompositePipe := bus.NewCompositePipe("private", log, resourceDrainPipe, "meta", "system", "resource")
 
 	// provision
 	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision",
@@ -61,7 +61,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 			Required: manifest.Constraint{"${agent.drain}": "!= true"},
 		})
 	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	provisionCompositePipe := bus.NewCompositePipe("private", provisionDrainPipe, "meta", "system", "resource")
+	provisionCompositePipe := bus.NewCompositePipe("private", log, provisionDrainPipe, "meta", "system", "resource")
 
 	s.confPipe = bus.NewTeePipe(resourceCompositePipe, provisionCompositePipe)
 
@@ -125,7 +125,7 @@ func (s *Server) Configure() {
 	}
 	serverCfg := DefaultConfig()
 	serverCfg.Agent.Id = s.options.AgentId
-	serverCfg.Meta = bus.CloneMap(s.options.Meta)
+	serverCfg.Meta = lib.CloneMap(s.options.Meta)
 	if err := serverCfg.Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal server configs: %v", err)
 	}

@@ -12,7 +12,7 @@ import (
 )
 
 func TestRangeExecutor_Allocate(t *testing.T) {
-	cons := &bus.DummyConsumer{}
+	cons := &bus.TestingConsumer{}
 	executor := resource.NewRangeExecutor(logx.GetLog("test"), resource.Config{
 		Nature: "range",
 		Kind:   "port",

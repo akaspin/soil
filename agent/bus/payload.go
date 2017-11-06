@@ -24,11 +24,8 @@ func NewPayload(v interface{}) (p Payload) {
 		p = v1.Clone()
 	case map[string]string:
 		p = NewFlatMapPayload(v1)
-	case []byte:
-		p = NewJSONPayload(v1)
-	case string:
-		p = NewJSONPayload([]byte(v1))
 	default:
+		// interface
 		data, _ := json.Marshal(v1)
 		p = NewJSONPayload(data)
 	}
@@ -109,3 +106,8 @@ func (p JSONPayload) JSON() ([]byte, error) {
 func (p JSONPayload) Clone() Payload {
 	return NewJSONPayload(p.data)
 }
+//
+//func (p JSONPayload) String() (res string) {
+//	res = string(p.data)
+//	return
+//}

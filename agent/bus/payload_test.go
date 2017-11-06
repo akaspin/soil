@@ -69,6 +69,25 @@ func TestJSONPayload(t *testing.T) {
 			{A: "2"},
 		}, v)
 	})
+	t.Run("map", func(t *testing.T) {
+		ingest := map[string]interface{}{
+			"A": map[string]string{
+				"A": "1",
+			},
+			"B": map[string]string{
+				"A": "2",
+			},
+		}
+		data, jErr := json.Marshal(ingest)
+		assert.NoError(t, jErr)
+		payload := bus.NewJSONPayload(data)
+		var v map[string]dummy
+		assert.NoError(t, payload.Unmarshal(&v))
+		assert.Equal(t, map[string]dummy{
+			"A": {A: "1"},
+			"B": {A: "2"},
+		}, v)
+	})
 }
 
 func TestNewPayload(t *testing.T) {
@@ -91,6 +110,12 @@ func TestNewPayload(t *testing.T) {
 		})
 		_, ok := p.(bus.JSONPayload)
 		assert.True(t, ok)
+	})
+	t.Run("string", func(t *testing.T) {
+		p := bus.NewPayload("test")
+		var v string
+		assert.NoError(t, p.Unmarshal(&v))
+		assert.Equal(t, "test", v)
 	})
 
 }

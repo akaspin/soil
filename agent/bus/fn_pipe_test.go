@@ -10,8 +10,8 @@ import (
 )
 
 func TestFnPipe_ConsumeMessage(t *testing.T) {
-	c1 := &bus.DummyConsumer{}
-	c2 := &bus.DummyConsumer{}
+	c1 := &bus.TestingConsumer{}
+	c2 := &bus.TestingConsumer{}
 
 	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
 		var chunk map[string]string

@@ -1,4 +1,4 @@
-// build ide test_unit
+// +build ide test_unit
 
 package bus_test
 
@@ -9,7 +9,7 @@ import (
 )
 
 func TestCompositePipe_ConsumeMessage(t *testing.T) {
-	dummy := &bus.DummyConsumer{}
+	dummy := &bus.TestingConsumer{}
 	pipe := bus.NewCompositePipe("test", logx.GetLog("test"), dummy, "1", "2")
 
 	t.Run("1", func(t *testing.T) {

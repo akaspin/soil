@@ -35,11 +35,11 @@ test: test-unit test-cluster test-systemd 		## run all tests
 clean-test: clean-test-systemd		## clean test artifacts
 	find . -name ".test_*" -exec rm -rf {} \;
 
-test-cluster: $(SRC)
-	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES)
-
 test-unit: $(SRC)		## run unit tests
 	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)
+
+test-cluster: $(SRC)
+	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES)
 
 test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	docker -H 127.0.0.1:2475 run --net=host --rm --name=test \

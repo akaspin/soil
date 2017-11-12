@@ -7,6 +7,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// TODO: refactor to msgpack
+
 // Immutable payload
 type Payload interface {
 	IsEmpty() bool
@@ -106,6 +108,7 @@ func (p JSONPayload) JSON() ([]byte, error) {
 func (p JSONPayload) Clone() Payload {
 	return NewJSONPayload(p.data)
 }
+
 //
 //func (p JSONPayload) String() (res string) {
 //	res = string(p.data)

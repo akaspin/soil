@@ -5,8 +5,12 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/supervisor"
-	"time"
 )
+
+type kvConfigRequest struct {
+	config   Config
+	internal bool
+}
 
 type KV struct {
 	*supervisor.Control
@@ -16,14 +20,20 @@ type KV struct {
 	backend Backend
 	config  Config
 
-	volatile map[string]bus.Message    // volatile records
-	pending  map[string]BackendStoreOp // pending ops
+	configRequestChan chan kvConfigRequest
+	storeRequestsChan chan []BackendStoreOp
+	watchRequestsChan chan watcher
 
-	configRequestChan chan configRequest
-	submitChan        chan []BackendStoreOp
+	volatile          map[string]bus.Message    // volatile records
+	pending           map[string]BackendStoreOp // pending ops
 	commitsChan       chan []BackendCommit
+	invokePendingChan chan struct{} // invoke pending operations
 
-	invokeChan chan struct{}
+	registerWatchChan    chan BackendWatchRequest
+	watchResultsChan     chan bus.Message
+	watchGroups          map[string]*watchGroup
+	pendingWatchGroups   map[string]struct{}
+	closedWatchGroupChan chan string
 }
 
 func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
@@ -35,11 +45,17 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 		volatile: map[string]bus.Message{},
 		pending:  map[string]BackendStoreOp{},
 
-		configRequestChan: make(chan configRequest, 1),
-		submitChan:        make(chan []BackendStoreOp, 1),
-		commitsChan:       make(chan []BackendCommit, 1),
+		configRequestChan: make(chan kvConfigRequest, 1),
+		storeRequestsChan: make(chan []BackendStoreOp, 1),
+		watchRequestsChan: make(chan watcher, 1),
 
-		invokeChan: make(chan struct{}, 1),
+		commitsChan:       make(chan []BackendCommit, 1),
+		watchResultsChan:  make(chan bus.Message, 1),
+		invokePendingChan: make(chan struct{}, 1),
+
+		watchGroups:          map[string]*watchGroup{},
+		pendingWatchGroups:   map[string]struct{}{},
+		closedWatchGroupChan: make(chan string),
 	}
 	return
 }
@@ -54,24 +70,37 @@ func (k *KV) Configure(config Config) {
 	select {
 	case <-k.Control.Ctx().Done():
 		k.log.Warningf(`ignore config: %v`, k.Control.Ctx().Err())
-	case k.configRequestChan <- configRequest{
+	case k.configRequestChan <- kvConfigRequest{
 		config: config,
 	}:
 		k.log.Tracef(`configure: %v`, config)
 	}
 }
 
+// Submit store operations
 func (k *KV) Submit(ops []BackendStoreOp) {
 	select {
 	case <-k.Control.Ctx().Done():
 		k.log.Warningf(`ignore submit: %v`, k.Control.Ctx().Err())
-	case k.submitChan <- ops:
+	case k.storeRequestsChan <- ops:
 		k.log.Tracef(`submitted: %v`, ops)
 	}
 }
 
+// Subscribe for changes
 func (k *KV) Subscribe(key string, ctx context.Context, consumer bus.Consumer) {
-
+	select {
+	case <-k.Control.Ctx().Done():
+		k.log.Warningf(`ignore subscribe: %v`, k.Control.Ctx().Err())
+	case k.watchRequestsChan <- watcher{
+		BackendWatchRequest: BackendWatchRequest{
+			Key: key,
+			Ctx: ctx,
+		},
+		consumer: consumer,
+	}:
+		k.log.Tracef(`subscribe: %s`, key)
+	}
 }
 
 func (k *KV) loop() {
@@ -107,9 +136,11 @@ LOOP:
 					WithTTL: true,
 				}
 			}
+			for key := range k.watchGroups {
+				k.pendingWatchGroups[key] = struct{}{}
+			}
 			k.backend = k.createBackend(req.config)
-			log.Debugf(`created: %v`, k.config)
-		case ops := <-k.submitChan:
+		case ops := <-k.storeRequestsChan:
 			log.Tracef(`submit: %v`, ops)
 			for _, op := range ops {
 				id := op.Message.GetID()
@@ -126,11 +157,11 @@ LOOP:
 			go func() {
 				select {
 				case <-k.Control.Ctx().Done():
-				case k.invokeChan <- struct{}{}:
+				case k.invokePendingChan <- struct{}{}:
 				}
 			}()
-		case <-k.invokeChan:
-			log.Tracef(`invoke: (pending: %v)`, k.pending)
+		case <-k.invokePendingChan:
+			log.Tracef(`invoke: (pending: %v, watch: %v)`, k.pending, k.pendingWatchGroups)
 			select {
 			case <-k.backend.ReadyCtx().Done():
 				// ok send ops
@@ -138,16 +169,27 @@ LOOP:
 				case <-k.backend.Ctx().Done():
 					log.Trace(`skip send pending: backend is closed`)
 				default:
-					if len(k.pending) == 0 {
-						log.Trace(`skip submit: pending is empty`)
-						continue LOOP
+					if len(k.pending) > 0 {
+						var ops []BackendStoreOp
+						for _, op := range k.pending {
+							ops = append(ops, op)
+						}
+						k.backend.Submit(ops)
+						log.Tracef(`submitted: %v`, ops)
 					}
-					var ops []BackendStoreOp
-					for _, op := range k.pending {
-						ops = append(ops, op)
+					if len(k.pendingWatchGroups) > 0 {
+						var watchReqs []BackendWatchRequest
+						for key := range k.pendingWatchGroups {
+							if group, ok := k.watchGroups[key]; ok {
+								watchReqs = append(watchReqs, BackendWatchRequest{
+									Key: group.key,
+									Ctx: group.ctx,
+								})
+							}
+							delete(k.pendingWatchGroups, key)
+						}
+						k.backend.Subscribe(watchReqs)
 					}
-					k.backend.Submit(ops)
-					log.Tracef(`submitted: %v`, ops)
 				}
 			default:
 				log.Trace(`skip send pending: backend is not ready`)
@@ -169,6 +211,40 @@ LOOP:
 			default:
 				log.Trace(`skip commit: backend is not ready`)
 			}
+		case req := <-k.watchRequestsChan:
+			if group, ok := k.watchGroups[req.Key]; ok {
+				k.log.Tracef(`watch group %s found: adding watcher`, group.key)
+				group.register(req)
+				continue LOOP
+			}
+			k.log.Tracef(`creating watching group for %s`, req.Key)
+			group := newWatchGroup(k.Control.Ctx(), k.log, req.Key)
+			k.watchGroups[req.Key] = group
+			group.register(req)
+			go func() {
+				select {
+				case <-k.Control.Ctx().Done():
+				case <-group.ctx.Done():
+					k.closedWatchGroupChan <- req.Key
+				}
+			}()
+			k.pendingWatchGroups[req.Key] = struct{}{}
+			go func() {
+				select {
+				case <-k.Control.Ctx().Done():
+				case k.invokePendingChan <- struct{}{}:
+				}
+			}()
+		case res := <-k.watchResultsChan:
+			log.Tracef(`watch result: %v`, res)
+			if group, ok := k.watchGroups[res.GetID()]; ok {
+				group.ConsumeMessage(res)
+				k.log.Tracef(`message %v sent to watch group`, res)
+				continue LOOP
+			}
+			k.log.Warningf(`watch group %s is not found`, res.GetID())
+		case id := <-k.closedWatchGroupChan:
+			delete(k.watchGroups, id)
 		}
 	}
 }
@@ -182,87 +258,4 @@ func (k *KV) createBackend(config Config) (backend Backend) {
 
 	k.log.Debugf(`created: %v`, config)
 	return
-}
-
-// Backend watchdog evaluates Backend contexts and commit channel
-type backendWatchdog struct {
-	kv      *KV
-	backend Backend
-	config  Config
-	log     *logx.Log
-}
-
-func newBackendWatchdog(kv *KV, backend Backend, config Config) (w *backendWatchdog) {
-	w = &backendWatchdog{
-		kv:      kv,
-		backend: backend,
-		config:  config,
-		log:     kv.log.GetLog("cluster", "watchdog", config.URL, config.ID),
-	}
-	go w.ready()
-	go w.done()
-	go w.commit()
-	return
-}
-
-// watch ready context
-func (w *backendWatchdog) ready() {
-	select {
-	case <-w.backend.Ctx().Done():
-		return
-	case <-w.backend.ReadyCtx().Done():
-		w.log.Trace(`backend is ready`)
-		select {
-		case <-w.kv.Control.Ctx().Done():
-		case w.kv.invokeChan <- struct{}{}:
-			w.log.Debug(`try request sent`)
-		}
-	}
-}
-
-func (w *backendWatchdog) done() {
-	<-w.backend.Ctx().Done()
-	w.log.Tracef(`backend closed: sending wake request after %s`, w.config.RetryInterval)
-	select {
-	case <-w.kv.Control.Ctx().Done():
-		return
-	case <-time.After(w.config.RetryInterval):
-		w.log.Trace(`sending wake request`)
-		select {
-		case <-w.kv.Control.Ctx().Done():
-			w.log.Tracef(`skip: master context closed`)
-			return
-		case w.kv.configRequestChan <- configRequest{
-			config:   w.config,
-			internal: true,
-		}:
-			w.log.Trace(`wake request sent`)
-		}
-	}
-}
-
-func (w *backendWatchdog) commit() {
-	w.log.Trace(`commits: open`)
-LOOP:
-	for {
-		select {
-		case <-w.backend.Ctx().Done():
-			break LOOP
-		case commits := <-w.backend.CommitChan():
-			w.log.Tracef(`received commits: %v`, commits)
-			select {
-			case <-w.backend.Ctx().Done():
-				w.log.Tracef(`skip sending commits %v: backend closed`)
-				break LOOP
-			case w.kv.commitsChan <- commits:
-				w.log.Tracef(`commits sent: %v`, commits)
-			}
-		}
-	}
-	w.log.Trace(`commit: close`)
-}
-
-type configRequest struct {
-	config   Config
-	internal bool
 }

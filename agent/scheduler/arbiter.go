@@ -80,6 +80,10 @@ func (a *Arbiter) Unbind(id string, callback func()) {
 	}
 }
 
+func (a *Arbiter) ConsumerName() string {
+	return a.name
+}
+
 func (a *Arbiter) ConsumeMessage(message bus.Message) {
 	select {
 	case <-a.Control.Ctx().Done():

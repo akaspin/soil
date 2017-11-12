@@ -25,8 +25,9 @@ type BackendConfig struct {
 type Backend interface {
 	io.Closer
 
-	Ctx() context.Context // Backend context closes on backend is not available to accept operations
-	ReadyCtx() context.Context // Ready context closes then backend is ready to accept operations
+	Ctx() context.Context        // Backend context closes on backend is not available to accept operations
+	FailCtx() context.Context    // Fail context closes then backend is failed
+	ReadyCtx() context.Context   // Ready context closes then backend is ready to accept operations
 	Submit(ops []BackendStoreOp) // Submit ops to backend
 	Subscribe(req []BackendWatchRequest)
 	CommitChan() chan []BackendCommit

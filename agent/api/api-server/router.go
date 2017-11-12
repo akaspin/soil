@@ -85,6 +85,10 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (r *Router) ConsumerName() string {
+	return "router"
+}
+
 // ConsumeMessage accepts message with map of nodes
 func (r *Router) ConsumeMessage(message bus.Message) {
 	go func() {

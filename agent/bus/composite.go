@@ -29,6 +29,10 @@ func NewCompositePipe(name string, log *logx.Log, downstream Consumer, declared 
 	return
 }
 
+func (p *CompositePipe) ConsumerName() string {
+	return p.name
+}
+
 func (p *CompositePipe) ConsumeMessage(message Message) {
 	p.mu.Lock()
 	defer p.mu.Unlock()

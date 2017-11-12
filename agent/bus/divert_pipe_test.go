@@ -9,7 +9,7 @@ import (
 
 func TestDivertPipe_Divert(t *testing.T) {
 	dummy := &bus.TestingConsumer{}
-	pipe := bus.NewDivertPipe(dummy, bus.NewMessage("drain", map[string]string{
+	pipe := bus.NewDivertPipe("drain", dummy, bus.NewMessage("drain", map[string]string{
 		"drain": "true",
 	}))
 

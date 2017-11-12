@@ -5,6 +5,6 @@ type Consumer interface {
 	ConsumeMessage(message Message)
 }
 
-type MultiConsumer interface {
-	ConsumeMessages(messages ...Message)
+type NamedConsumer interface {
+	ConsumerName() string
 }

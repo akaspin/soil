@@ -2,12 +2,13 @@ package cluster
 
 import (
 	"context"
+	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"net/url"
 )
 
-func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}) (f BackendFactory) {
+func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, msgChan chan bus.Message) (f BackendFactory) {
 	f = func(ctx context.Context, log *logx.Log, config Config) (b Backend, err error) {
 		kvConfig := BackendConfig{
 			Kind:    "local",
@@ -30,7 +31,7 @@ func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}) (f
 		case "zero":
 			b = NewZeroBackend(ctx, kvLog)
 		default:
-			b = NewTestingBackend(ctx, log, consumer, crashChan)
+			b = NewTestingBackend(ctx, log, consumer, crashChan, msgChan)
 		}
 		return
 	}
@@ -41,12 +42,14 @@ func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}) (f
 type TestingBackend struct {
 	*baseBackend
 	consumer bus.Consumer
+	msgChan  chan bus.Message
 }
 
-func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer, crashChan chan struct{}) (b *TestingBackend) {
+func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer, crashChan chan struct{}, msgChan chan bus.Message) (b *TestingBackend) {
 	b = &TestingBackend{
 		baseBackend: newBaseBackend(ctx, log, BackendConfig{}),
 		consumer:    consumer,
+		msgChan:     msgChan,
 	}
 	b.readyCancel()
 	go func() {
@@ -54,7 +57,17 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer
 		case <-b.ctx.Done():
 		case <-crashChan:
 			log.Trace(`crash`)
-			b.cancel()
+			b.fail(fmt.Errorf(`crash`))
+		}
+	}()
+	go func() {
+		for {
+			select {
+			case <-b.ctx.Done():
+				return
+			case msg := <-b.msgChan:
+				b.watchChan <- msg
+			}
 		}
 	}()
 	return
@@ -88,6 +101,8 @@ func (b *TestingBackend) Submit(ops []BackendStoreOp) {
 	}
 }
 
-func (b *TestingBackend) Subscribe(req []BackendWatchRequest) {
-
+func (b *TestingBackend) Subscribe(requests []BackendWatchRequest) {
+	for _, req := range requests {
+		b.log.Tracef(`subscribe: %s`, req.Key)
+	}
 }

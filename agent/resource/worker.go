@@ -73,6 +73,10 @@ func (w *Worker) Submit(podName string, requests []manifest.Resource) {
 	}
 }
 
+func (w *Worker) ConsumerName() string {
+	return w.name
+}
+
 // Consume message with values from worker. Message prefix should be resource id.
 func (w *Worker) ConsumeMessage(message bus.Message) {
 	w.log.Tracef(`message consumed: %v`, message)

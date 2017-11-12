@@ -20,6 +20,5 @@ func NewZeroBackend(ctx context.Context, log *logx.Log) (w *ZeroBackend) {
 func (w *ZeroBackend) Submit(ops []BackendStoreOp) {
 }
 
-
 func (w *ZeroBackend) Subscribe(req []BackendWatchRequest) {
 }

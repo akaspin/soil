@@ -15,12 +15,10 @@ import (
 
 // Consul Backend
 type ConsulBackend struct {
-
 	conn      *api.Client
 	sessionID string
 
 	*baseBackend
-
 
 	opsChan          chan []BackendStoreOp
 	watchRequestChan chan []BackendWatchRequest
@@ -28,7 +26,7 @@ type ConsulBackend struct {
 
 func NewConsulBackend(ctx context.Context, log *logx.Log, config BackendConfig) (w *ConsulBackend) {
 	w = &ConsulBackend{
-		baseBackend: newBaseBackend(ctx, log, config),
+		baseBackend:      newBaseBackend(ctx, log, config),
 		opsChan:          make(chan []BackendStoreOp, 1),
 		watchRequestChan: make(chan []BackendWatchRequest, 1),
 	}
@@ -250,9 +248,4 @@ func (b *ConsulBackend) connect() {
 		}
 		b.log.Trace(`renew closed`)
 	}()
-}
-
-func (b *ConsulBackend) fail(err error) {
-	b.log.Errorf(`failed: %v`, err)
-	b.cancel()
 }

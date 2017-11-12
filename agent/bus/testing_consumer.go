@@ -12,6 +12,10 @@ type TestingConsumer struct {
 	messages []Message
 }
 
+func (c *TestingConsumer) ConsumerName() string {
+	return "testing"
+}
+
 func (c *TestingConsumer) ConsumeMessage(message Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

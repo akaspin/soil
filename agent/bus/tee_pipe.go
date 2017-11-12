@@ -12,6 +12,10 @@ func NewTeePipe(downstreams ...Consumer) (p *TeePipe) {
 	return
 }
 
+func (p *TeePipe) ConsumerName() string {
+	return "tee"
+}
+
 func (p *TeePipe) ConsumeMessage(message Message) {
 	for _, downstream := range p.downstreams {
 		downstream.ConsumeMessage(message)

@@ -4,6 +4,7 @@ package bus
 type Message struct {
 	id   string // Producer id
 	data Payload
+	ok   bool
 }
 
 // Create new message
@@ -11,6 +12,7 @@ func NewMessage(id string, payload interface{}) (m Message) {
 	m = Message{
 		id:   id,
 		data: NewPayload(payload),
+		ok:   true,
 	}
 	return
 }
@@ -21,8 +23,8 @@ func (m Message) GetID() string {
 }
 
 func (m Message) Payload() (res Payload) {
-	if m.data == nil {
-		res = NewFlatMapPayload(nil)
+	if !m.ok {
+		res = NewPayload(nil)
 		return
 	}
 	res = m.data
@@ -30,6 +32,6 @@ func (m Message) Payload() (res Payload) {
 }
 
 func (m Message) IsEqual(ingest Message) (res bool) {
-	res = m.id == ingest.id && m.data.Hash() == ingest.data.Hash()
+	res = m.id == ingest.id && m.Payload().Hash() == ingest.Payload().Hash()
 	return
 }

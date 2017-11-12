@@ -198,7 +198,7 @@ WAIT:
 
 	// Handle the one-shot mode.
 	if s.opts.SemaphoreTryOnce && attempts > 0 {
-		elapsed := time.Since(start)
+		elapsed := time.Now().Sub(start)
 		if elapsed > qOpts.WaitTime {
 			return nil, nil
 		}

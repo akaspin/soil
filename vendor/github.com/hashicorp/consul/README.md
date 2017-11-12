@@ -67,5 +67,4 @@ format the code according to Go standards.
 ## Vendoring
 
 Consul currently uses [govendor](https://github.com/kardianos/govendor) for
-vendoring and [vendorfmt](https://github.com/magiconair/vendorfmt) for formatting
-`vendor.json` to a more merge-friendly "one line per package" format.
+vendoring.

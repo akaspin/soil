@@ -2,115 +2,43 @@ package bus
 
 import (
 	"encoding/json"
-	"github.com/mitchellh/copystructure"
-	"github.com/mitchellh/hashstructure"
-	"github.com/mitchellh/mapstructure"
+	"hash/crc64"
 )
 
-// TODO: refactor to msgpack
-
-// Immutable payload
-type Payload interface {
-	IsEmpty() bool
-	Hash() uint64
-	Unmarshal(interface{}) error
-	JSON() ([]byte, error)
-	Clone() Payload
+type Payload struct {
+	data    []byte
+	isEmpty bool
 }
 
 func NewPayload(v interface{}) (p Payload) {
 	switch v1 := v.(type) {
-	case nil:
-		p = NewFlatMapPayload(nil)
 	case Payload:
-		p = v1.Clone()
-	case map[string]string:
-		p = NewFlatMapPayload(v1)
+		p = v1
 	default:
-		// interface
-		data, _ := json.Marshal(v1)
-		p = NewJSONPayload(data)
+		p = Payload{
+			isEmpty: v == nil,
+		}
+		p.data, _ = json.Marshal(v)
 	}
 	return
 }
 
-// Flat map payload
-type FlatMapPayload struct {
-	data map[string]string
-	mark uint64
+func (p Payload) IsEmpty() bool {
+	return p.isEmpty
 }
 
-func NewFlatMapPayload(v map[string]string) (p FlatMapPayload) {
-	if v == nil {
-		return
+func (p Payload) Hash() uint64 {
+	if p.isEmpty {
+		return 0
 	}
-	v1, _ := copystructure.Copy(v)
-	p.data = v1.(map[string]string)
-	p.mark, _ = hashstructure.Hash(p.data, nil)
-	return
+	return crc64.Checksum(p.data, crc64.MakeTable(crc64.ECMA))
 }
 
-func (p FlatMapPayload) IsEmpty() bool {
-	return p.data == nil
-}
-
-func (p FlatMapPayload) Hash() uint64 {
-	return p.mark
-}
-
-func (p FlatMapPayload) Unmarshal(v interface{}) (err error) {
-	err = mapstructure.Decode(p.data, v)
-	return
-}
-
-func (p FlatMapPayload) JSON() (res []byte, err error) {
-	res, err = json.Marshal(&p.data)
-	return
-}
-
-func (p FlatMapPayload) Clone() (res Payload) {
-	res = NewFlatMapPayload(p.data)
-	return
-}
-
-// JSON payload holds data in JSON
-type JSONPayload struct {
-	data []byte
-	mark uint64
-}
-
-func NewJSONPayload(v []byte) (p JSONPayload) {
-	if v == nil {
-		return
-	}
-	p.data = make([]byte, len(v))
-	copy(p.data, v)
-	p.mark, _ = hashstructure.Hash(p.data, nil)
-	return
-}
-
-func (p JSONPayload) IsEmpty() bool {
-	return p.data == nil
-}
-
-func (p JSONPayload) Hash() uint64 {
-	return p.mark
-}
-
-func (p JSONPayload) Unmarshal(v interface{}) error {
+func (p Payload) Unmarshal(v interface{}) error {
 	return json.Unmarshal(p.data, v)
 }
 
-func (p JSONPayload) JSON() ([]byte, error) {
-	return p.data, nil
+func (p Payload) String() (res string) {
+	res = string(p.data)
+	return
 }
-
-func (p JSONPayload) Clone() Payload {
-	return NewJSONPayload(p.data)
-}
-
-//
-//func (p JSONPayload) String() (res string) {
-//	res = string(p.data)
-//	return
-//}

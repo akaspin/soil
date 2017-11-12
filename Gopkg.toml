@@ -34,8 +34,8 @@ required = [
   name = "github.com/hashicorp/hcl"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/hashicorp/consul"
+  version = "1.0.0"
 
 [[constraint]]
   branch = "master"

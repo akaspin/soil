@@ -19,7 +19,7 @@ type Control struct {
 	Cancel context.CancelFunc
 
 	closeTimeout time.Duration
-	boundedWg *sync.WaitGroup
+	boundedWg sync.WaitGroup
 
 	closeCtx context.Context
 	closeCancel context.CancelFunc
@@ -33,7 +33,6 @@ func NewControl(ctx context.Context) (c *Control) {
 func NewControlTimeout(ctx context.Context, timeout time.Duration) (c *Control) {
 	c = &Control{
 		closeTimeout: timeout,
-		boundedWg: &sync.WaitGroup{},
 	}
 	c.ctx, c.Cancel = context.WithCancel(ctx)
 	c.closeCtx, c.closeCancel = context.WithCancel(context.Background())

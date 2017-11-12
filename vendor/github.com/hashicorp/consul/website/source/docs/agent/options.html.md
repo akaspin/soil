@@ -265,10 +265,6 @@ will exit with an error at startup.
     combined with static IP or DNS addresses or even multiple configurations
     for different providers.
 
-    In order to use discovery behind a proxy, you will need to set
-    `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables per
-    [Golang `net/http` library](https://golang.org/pkg/net/http/#ProxyFromEnvironment).
-
     The following sections give the options specific to each supported cloud
     provider.
 
@@ -297,7 +293,7 @@ will exit with an error at startup.
 
     #### Authentication &amp; Precedence
 
-    - Static credentials `access_key_id=xxx secret_access_key=xxx`
+    - Static credentials `acesss_key_id=xxx secret_access_key=xxx`
     - Environment variables (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`)
     - Shared credentials file (`~/.aws/credentials` or the path specified by `AWS_SHARED_CREDENTIALS_FILE`)
     - ECS task role metadata (container-specific).
@@ -1036,9 +1032,7 @@ Consul will not enable TLS for the HTTP API unless the `https` port has been ass
 * <a name="recursors"></a><a href="#recursors">`recursors`</a> This flag provides addresses of
   upstream DNS servers that are used to recursively resolve queries if they are not inside the service
   domain for Consul. For example, a node can use Consul directly as a DNS server, and if the record is
-  outside of the "consul." domain, the query will be resolved upstream. As of Consul 1.0.1 recursors
-  can be provided as IP addresses or as go-sockaddr templates. IP addresses are resolved in order, 
-  and duplicates are ignored.
+  outside of the "consul." domain, the query will be resolved upstream.
 
 * <a name="rejoin_after_leave"></a><a href="#rejoin_after_leave">`rejoin_after_leave`</a> Equivalent
   to the [`-rejoin` command-line flag](#_rejoin).

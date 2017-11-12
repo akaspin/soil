@@ -180,7 +180,7 @@ WAIT:
 
 	// Handle the one-shot mode.
 	if l.opts.LockTryOnce && attempts > 0 {
-		elapsed := time.Since(start)
+		elapsed := time.Now().Sub(start)
 		if elapsed > qOpts.WaitTime {
 			return nil, nil
 		}

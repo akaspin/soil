@@ -36,7 +36,6 @@ func TestNewConsulBackend(t *testing.T) {
 			t.Error(`should be not clean`)
 			t.Fail()
 		case <-kv.FailCtx().Done():
-			t.Log(`clean`)
 		}
 	})
 	t.Run(`up`, func(t *testing.T) {
@@ -129,8 +128,8 @@ func TestConsulBackend_Submit(t *testing.T) {
 		})
 		time.Sleep(time.Millisecond * 300)
 		assert.Equal(t, commits, []cluster.BackendCommit{
-			{ID: "test/01", Hash: 0xbb7d15153d68baf8, WithTTL: false},
-			{ID: "test/02", Hash: 0xc05493d64906019a, WithTTL: true}})
+			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
+			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true}})
 	})
 	t.Run("ensure", func(t *testing.T) {
 		res, _, err := cli.KV().List("soil/test/", nil)
@@ -158,12 +157,11 @@ func TestConsulBackend_Submit(t *testing.T) {
 		})
 		time.Sleep(time.Millisecond * 300)
 		assert.Equal(t, commits, []cluster.BackendCommit{
-			{ID: "test/01", Hash: 0xbb7d15153d68baf8, WithTTL: false},
-			{ID: "test/02", Hash: 0xc05493d64906019a, WithTTL: true},
+			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
+			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true},
 			{ID: "test/01", Hash: 0x0, WithTTL: false},
 			{ID: "test/02", Hash: 0x0, WithTTL: false},
-			{ID: "test/03", Hash: 0x0, WithTTL: false},
-		})
+			{ID: "test/03", Hash: 0x0, WithTTL: false}})
 		res, _, err := cli.KV().List("soil/test/", nil)
 		assert.NoError(t, err)
 		assert.Len(t, res, 0)

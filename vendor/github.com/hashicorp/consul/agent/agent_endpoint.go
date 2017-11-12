@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/hashicorp/consul/acl"
-	"github.com/hashicorp/consul/agent/checks"
 	"github.com/hashicorp/consul/agent/config"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/api"
@@ -73,7 +72,7 @@ func (s *HTTPServer) AgentSelf(resp http.ResponseWriter, req *http.Request) (int
 		Coord:       cs[s.agent.config.SegmentName],
 		Member:      s.agent.LocalMember(),
 		Stats:       s.agent.Stats(),
-		Meta:        s.agent.State.Metadata(),
+		Meta:        s.agent.state.Metadata(),
 	}, nil
 }
 
@@ -138,7 +137,7 @@ func (s *HTTPServer) AgentServices(resp http.ResponseWriter, req *http.Request) 
 	var token string
 	s.parseToken(req, &token)
 
-	services := s.agent.State.Services()
+	services := s.agent.state.Services()
 	if err := s.agent.filterServices(token, &services); err != nil {
 		return nil, err
 	}
@@ -162,7 +161,7 @@ func (s *HTTPServer) AgentChecks(resp http.ResponseWriter, req *http.Request) (i
 	var token string
 	s.parseToken(req, &token)
 
-	checks := s.agent.State.Checks()
+	checks := s.agent.state.Checks()
 	if err := s.agent.filterChecks(token, &checks); err != nil {
 		return nil, err
 	}
@@ -305,7 +304,7 @@ func (s *HTTPServer) AgentForceLeave(resp http.ResponseWriter, req *http.Request
 // services and checks to the server. If the operation fails, we only
 // only warn because the write did succeed and anti-entropy will sync later.
 func (s *HTTPServer) syncChanges() {
-	if err := s.agent.State.SyncChanges(); err != nil {
+	if err := s.agent.state.syncChanges(); err != nil {
 		s.agent.logger.Printf("[ERR] agent: failed to sync changes: %v", err)
 	}
 }
@@ -491,9 +490,9 @@ func (s *HTTPServer) AgentCheckUpdate(resp http.ResponseWriter, req *http.Reques
 	}
 
 	total := len(update.Output)
-	if total > checks.BufSize {
+	if total > CheckBufSize {
 		update.Output = fmt.Sprintf("%s ... (captured %d of %d bytes)",
-			update.Output[:checks.BufSize], checks.BufSize, total)
+			update.Output[:CheckBufSize], CheckBufSize, total)
 	}
 
 	checkID := types.CheckID(strings.TrimPrefix(req.URL.Path, "/v1/agent/check/update/"))

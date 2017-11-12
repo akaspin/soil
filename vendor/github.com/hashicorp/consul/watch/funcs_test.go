@@ -1,379 +1,356 @@
-package watch_test
+package watch
 
 import (
-	"encoding/json"
-	"errors"
-	"sync"
+	"os"
 	"testing"
 	"time"
 
-	"github.com/hashicorp/consul/agent"
 	consulapi "github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/watch"
 )
 
-var errBadContent = errors.New("bad content")
-var errTimeout = errors.New("timeout")
+var consulAddr string
 
-var timeout = 5 * time.Second
-
-func makeInvokeCh() chan error {
-	ch := make(chan error)
-	time.AfterFunc(timeout, func() { ch <- errTimeout })
-	return ch
+func init() {
+	consulAddr = os.Getenv("CONSUL_ADDR")
 }
 
 func TestKeyWatch(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"key", "key":"foo/bar/baz"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.(*consulapi.KVPair)
+			if !ok || v == nil || string(v.Value) != "test" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.(*consulapi.KVPair)
-		if !ok || v == nil {
-			return // ignore
-		}
-		if string(v.Value) != "test" {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		kv := a.Client().KV()
-
+		defer plan.Stop()
 		time.Sleep(20 * time.Millisecond)
+
+		kv := plan.client.KV()
 		pair := &consulapi.KVPair{
 			Key:   "foo/bar/baz",
 			Value: []byte("test"),
 		}
-		if _, err := kv.Put(pair, nil); err != nil {
+		_, err := kv.Put(pair, nil)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		// Wait for the query to run
+		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		// Delete the key
+		_, err = kv.Delete("foo/bar/baz", nil)
+		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestKeyWatch_With_PrefixDelete(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"key", "key":"foo/bar/baz"}`)
+	invoke := 0
+	deletedKeyWatchInvoked := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
-		}
-		v, ok := raw.(*consulapi.KVPair)
-		if !ok || v == nil {
-			return // ignore
-		}
-		if string(v.Value) != "test" {
-			invoke <- errBadContent
+		if raw == nil && deletedKeyWatchInvoked == 0 {
+			deletedKeyWatchInvoked++
 			return
 		}
-		invoke <- nil
+		if invoke == 0 {
+			v, ok := raw.(*consulapi.KVPair)
+			if !ok || v == nil || string(v.Value) != "test" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
+		}
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		kv := a.Client().KV()
-
+		defer plan.Stop()
 		time.Sleep(20 * time.Millisecond)
+
+		kv := plan.client.KV()
 		pair := &consulapi.KVPair{
 			Key:   "foo/bar/baz",
 			Value: []byte("test"),
 		}
-		if _, err := kv.Put(pair, nil); err != nil {
+		_, err := kv.Put(pair, nil)
+		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
-	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
+		// Wait for the query to run
+		time.Sleep(20 * time.Millisecond)
+
+		// Delete the key
+		_, err = kv.DeleteTree("foo/bar", nil)
+		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
+
+		plan.Stop()
 	}()
 
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
+	if invoke != 1 {
+		t.Fatalf("expected watch plan to be invoked once but got %v", invoke)
+	}
 
-	plan.Stop()
-	wg.Wait()
+	if deletedKeyWatchInvoked != 1 {
+		t.Fatalf("expected watch plan to be invoked once on delete but got %v", deletedKeyWatchInvoked)
+	}
 }
 
 func TestKeyPrefixWatch(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"keyprefix", "prefix":"foo/"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.(consulapi.KVPairs)
+			if ok && v == nil {
+				return
+			}
+			if !ok || v == nil || string(v[0].Key) != "foo/bar" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.(consulapi.KVPairs)
-		if !ok || len(v) == 0 {
-			return
-		}
-		if string(v[0].Key) != "foo/bar" {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		kv := a.Client().KV()
-
+		defer plan.Stop()
 		time.Sleep(20 * time.Millisecond)
+
+		kv := plan.client.KV()
 		pair := &consulapi.KVPair{
 			Key: "foo/bar",
 		}
-		if _, err := kv.Put(pair, nil); err != nil {
+		_, err := kv.Put(pair, nil)
+		if err != nil {
+			t.Fatalf("err: %v", err)
+		}
+
+		// Wait for the query to run
+		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		// Delete the key
+		_, err = kv.Delete("foo/bar", nil)
+		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestServicesWatch(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"services"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.(map[string][]string)
+			if !ok || v["consul"] == nil {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.(map[string][]string)
-		if !ok || len(v) == 0 {
-			return // ignore
-		}
-		if v["consul"] == nil {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		agent := a.Client().Agent()
-
 		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		agent := plan.client.Agent()
 		reg := &consulapi.AgentServiceRegistration{
 			ID:   "foo",
 			Name: "foo",
 		}
-		if err := agent.ServiceRegister(reg); err != nil {
-			t.Fatalf("err: %v", err)
-		}
+		agent.ServiceRegister(reg)
+		time.Sleep(20 * time.Millisecond)
+		agent.ServiceDeregister("foo")
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestNodesWatch(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"nodes"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.([]*consulapi.Node)
+			if !ok || len(v) == 0 {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.([]*consulapi.Node)
-		if !ok || len(v) == 0 {
-			return // ignore
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		catalog := a.Client().Catalog()
-
 		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		catalog := plan.client.Catalog()
 		reg := &consulapi.CatalogRegistration{
 			Node:       "foobar",
 			Address:    "1.1.1.1",
 			Datacenter: "dc1",
 		}
-		if _, err := catalog.Register(reg, nil); err != nil {
-			t.Fatalf("err: %v", err)
+		catalog.Register(reg, nil)
+		time.Sleep(20 * time.Millisecond)
+		dereg := &consulapi.CatalogDeregistration{
+			Node:       "foobar",
+			Address:    "1.1.1.1",
+			Datacenter: "dc1",
 		}
+		catalog.Deregister(dereg, nil)
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestServiceWatch(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"service", "service":"foo", "tag":"bar", "passingonly":true}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.([]*consulapi.ServiceEntry)
+			if ok && len(v) == 0 {
+				return
+			}
+			if !ok || v[0].Service.ID != "foo" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.([]*consulapi.ServiceEntry)
-		if !ok || len(v) == 0 {
-			return // ignore
-		}
-		if v[0].Service.ID != "foo" {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		agent := a.Client().Agent()
-
 		time.Sleep(20 * time.Millisecond)
+
+		agent := plan.client.Agent()
 		reg := &consulapi.AgentServiceRegistration{
 			ID:   "foo",
 			Name: "foo",
 			Tags: []string{"bar"},
 		}
-		if err := agent.ServiceRegister(reg); err != nil {
-			t.Fatalf("err: %v", err)
-		}
+		agent.ServiceRegister(reg)
+
+		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		agent.ServiceDeregister("foo")
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestChecksWatch_State(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"checks", "state":"warning"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.([]*consulapi.HealthCheck)
+			if len(v) == 0 {
+				return
+			}
+			if !ok || v[0].CheckID != "foobar" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.([]*consulapi.HealthCheck)
-		if !ok || len(v) == 0 {
-			return // ignore
-		}
-		if v[0].CheckID != "foobar" || v[0].Status != "warning" {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		catalog := a.Client().Catalog()
-
 		time.Sleep(20 * time.Millisecond)
+
+		catalog := plan.client.Catalog()
 		reg := &consulapi.CatalogRegistration{
 			Node:       "foobar",
 			Address:    "1.1.1.1",
@@ -385,56 +362,55 @@ func TestChecksWatch_State(t *testing.T) {
 				Status:  consulapi.HealthWarning,
 			},
 		}
-		if _, err := catalog.Register(reg, nil); err != nil {
-			t.Fatalf("err: %v", err)
+		catalog.Register(reg, nil)
+
+		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		dereg := &consulapi.CatalogDeregistration{
+			Node:       "foobar",
+			Address:    "1.1.1.1",
+			Datacenter: "dc1",
 		}
+		catalog.Deregister(dereg, nil)
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestChecksWatch_Service(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"checks", "service":"foobar"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return // ignore
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.([]*consulapi.HealthCheck)
+			if len(v) == 0 {
+				return
+			}
+			if !ok || v[0].CheckID != "foobar" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.([]*consulapi.HealthCheck)
-		if !ok || len(v) == 0 {
-			return // ignore
-		}
-		if v[0].CheckID != "foobar" {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		catalog := a.Client().Catalog()
-
 		time.Sleep(20 * time.Millisecond)
+
+		catalog := plan.client.Catalog()
 		reg := &consulapi.CatalogRegistration{
 			Node:       "foobar",
 			Address:    "1.1.1.1",
@@ -451,86 +427,68 @@ func TestChecksWatch_Service(t *testing.T) {
 				ServiceID: "foobar",
 			},
 		}
-		if _, err := catalog.Register(reg, nil); err != nil {
+		_, err := catalog.Register(reg, nil)
+		if err != nil {
 			t.Fatalf("err: %v", err)
 		}
-	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
+		time.Sleep(20 * time.Millisecond)
+		plan.Stop()
+
+		dereg := &consulapi.CatalogDeregistration{
+			Node:       "foobar",
+			Address:    "1.1.1.1",
+			Datacenter: "dc1",
 		}
+		catalog.Deregister(dereg, nil)
 	}()
 
-	if err := <-invoke; err != nil {
+	err := plan.Run(consulAddr)
+	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
 
-	plan.Stop()
-	wg.Wait()
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }
 
 func TestEventWatch(t *testing.T) {
-	t.Parallel()
-	a := agent.NewTestAgent(t.Name(), ``)
-	defer a.Shutdown()
-
-	invoke := makeInvokeCh()
+	if consulAddr == "" {
+		t.Skip()
+	}
 	plan := mustParse(t, `{"type":"event", "name": "foo"}`)
+	invoke := 0
 	plan.Handler = func(idx uint64, raw interface{}) {
-		if raw == nil {
-			return
+		if invoke == 0 {
+			if raw == nil {
+				return
+			}
+			v, ok := raw.([]*consulapi.UserEvent)
+			if !ok || len(v) == 0 || string(v[len(v)-1].Name) != "foo" {
+				t.Fatalf("Bad: %#v", raw)
+			}
+			invoke++
 		}
-		v, ok := raw.([]*consulapi.UserEvent)
-		if !ok || len(v) == 0 {
-			return // ignore
-		}
-		if string(v[len(v)-1].Name) != "foo" {
-			invoke <- errBadContent
-			return
-		}
-		invoke <- nil
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
-		event := a.Client().Event()
-
+		defer plan.Stop()
 		time.Sleep(20 * time.Millisecond)
+
+		event := plan.client.Event()
 		params := &consulapi.UserEvent{Name: "foo"}
 		if _, _, err := event.Fire(params, nil); err != nil {
 			t.Fatalf("err: %v", err)
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := plan.Run(a.HTTPAddr()); err != nil {
-			t.Fatalf("err: %v", err)
-		}
-	}()
-
-	if err := <-invoke; err != nil {
-		t.Fatalf("err: %v", err)
-	}
-
-	plan.Stop()
-	wg.Wait()
-}
-
-func mustParse(t *testing.T, q string) *watch.Plan {
-	var params map[string]interface{}
-	if err := json.Unmarshal([]byte(q), &params); err != nil {
-		t.Fatal(err)
-	}
-	plan, err := watch.Parse(params)
+	err := plan.Run(consulAddr)
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
-	return plan
+
+	if invoke == 0 {
+		t.Fatalf("bad: %v", invoke)
+	}
 }

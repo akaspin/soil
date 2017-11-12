@@ -2208,7 +2208,7 @@ func TestDNS_RecursorTimeout(t *testing.T) {
 	start := time.Now()
 	in, _, err := c.Exchange(m, a.DNSAddr())
 
-	duration := time.Since(start)
+	duration := time.Now().Sub(start)
 
 	if err != nil {
 		t.Fatalf("err: %v", err)
@@ -4154,9 +4154,6 @@ func TestDNS_InvalidQueries(t *testing.T) {
 		"node.consul.",
 		"service.consul.",
 		"query.consul.",
-		"foo.node.dc1.extra.consul.",
-		"foo.service.dc1.extra.consul.",
-		"foo.query.dc1.extra.consul.",
 	}
 	for _, question := range questions {
 		m := new(dns.Msg)

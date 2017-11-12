@@ -12,9 +12,9 @@ import (
 type Group struct {
 	ctx        context.Context
 	cancel     context.CancelFunc
-	wg         *sync.WaitGroup
+	wg         sync.WaitGroup
 
-	errMu   *sync.Mutex
+	errMu   sync.Mutex
 	err        error
 
 	trap *Trap
@@ -23,8 +23,6 @@ type Group struct {
 
 func NewGroup(ctx context.Context, components ...Component) (g *Group) {
 	g = &Group{
-		wg: &sync.WaitGroup{},
-		errMu: &sync.Mutex{},
 		components: components,
 	}
 	g.ctx, g.cancel = context.WithCancel(ctx)

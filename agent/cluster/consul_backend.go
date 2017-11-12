@@ -167,9 +167,15 @@ func (b *ConsulBackend) handleStoreOps(ops []BackendStoreOp) {
 			})
 			continue
 		}
-		valJson, err := op.Message.Payload().JSON()
+		var value interface{}
+		if err := op.Message.Payload().Unmarshal(&value); err != nil {
+			b.log.Errorf(`can't unmarshal payload %s: %v`, op.Message.Payload(), err)
+			continue
+		}
+		valJson, err := json.Marshal(value)
 		if err != nil {
-			b.fail(err)
+			b.log.Errorf(`can't marshal payload %v: %v`, value, err)
+			continue
 		}
 		if op.WithTTL {
 			kvOps = append(kvOps, &api.KVTxnOp{

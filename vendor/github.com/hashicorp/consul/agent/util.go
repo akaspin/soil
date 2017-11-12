@@ -4,14 +4,26 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"os/signal"
 	osuser "os/user"
 	"strconv"
+	"time"
 
 	"github.com/hashicorp/consul/types"
 	"github.com/hashicorp/go-msgpack/codec"
+)
+
+const (
+	// This scale factor means we will add a minute after we cross 128 nodes,
+	// another at 256, another at 512, etc. By 8192 nodes, we will scale up
+	// by a factor of 8.
+	//
+	// If you update this, you may need to adjust the tuning of
+	// CoordinateUpdatePeriod and CoordinateUpdateMaxBatchSize.
+	aeScaleThreshold = 128
 )
 
 // msgpackHandle is a shared handle for encoding/decoding of
@@ -19,6 +31,18 @@ import (
 var msgpackHandle = &codec.MsgpackHandle{
 	RawToString: true,
 	WriteExt:    true,
+}
+
+// aeScale is used to scale the time interval at which anti-entropy updates take
+// place. It is used to prevent saturation as the cluster size grows.
+func aeScale(interval time.Duration, n int) time.Duration {
+	// Don't scale until we cross the threshold
+	if n <= aeScaleThreshold {
+		return interval
+	}
+
+	multiplier := math.Ceil(math.Log2(float64(n))-math.Log2(aeScaleThreshold)) + 1.0
+	return time.Duration(multiplier) * interval
 }
 
 // decodeMsgPack is used to decode a MsgPack encoded object
@@ -90,6 +114,15 @@ GROUP:
 	}
 
 	return nil
+}
+
+// ExecSubprocess returns a command to execute a subprocess directly.
+func ExecSubprocess(args []string) (*exec.Cmd, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("need an executable to run")
+	}
+
+	return exec.Command(args[0], args[1:]...), nil
 }
 
 // ForwardSignals will fire up a goroutine to forward signals to the given

@@ -27,7 +27,6 @@ func mustParse(t *testing.T, q string) *Plan {
 }
 
 func TestRun_Stop(t *testing.T) {
-	t.Parallel()
 	plan := mustParse(t, `{"type":"noop"}`)
 
 	var expect uint64 = 1

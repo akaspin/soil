@@ -3,8 +3,7 @@ resource "aws_instance" "server" {
     instance_type = "${var.instance_type}"
     key_name = "${var.key_name}"
     count = "${var.servers}"
-    security_groups = ["${aws_security_group.consul.id}"]
-    subnet_id = "${lookup(var.subnets, count.index % var.servers)}"
+    security_groups = ["${aws_security_group.consul.name}"]
 
     connection {
         user = "${lookup(var.user, var.platform)}"
@@ -26,7 +25,7 @@ resource "aws_instance" "server" {
     provisioner "remote-exec" {
         inline = [
             "echo ${var.servers} > /tmp/consul-server-count",
-            "echo ${aws_instance.server.0.private_ip} > /tmp/consul-server-addr",
+            "echo ${aws_instance.server.0.private_dns} > /tmp/consul-server-addr",
         ]
     }
 
@@ -42,7 +41,6 @@ resource "aws_instance" "server" {
 resource "aws_security_group" "consul" {
     name = "consul_${var.platform}"
     description = "Consul internal traffic + maintenance."
-    vpc_id = "${var.vpc_id}"
 
     // These are for internal traffic
     ingress {

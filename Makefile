@@ -36,10 +36,10 @@ clean-test: clean-test-systemd		## clean test artifacts
 	find . -name ".test_*" -exec rm -rf {} \;
 
 test-unit: $(SRC)		## run unit tests
-	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)
+	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
 
 test-cluster: $(SRC)
-	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES)
+	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
 
 test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	docker -H 127.0.0.1:2475 run --net=host --rm --name=test \
@@ -50,7 +50,7 @@ test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /vagrant:/go/src/github.com/akaspin/soil \
-	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(TEST_PACKAGES)
+	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel

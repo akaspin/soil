@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/manifest"
@@ -201,11 +202,17 @@ func (w *Worker) notify() {
 	var err error
 	data := map[string]string{}
 	for id, all := range w.state {
-		var dataJson []byte
-		if dataJson, err = all.Values.Payload().JSON(); err != nil {
+		var value interface{}
+		if err = all.Values.Payload().Unmarshal(&value); err != nil {
 			w.log.Error(err)
 			continue
 		}
+		var dataJson []byte
+		if dataJson, err = json.Marshal(value); err != nil {
+			w.log.Error(err)
+			continue
+		}
+
 		data[id+".__values"] = string(dataJson)
 
 		var chunk map[string]string

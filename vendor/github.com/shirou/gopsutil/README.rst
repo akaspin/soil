@@ -87,6 +87,8 @@ You can set an alternative location to :code:`/sys` by setting the :code:`HOST_S
 
 You can set an alternative location to :code:`/etc` by setting the :code:`HOST_ETC` environment variable.
 
+You can set an alternative location to :code:`/var` by setting the :code:`HOST_VAR` environment variable.
+
 Documentation
 ------------------------
 
@@ -200,7 +202,7 @@ name             Linux FreeBSD OpenBSD MacOSX Windows
 pid                 x     x      x       x       x
 ppid                x     x      x       x       x
 name                x     x      x       x       x
-cmdline             x                    x       x
+cmdline             x     x              x       x
 create_time         x                    x
 status              x     x      x       x
 cwd                 x
@@ -213,7 +215,7 @@ nice                x     x      x       x       x
 num_fds             x
 num_ctx_switches    x
 num_threads         x     x      x       x       x
-cpu_times           x
+cpu_times           x                            x
 memory_info         x     x      x       x       x
 memory_info_ex      x
 memory_maps         x
@@ -227,7 +229,7 @@ username            x     x      x       x       x
 ionice
 rlimit              x
 num_handlers
-threads
+threads             x
 cpu_percent         x            x       x
 cpu_affinity
 memory_percent

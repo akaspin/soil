@@ -13,7 +13,6 @@ import (
 )
 
 func TestKV_Configure(t *testing.T) {
-	t.Skip()
 	consumer := &bus.TestingConsumer{}
 	crashChan := make(chan struct{})
 	kv := cluster.NewKV(context.Background(), logx.GetLog("test"), cluster.NewTestingBackendFactory(consumer, crashChan, nil))

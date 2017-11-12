@@ -35,7 +35,8 @@ func TestNewConsulBackend(t *testing.T) {
 		case <-kv.ReadyCtx().Done():
 			t.Error(`should be not clean`)
 			t.Fail()
-		case <-kv.Ctx().Done():
+		case <-kv.FailCtx().Done():
+			t.Log(`clean`)
 		}
 	})
 	t.Run(`up`, func(t *testing.T) {
@@ -51,7 +52,7 @@ func TestNewConsulBackend(t *testing.T) {
 		defer kv.Close()
 		select {
 		case <-kv.ReadyCtx().Done():
-		case <-kv.Ctx().Done():
+		case <-kv.FailCtx().Done():
 			t.Error(`should not fail`)
 			t.Fail()
 		}
@@ -69,7 +70,7 @@ func TestNewConsulBackend(t *testing.T) {
 		defer kv.Close()
 		select {
 		case <-kv.ReadyCtx().Done():
-		case <-kv.Ctx().Done():
+		case <-kv.FailCtx().Done():
 			t.Error(`should not fail`)
 			t.Fail()
 		}
@@ -111,7 +112,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 	t.Run("wait clean", func(t *testing.T) {
 		select {
 		case <-kv.ReadyCtx().Done():
-		case <-kv.Ctx().Done():
+		case <-kv.FailCtx().Done():
 			t.Error(`should not fail`)
 			t.Fail()
 		}

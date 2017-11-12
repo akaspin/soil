@@ -12,7 +12,7 @@ import (
 )
 
 func TestDummyExecutor_Allocate(t *testing.T) {
-	cons1 := &bus.DummyConsumer{}
+	cons1 := &bus.TestingConsumer{}
 	executor := resource.NewDummyExecutor(logx.GetLog("kind-1"), resource.Config{
 		Kind: "kind-1",
 	}, cons1)

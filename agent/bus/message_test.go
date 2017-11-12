@@ -1,4 +1,4 @@
-// +build ide test_unit
+// +`build ide test_unit
 
 package bus_test
 
@@ -26,7 +26,7 @@ func TestMessageStringify(t *testing.T) {
 
 func TestMessage_IsEmpty(t *testing.T) {
 	message := bus.NewMessage("test", nil)
-	assert.True(t, message.IsEmpty())
+	assert.True(t, message.Payload().IsEmpty())
 }
 
 func TestMessage_GetPayload(t *testing.T) {
@@ -35,8 +35,11 @@ func TestMessage_GetPayload(t *testing.T) {
 	}
 	msg := bus.NewMessage("test", payload)
 	payload["2"] = "2"
-	assert.NotEqual(t, msg.GetPayloadMap(), payload)
-	assert.Equal(t, msg.GetPayloadMap(), map[string]string{
+
+	var chunk map[string]string
+	assert.NoError(t, msg.Payload().Unmarshal(&chunk))
+	assert.NotEqual(t, chunk, payload)
+	assert.Equal(t, chunk, map[string]string{
 		"1": "1",
 	})
 }

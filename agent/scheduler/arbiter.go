@@ -80,6 +80,10 @@ func (a *Arbiter) Unbind(id string, callback func()) {
 	}
 }
 
+func (a *Arbiter) ConsumerName() string {
+	return a.name
+}
+
 func (a *Arbiter) ConsumeMessage(message bus.Message) {
 	select {
 	case <-a.Control.Ctx().Done():
@@ -120,12 +124,17 @@ LOOP:
 
 func (a *Arbiter) updateCache() {
 	if len(a.config.ConstraintOnly) == 0 {
-		a.env = bus.NewMessage(a.state.GetID(), a.state.GetPayloadMap())
+		a.env = bus.NewMessage(a.state.GetID(), a.state.Payload())
+		return
+	}
+	var src map[string]string
+	if err := a.state.Payload().Unmarshal(&src); err != nil {
+		a.log.Error(err)
 		return
 	}
 	env := map[string]string{}
 LOOP:
-	for k, v := range a.state.GetPayloadMap() {
+	for k, v := range src {
 		for _, reg := range a.config.ConstraintOnly {
 			if reg.MatchString(k) {
 				continue LOOP
@@ -137,24 +146,30 @@ LOOP:
 }
 
 func (a *Arbiter) notify(entity arbiterEntity) {
-	if a.state.IsEmpty() {
+	if a.state.Payload().IsEmpty() {
 		a.log.Tracef(`skipping arbitrate "%s": state is empty`, entity.id)
 		return
 	}
 	a.log.Tracef(`evaluating "%s"`, entity.id)
 
+	var statePayload map[string]string
+	if err := a.state.Payload().Unmarshal(&statePayload); err != nil {
+		a.log.Error(err)
+		return
+	}
+
 	if a.config.Required != nil {
-		if err := a.config.Required.Check(a.state.GetPayloadMap()); err != nil {
+		if err := a.config.Required.Check(statePayload); err != nil {
 			a.log.Warningf(`notifying "%s" (required): %v`, entity.id, err)
 			entity.notifyFn(err, bus.NewMessage(a.name, nil))
 			return
 		}
 	}
-	if err := entity.constraint.Check(a.state.GetPayloadMap()); err != nil {
+	if err := entity.constraint.Check(statePayload); err != nil {
 		a.log.Debugf(`notifying "%s": %v`, entity.id, err)
 		entity.notifyFn(err, bus.NewMessage(a.name, nil))
 		return
 	}
-	a.log.Debugf(`notifying "%s": ok:%x`, entity.id, a.env.GetPayloadMark())
+	a.log.Debugf(`notifying "%s": ok:%x`, entity.id, a.env.Payload().Hash())
 	entity.notifyFn(nil, a.env)
 }

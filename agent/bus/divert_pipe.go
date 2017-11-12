@@ -6,6 +6,7 @@ import "sync"
 // When entering the mode pipe sends predefined message to downstream. Pipe
 // sends last consumed message when exit drain mode.
 type DivertPipe struct {
+	name     string
 	consumer Consumer
 	inDrain  Message
 
@@ -14,12 +15,17 @@ type DivertPipe struct {
 	isDiverting bool
 }
 
-func NewDivertPipe(consumer Consumer, divert Message) (p *DivertPipe) {
+func NewDivertPipe(name string, consumer Consumer, divert Message) (p *DivertPipe) {
 	p = &DivertPipe{
+		name:     name,
 		consumer: consumer,
 		inDrain:  divert,
 	}
 	return
+}
+
+func (p *DivertPipe) ConsumerName() string {
+	return p.name
 }
 
 func (p *DivertPipe) ConsumeMessage(message Message) {

@@ -15,7 +15,7 @@ import (
 func TestWorker_Submit(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
-	cons1 := &bus.DummyConsumer{}
+	cons1 := &bus.TestingConsumer{}
 
 	recovered := []resource.Alloc{
 		{
@@ -300,7 +300,7 @@ func TestWorker_Submit(t *testing.T) {
 
 func TestWorker_Configure(t *testing.T) {
 	t.Run("0 empty", func(t *testing.T) {
-		cons := &bus.DummyConsumer{}
+		cons := &bus.TestingConsumer{}
 		worker := resource.NewWorker(context.Background(), logx.GetLog(""), "dummy1", cons, resource.EvaluatorConfig{}, nil)
 		worker.Configure(resource.Config{
 			Nature: "dummy",

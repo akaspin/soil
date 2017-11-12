@@ -13,6 +13,10 @@ func NewFnPipe(fn func(message Message) Message, consumers ...Consumer) (p *FnPi
 	return
 }
 
+func (p *FnPipe) ConsumerName() string {
+	return "fn"
+}
+
 func (p *FnPipe) ConsumeMessage(message Message) {
 	res := message
 	if p.fn != nil {

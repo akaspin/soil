@@ -9,10 +9,6 @@ import (
 	"os"
 )
 
-type NodeConfig struct {
-	Id string `hcl:"id" json:"id"`
-}
-
 // Agent - specific config
 type Config struct {
 	Agent struct {

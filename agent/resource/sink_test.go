@@ -22,10 +22,10 @@ func TestSink_Flow_NoRecovery(t *testing.T) {
 	log := logx.GetLog("test")
 	waitTime := time.Millisecond * 300
 	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})
-	arbiterCompositePipe := bus.NewCompositePipe("private", arbiter, "resource")
+	arbiterCompositePipe := bus.NewCompositePipe("private", log, arbiter, "resource")
 
-	downstreamCons := &bus.DummyConsumer{}
-	checkCons := &bus.DummyConsumer{}
+	downstreamCons := &bus.TestingConsumer{}
+	checkCons := &bus.TestingConsumer{}
 	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
 	evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, nil, downstreamCons, upstream)
@@ -55,10 +55,10 @@ func TestSink_Flow(t *testing.T) {
 	log := logx.GetLog("test")
 	waitTime := time.Millisecond * 300
 	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})
-	arbiterCompositePipe := bus.NewCompositePipe("private", arbiter, "resource")
+	arbiterCompositePipe := bus.NewCompositePipe("private", log, arbiter, "resource")
 
-	downstreamCons := &bus.DummyConsumer{}
-	checkCons := &bus.DummyConsumer{}
+	downstreamCons := &bus.TestingConsumer{}
+	checkCons := &bus.TestingConsumer{}
 	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
 	var state allocation.Recovery

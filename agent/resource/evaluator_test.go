@@ -19,8 +19,8 @@ func TestEvaluator_Configure(t *testing.T) {
 
 	runTest := func(t *testing.T, config []resource.Config, state allocation.Recovery, downstream, upstream []bus.Message) {
 		t.Helper()
-		downstreamCons := &bus.DummyConsumer{}
-		upstreamCons := &bus.DummyConsumer{}
+		downstreamCons := &bus.TestingConsumer{}
+		upstreamCons := &bus.TestingConsumer{}
 		evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, downstreamCons, upstreamCons)
 		assert.NoError(t, evaluator.Open())
 		evaluator.Configure(config)

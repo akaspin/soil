@@ -53,15 +53,19 @@ func (e *RangeExecutor) Allocate(request Alloc) {
 	id := request.GetID()
 
 	// try to recover value from allocated
-	if val, ok := request.Values.GetPayloadMap()["value"]; ok {
-		if parsed, err := strconv.ParseUint(val, 10, 32); err != nil {
-			e.log.Warningf(`can't parse value: %s:%s`, id, val)
-		} else {
-			if value = uint32(parsed); value >= e.min && value <= e.max {
-				recovered = true
-				e.log.Tracef(`recovered value: %s:%d`, id, value)
+	var valuesChunk map[string]string
+	errU := request.Values.Payload().Unmarshal(&valuesChunk)
+	if errU == nil {
+		if val, ok := valuesChunk["value"]; ok {
+			if parsed, err := strconv.ParseUint(val, 10, 32); err != nil {
+				e.log.Warningf(`can't parse value: %s:%s`, id, val)
 			} else {
-				e.log.Warningf(`recovered value exceeds limits: %s:%d:%d:%d`, id, e.min, value, e.max)
+				if value = uint32(parsed); value >= e.min && value <= e.max {
+					recovered = true
+					e.log.Tracef(`recovered value: %s:%d`, id, value)
+				} else {
+					e.log.Warningf(`recovered value exceeds limits: %s:%d:%d:%d`, id, e.min, value, e.max)
+				}
 			}
 		}
 	}

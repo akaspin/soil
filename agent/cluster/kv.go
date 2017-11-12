@@ -254,7 +254,7 @@ func (k *KV) createBackend(config Config) (backend Backend) {
 	if backend, kvErr = k.factory(k.Control.Ctx(), k.log, config); kvErr != nil {
 		k.log.Error(kvErr)
 	}
-	newBackendWatchdog(k, backend, config)
+	newWatchdog(k, backend, config)
 
 	k.log.Debugf(`created: %v`, config)
 	return

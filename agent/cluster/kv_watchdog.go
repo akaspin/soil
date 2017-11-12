@@ -6,15 +6,15 @@ import (
 )
 
 // Backend watchdog evaluates Backend contexts and commit channel
-type kvBackendWatchdog struct {
+type kvWatchdog struct {
 	kv      *KV
 	backend Backend
 	config  Config
 	log     *logx.Log
 }
 
-func newBackendWatchdog(kv *KV, backend Backend, config Config) (w *kvBackendWatchdog) {
-	w = &kvBackendWatchdog{
+func newWatchdog(kv *KV, backend Backend, config Config) (w *kvWatchdog) {
+	w = &kvWatchdog{
 		kv:      kv,
 		backend: backend,
 		config:  config,
@@ -27,7 +27,7 @@ func newBackendWatchdog(kv *KV, backend Backend, config Config) (w *kvBackendWat
 }
 
 // watch ready context
-func (w *kvBackendWatchdog) ready() {
+func (w *kvWatchdog) ready() {
 	select {
 	case <-w.backend.Ctx().Done():
 		return
@@ -41,7 +41,7 @@ func (w *kvBackendWatchdog) ready() {
 	}
 }
 
-func (w *kvBackendWatchdog) done() {
+func (w *kvWatchdog) done() {
 	<-w.backend.Ctx().Done()
 	select {
 	case <-w.backend.FailCtx().Done():
@@ -63,7 +63,7 @@ func (w *kvBackendWatchdog) done() {
 	}
 }
 
-func (w *kvBackendWatchdog) downstream() {
+func (w *kvWatchdog) downstream() {
 	w.log.Trace(`downstream: open`)
 LOOP:
 	for {
@@ -83,10 +83,10 @@ LOOP:
 			w.log.Tracef(`received watch: %v`, msg)
 			select {
 			case <-w.backend.Ctx().Done():
-				w.log.Tracef(`skip sending watch %v: backend closed`)
+				w.log.Tracef(`skip sending watch watch result %v: backend closed`)
 				break LOOP
 			case w.kv.watchResultsChan <- msg:
-				w.log.Tracef(`watch sent: %v`, msg)
+				w.log.Tracef(`watch result sent: %v`, msg)
 			}
 		}
 	}

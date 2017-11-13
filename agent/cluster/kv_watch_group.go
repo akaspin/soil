@@ -22,7 +22,7 @@ type watchGroup struct {
 
 func newWatchGroup(ctx context.Context, log *logx.Log, key string) (g *watchGroup) {
 	g = &watchGroup{
-		log:          log.GetLog("cluster", "watch", key),
+		log:          log.GetLog("cluster", "kv", "watch", key),
 		key:          key,
 		cache:        bus.NewMessage("", nil),
 		requests:     map[string]watcher{},
@@ -102,6 +102,6 @@ LOOP:
 }
 
 type watcher struct {
-	BackendWatchRequest
+	WatchRequest
 	consumer bus.Consumer
 }

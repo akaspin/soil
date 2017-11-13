@@ -25,12 +25,12 @@ type BackendConfig struct {
 type Backend interface {
 	io.Closer
 
-	Ctx() context.Context        // Backend context closes on backend is not available to accept operations
-	FailCtx() context.Context    // Fail context closes then backend is failed
-	ReadyCtx() context.Context   // Ready context closes then backend is ready to accept operations
-	Submit(ops []BackendStoreOp) // Submit ops to backend
-	Subscribe(req []BackendWatchRequest)
-	CommitChan() chan []BackendCommit
+	Ctx() context.Context      // Backend context closes on backend is not available to accept operations
+	FailCtx() context.Context  // Fail context closes then backend is failed
+	ReadyCtx() context.Context // Ready context closes then backend is ready to accept operations
+	Submit(ops []StoreOp)      // Submit ops to backend
+	Subscribe(req []WatchRequest)
+	CommitChan() chan []StoreCommit
 	WatchChan() chan bus.Message
 }
 
@@ -63,18 +63,18 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 	return
 }
 
-type BackendStoreOp struct {
+type StoreOp struct {
 	Message bus.Message
 	WithTTL bool
 }
 
-type BackendWatchRequest struct {
-	Key string
-	Ctx context.Context
-}
-
-type BackendCommit struct {
+type StoreCommit struct {
 	ID      string
 	Hash    uint64
 	WithTTL bool
+}
+
+type WatchRequest struct {
+	Key string
+	Ctx context.Context
 }

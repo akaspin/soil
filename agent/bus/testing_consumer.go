@@ -36,6 +36,10 @@ func (c *TestingConsumer) AssertPayloads(t *testing.T, expect []map[string]strin
 	assert.Equal(t, expect, res)
 }
 
+func (c *TestingConsumer) Messages() []Message {
+	return c.messages
+}
+
 func (c *TestingConsumer) AssertMessages(t *testing.T, expect ...Message) {
 	t.Helper()
 	assert.Equal(t, expect, c.messages)

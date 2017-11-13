@@ -18,7 +18,7 @@ func newWatchdog(kv *KV, backend Backend, config Config) (w *kvWatchdog) {
 		kv:      kv,
 		backend: backend,
 		config:  config,
-		log:     kv.log.GetLog("cluster", "watchdog", config.URL, config.ID),
+		log:     kv.log.GetLog("cluster", "kv", "watchdog", config.URL, config.ID),
 	}
 	go w.ready()
 	go w.done()

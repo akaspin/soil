@@ -17,7 +17,7 @@ type baseBackend struct {
 	failCtx     context.Context
 	failCancel  context.CancelFunc
 
-	commitsChan chan []BackendCommit
+	commitsChan chan []StoreCommit
 	watchChan   chan bus.Message
 }
 
@@ -25,7 +25,7 @@ func newBaseBackend(ctx context.Context, log *logx.Log, config BackendConfig) (b
 	b = &baseBackend{
 		log:         log,
 		config:      config,
-		commitsChan: make(chan []BackendCommit, 1),
+		commitsChan: make(chan []StoreCommit, 1),
 		watchChan:   make(chan bus.Message, 1),
 	}
 	b.failCtx, b.failCancel = context.WithCancel(ctx)
@@ -51,7 +51,7 @@ func (b *baseBackend) ReadyCtx() context.Context {
 	return b.readyCtx
 }
 
-func (b *baseBackend) CommitChan() chan []BackendCommit {
+func (b *baseBackend) CommitChan() chan []StoreCommit {
 	return b.commitsChan
 }
 

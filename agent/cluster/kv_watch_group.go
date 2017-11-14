@@ -5,6 +5,8 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/nu7hatch/gouuid"
+	"encoding/json"
+	"bytes"
 )
 
 type watchGroup struct {
@@ -17,7 +19,7 @@ type watchGroup struct {
 	requests     map[string]watcher
 	registerChan chan watcher
 	outChan      chan string
-	messageChan  chan bus.Message
+	resultsChan  chan WatchResult
 }
 
 func newWatchGroup(ctx context.Context, log *logx.Log, key string) (g *watchGroup) {
@@ -28,7 +30,7 @@ func newWatchGroup(ctx context.Context, log *logx.Log, key string) (g *watchGrou
 		requests:     map[string]watcher{},
 		registerChan: make(chan watcher),
 		outChan:      make(chan string),
-		messageChan:  make(chan bus.Message),
+		resultsChan:  make(chan WatchResult),
 	}
 	g.ctx, g.cancel = context.WithCancel(ctx)
 	go g.loop()
@@ -42,11 +44,11 @@ func (g *watchGroup) register(req watcher) {
 	}
 }
 
-func (g *watchGroup) ConsumeMessage(message bus.Message) {
+func (g *watchGroup) AcceptResult(result WatchResult) {
 	select {
 	case <-g.ctx.Done():
-	case g.messageChan <- message:
-		g.log.Tracef(`consumed: %v`, message)
+	case g.resultsChan <- result:
+		g.log.Tracef(`consumed: %v`, result)
 	}
 }
 
@@ -81,19 +83,31 @@ LOOP:
 			if len(g.requests) == 0 {
 				g.cancel()
 			}
-		case msg := <-g.messageChan:
-			if g.cache.Payload().Hash() == msg.Payload().Hash() {
+		case result := <-g.resultsChan:
+			payload := map[string]interface{}{}
+			for k, raw := range result.Data {
+				var value interface{}
+				if err := json.NewDecoder(bytes.NewReader(raw)).Decode(&value); err != nil {
+					g.log.Debug(err)
+					continue
+				}
+				payload[k] = value
+			}
+			ingest := bus.NewMessage(result.Key, payload)
+
+
+			if g.cache.Payload().Hash() == ingest.Payload().Hash() {
 				g.log.Tracef(`skip broadcast: message is equal to cache`)
 				continue LOOP
 			}
-			g.cache = bus.NewMessage(msg.GetID(), msg.Payload())
-			g.log.Tracef(`broadcasting: %v to %d consumers`, msg, len(g.requests))
+			g.cache = bus.NewMessage(ingest.GetID(), ingest.Payload())
+			g.log.Tracef(`broadcasting: %v to %d consumers`, result, len(g.requests))
 			for id, w := range g.requests {
 				select {
 				case <-w.Ctx.Done():
 				default:
-					w.consumer.ConsumeMessage(msg)
-					g.log.Tracef(`sent to consumer %s: %v`, id, msg)
+					w.consumer.ConsumeMessage(ingest)
+					g.log.Tracef(`sent to consumer %s: %v`, id, result)
 				}
 			}
 		}

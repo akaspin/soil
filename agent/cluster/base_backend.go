@@ -3,7 +3,6 @@ package cluster
 import (
 	"context"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/bus"
 )
 
 type baseBackend struct {
@@ -18,15 +17,15 @@ type baseBackend struct {
 	failCancel  context.CancelFunc
 
 	commitsChan chan []StoreCommit
-	watchChan   chan bus.Message
+	watchResultsChan chan WatchResult
 }
 
 func newBaseBackend(ctx context.Context, log *logx.Log, config BackendConfig) (b *baseBackend) {
 	b = &baseBackend{
 		log:         log,
 		config:      config,
-		commitsChan: make(chan []StoreCommit, 1),
-		watchChan:   make(chan bus.Message, 1),
+		commitsChan: make(chan []StoreCommit),
+		watchResultsChan: make(chan WatchResult),
 	}
 	b.failCtx, b.failCancel = context.WithCancel(ctx)
 	b.ctx, b.cancel = context.WithCancel(b.failCtx)
@@ -55,8 +54,8 @@ func (b *baseBackend) CommitChan() chan []StoreCommit {
 	return b.commitsChan
 }
 
-func (b *baseBackend) WatchChan() chan bus.Message {
-	return b.watchChan
+func (b *baseBackend) WatchResultsChan() chan WatchResult {
+	return b.watchResultsChan
 }
 
 func (b *baseBackend) fail(err error) {

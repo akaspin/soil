@@ -151,7 +151,7 @@ func TestKV_Subscribe(t *testing.T) {
 	defer cancel()
 	consumer := bus.NewTestingConsumer(ctx)
 	crashChan := make(chan struct{})
-	msgChan := make(chan bus.Message)
+	msgChan := make(chan map[string]map[string]interface{})
 
 	kv := cluster.NewKV(ctx, logx.GetLog("test"), cluster.NewTestingBackendFactory(consumer, crashChan, msgChan))
 	assert.NoError(t, kv.Open())
@@ -174,14 +174,18 @@ func TestKV_Subscribe(t *testing.T) {
 		time.Sleep(time.Millisecond * 100)
 	})
 	t.Run(`put 1`, func(t *testing.T) {
-		msgChan <- bus.NewMessage("test/1", map[string]string{"1": "1"})
+		msgChan <- map[string]map[string]interface{}{
+			"test/1": {"1": "1"},
+		}
 
 		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
 	t.Run(`put 1 duplicate`, func(t *testing.T) {
-		msgChan <- bus.NewMessage("test/1", map[string]string{"1": "1"})
+		msgChan <- map[string]map[string]interface{}{
+			"test/1": {"1": "1"},
+		}
 		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
@@ -204,9 +208,9 @@ func TestKV_Subscribe(t *testing.T) {
 	t.Run(`unsubscribe 2`, func(t *testing.T) {
 		cancel2()
 		time.Sleep(time.Millisecond * 100)
-		msgChan <- bus.NewMessage("test/1", map[string]string{"1": "2"})
-
-
+		msgChan <- map[string]map[string]interface{}{
+			"test/1": {"1": "2"},
+		}
 		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 			bus.NewMessage("test/1", map[string]string{"1": "2"}),

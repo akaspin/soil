@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"encoding/json"
+	"bytes"
 )
 
 func TestNewConsulBackend(t *testing.T) {
@@ -189,12 +191,20 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 	})
 	defer kv.Close()
 
-	watchRes := map[string][]bus.Message{}
+	cons1 := bus.NewTestingConsumer(ctx)
+
 	go func() {
-		for res := range kv.WatchChan() {
-			watchRes[res.GetID()] = append(watchRes[res.GetID()], res)
+		for result := range kv.WatchResultsChan() {
+			payload := map[string]interface{}{}
+			for k, v := range result.Data {
+				var value interface{}
+				assert.NoError(t, json.NewDecoder(bytes.NewReader(v)).Decode(&value))
+				payload[k] = value
+			}
+			cons1.ConsumeMessage(bus.NewMessage(result.Key, payload))
 		}
 	}()
+
 	watch1Ctx, watch1Cancel := context.WithCancel(ctx)
 	watch2Ctx, watch2Cancel := context.WithCancel(ctx)
 	defer watch1Cancel()
@@ -219,17 +229,17 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 				Ctx: watch2Ctx,
 			},
 		})
-		time.Sleep(time.Millisecond * 200)
 	})
+
 	t.Run(`ensure empty messages`, func(t *testing.T) {
-		assert.Equal(t, watchRes, map[string][]bus.Message{
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
 			"1": {
 				bus.NewMessage("1", map[string]interface{}{}),
 			},
 			"2": {
 				bus.NewMessage("2", map[string]interface{}{}),
 			},
-		})
+		}))
 	})
 	t.Run(`put to 1`, func(t *testing.T) {
 		_, err := cli.KV().Put(&api.KVPair{
@@ -237,10 +247,9 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 			Value: []byte(`"1"`),
 		}, nil)
 		assert.NoError(t, err)
-		time.Sleep(time.Millisecond * 200)
 	})
 	t.Run(`ensure messages`, func(t *testing.T) {
-		assert.Equal(t, watchRes, map[string][]bus.Message{
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
 			"1": {
 				bus.NewMessage("1", map[string]interface{}{}),
 				bus.NewMessage("1", map[string]interface{}{
@@ -251,6 +260,6 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 				bus.NewMessage("2", map[string]interface{}{}),
 				bus.NewMessage("2", map[string]interface{}{}),
 			},
-		})
+		}))
 	})
 }

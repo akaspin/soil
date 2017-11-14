@@ -15,7 +15,7 @@ func NewPayload(v interface{}) (p Payload) {
 	case Payload:
 		p = Payload{
 			isEmpty: v1.isEmpty,
-			data: make([]byte, len(v1.data)),
+			data:    make([]byte, len(v1.data)),
 		}
 		copy(p.data, v1.data)
 	default:

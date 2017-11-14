@@ -58,7 +58,6 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		"second-1.service",
 		"third-1.service",
 	}
-	waitTime := time.Millisecond * 1000
 
 	t.Run("0 deploy private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
@@ -67,14 +66,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
 				"first-1.service":            "active",
 				"second-1.service":           "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				"/run/systemd/system/pod-private-first.service":  0x96a7afc007ee24d2,
@@ -90,8 +88,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
@@ -99,7 +96,8 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 				"first-1.service":            "active",
 				"second-1.service":           "active",
 				"third-1.service":            "active",
-			})
+			}))
+
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				"/run/systemd/system/pod-private-first.service":  0x96a7afc007ee24d2,
@@ -118,14 +116,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
 				"first-1.service":            "active",
 				"second-1.service":           "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				"/run/systemd/system/pod-private-first.service":  0x96a7afc007ee24d2,
@@ -139,14 +136,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		var registry manifest.Registry
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_3.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
-
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				"/run/systemd/system/pod-private-second.service": 0xd8fefca310e10e7d,
@@ -160,14 +156,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.second_private": "1",
 			"meta.first_public":   "1",
 		}))
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-public-first.service":   "active",
 				"first-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				// pods are changed
@@ -183,16 +178,15 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		var registry manifest.Registry
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_5.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
-
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-private-first.service":  "active",
 				"first-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				// first pod now is private
@@ -211,12 +205,12 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.first_public":   "1",
 			"meta.second_private": "1",
 		}))
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				// second pod is changed
@@ -232,14 +226,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-public-first.service":   "active",
 				"first-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				"/run/systemd/system/pod-public-first.service":   0x83a6119e4a9f647d,
@@ -261,14 +254,14 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames,
+
+		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
 				"pod-private-first.service":  "active",
 				"first-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
 				"/run/systemd/system/pod-private-first.service":  0x4fcf100324fc09f5,

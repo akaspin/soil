@@ -20,15 +20,15 @@ type ConsulBackend struct {
 
 	*baseBackend
 
-	opsChan          chan []BackendStoreOp
-	watchRequestChan chan []BackendWatchRequest
+	opsChan          chan []StoreOp
+	watchRequestChan chan []WatchRequest
 }
 
 func NewConsulBackend(ctx context.Context, log *logx.Log, config BackendConfig) (w *ConsulBackend) {
 	w = &ConsulBackend{
 		baseBackend:      newBaseBackend(ctx, log, config),
-		opsChan:          make(chan []BackendStoreOp, 1),
-		watchRequestChan: make(chan []BackendWatchRequest, 1),
+		opsChan:          make(chan []StoreOp, 1),
+		watchRequestChan: make(chan []WatchRequest, 1),
 	}
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	go w.connect()
@@ -41,7 +41,7 @@ func (b *ConsulBackend) Close() error {
 	return nil
 }
 
-func (b *ConsulBackend) Submit(op []BackendStoreOp) {
+func (b *ConsulBackend) Submit(op []StoreOp) {
 	select {
 	case <-b.ctx.Done():
 		b.log.Warningf(`ignore %v: %v`, op, b.ctx.Err())
@@ -51,7 +51,7 @@ func (b *ConsulBackend) Submit(op []BackendStoreOp) {
 }
 
 // Subscribe
-func (b *ConsulBackend) Subscribe(req []BackendWatchRequest) {
+func (b *ConsulBackend) Subscribe(req []WatchRequest) {
 	select {
 	case <-b.ctx.Done():
 		b.log.Warningf(`ignore %v: %v`, req, b.ctx.Err())
@@ -92,7 +92,7 @@ LOOP:
 	}
 }
 
-func (b *ConsulBackend) watch(req BackendWatchRequest) {
+func (b *ConsulBackend) watch(req WatchRequest) {
 	directory := path.Join(b.config.Chroot, req.Key)
 	log := b.log.GetLog(b.log.Prefix(), append(b.log.Tags(), "watch", req.Key)...)
 	log.Debugf(`open`)
@@ -150,12 +150,12 @@ LOOP:
 
 }
 
-func (b *ConsulBackend) handleStoreOps(ops []BackendStoreOp) {
+func (b *ConsulBackend) handleStoreOps(ops []StoreOp) {
 	var kvOps api.KVTxnOps
-	var commits []BackendCommit
+	var commits []StoreCommit
 	for _, op := range ops {
 		key := path.Join(b.config.Chroot, op.Message.GetID())
-		commits = append(commits, BackendCommit{
+		commits = append(commits, StoreCommit{
 			ID:      op.Message.GetID(),
 			Hash:    op.Message.Payload().Hash(),
 			WithTTL: op.WithTTL,

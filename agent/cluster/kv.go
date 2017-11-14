@@ -21,15 +21,15 @@ type KV struct {
 	config  Config
 
 	configRequestChan chan kvConfigRequest
-	storeRequestsChan chan []BackendStoreOp
+	storeRequestsChan chan []StoreOp
 	watchRequestsChan chan watcher
 
-	volatile          map[string]bus.Message    // volatile records
-	pending           map[string]BackendStoreOp // pending ops
-	commitsChan       chan []BackendCommit
+	volatile          map[string]bus.Message // volatile records
+	pending           map[string]StoreOp     // pending ops
+	commitsChan       chan []StoreCommit
 	invokePendingChan chan struct{} // invoke pending operations
 
-	registerWatchChan    chan BackendWatchRequest
+	registerWatchChan    chan WatchRequest
 	watchResultsChan     chan bus.Message
 	watchGroups          map[string]*watchGroup
 	pendingWatchGroups   map[string]struct{}
@@ -43,13 +43,13 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 		factory:  factory,
 		config:   Config{},
 		volatile: map[string]bus.Message{},
-		pending:  map[string]BackendStoreOp{},
+		pending:  map[string]StoreOp{},
 
 		configRequestChan: make(chan kvConfigRequest, 1),
-		storeRequestsChan: make(chan []BackendStoreOp, 1),
+		storeRequestsChan: make(chan []StoreOp, 1),
 		watchRequestsChan: make(chan watcher, 1),
 
-		commitsChan:       make(chan []BackendCommit, 1),
+		commitsChan:       make(chan []StoreCommit, 1),
 		watchResultsChan:  make(chan bus.Message, 1),
 		invokePendingChan: make(chan struct{}, 1),
 
@@ -78,7 +78,7 @@ func (k *KV) Configure(config Config) {
 }
 
 // Submit store operations
-func (k *KV) Submit(ops []BackendStoreOp) {
+func (k *KV) Submit(ops []StoreOp) {
 	select {
 	case <-k.Control.Ctx().Done():
 		k.log.Warningf(`ignore submit: %v`, k.Control.Ctx().Err())
@@ -93,7 +93,7 @@ func (k *KV) Subscribe(key string, ctx context.Context, consumer bus.Consumer) {
 	case <-k.Control.Ctx().Done():
 		k.log.Warningf(`ignore subscribe: %v`, k.Control.Ctx().Err())
 	case k.watchRequestsChan <- watcher{
-		BackendWatchRequest: BackendWatchRequest{
+		WatchRequest: WatchRequest{
 			Key: key,
 			Ctx: ctx,
 		},
@@ -131,7 +131,7 @@ LOOP:
 			}
 			k.config = req.config
 			for id, message := range k.volatile {
-				k.pending[id] = BackendStoreOp{
+				k.pending[id] = StoreOp{
 					Message: message,
 					WithTTL: true,
 				}
@@ -170,7 +170,7 @@ LOOP:
 					log.Trace(`skip send pending: backend is closed`)
 				default:
 					if len(k.pending) > 0 {
-						var ops []BackendStoreOp
+						var ops []StoreOp
 						for _, op := range k.pending {
 							ops = append(ops, op)
 						}
@@ -178,10 +178,10 @@ LOOP:
 						log.Tracef(`submitted: %v`, ops)
 					}
 					if len(k.pendingWatchGroups) > 0 {
-						var watchReqs []BackendWatchRequest
+						var watchReqs []WatchRequest
 						for key := range k.pendingWatchGroups {
 							if group, ok := k.watchGroups[key]; ok {
-								watchReqs = append(watchReqs, BackendWatchRequest{
+								watchReqs = append(watchReqs, WatchRequest{
 									Key: group.key,
 									Ctx: group.ctx,
 								})

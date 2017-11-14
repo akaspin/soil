@@ -101,7 +101,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 	})
 	defer kv.Close()
 
-	var commits []cluster.BackendCommit
+	var commits []cluster.StoreCommit
 	go func() {
 		for ok := range kv.CommitChan() {
 			commits = append(commits, ok...)
@@ -117,7 +117,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 		}
 	})
 	t.Run("submit", func(t *testing.T) {
-		kv.Submit([]cluster.BackendStoreOp{
+		kv.Submit([]cluster.StoreOp{
 			{
 				Message: bus.NewMessage("test/01", "01"),
 			},
@@ -127,7 +127,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 			},
 		})
 		time.Sleep(time.Millisecond * 300)
-		assert.Equal(t, commits, []cluster.BackendCommit{
+		assert.Equal(t, commits, []cluster.StoreCommit{
 			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
 			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true}})
 	})
@@ -144,7 +144,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 		assert.Equal(t, []byte(`"02"`), res.Value)
 	})
 	t.Run("submit delete", func(t *testing.T) {
-		kv.Submit([]cluster.BackendStoreOp{
+		kv.Submit([]cluster.StoreOp{
 			{
 				Message: bus.NewMessage("test/01", nil),
 			},
@@ -156,7 +156,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 			},
 		})
 		time.Sleep(time.Millisecond * 300)
-		assert.Equal(t, commits, []cluster.BackendCommit{
+		assert.Equal(t, commits, []cluster.StoreCommit{
 			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
 			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true},
 			{ID: "test/01", Hash: 0x0, WithTTL: false},
@@ -209,7 +209,7 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 		}
 	})
 	t.Run(`setup watches`, func(t *testing.T) {
-		kv.Subscribe([]cluster.BackendWatchRequest{
+		kv.Subscribe([]cluster.WatchRequest{
 			{
 				Key: "1",
 				Ctx: watch1Ctx,

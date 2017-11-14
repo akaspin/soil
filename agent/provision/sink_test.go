@@ -58,7 +58,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		"second-1.service",
 		"third-1.service",
 	}
-	waitTime := time.Millisecond * 700
+	waitTime := time.Millisecond * 1000
 
 	t.Run("0 deploy private", func(t *testing.T) {
 		var buffers lib.StaticBuffers

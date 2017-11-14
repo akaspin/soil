@@ -19,8 +19,10 @@ func TestKV_Configure(t *testing.T) {
 	assert.NoError(t, kv.Open())
 
 	t.Run(`submit on zero`, func(t *testing.T) {
-		kv.Submit([]cluster.BackendStoreOp{
+		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-volatile", map[string]string{"1": "1"}), true},
+		})
+		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-permanent", map[string]string{"1": "1"}), false},
 		})
 		time.Sleep(time.Millisecond * 300)
@@ -95,11 +97,16 @@ func TestKV_Configure(t *testing.T) {
 		)
 	})
 	t.Run(`add and remove`, func(t *testing.T) {
-		kv.Submit([]cluster.BackendStoreOp{
+		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-volatile", nil), true},
+		})
+		time.Sleep(time.Millisecond * 100)
+		kv.Submit([]cluster.StoreOp{
+			//{bus.NewMessage("pre-volatile", nil), true},
 			{bus.NewMessage("post-volatile", map[string]string{"1": "1"}), true},
 		})
-		time.Sleep(time.Millisecond * 300)
+		time.Sleep(time.Millisecond * 100)
+
 		consumer.AssertMessages(t,
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
@@ -122,6 +129,8 @@ func TestKV_Configure(t *testing.T) {
 					"Data": nil,
 					"TTL":  true,
 				},
+			}),
+			bus.NewMessage("test", map[string]interface{}{
 				"post-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
 					"TTL":  true,

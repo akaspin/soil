@@ -73,11 +73,11 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer
 	return
 }
 
-func (b *TestingBackend) Submit(ops []BackendStoreOp) {
+func (b *TestingBackend) Submit(ops []StoreOp) {
 	data := map[string]interface{}{}
-	var commits []BackendCommit
+	var commits []StoreCommit
 	for _, op := range ops {
-		commits = append(commits, BackendCommit{
+		commits = append(commits, StoreCommit{
 			ID:      op.Message.GetID(),
 			Hash:    op.Message.Payload().Hash(),
 			WithTTL: op.WithTTL,
@@ -101,7 +101,7 @@ func (b *TestingBackend) Submit(ops []BackendStoreOp) {
 	}
 }
 
-func (b *TestingBackend) Subscribe(requests []BackendWatchRequest) {
+func (b *TestingBackend) Subscribe(requests []WatchRequest) {
 	for _, req := range requests {
 		b.log.Tracef(`subscribe: %s`, req.Key)
 	}

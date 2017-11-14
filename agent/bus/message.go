@@ -1,5 +1,7 @@
 package bus
 
+import "fmt"
+
 // Message
 type Message struct {
 	id   string // Producer id
@@ -33,5 +35,10 @@ func (m Message) Payload() (res Payload) {
 
 func (m Message) IsEqual(ingest Message) (res bool) {
 	res = m.id == ingest.id && m.Payload().Hash() == ingest.Payload().Hash()
+	return
+}
+
+func (m Message) String() (res string) {
+	res = fmt.Sprintf("%s:%s", m.id, m.data)
 	return
 }

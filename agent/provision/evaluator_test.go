@@ -31,8 +31,9 @@ func TestEvaluator_Allocate(t *testing.T) {
 	})
 	assert.NoError(t, evaluator.Open())
 
-	time.Sleep(time.Millisecond * 500)
+	waitConfig := fixture.DefaultWaitConfig()
 
+	time.Sleep(time.Millisecond * 500)
 	t.Run("0 create pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
 		var registry manifest.Registry
@@ -42,14 +43,13 @@ func TestEvaluator_Allocate(t *testing.T) {
 		evaluator.Allocate(registry[0], map[string]string{
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
-		time.Sleep(time.Millisecond * 500)
 
-		sd.AssertUnitStates(t,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
@@ -66,13 +66,13 @@ func TestEvaluator_Allocate(t *testing.T) {
 		evaluator.Allocate(registry[0], map[string]string{
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
-		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnitStates(t,
+
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
@@ -83,13 +83,13 @@ func TestEvaluator_Allocate(t *testing.T) {
 	})
 	t.Run("2 destroy non-existent", func(t *testing.T) {
 		evaluator.Deallocate("pod-2")
-		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnitStates(t,
+
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
-			})
+			}))
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
@@ -100,9 +100,10 @@ func TestEvaluator_Allocate(t *testing.T) {
 	})
 	t.Run("3 destroy pod-1", func(t *testing.T) {
 		evaluator.Deallocate("pod-1")
-		time.Sleep(time.Millisecond * 500)
-		sd.AssertUnitStates(t, []string{"pod-private-pod-1.service", "unit-1.service"},
-			map[string]string{})
+
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]string{}))
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{},

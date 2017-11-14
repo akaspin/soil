@@ -45,13 +45,12 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 		volatile: map[string]bus.Message{},
 		pending:  map[string]StoreOp{},
 
-		configRequestChan: make(chan kvConfigRequest, 1),
-		storeRequestsChan: make(chan []StoreOp, 1),
-		watchRequestsChan: make(chan watcher, 1),
-
-		commitsChan:       make(chan []StoreCommit, 1),
-		watchResultsChan:  make(chan bus.Message, 1),
-		invokePendingChan: make(chan struct{}, 1),
+		configRequestChan: make(chan kvConfigRequest),
+		storeRequestsChan: make(chan []StoreOp),
+		watchRequestsChan: make(chan watcher),
+		commitsChan:       make(chan []StoreCommit),
+		watchResultsChan:  make(chan bus.Message),
+		invokePendingChan: make(chan struct{}),
 
 		watchGroups:          map[string]*watchGroup{},
 		pendingWatchGroups:   map[string]struct{}{},

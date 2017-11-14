@@ -7,13 +7,13 @@ import (
 
 type producer struct {
 	key string
-	kv *KV
+	kv  *KV
 }
 
 func NewProducer(kv *KV, key string) (p bus.Producer) {
 	p = &producer{
 		key: key,
-		kv: kv,
+		kv:  kv,
 	}
 	return
 }
@@ -21,4 +21,3 @@ func NewProducer(kv *KV, key string) (p bus.Producer) {
 func (p *producer) Subscribe(ctx context.Context, consumer bus.Consumer) {
 	p.kv.Subscribe(p.key, ctx, consumer)
 }
-

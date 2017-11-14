@@ -6,12 +6,16 @@ import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
+	"context"
+	"github.com/akaspin/soil/fixture"
 )
 
 func TestFnPipe_ConsumeMessage(t *testing.T) {
-	c1 := &bus.TestingConsumer{}
-	c2 := &bus.TestingConsumer{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c1 := bus.NewTestingConsumer(ctx)
+	c2 := bus.NewTestingConsumer(ctx)
 
 	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
 		var chunk map[string]string
@@ -26,14 +30,11 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 		"a": "1",
 		"b": "2",
 	}))
-	time.Sleep(time.Millisecond * 100)
 
-	time.Sleep(time.Millisecond * 100)
-
-	c1.AssertPayloads(t, []map[string]string{
-		{"b": "2"},
-	})
-	c2.AssertPayloads(t, []map[string]string{
-		{"b": "2"},
-	})
+	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), c1.ExpectMessagesFn(
+		bus.NewMessage("test", map[string]string{"b": "2"}),
+	))
+	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), c2.ExpectMessagesFn(
+		bus.NewMessage("test", map[string]string{"b": "2"}),
+	))
 }

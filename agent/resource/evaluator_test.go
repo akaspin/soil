@@ -8,9 +8,9 @@ import (
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"time"
 )
 
 func TestEvaluator_Configure(t *testing.T) {
@@ -19,15 +19,17 @@ func TestEvaluator_Configure(t *testing.T) {
 
 	runTest := func(t *testing.T, config []resource.Config, state allocation.Recovery, downstream, upstream []bus.Message) {
 		t.Helper()
-		downstreamCons := &bus.TestingConsumer{}
-		upstreamCons := &bus.TestingConsumer{}
+		ctx1, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		downstreamCons := bus.NewTestingConsumer(ctx1)
+		upstreamCons := bus.NewTestingConsumer(ctx1)
 		evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, downstreamCons, upstreamCons)
 		assert.NoError(t, evaluator.Open())
 		evaluator.Configure(config)
-		time.Sleep(time.Millisecond * 200)
 
-		downstreamCons.AssertMessages(t, downstream...)
-		upstreamCons.AssertMessages(t, upstream...)
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), downstreamCons.ExpectMessagesFn(downstream...))
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), upstreamCons.ExpectMessagesFn(upstream...))
 
 		evaluator.Close()
 		evaluator.Wait()

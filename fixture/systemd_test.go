@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 func TestSystemd_Cleanup(t *testing.T) {
@@ -13,12 +14,18 @@ func TestSystemd_Cleanup(t *testing.T) {
 	assert.NoError(t, sd.DeployPod("test-1", 1))
 	assert.NoError(t, sd.DeployPod("test-2", 1))
 
-	sd.AssertUnitStates(t, []string{"pod-cleanup-*"}, map[string]string{
+	fixture.WaitNoError(t, fixture.WaitConfig{
+		Retry: time.Millisecond* 50,
+		Retries: 1000,
+	}, sd.UnitStatesFn([]string{"pod-cleanup-*"}, map[string]string{
 		"pod-cleanup-test-1.service": "active",
 		"pod-cleanup-test-2.service": "active",
-	})
+	}))
 	assert.NoError(t, sd.Cleanup())
-	sd.AssertUnitStates(t, []string{"pod-cleanup-*"}, map[string]string{})
+	fixture.WaitNoError(t, fixture.WaitConfig{
+		Retry: time.Millisecond* 50,
+		Retries: 1000,
+	}, sd.UnitStatesFn([]string{"pod-cleanup-*"}, map[string]string{}))
 }
 
 func TestSystemd_AssertUnitBodies(t *testing.T) {

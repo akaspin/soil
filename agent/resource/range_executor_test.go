@@ -9,10 +9,15 @@ import (
 	"github.com/akaspin/soil/manifest"
 	"testing"
 	"time"
+	"context"
+	"github.com/akaspin/soil/fixture"
 )
 
 func TestRangeExecutor_Allocate(t *testing.T) {
-	cons := &bus.TestingConsumer{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cons := bus.NewTestingConsumer(ctx)
 	executor := resource.NewRangeExecutor(logx.GetLog("test"), resource.Config{
 		Nature: "range",
 		Kind:   "port",
@@ -30,10 +35,9 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 			},
 			Values: bus.NewMessage("1.8080", map[string]string{"value": "8002"}),
 		})
-		time.Sleep(time.Millisecond * 100)
-		cons.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
 			bus.NewMessage("1.8080", map[string]string{"allocated": "true", "value": "8002"}),
-		)
+		))
 	})
 	t.Run("0 recovered not in range", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
@@ -41,23 +45,22 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 			Request: manifest.Resource{Kind: "port", Name: "8081"},
 			Values:  bus.NewMessage("1.8080", map[string]string{"value": "1000"}),
 		})
-		time.Sleep(time.Millisecond * 100)
-		cons.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
 			bus.NewMessage("1.8080", map[string]string{"allocated": "true", "value": "8002"}),
 			bus.NewMessage("1.8081", map[string]string{"allocated": "true", "value": "8000"}),
-		)
+		))
 	})
 	t.Run("0 allocate", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
 			PodName: "1",
 			Request: manifest.Resource{Kind: "port", Name: "8082"},
 		})
-		time.Sleep(time.Millisecond * 100)
-		cons.AssertMessages(t,
+
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
 			bus.NewMessage("1.8080", map[string]string{"allocated": "true", "value": "8002"}),
 			bus.NewMessage("1.8081", map[string]string{"allocated": "true", "value": "8000"}),
 			bus.NewMessage("1.8082", map[string]string{"allocated": "true", "value": "8001"}),
-		)
+		))
 	})
 	t.Run("0 not available", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
@@ -69,19 +72,18 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 			PodName: "1",
 			Request: manifest.Resource{Kind: "port", Name: "failed"},
 		})
-		time.Sleep(time.Millisecond * 100)
-		cons.AssertMessages(t,
+
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
 			bus.NewMessage("1.8080", map[string]string{"allocated": "true", "value": "8002"}),
 			bus.NewMessage("1.8081", map[string]string{"allocated": "true", "value": "8000"}),
 			bus.NewMessage("1.8082", map[string]string{"allocated": "true", "value": "8001"}),
 			bus.NewMessage("1.8083", map[string]string{"allocated": "true", "value": "8003"}),
 			bus.NewMessage("1.failed", map[string]string{"allocated": "false", "failure": "not-available"}),
-		)
+		))
 	})
 	t.Run("0 remove 1.8082", func(t *testing.T) {
 		executor.Deallocate("1.8082")
-		time.Sleep(time.Millisecond * 100)
-		cons.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
 			bus.NewMessage("1.8080", map[string]string{"allocated": "true", "value": "8002"}),
 			bus.NewMessage("1.8081", map[string]string{"allocated": "true", "value": "8000"}),
 			bus.NewMessage("1.8082", map[string]string{"allocated": "true", "value": "8001"}),
@@ -89,7 +91,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 			bus.NewMessage("1.failed", map[string]string{"allocated": "false", "failure": "not-available"}),
 			bus.NewMessage("1.8082", nil),
 			bus.NewMessage("1.failed", map[string]string{"allocated": "true", "value": "8001"}),
-		)
+		))
 	})
 
 }

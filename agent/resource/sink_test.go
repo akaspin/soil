@@ -15,17 +15,20 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"github.com/akaspin/soil/fixture"
 )
 
 func TestSink_Flow_NoRecovery(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
-	waitTime := time.Millisecond * 300
 	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})
 	arbiterCompositePipe := bus.NewCompositePipe("private", log, arbiter, "resource")
 
-	downstreamCons := &bus.TestingConsumer{}
-	checkCons := &bus.TestingConsumer{}
+	consCtx, consCancel := context.WithCancel(context.Background())
+	defer consCancel()
+	downstreamCons := bus.NewTestingConsumer(consCtx)
+	checkCons := bus.NewTestingConsumer(consCtx)
+
 	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
 	evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, nil, downstreamCons, upstream)
@@ -41,10 +44,13 @@ func TestSink_Flow_NoRecovery(t *testing.T) {
 	assert.NoError(t, sv.Open())
 
 	evaluator.Configure(nil)
-	time.Sleep(waitTime)
 
-	checkCons.AssertMessages(t, bus.NewMessage("resource", map[string]string{}))
-	downstreamCons.AssertMessages(t, bus.NewMessage("resource", map[string]string{}))
+	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), checkCons.ExpectMessagesFn(
+		bus.NewMessage("resource", map[string]string{}),
+	))
+	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), downstreamCons.ExpectMessagesFn(
+		bus.NewMessage("resource", map[string]string{}),
+	))
 
 	sv.Close()
 	sv.Wait()
@@ -57,8 +63,10 @@ func TestSink_Flow(t *testing.T) {
 	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})
 	arbiterCompositePipe := bus.NewCompositePipe("private", log, arbiter, "resource")
 
-	downstreamCons := &bus.TestingConsumer{}
-	checkCons := &bus.TestingConsumer{}
+	consCtx, consCancel := context.WithCancel(context.Background())
+	defer consCancel()
+	downstreamCons := bus.NewTestingConsumer(consCtx)
+	checkCons := bus.NewTestingConsumer(consCtx)
 	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
 	var state allocation.Recovery
@@ -94,15 +102,14 @@ func TestSink_Flow(t *testing.T) {
 				Kind:   "fake2",
 			},
 		})
-		time.Sleep(waitTime)
 
-		checkCons.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), checkCons.ExpectMessagesFn(
 			bus.NewMessage("resource", map[string]string{
 				"request.fake1.allow": "true",
 				"request.fake2.allow": "true",
 			}),
-		)
-		downstreamCons.AssertMessages(t,
+		))
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), downstreamCons.ExpectMessagesFn(
 			bus.NewMessage("resource", map[string]string{
 				"fake1.test-1.1.allocated": "true",
 				"fake1.test-1.1.fixed":     "8080",
@@ -112,7 +119,7 @@ func TestSink_Flow(t *testing.T) {
 				"fake2.test-1.1.allocated": "true",
 				"fake2.test-1.1.__values":  "{\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("1 submit", func(t *testing.T) {
 		var buffers lib.StaticBuffers
@@ -121,12 +128,12 @@ func TestSink_Flow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal("private", buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
 		time.Sleep(waitTime)
-		downstreamCons.AssertLastMessage(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), downstreamCons.ExpectLastMessageFn(
 			bus.NewMessage("resource", map[string]string{
 				"fake1.test-1.1.allocated": "true",
 				"fake1.test-1.1.__values":  "{\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 
 	sv.Close()

@@ -93,7 +93,6 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 		return
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-
 	var err error
 	if s.dockerCli, err = client.NewEnvClient(); err != nil {
 		t.Error(err)

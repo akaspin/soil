@@ -135,29 +135,27 @@ func (s *Systemd) Cleanup() (err error) {
 	return
 }
 
-func (s *Systemd) AssertUnitStates(t *testing.T, names []string, states map[string]string) {
-	t.Helper()
-	conn, err := dbus.New()
-	if err != nil {
-		t.Error(err)
-		t.Fail()
+func (s *Systemd) UnitStatesFn(names []string, states map[string]string) (fn func() error) {
+	fn = func() (err error) {
+		conn, err := dbus.New()
+		if err != nil {
+			return
+		}
+		defer conn.Close()
+		l, err := conn.ListUnitsByPatterns([]string{}, names)
+		if err != nil {
+			return
+		}
+		res := map[string]string{}
+		for _, u := range l {
+			res[u.Name] = u.ActiveState
+		}
+		if !reflect.DeepEqual(states, res) {
+			err = fmt.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
+		}
 		return
 	}
-	defer conn.Close()
-	l, err := conn.ListUnitsByPatterns([]string{}, names)
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-		return
-	}
-	res := map[string]string{}
-	for _, u := range l {
-		res[u.Name] = u.ActiveState
-	}
-	if !reflect.DeepEqual(states, res) {
-		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
-		t.Fail()
-	}
+	return
 }
 
 func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[string]string) {

@@ -22,7 +22,6 @@ func TestServer_Configure(t *testing.T) {
 	sd.Cleanup()
 	defer sd.Cleanup()
 
-	waitTime := time.Millisecond * 1000
 	os.RemoveAll("testdata/.test_server.hcl")
 	copyConfig := func(t *testing.T, config string) {
 		os.RemoveAll("testdata/.test_server.hcl")
@@ -46,26 +45,30 @@ func TestServer_Configure(t *testing.T) {
 	}
 	server := agent.NewServer(context.Background(), logx.GetLog("test"), serverOptions)
 	assert.NoError(t, server.Open())
-	time.Sleep(waitTime)
+	//time.Sleep(waitTime)
 
 	allUnitNames := []string{
 		"pod-*",
 		"unit-*",
 	}
 
+	waitConfig := fixture.WaitConfig{
+		Retry: time.Millisecond* 50,
+		Retries: 1000,
+	}
+
 	t.Run("0 pods should not be present", func(t *testing.T) {
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{})
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("1 deploy first configuration", func(t *testing.T) {
 		copyConfig(t, "server_test_1.hcl")
 		server.Configure()
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
 			"unit-2.service":        "active",
-		})
+		}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
 			"/run/systemd/system/pod-private-1.service": 0xf114f766af424710,
 			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
@@ -76,11 +79,11 @@ func TestServer_Configure(t *testing.T) {
 	t.Run("2 remove 2 from meta", func(t *testing.T) {
 		copyConfig(t, "server_test_2.hcl")
 		server.Configure()
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
-		})
+		}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
 			"/run/systemd/system/pod-private-1.service": 0xce80849ad12813cc,
 			"/run/systemd/system/unit-1.service":        0xce7b239c1e94def4,
@@ -98,14 +101,13 @@ func TestServer_Configure(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
-		time.Sleep(waitTime)
 
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
 			"unit-2.service":        "active",
-		})
+		}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
 			"/run/systemd/system/pod-private-1.service": 0xf114f766af424710,
 			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
@@ -118,9 +120,8 @@ func TestServer_Configure(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
-		time.Sleep(waitTime)
 
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{})
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{})
 	})
 	t.Run("6 drain off", func(t *testing.T) {
@@ -128,14 +129,13 @@ func TestServer_Configure(t *testing.T) {
 		assert.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
-		time.Sleep(waitTime)
 
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
 			"unit-2.service":        "active",
-		})
+		}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
 			"/run/systemd/system/pod-private-1.service": 0xf114f766af424710,
 			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
@@ -146,11 +146,10 @@ func TestServer_Configure(t *testing.T) {
 	t.Run("7 with resource", func(t *testing.T) {
 		copyConfig(t, "server_test_7.hcl")
 		server.Configure()
-		time.Sleep(waitTime)
-		sd.AssertUnitStates(t, allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
-		})
+		}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
 			"/run/systemd/system/pod-private-1.service": 0x9e2aa3b3b95275df,
 			"/run/systemd/system/unit-1.service":        0x5ea112942f0c47e8,

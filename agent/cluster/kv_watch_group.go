@@ -28,7 +28,7 @@ func newWatchGroup(ctx context.Context, log *logx.Log, key string) (g *watchGrou
 		requests:     map[string]watcher{},
 		registerChan: make(chan watcher),
 		outChan:      make(chan string),
-		messageChan:  make(chan bus.Message, 100),
+		messageChan:  make(chan bus.Message),
 	}
 	g.ctx, g.cancel = context.WithCancel(ctx)
 	go g.loop()

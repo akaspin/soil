@@ -7,13 +7,16 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/cluster"
+	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
 func TestStore_ConsumeMessage(t *testing.T) {
-	consumer := &bus.TestingConsumer{}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	consumer := bus.NewTestingConsumer(ctx)
 	crashChan := make(chan struct{})
 	kv := cluster.NewKV(context.Background(), logx.GetLog("test"), cluster.NewTestingBackendFactory(consumer, crashChan, nil))
 	assert.NoError(t, kv.Open())
@@ -29,20 +32,18 @@ func TestStore_ConsumeMessage(t *testing.T) {
 		store.ConsumeMessage(bus.NewMessage("1", map[string]string{
 			"1": "1",
 		}))
-		time.Sleep(time.Millisecond * 100)
-		consumer.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"prefix/1": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
 					"TTL":  true,
 				},
 			}),
-		)
+		))
 		store.ConsumeMessage(bus.NewMessage("", map[string]string{
 			"1": "2",
 		}))
-		time.Sleep(time.Millisecond * 100)
-		consumer.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"prefix/1": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -55,15 +56,14 @@ func TestStore_ConsumeMessage(t *testing.T) {
 					"TTL":  true,
 				},
 			}),
-		)
+		))
 	})
 	t.Run(`volatile without prefix`, func(t *testing.T) {
 		store := cluster.NewVolatileStore(kv, "")
 		store.ConsumeMessage(bus.NewMessage("1", map[string]string{
 			"1": "1",
 		}))
-		time.Sleep(time.Millisecond * 100)
-		consumer.AssertMessages(t,
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"prefix/1": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -82,7 +82,7 @@ func TestStore_ConsumeMessage(t *testing.T) {
 					"TTL":  true,
 				},
 			}),
-		)
+		))
 	})
 
 }

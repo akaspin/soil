@@ -7,15 +7,16 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"testing"
-	"time"
 )
 
 func TestWorker_Submit(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	log := logx.GetLog("test")
-	cons1 := &bus.TestingConsumer{}
+	cons1 := bus.NewTestingConsumer(ctx)
 
 	recovered := []resource.Alloc{
 		{
@@ -46,14 +47,14 @@ func TestWorker_Submit(t *testing.T) {
 
 	worker := resource.NewWorker(ctx, log, "dummy1", cons1, resource.EvaluatorConfig{}, recovered)
 
+	waitConfig := fixture.DefaultWaitConfig()
 	t.Run("0 configure", func(t *testing.T) {
 		worker.Configure(resource.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 		})
 
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -61,12 +62,11 @@ func TestWorker_Submit(t *testing.T) {
 				"2.res-2.allocated": "true",
 				"2.res-2.__values":  "{\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("1 remove 2.res-2", func(t *testing.T) {
 		worker.Submit("2", nil)
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -79,7 +79,7 @@ func TestWorker_Submit(t *testing.T) {
 				"1.res-1.1":         "2",
 				"1.res-1.__values":  "{\"1\":\"2\",\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("2 change 1.res1", func(t *testing.T) {
 		worker.Submit("1", []manifest.Resource{
@@ -91,8 +91,8 @@ func TestWorker_Submit(t *testing.T) {
 				},
 			},
 		})
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -110,7 +110,7 @@ func TestWorker_Submit(t *testing.T) {
 				"1.res-1.1":         "1",
 				"1.res-1.__values":  "{\"1\":\"1\",\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("3 no changes", func(t *testing.T) {
 		worker.Submit("1", []manifest.Resource{
@@ -122,8 +122,8 @@ func TestWorker_Submit(t *testing.T) {
 				},
 			},
 		})
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -141,7 +141,7 @@ func TestWorker_Submit(t *testing.T) {
 				"1.res-1.1":         "1",
 				"1.res-1.__values":  "{\"1\":\"1\",\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("4 add 2", func(t *testing.T) {
 		worker.Submit("2", []manifest.Resource{
@@ -156,8 +156,8 @@ func TestWorker_Submit(t *testing.T) {
 				Config: map[string]interface{}{},
 			},
 		})
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -184,7 +184,7 @@ func TestWorker_Submit(t *testing.T) {
 				"2.res-2.allocated": "true",
 				"2.res-2.__values":  "{\"allocated\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("5 reconfigure", func(t *testing.T) {
 		worker.Configure(resource.Config{
@@ -194,8 +194,8 @@ func TestWorker_Submit(t *testing.T) {
 				"prop1": true,
 			},
 		})
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -234,7 +234,7 @@ func TestWorker_Submit(t *testing.T) {
 				"2.res-2.prop1":     "true",
 				"2.res-2.__values":  "{\"allocated\":\"true\",\"prop1\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("5 reconfigure with equal config", func(t *testing.T) {
 		worker.Configure(resource.Config{
@@ -244,8 +244,7 @@ func TestWorker_Submit(t *testing.T) {
 				"prop1": true,
 			},
 		})
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertMessages(t,
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("dummy1", map[string]string{
 				"1.res-1.allocated": "true",
 				"1.res-1.1":         "2",
@@ -284,15 +283,15 @@ func TestWorker_Submit(t *testing.T) {
 				"2.res-2.prop1":     "true",
 				"2.res-2.__values":  "{\"allocated\":\"true\",\"prop1\":\"true\"}",
 			}),
-		)
+		))
 	})
 	t.Run("6 remove allocations", func(t *testing.T) {
 		worker.Submit("1", nil)
 		worker.Submit("2", nil)
-		time.Sleep(time.Millisecond * 200)
-		cons1.AssertLastMessage(t,
+
+		fixture.WaitNoError(t, waitConfig, cons1.ExpectLastMessageFn(
 			bus.NewMessage("dummy1", map[string]string{}),
-		)
+		))
 	})
 
 	worker.Close()
@@ -300,13 +299,16 @@ func TestWorker_Submit(t *testing.T) {
 
 func TestWorker_Configure(t *testing.T) {
 	t.Run("0 empty", func(t *testing.T) {
-		cons := &bus.TestingConsumer{}
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		cons := bus.NewTestingConsumer(ctx)
 		worker := resource.NewWorker(context.Background(), logx.GetLog(""), "dummy1", cons, resource.EvaluatorConfig{}, nil)
 		worker.Configure(resource.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 		})
-		time.Sleep(time.Millisecond * 200)
-		cons.AssertMessages(t, bus.NewMessage("dummy1", map[string]string{}))
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
+			bus.NewMessage("dummy1", map[string]string{}),
+		))
 	})
 }

@@ -1,72 +1,128 @@
 package bus
 
 import (
-	"github.com/stretchr/testify/assert"
-	"sync"
-	"testing"
-	"fmt"
+	"context"
 	"reflect"
+	"fmt"
 )
 
-// Dummy Consumer for testing purposes
 type TestingConsumer struct {
-	mu       sync.RWMutex
-	messages []Message
+	ctx         context.Context
+	data        []Message
+	messageChan chan Message
+	assertChan  chan struct {
+		expect  []Message
+		resChan chan error
+	}
+	assertLastChan chan struct {
+		expect  Message
+		resChan chan error
+	}
 }
 
-func (c *TestingConsumer) ConsumerName() string {
-	return "testing"
+func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
+	c = &TestingConsumer{
+		ctx: ctx,
+		messageChan: make(chan Message),
+		assertChan: make(chan struct {
+			expect  []Message
+			resChan chan error
+		}),
+		assertLastChan: make(chan struct {
+			expect  Message
+			resChan chan error
+		}),
+	}
+	go c.loop()
+	return
 }
 
 func (c *TestingConsumer) ConsumeMessage(message Message) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.messages = append(c.messages, message)
-}
-
-func (c *TestingConsumer) AssertPayloads(t *testing.T, expect []map[string]string) {
-	t.Helper()
-	var res []map[string]string
-	for _, message := range c.messages {
-		var chunk map[string]string
-		if err := message.Payload().Unmarshal(&chunk); err != nil {
-			t.Error(err)
-			t.Fail()
-		}
-		res = append(res, chunk)
+	select {
+	case <-c.ctx.Done():
+	case c.messageChan <- message:
 	}
-	assert.Equal(t, expect, res)
 }
 
-func (c *TestingConsumer) Messages() []Message {
-	return c.messages
-}
-
-func (c *TestingConsumer) CompareMessagesFn(expect ...Message) (fn func() error) {
+func (c *TestingConsumer) ExpectMessagesFn(expect ...Message) (fn func() error) {
 	fn = func() (err error) {
-		var eq bool
-		c.mu.RLock()
-		eq = reflect.DeepEqual(expect, c.messages)
-		c.mu.RUnlock()
-		if !eq {
-			err = fmt.Errorf("not equal (expected)%s != (actual)%s", expect, c.messages)
+		resChan := make(chan error)
+		select {
+		case <-c.ctx.Done():
+			err = c.ctx.Err()
+			return
+		case c.assertChan <- struct {
+			expect  []Message
+			resChan chan error
+		}{
+			expect:  expect,
+			resChan: resChan,
+		}:
+		}
+
+		select {
+		case <-c.ctx.Done():
+			err = c.ctx.Err()
+			return
+		case err = <-resChan:
+		}
+
+		return
+	}
+	return
+}
+
+func (c *TestingConsumer) ExpectLastMessageFn(message Message) (fn func() error) {
+	fn = func() (err error) {
+		resChan := make(chan error)
+		select {
+		case <-c.ctx.Done():
+			err = c.ctx.Err()
+			return
+		case c.assertLastChan <- struct {
+			expect  Message
+			resChan chan error
+		}{
+			expect:  message,
+			resChan: resChan,
+		}:
+		}
+
+		select {
+		case <-c.ctx.Done():
+			err = c.ctx.Err()
+			return
+		case err = <-resChan:
 		}
 		return
 	}
 	return
 }
 
-func (c *TestingConsumer) AssertMessages(t *testing.T, expect ...Message) {
-	t.Helper()
-	assert.Equal(t, expect, c.messages)
-}
-
-func (c *TestingConsumer) AssertLastMessage(t *testing.T, expect Message) {
-	t.Helper()
-	if len(c.messages) == 0 {
-		assert.Equal(t, expect, nil)
-		return
+func (c *TestingConsumer) loop() {
+LOOP:
+	for {
+		select {
+		case <-c.ctx.Done():
+			return
+		case msg := <-c.messageChan:
+			c.data = append(c.data, msg)
+		case assertReq := <-c.assertChan:
+			var err error
+			if !reflect.DeepEqual(assertReq.expect, c.data) {
+				err = fmt.Errorf("not equal (expected)%s != (actual)%s", assertReq.expect, c.data)
+			}
+			assertReq.resChan <- err
+		case assertReq := <-c.assertLastChan:
+			var err error
+			if len(c.data) == 0 {
+				assertReq.resChan <- fmt.Errorf(`no messages found`)
+				continue LOOP
+			}
+			if !reflect.DeepEqual(assertReq.expect, c.data[len(c.data)-1]) {
+				err = fmt.Errorf("not equal (expected)%s != (actual)%s", assertReq.expect, c.data[len(c.data)-1])
+			}
+			assertReq.resChan <- err
+		}
 	}
-	assert.Equal(t, expect, c.messages[len(c.messages)-1])
 }

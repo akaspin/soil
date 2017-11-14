@@ -30,18 +30,18 @@ deps: Gopkg.toml $(SRC)	## update vendor
 ### Test
 ###
 
-test: test-unit test-cluster test-systemd 		## run all tests
+test: test-unit test-systemd test-cluster 		## run all tests
 
 clean-test: clean-test-systemd		## clean test artifacts
 	find . -name ".test_*" -exec rm -rf {} \;
 
-test-unit: $(SRC) $(ALL_SRC)		## run unit tests
-	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
+test-unit: 		## run unit tests
+	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)
 
-test-cluster: $(SRC) $(ALL_SRC)
-	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
+test-cluster:
+	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES)
 
-test-systemd: testdata/systemd/.vagrant-ok $(SRC) $(ALL_SRC)	## run SystemD tests
+test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	docker -H 127.0.0.1:2475 run --net=host --rm --name=test \
 	-v /run/soil:/run/soil \
 	-v /var/lib/soil:/var/lib/soil \
@@ -50,7 +50,7 @@ test-systemd: testdata/systemd/.vagrant-ok $(SRC) $(ALL_SRC)	## run SystemD test
 	-v /var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket \
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /vagrant:/go/src/github.com/akaspin/soil \
-	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
+	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(TEST_PACKAGES)
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel

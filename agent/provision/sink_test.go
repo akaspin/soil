@@ -59,6 +59,11 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		"third-1.service",
 	}
 
+	waitConfig := fixture.WaitConfig{
+		Retry: time.Millisecond* 50,
+		Retries: 1000,
+	}
+
 	t.Run("0 deploy private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
 		var registry manifest.Registry
@@ -66,7 +71,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
@@ -88,7 +93,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
@@ -116,7 +121,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-first.service":  "active",
 				"pod-private-second.service": "active",
@@ -138,7 +143,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
 
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
@@ -156,7 +161,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.second_private": "1",
 			"meta.first_public":   "1",
 		}))
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
@@ -180,7 +185,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
 
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
@@ -206,7 +211,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.second_private": "1",
 		}))
 
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
@@ -226,7 +231,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
 		sink.ConsumeRegistry(registry)
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",
@@ -255,7 +260,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 
 		sink.ConsumeRegistry(registry)
 
-		fixture.WaitNoError(t, time.Millisecond*50, 100, sd.UnitStatesFn(allUnitNames,
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames,
 			map[string]string{
 				"pod-private-second.service": "active",
 				"second-1.service":           "active",

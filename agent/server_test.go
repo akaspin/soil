@@ -52,13 +52,18 @@ func TestServer_Configure(t *testing.T) {
 		"unit-*",
 	}
 
+	waitConfig := fixture.WaitConfig{
+		Retry: time.Millisecond* 50,
+		Retries: 1000,
+	}
+
 	t.Run("0 pods should not be present", func(t *testing.T) {
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{}))
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("1 deploy first configuration", func(t *testing.T) {
 		copyConfig(t, "server_test_1.hcl")
 		server.Configure()
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
@@ -75,7 +80,7 @@ func TestServer_Configure(t *testing.T) {
 		copyConfig(t, "server_test_2.hcl")
 		server.Configure()
 
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 		}))
@@ -97,7 +102,7 @@ func TestServer_Configure(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
@@ -116,7 +121,7 @@ func TestServer_Configure(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{}))
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{})
 	})
 	t.Run("6 drain off", func(t *testing.T) {
@@ -125,7 +130,7 @@ func TestServer_Configure(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
@@ -141,7 +146,7 @@ func TestServer_Configure(t *testing.T) {
 	t.Run("7 with resource", func(t *testing.T) {
 		copyConfig(t, "server_test_7.hcl")
 		server.Configure()
-		fixture.WaitNoError(t, time.Millisecond*10, 300, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 		}))

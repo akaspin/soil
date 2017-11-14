@@ -22,6 +22,7 @@ func WaitNoError(t *testing.T, retry time.Duration, retries int, fn func() error
 			break
 		}
 		t.Logf(`retry %d of %d: %v`, i, retries, err)
+		time.Sleep(retry)
 	}
 	assert.NoError(t, err)
 }

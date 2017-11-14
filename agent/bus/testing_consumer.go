@@ -4,11 +4,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+	"fmt"
+	"reflect"
 )
 
 // Dummy Consumer for testing purposes
 type TestingConsumer struct {
-	mu       sync.Mutex
+	mu       sync.RWMutex
 	messages []Message
 }
 
@@ -19,6 +21,7 @@ func (c *TestingConsumer) ConsumerName() string {
 func (c *TestingConsumer) ConsumeMessage(message Message) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	c.messages = append(c.messages, message)
 }
 
@@ -38,6 +41,20 @@ func (c *TestingConsumer) AssertPayloads(t *testing.T, expect []map[string]strin
 
 func (c *TestingConsumer) Messages() []Message {
 	return c.messages
+}
+
+func (c *TestingConsumer) CompareMessagesFn(expect ...Message) (fn func() error) {
+	fn = func() (err error) {
+		var eq bool
+		c.mu.RLock()
+		eq = reflect.DeepEqual(expect, c.messages)
+		c.mu.RUnlock()
+		if !eq {
+			err = fmt.Errorf("not equal (expected)%s != (actual)%s", expect, c.messages)
+		}
+		return
+	}
+	return
 }
 
 func (c *TestingConsumer) AssertMessages(t *testing.T, expect ...Message) {

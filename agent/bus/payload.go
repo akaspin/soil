@@ -13,7 +13,11 @@ type Payload struct {
 func NewPayload(v interface{}) (p Payload) {
 	switch v1 := v.(type) {
 	case Payload:
-		p = v1
+		p = Payload{
+			isEmpty: v1.isEmpty,
+			data: make([]byte, len(v1.data)),
+		}
+		copy(p.data, v1.data)
 	default:
 		p = Payload{
 			isEmpty: v == nil,

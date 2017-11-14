@@ -11,7 +11,7 @@ type Store struct {
 	prefix   string
 }
 
-func NewVolatileStore(kv *KV, prefix string) (s *Store) {
+func NewVolatileStore(kv *KV, prefix string) (s bus.Consumer) {
 	s = &Store{
 		kv:       kv,
 		prefix:   prefix,
@@ -20,7 +20,7 @@ func NewVolatileStore(kv *KV, prefix string) (s *Store) {
 	return
 }
 
-func NewPermanentStore(kv *KV, prefix string) (s *Store) {
+func NewPermanentStore(kv *KV, prefix string) (s bus.Consumer) {
 	s = &Store{
 		kv:       kv,
 		prefix:   prefix,

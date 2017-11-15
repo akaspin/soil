@@ -30,7 +30,8 @@ type KV struct {
 	invokePendingChan chan struct{} // invoke pending operations
 
 	registerWatchChan    chan WatchRequest
-	watchResultsChan     chan bus.Message
+	watchResultsChan     chan WatchResult
+
 	watchGroups          map[string]*watchGroup
 	pendingWatchGroups   map[string]struct{}
 	closedWatchGroupChan chan string
@@ -49,7 +50,7 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 		storeRequestsChan: make(chan []StoreOp),
 		watchRequestsChan: make(chan watcher),
 		commitsChan:       make(chan []StoreCommit),
-		watchResultsChan:  make(chan bus.Message),
+		watchResultsChan:  make(chan WatchResult),
 		invokePendingChan: make(chan struct{}),
 
 		watchGroups:          map[string]*watchGroup{},
@@ -234,14 +235,14 @@ LOOP:
 				case k.invokePendingChan <- struct{}{}:
 				}
 			}()
-		case res := <-k.watchResultsChan:
-			log.Tracef(`watch result: %v`, res)
-			if group, ok := k.watchGroups[res.GetID()]; ok {
-				group.ConsumeMessage(res)
-				k.log.Tracef(`message %v sent to watch group`, res)
+		case result := <-k.watchResultsChan:
+			log.Tracef(`watch result: %v`, result)
+			if group, ok := k.watchGroups[result.Key]; ok {
+				group.AcceptResult(result)
+				k.log.Tracef(`message %v sent to watch group`, result)
 				continue LOOP
 			}
-			k.log.Warningf(`watch group %s is not found`, res.GetID())
+			k.log.Warningf(`watch group %s is not found`, result.Key)
 		case id := <-k.closedWatchGroupChan:
 			delete(k.watchGroups, id)
 		}

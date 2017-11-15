@@ -6,9 +6,10 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"net/url"
+	"encoding/json"
 )
 
-func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, msgChan chan bus.Message) (f BackendFactory) {
+func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, msgChan chan map[string]map[string]interface{}) (f BackendFactory) {
 	f = func(ctx context.Context, log *logx.Log, config Config) (b Backend, err error) {
 		kvConfig := BackendConfig{
 			Kind:    "local",
@@ -42,10 +43,10 @@ func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, ms
 type TestingBackend struct {
 	*baseBackend
 	consumer bus.Consumer
-	msgChan  chan bus.Message
+	msgChan  chan map[string]map[string]interface{}
 }
 
-func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer, crashChan chan struct{}, msgChan chan bus.Message) (b *TestingBackend) {
+func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer, crashChan chan struct{}, msgChan chan map[string]map[string]interface{}) (b *TestingBackend) {
 	b = &TestingBackend{
 		baseBackend: newBaseBackend(ctx, log, BackendConfig{}),
 		consumer:    consumer,
@@ -66,7 +67,25 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer
 			case <-b.ctx.Done():
 				return
 			case msg := <-b.msgChan:
-				b.watchChan <- msg
+				for key, values := range msg {
+					result := WatchResult{
+						Key: key,
+						Data: map[string][]byte{},
+					}
+					for k, v := range values {
+						buf, err := json.Marshal(v)
+						if err != nil {
+							log.Error(err)
+							continue
+						}
+						result.Data[k] = buf
+					}
+					select {
+					case <-b.ctx.Done():
+						return
+					case b.watchResultsChan <- result:
+					}
+				}
 			}
 		}
 	}()

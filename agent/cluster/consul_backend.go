@@ -1,24 +1,21 @@
 package cluster
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/akaspin/logx"
-	"github.com/akaspin/soil/agent/bus"
 	"github.com/hashicorp/consul/api"
 	"path"
-	"strings"
 	"time"
 )
 
 // Consul Backend
 type ConsulBackend struct {
+	*baseBackend
+
 	conn      *api.Client
 	sessionID string
-
-	*baseBackend
 
 	opsChan          chan []StoreOp
 	watchRequestChan chan []WatchRequest
@@ -27,8 +24,8 @@ type ConsulBackend struct {
 func NewConsulBackend(ctx context.Context, log *logx.Log, config BackendConfig) (w *ConsulBackend) {
 	w = &ConsulBackend{
 		baseBackend:      newBaseBackend(ctx, log, config),
-		opsChan:          make(chan []StoreOp, 1),
-		watchRequestChan: make(chan []WatchRequest, 1),
+		opsChan:          make(chan []StoreOp),
+		watchRequestChan: make(chan []WatchRequest),
 	}
 	w.ctx, w.cancel = context.WithCancel(ctx)
 	go w.connect()
@@ -50,7 +47,6 @@ func (b *ConsulBackend) Submit(op []StoreOp) {
 	}
 }
 
-// Subscribe
 func (b *ConsulBackend) Subscribe(req []WatchRequest) {
 	select {
 	case <-b.ctx.Done():
@@ -58,10 +54,6 @@ func (b *ConsulBackend) Subscribe(req []WatchRequest) {
 	case b.watchRequestChan <- req:
 		b.log.Tracef(`subscribe: %v`, req)
 	}
-}
-
-func (b *ConsulBackend) WatchChan() chan bus.Message {
-	return b.watchChan
 }
 
 func (b *ConsulBackend) loop() {
@@ -78,13 +70,10 @@ LOOP:
 	for {
 		select {
 		case <-b.ctx.Done():
-			b.log.Tracef(`context done`)
 			break LOOP
 		case ops := <-b.opsChan:
-			b.log.Tracef(`received: %v`, ops)
-			b.handleStoreOps(ops)
+			b.processStoreOpts(ops)
 		case requests := <-b.watchRequestChan:
-			b.log.Tracef(`received watch: %v`, requests)
 			for _, req := range requests {
 				go b.watch(req)
 			}
@@ -98,13 +87,11 @@ func (b *ConsulBackend) watch(req WatchRequest) {
 	log.Debugf(`open`)
 
 	watchCtx, watchCancel := context.WithCancel(b.ctx)
-	// bound watch context to request
 	go func() {
 		select {
 		case <-req.Ctx.Done():
 			watchCancel()
 		case <-watchCtx.Done():
-			// also terminate on watch ctx done
 		}
 	}()
 
@@ -113,7 +100,6 @@ LOOP:
 	for {
 		select {
 		case <-watchCtx.Done():
-			log.Trace(b.ctx.Err())
 			break LOOP
 		default:
 		}
@@ -129,28 +115,23 @@ LOOP:
 		}
 		opts.WaitIndex = meta.LastIndex
 
-		// pack pairs
-		values := map[string]interface{}{}
+		result := WatchResult{
+			Key: req.Key,
+			Data: map[string][]byte{},
+		}
 		for _, pair := range pairs {
-			var value interface{}
-			if jsonErr := json.NewDecoder(bytes.NewReader(pair.Value)).Decode(&value); jsonErr != nil {
-				log.Error(err)
-				continue
-			}
-			values[strings.TrimPrefix(pair.Key, directory+"/")] = value
+			result.Data[TrimKeyPrefix(directory, pair.Key)] = pair.Value
 		}
 		select {
 		case <-watchCtx.Done():
-			log.Trace(b.ctx.Err())
 			break LOOP
-		case b.watchChan <- bus.NewMessage(req.Key, values):
-			log.Tracef(`sent: %v`, values)
+		case b.watchResultsChan <- result:
 		}
 	}
-
+	log.Info(`closed`)
 }
 
-func (b *ConsulBackend) handleStoreOps(ops []StoreOp) {
+func (b *ConsulBackend) processStoreOpts(ops []StoreOp) {
 	var kvOps api.KVTxnOps
 	var commits []StoreCommit
 	for _, op := range ops {

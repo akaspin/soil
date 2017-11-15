@@ -18,6 +18,10 @@ type TestingConsumer struct {
 		expect  Message
 		resChan chan error
 	}
+	assertByIdChan chan struct{
+		expect map[string][]Message
+		resChan chan error
+	}
 }
 
 func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
@@ -30,6 +34,10 @@ func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
 		}),
 		assertLastChan: make(chan struct {
 			expect  Message
+			resChan chan error
+		}),
+		assertByIdChan: make(chan struct {
+			expect  map[string][]Message
 			resChan chan error
 		}),
 	}
@@ -99,6 +107,35 @@ func (c *TestingConsumer) ExpectLastMessageFn(message Message) (fn func() error)
 	return
 }
 
+func (c *TestingConsumer) ExpectMessagesByIdFn(expect map[string][]Message) (fn func() error) {
+	fn = func() (err error) {
+		resChan := make(chan error)
+		select {
+		case <-c.ctx.Done():
+			err = c.ctx.Err()
+			return
+		case c.assertByIdChan <- struct {
+			expect  map[string][]Message
+			resChan chan error
+		}{
+			expect:  expect,
+			resChan: resChan,
+		}:
+		}
+
+		select {
+		case <-c.ctx.Done():
+			err = c.ctx.Err()
+			return
+		case err = <-resChan:
+		}
+		return
+	}
+	return
+}
+
+
+
 func (c *TestingConsumer) loop() {
 LOOP:
 	for {
@@ -121,6 +158,16 @@ LOOP:
 			}
 			if !reflect.DeepEqual(assertReq.expect, c.data[len(c.data)-1]) {
 				err = fmt.Errorf("not equal (expected)%s != (actual)%s", assertReq.expect, c.data[len(c.data)-1])
+			}
+			assertReq.resChan <- err
+		case assertReq := <-c.assertByIdChan:
+			var err error
+			results := map[string][]Message{}
+			for _, message := range c.data {
+				results[message.GetID()] = append(results[message.GetID()], message)
+			}
+			if !reflect.DeepEqual(assertReq.expect, results) {
+				err = fmt.Errorf("not equal (expected)%s != (actual)%s", assertReq.expect, results)
 			}
 			assertReq.resChan <- err
 		}

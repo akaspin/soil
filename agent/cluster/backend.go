@@ -22,6 +22,17 @@ type BackendConfig struct {
 	TTL     time.Duration
 }
 
+type WatchRequest struct {
+	Key string
+	Ctx context.Context
+}
+
+type WatchResult struct {
+	Key string
+	Data map[string][]byte
+}
+
+
 type Backend interface {
 	io.Closer
 
@@ -31,7 +42,7 @@ type Backend interface {
 	Submit(ops []StoreOp)      // Submit ops to backend
 	Subscribe(req []WatchRequest)
 	CommitChan() chan []StoreCommit
-	WatchChan() chan bus.Message
+	WatchResultsChan() chan WatchResult
 }
 
 type BackendFactory func(ctx context.Context, log *logx.Log, config Config) (c Backend, err error)
@@ -74,7 +85,3 @@ type StoreCommit struct {
 	WithTTL bool
 }
 
-type WatchRequest struct {
-	Key string
-	Ctx context.Context
-}

@@ -79,14 +79,14 @@ LOOP:
 			case w.kv.commitsChan <- commits:
 				w.log.Tracef(`commits sent: %v`, commits)
 			}
-		case msg := <-w.backend.WatchChan():
-			w.log.Tracef(`received watch: %v`, msg)
+		case results := <-w.backend.WatchResultsChan():
+			w.log.Tracef(`received watch: %v`, results)
 			select {
 			case <-w.backend.Ctx().Done():
 				w.log.Tracef(`skip sending watch watch result %v: backend closed`)
 				break LOOP
-			case w.kv.watchResultsChan <- msg:
-				w.log.Tracef(`watch result sent: %v`, msg)
+			case w.kv.watchResultsChan <- results:
+				w.log.Tracef(`watch result sent: %v`, results)
 			}
 		}
 	}

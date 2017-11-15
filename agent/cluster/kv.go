@@ -164,7 +164,6 @@ LOOP:
 			log.Tracef(`invoke: (pending: %v, watch: %v)`, k.pending, k.pendingWatchGroups)
 			select {
 			case <-k.backend.ReadyCtx().Done():
-				// ok send ops
 				select {
 				case <-k.backend.Ctx().Done():
 					log.Trace(`skip send pending: backend is closed`)
@@ -178,17 +177,17 @@ LOOP:
 						log.Tracef(`submitted: %v`, ops)
 					}
 					if len(k.pendingWatchGroups) > 0 {
-						var watchReqs []WatchRequest
+						var requests []WatchRequest
 						for key := range k.pendingWatchGroups {
 							if group, ok := k.watchGroups[key]; ok {
-								watchReqs = append(watchReqs, WatchRequest{
+								requests = append(requests, WatchRequest{
 									Key: group.key,
 									Ctx: group.ctx,
 								})
 							}
 							delete(k.pendingWatchGroups, key)
 						}
-						k.backend.Subscribe(watchReqs)
+						k.backend.Subscribe(requests)
 					}
 				}
 			default:

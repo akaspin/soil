@@ -1,4 +1,4 @@
-// +build ide test_unit
+// build ide test_unit
 
 package api_server_test
 
@@ -10,10 +10,12 @@ import (
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/fixture"
+	"github.com/akaspin/soil/proto"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -33,16 +35,6 @@ func (r *jsonEndpoint) Process(ctx context.Context, u *url.URL, v interface{}) (
 		"params": u.Query(),
 	}
 	return
-}
-
-func checkGetResponse(t *testing.T, uri string, expect map[string]interface{}) {
-	t.Helper()
-	resp, err := http.Get(uri)
-	assert.NoError(t, err)
-	assert.Equal(t, resp.StatusCode, 200)
-	var res map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&res)
-	assert.Equal(t, expect, res)
 }
 
 func TestNewServer(t *testing.T) {
@@ -72,46 +64,141 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 	router2 := api_server.NewRouter(log,
 		api_server.GET("/v1/route", &jsonEndpoint{"node-2"}),
 	)
+	nodesProducer := bus.NewTeePipe(router1, router2)
 
 	ts1 := httptest.NewServer(router1)
 	defer ts1.Close()
 	ts2 := httptest.NewServer(router2)
 	defer ts1.Close()
 
-	nodesProducer := bus.NewTeePipe(router1, router2)
-	nodesProducer.ConsumeMessage(bus.NewMessage("nodes", map[string]string{
-		"node-1": ts1.Listener.Addr().String(),
-		"node-2": ts2.Listener.Addr().String(),
-	}))
-	time.Sleep(time.Second)
+	checkGet := func(t *testing.T, uri string, code int, expect map[string]interface{}) {
+		t.Helper()
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), func() (err error) {
+			resp, err := http.Get(uri)
+			if err != nil {
+				return
+			}
+			if resp.StatusCode != code {
+				err = fmt.Errorf(`bad status code: %d != %d`, code, resp.StatusCode)
+				return
+			}
+			if expect == nil {
+				return
+			}
+			var res map[string]interface{}
+			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+				return
+			}
+			if !reflect.DeepEqual(expect, res) {
+				err = fmt.Errorf("not equal (expected)%s != (actual)%s", expect, res)
+			}
+			return
+		})
+	}
 
-	checkGetResponse(t,
-		ts1.URL+"/v1/route?test=2",
-		map[string]interface{}{
-			"id":     "node-1",
-			"url":    "/v1/route",
-			"params": map[string]interface{}{"test": []interface{}{"2"}},
-		})
-	checkGetResponse(t,
-		ts2.URL+"/v1/route?test=2",
-		map[string]interface{}{
-			"id":     "node-2",
-			"url":    "/v1/route",
-			"params": map[string]interface{}{"test": []interface{}{"2"}},
-		})
-	checkGetResponse(t,
-		ts1.URL+"/v1/route?node=node-2&redirect&test=2",
-		map[string]interface{}{
-			"id":     "node-2",
-			"url":    "/v1/route",
-			"params": map[string]interface{}{"test": []interface{}{"2"}},
-		})
-	checkGetResponse(t,
-		ts1.URL+"/v1/route?node=node-2&test=2",
-		map[string]interface{}{
-			"id":     "node-2",
-			"url":    "/v1/route",
-			"params": map[string]interface{}{"test": []interface{}{"2"}},
-		})
+	t.Run(`no nodes node-1 self`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?test=2",
+			200,
+			map[string]interface{}{
+				"id":     "node-1",
+				"url":    "/v1/route",
+				"params": map[string]interface{}{"test": []interface{}{"2"}},
+			},
+		)
+	})
+	t.Run(`no nodes node-1 proxy to node-2`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?node=node-2&test=2",
+			404,
+			nil,
+		)
+	})
+	t.Run(`configure node-1 and node-2`, func(t *testing.T) {
+		nodesProducer.ConsumeMessage(bus.NewMessage("nodes", map[string]interface{}{
+			"node-1": proto.ClusterNode{
+				ID:        "node-1",
+				Advertise: ts1.Listener.Addr().String(),
+			},
+			"node-2": proto.ClusterNode{
+				ID:        "node-2",
+				Advertise: ts2.Listener.Addr().String(),
+			},
+		}))
+	})
+	t.Run(`with nodes node-1 self`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?test=2",
+			200,
+			map[string]interface{}{
+				"id":     "node-1",
+				"url":    "/v1/route",
+				"params": map[string]interface{}{"test": []interface{}{"2"}},
+			},
+		)
+	})
+	t.Run(`with nodes node-2 self`, func(t *testing.T) {
+		checkGet(t,
+			ts2.URL+"/v1/route?test=2",
+			200,
+			map[string]interface{}{
+				"id":     "node-2",
+				"url":    "/v1/route",
+				"params": map[string]interface{}{"test": []interface{}{"2"}},
+			},
+		)
+	})
+	t.Run(`with nodes node-1 proxy to node-2`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?node=node-2&test=2",
+			200,
+			map[string]interface{}{
+				"id":     "node-2",
+				"url":    "/v1/route",
+				"params": map[string]interface{}{"test": []interface{}{"2"}},
+			},
+		)
+	})
+	t.Run(`with nodes node-1 redirect to node-2`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?node=node-2&redirect&test=2",
+			200,
+			map[string]interface{}{
+				"id":     "node-2",
+				"url":    "/v1/route",
+				"params": map[string]interface{}{"test": []interface{}{"2"}},
+			},
+		)
+	})
+	t.Run(`configure node-2 to node-3`, func(t *testing.T) {
+		nodesProducer.ConsumeMessage(bus.NewMessage("nodes", map[string]interface{}{
+			"node-1": proto.ClusterNode{
+				ID:        "node-1",
+				Advertise: ts1.Listener.Addr().String(),
+			},
+			"node-3": proto.ClusterNode{
+				ID:        "node-3",
+				Advertise: ts2.Listener.Addr().String(),
+			},
+		}))
+	})
+	t.Run(`with nodes node-1 proxy to node-2`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?node=node-2&test=2",
+			404,
+			nil,
+		)
+	})
+	t.Run(`with nodes node-1 proxy to node-3`, func(t *testing.T) {
+		checkGet(t,
+			ts1.URL+"/v1/route?node=node-3&test=2",
+			200,
+			map[string]interface{}{
+				"id":     "node-2",
+				"url":    "/v1/route",
+				"params": map[string]interface{}{"test": []interface{}{"2"}},
+			},
+		)
+	})
 
 }

@@ -215,7 +215,6 @@ func (s *ConsulServer) Clean() {
 
 func (s *ConsulServer) WaitAlive() {
 	s.t.Helper()
-	println(s.Address())
 	rtr := retrier.New(retrier.ConstantBackoff(100, time.Millisecond*50), retrier.DefaultClassifier{})
 	err := rtr.Run(func() (err error) {
 		resp, err := http.Get(fmt.Sprintf("http://%s/v1/agent/self", s.Address()))

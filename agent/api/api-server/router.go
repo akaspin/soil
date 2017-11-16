@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/proto"
 	"net/http"
 	"net/http/httputil"
 	"sync"
@@ -30,6 +31,7 @@ func NewRouter(log *logx.Log, endpoints ...*Endpoint) (r *Router) {
 		endpoints: endpoints,
 		mux:       http.NewServeMux(),
 		nodesMu:   &sync.RWMutex{},
+		nodes:     map[string]string{},
 	}
 	paths := map[string][]*Endpoint{}
 	for _, endpoint := range endpoints {
@@ -85,15 +87,22 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// ConsumeMessage accepts message with map of nodes
+// ConsumeMessage accepts message with map string:proto.ClusterNode
 func (r *Router) ConsumeMessage(message bus.Message) {
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()
-		if err := message.Payload().Unmarshal(&r.nodes); err != nil {
+		var value map[string]proto.ClusterNode
+		if err := message.Payload().Unmarshal(&value); err != nil {
 			r.log.Error(err)
+			return
 		}
-		r.log.Debugf("synced nodes: %v", message.Payload())
+		nodes := map[string]string{}
+		for _, node := range value {
+			nodes[node.ID] = node.Advertise
+		}
+		r.nodes = nodes
+		r.log.Infof("nodes updated: %v", r.nodes)
 	}()
 }
 

@@ -37,6 +37,7 @@ func TestConsulServer(t *testing.T) {
 		assert.NoError(t, err)
 		res, _, err := cli.Session().Info(sess1, nil)
 		assert.NoError(t, err)
+		assert.NotNil(t, res)
 		assert.Equal(t, res.Name, "sess1")
 	})
 	t.Run("get session 2", func(t *testing.T) {
@@ -47,6 +48,7 @@ func TestConsulServer(t *testing.T) {
 		assert.NoError(t, err)
 		res, _, err := cli.Session().Info(sess2, nil)
 		assert.NoError(t, err)
+		assert.NotNil(t, res)
 		assert.Equal(t, res.Name, "sess2")
 	})
 	t.Run("acquire with sess1", func(t *testing.T) {

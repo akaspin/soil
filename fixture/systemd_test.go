@@ -15,7 +15,7 @@ func TestSystemd_Cleanup(t *testing.T) {
 	assert.NoError(t, sd.DeployPod("test-2", 1))
 
 	fixture.WaitNoError(t, fixture.WaitConfig{
-		Retry: time.Millisecond* 50,
+		Retry:   time.Millisecond * 50,
 		Retries: 1000,
 	}, sd.UnitStatesFn([]string{"pod-cleanup-*"}, map[string]string{
 		"pod-cleanup-test-1.service": "active",
@@ -23,7 +23,7 @@ func TestSystemd_Cleanup(t *testing.T) {
 	}))
 	assert.NoError(t, sd.Cleanup())
 	fixture.WaitNoError(t, fixture.WaitConfig{
-		Retry: time.Millisecond* 50,
+		Retry:   time.Millisecond * 50,
 		Retries: 1000,
 	}, sd.UnitStatesFn([]string{"pod-cleanup-*"}, map[string]string{}))
 }

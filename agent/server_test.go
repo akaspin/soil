@@ -53,7 +53,7 @@ func TestServer_Configure(t *testing.T) {
 	}
 
 	waitConfig := fixture.WaitConfig{
-		Retry: time.Millisecond* 50,
+		Retry:   time.Millisecond * 50,
 		Retries: 1000,
 	}
 

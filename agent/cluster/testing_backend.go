@@ -2,11 +2,11 @@ package cluster
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"net/url"
-	"encoding/json"
 )
 
 func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, msgChan chan map[string]map[string]interface{}) (f BackendFactory) {
@@ -69,7 +69,7 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer
 			case msg := <-b.msgChan:
 				for key, values := range msg {
 					result := WatchResult{
-						Key: key,
+						Key:  key,
 						Data: map[string][]byte{},
 					}
 					for k, v := range values {

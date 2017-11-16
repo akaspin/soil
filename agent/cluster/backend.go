@@ -28,10 +28,9 @@ type WatchRequest struct {
 }
 
 type WatchResult struct {
-	Key string
+	Key  string
 	Data map[string][]byte
 }
-
 
 type Backend interface {
 	io.Closer
@@ -84,4 +83,3 @@ type StoreCommit struct {
 	Hash    uint64
 	WithTTL bool
 }
-

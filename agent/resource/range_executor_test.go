@@ -3,14 +3,14 @@
 package resource_test
 
 import (
+	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"testing"
 	"time"
-	"context"
-	"github.com/akaspin/soil/fixture"
 )
 
 func TestRangeExecutor_Allocate(t *testing.T) {

@@ -31,9 +31,7 @@ func TestKV_Configure(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-permanent", map[string]string{"1": "1"}), false},
 		})
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
-
-		))
+		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn())
 	})
 	t.Run(`configure 1`, func(t *testing.T) {
 		config := cluster.DefaultConfig()

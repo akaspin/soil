@@ -3,11 +3,11 @@
 package bus_test
 
 import (
+	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"testing"
-	"context"
 	"github.com/akaspin/soil/fixture"
+	"testing"
 )
 
 func TestCompositePipe_ConsumeMessage(t *testing.T) {
@@ -15,7 +15,6 @@ func TestCompositePipe_ConsumeMessage(t *testing.T) {
 	defer cancel()
 	dummy := bus.NewTestingConsumer(ctx)
 	pipe := bus.NewCompositePipe("test", logx.GetLog("test"), dummy, "1", "2")
-
 
 	t.Run("1", func(t *testing.T) {
 		pipe.ConsumeMessage(bus.NewMessage("1", map[string]string{

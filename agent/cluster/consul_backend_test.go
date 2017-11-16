@@ -3,7 +3,9 @@
 package cluster_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/cluster"
@@ -12,8 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"encoding/json"
-	"bytes"
 )
 
 func TestNewConsulBackend(t *testing.T) {

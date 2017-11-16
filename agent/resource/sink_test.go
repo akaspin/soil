@@ -9,13 +9,13 @@ import (
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/agent/scheduler"
+	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/akaspin/soil/fixture"
 )
 
 func TestSink_Flow_NoRecovery(t *testing.T) {

@@ -2,8 +2,8 @@ package bus
 
 import (
 	"context"
-	"reflect"
 	"fmt"
+	"reflect"
 )
 
 type TestingConsumer struct {
@@ -18,15 +18,15 @@ type TestingConsumer struct {
 		expect  Message
 		resChan chan error
 	}
-	assertByIdChan chan struct{
-		expect map[string][]Message
+	assertByIdChan chan struct {
+		expect  map[string][]Message
 		resChan chan error
 	}
 }
 
 func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
 	c = &TestingConsumer{
-		ctx: ctx,
+		ctx:         ctx,
 		messageChan: make(chan Message),
 		assertChan: make(chan struct {
 			expect  []Message
@@ -133,8 +133,6 @@ func (c *TestingConsumer) ExpectMessagesByIdFn(expect map[string][]Message) (fn 
 	}
 	return
 }
-
-
 
 func (c *TestingConsumer) loop() {
 LOOP:

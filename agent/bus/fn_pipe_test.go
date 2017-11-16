@@ -3,11 +3,11 @@
 package bus_test
 
 import (
+	"context"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"context"
-	"github.com/akaspin/soil/fixture"
 )
 
 func TestFnPipe_ConsumeMessage(t *testing.T) {

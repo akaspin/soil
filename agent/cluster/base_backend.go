@@ -16,15 +16,15 @@ type baseBackend struct {
 	failCtx     context.Context
 	failCancel  context.CancelFunc
 
-	commitsChan chan []StoreCommit
+	commitsChan      chan []StoreCommit
 	watchResultsChan chan WatchResult
 }
 
 func newBaseBackend(ctx context.Context, log *logx.Log, config BackendConfig) (b *baseBackend) {
 	b = &baseBackend{
-		log:         log,
-		config:      config,
-		commitsChan: make(chan []StoreCommit),
+		log:              log,
+		config:           config,
+		commitsChan:      make(chan []StoreCommit),
 		watchResultsChan: make(chan WatchResult),
 	}
 	b.failCtx, b.failCancel = context.WithCancel(ctx)

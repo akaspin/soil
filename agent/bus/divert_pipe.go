@@ -15,17 +15,12 @@ type DivertPipe struct {
 	isDiverting bool
 }
 
-func NewDivertPipe(name string, consumer Consumer, divert Message) (p *DivertPipe) {
+func NewDivertPipe(consumer Consumer, divert Message) (p *DivertPipe) {
 	p = &DivertPipe{
-		name:     name,
 		consumer: consumer,
 		inDrain:  divert,
 	}
 	return
-}
-
-func (p *DivertPipe) ConsumerName() string {
-	return p.name
 }
 
 func (p *DivertPipe) ConsumeMessage(message Message) {

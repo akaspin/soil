@@ -52,7 +52,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
 	})
-	resourceDrainPipe := bus.NewDivertPipe("drain", resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	resourceCompositePipe := bus.NewCompositePipe("private", log, resourceDrainPipe, "meta", "system", "resource")
 
 	// provision
@@ -60,7 +60,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		scheduler.ArbiterConfig{
 			Required: manifest.Constraint{"${agent.drain}": "!= true"},
 		})
-	provisionDrainPipe := bus.NewDivertPipe("drain", provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	provisionCompositePipe := bus.NewCompositePipe("private", log, provisionDrainPipe, "meta", "system", "resource")
 
 	s.confPipe = bus.NewTeePipe(resourceCompositePipe, provisionCompositePipe)

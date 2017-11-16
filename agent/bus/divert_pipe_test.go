@@ -13,7 +13,7 @@ func TestDivertPipe_Divert(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	dummy := bus.NewTestingConsumer(ctx)
-	pipe := bus.NewDivertPipe("drain", dummy, bus.NewMessage("drain", map[string]string{
+	pipe := bus.NewDivertPipe(dummy, bus.NewMessage("drain", map[string]string{
 		"drain": "true",
 	}))
 

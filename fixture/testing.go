@@ -12,7 +12,6 @@ func TestName(t *testing.T) (res string) {
 	return
 }
 
-
 // Poll while provided fn return no error
 func WaitNoError(t *testing.T, config WaitConfig, fn func() error) {
 	t.Helper()
@@ -33,14 +32,14 @@ func WaitNoError(t *testing.T, config WaitConfig, fn func() error) {
 }
 
 type WaitConfig struct {
-	Retry time.Duration
+	Retry   time.Duration
 	Retries int
 	Timeout time.Duration
 }
 
 func DefaultWaitConfig() (c WaitConfig) {
-	c= WaitConfig{
-		Retry: time.Millisecond * 100,
+	c = WaitConfig{
+		Retry:   time.Millisecond * 100,
 		Retries: 100,
 		Timeout: time.Minute,
 	}

@@ -58,10 +58,6 @@ func (i *ExecutorInstance) Close() (err error) {
 	return
 }
 
-func (i *ExecutorInstance) ConsumerName() string {
-	return i.ExecutorConfig.Nature + "." + i.ExecutorConfig.Kind
-}
-
 func (i *ExecutorInstance) ConsumeMessage(message bus.Message) {
 	go func() {
 		select {

@@ -1,12 +1,12 @@
 package cluster
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/nu7hatch/gouuid"
-	"encoding/json"
-	"bytes"
 )
 
 type watchGroup struct {
@@ -94,7 +94,6 @@ LOOP:
 				payload[k] = value
 			}
 			ingest := bus.NewMessage(result.Key, payload)
-
 
 			if g.cache.Payload().Hash() == ingest.Payload().Hash() {
 				g.log.Tracef(`skip broadcast: message is equal to cache`)

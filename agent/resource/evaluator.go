@@ -102,10 +102,6 @@ func (e *Evaluator) Configure(configs Configs) {
 	}
 }
 
-func (e *Evaluator) ConsumerName() string {
-	return "resource-evaluator"
-}
-
 // Consume message from worker
 func (e *Evaluator) ConsumeMessage(message bus.Message) {
 	e.log.Tracef("message consumed: %v", message)

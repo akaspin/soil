@@ -29,8 +29,8 @@ type KV struct {
 	commitsChan       chan []StoreCommit
 	invokePendingChan chan struct{} // invoke pending operations
 
-	registerWatchChan    chan WatchRequest
-	watchResultsChan     chan WatchResult
+	registerWatchChan chan WatchRequest
+	watchResultsChan  chan WatchResult
 
 	watchGroups          map[string]*watchGroup
 	pendingWatchGroups   map[string]struct{}

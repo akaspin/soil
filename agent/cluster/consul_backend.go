@@ -116,7 +116,7 @@ LOOP:
 		opts.WaitIndex = meta.LastIndex
 
 		result := WatchResult{
-			Key: req.Key,
+			Key:  req.Key,
 			Data: map[string][]byte{},
 		}
 		for _, pair := range pairs {

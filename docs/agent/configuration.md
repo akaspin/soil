@@ -32,6 +32,18 @@ $ soil agent --id agent-1 --config=config.hcl --meta rack=left
 Soil accepts configurations in HCL and JSON.
 
 ```hcl
+system {
+  pod_exec = "ExecStart=/usr/bin/sleep inf"
+}
+
+cluster {
+  node_id = "node-1"
+  advertise = "127.0.0.1:7654"
+  backend = "consul://127.0.0.1:8500/soil"
+  ttl = "3m"
+  retry = "30s"
+}
+
 meta {
   "groups" = "first,second,third"
   "rack" = "left"
@@ -42,7 +54,6 @@ resource "range" "port" {
   max = 23000
 }
 
-exec = "ExecStart=/usr/bin/sleep inf"
 
 pod "first-pod" {
   // ...

@@ -14,11 +14,11 @@ func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, ms
 		kvConfig := BackendConfig{
 			Kind:    "local",
 			Chroot:  "soil",
-			ID:      config.ID,
+			ID:      config.NodeID,
 			Address: "localhost",
 			TTL:     config.TTL,
 		}
-		u, err := url.Parse(config.URL)
+		u, err := url.Parse(config.BackendURL)
 		if err != nil {
 			log.Error(err)
 		}

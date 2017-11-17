@@ -18,7 +18,7 @@ func newWatchdog(kv *KV, backend Backend, config Config) (w *kvWatchdog) {
 		kv:      kv,
 		backend: backend,
 		config:  config,
-		log:     kv.log.GetLog("cluster", "kv", "watchdog", config.URL, config.ID),
+		log:     kv.log.GetLog("cluster", "kv", "watchdog", config.BackendURL, config.NodeID),
 	}
 	go w.ready()
 	go w.done()
@@ -32,7 +32,7 @@ func (w *kvWatchdog) ready() {
 	case <-w.backend.Ctx().Done():
 		return
 	case <-w.backend.ReadyCtx().Done():
-		w.log.Trace(`backend is ready`)
+		w.log.Info(`backend is ready`)
 		select {
 		case <-w.kv.Control.Ctx().Done():
 		case w.kv.invokePendingChan <- struct{}{}:
@@ -45,7 +45,7 @@ func (w *kvWatchdog) done() {
 	<-w.backend.Ctx().Done()
 	select {
 	case <-w.backend.FailCtx().Done():
-		w.log.Tracef(`failed: sending wake request after %s`, w.config.RetryInterval)
+		w.log.Errorf(`backend failed: sending wake request after %s`, w.config.RetryInterval)
 		select {
 		case <-w.kv.Control.Ctx().Done():
 		case <-time.After(w.config.RetryInterval):
@@ -59,7 +59,7 @@ func (w *kvWatchdog) done() {
 			}
 		}
 	default:
-		w.log.Trace(`context canceled`)
+		w.log.Info(`backend closed`)
 	}
 }
 

@@ -50,11 +50,11 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 	kvConfig := BackendConfig{
 		Kind:    "local",
 		Chroot:  "soil",
-		ID:      config.ID,
+		ID:      config.NodeID,
 		Address: "localhost",
 		TTL:     config.TTL,
 	}
-	u, err := url.Parse(config.URL)
+	u, err := url.Parse(config.BackendURL)
 	if err != nil {
 		log.Error(err)
 	}
@@ -65,8 +65,8 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 	}
 	kvLog := log.GetLog("cluster", "backend", kvConfig.Kind)
 	switch kvConfig.Kind {
-	//case backendConsul:
-	//	c = NewConsulBackend(ctx, kvLog, kvConfig)
+	case backendConsul:
+		c = NewConsulBackend(ctx, kvLog, kvConfig)
 	default:
 		c = NewZeroBackend(ctx, kvLog)
 	}

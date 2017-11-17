@@ -140,6 +140,7 @@ func TestKV_Configure(t *testing.T) {
 		))
 	})
 
+
 	kv.Close()
 	kv.Wait()
 }
@@ -217,4 +218,9 @@ func TestKV_Subscribe(t *testing.T) {
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
+	t.Run(`close`, func(t *testing.T) {
+		kv.Close()
+		time.Sleep(time.Second)
+	})
+
 }

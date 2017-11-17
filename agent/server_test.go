@@ -1,4 +1,4 @@
-// +build ide test_systemd
+// +build ide test_systemd,linux
 
 package agent_test
 
@@ -45,7 +45,6 @@ func TestServer_Configure(t *testing.T) {
 	}
 	server := agent.NewServer(context.Background(), logx.GetLog("test"), serverOptions)
 	assert.NoError(t, server.Open())
-	//time.Sleep(waitTime)
 
 	allUnitNames := []string{
 		"pod-*",
@@ -146,6 +145,19 @@ func TestServer_Configure(t *testing.T) {
 	t.Run("7 with resource", func(t *testing.T) {
 		copyConfig(t, "server_test_7.hcl")
 		server.Configure()
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+			"pod-private-1.service": "active",
+			"unit-1.service":        "active",
+		}))
+		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
+			"/run/systemd/system/pod-private-1.service": 0x9e2aa3b3b95275df,
+			"/run/systemd/system/unit-1.service":        0x5ea112942f0c47e8,
+		})
+	})
+	t.Run(`reconfigure cluster`, func(t *testing.T) {
+		copyConfig(t, "server_test_8.hcl")
+		server.Configure()
+		time.Sleep(time.Second)
 		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",

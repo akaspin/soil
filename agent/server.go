@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/cluster"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/agent/scheduler"
@@ -30,9 +31,9 @@ type Server struct {
 	sv supervisor.Component
 
 	confPipe bus.Consumer
-
 	resourceEvaluator       *resource.Evaluator
 	privateRegistryConsumer scheduler.RegistryConsumer
+	kv *cluster.KV
 }
 
 func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Server) {
@@ -40,6 +41,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		log:     log.GetLog("server"),
 		options: options,
 	}
+	s.kv = cluster.NewKV(ctx, log, cluster.DefaultBackendFactory)
 
 	var state allocation.Recovery
 	if recoveryErr := state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
@@ -91,6 +93,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	s.sv = supervisor.NewChain(ctx,
+		s.kv,
 		supervisor.NewGroup(ctx, resourceArbiter, provisionArbiter),
 		s.resourceEvaluator,
 		provisionEvaluator,
@@ -124,8 +127,8 @@ func (s *Server) Configure() {
 
 	}
 	serverCfg := DefaultConfig()
-	serverCfg.Agent.Id = s.options.AgentId
 	serverCfg.Meta = lib.CloneMap(s.options.Meta)
+
 	if err := serverCfg.Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal server configs: %v", err)
 	}
@@ -133,12 +136,16 @@ func (s *Server) Configure() {
 	if err := resourceConfigs.Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal resource configs: %v", err)
 	}
-
 	var registry manifest.Registry
 	if err := registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal registry: %v", err)
 	}
+	clusterConfig := cluster.DefaultConfig()
+	if err := (&clusterConfig).Unmarshal(buffers.GetReaders()...); err != nil {
+		s.log.Errorf("unmarshal cluster config: %v", err)
+	}
 
+	s.kv.Configure(clusterConfig)
 	s.confPipe.ConsumeMessage(bus.NewMessage("meta", serverCfg.Meta))
 	s.confPipe.ConsumeMessage(bus.NewMessage("system", serverCfg.System))
 	s.resourceEvaluator.Configure(resourceConfigs)

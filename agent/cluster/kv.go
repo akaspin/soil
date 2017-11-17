@@ -40,7 +40,7 @@ type KV struct {
 func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 	b = &KV{
 		Control:  supervisor.NewControl(ctx),
-		log:      log.GetLog("cluster", "backend"),
+		log:      log.GetLog("cluster", "kv"),
 		factory:  factory,
 		config:   Config{},
 		volatile: map[string]bus.Message{},
@@ -104,13 +104,13 @@ func (k *KV) Subscribe(key string, ctx context.Context, consumer bus.Consumer) {
 }
 
 func (k *KV) loop() {
-	log := k.log.GetLog("cluster", "backend", "loop")
+	log := k.log.GetLog("cluster", "kv", "loop")
+	k.log.Info(`open`)
 	k.backend = NewZeroBackend(k.Control.Ctx(), k.log)
 LOOP:
 	for {
 		select {
 		case <-k.Control.Ctx().Done():
-			log.Debugf(`control closed`)
 			break LOOP
 		case req := <-k.configRequestChan:
 			log.Tracef(`received config: %v`, req)
@@ -246,6 +246,7 @@ LOOP:
 			delete(k.watchGroups, id)
 		}
 	}
+	k.log.Info(`close`)
 }
 
 func (k *KV) createBackend(config Config) (backend Backend) {
@@ -254,7 +255,6 @@ func (k *KV) createBackend(config Config) (backend Backend) {
 		k.log.Error(kvErr)
 	}
 	newWatchdog(k, backend, config)
-
-	k.log.Debugf(`created: %v`, config)
+	k.log.Infof(`backend created: %v`, config)
 	return
 }

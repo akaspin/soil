@@ -19,5 +19,5 @@ func NewProducer(kv *KV, key string) (p bus.Producer) {
 }
 
 func (p *producer) Subscribe(ctx context.Context, consumer bus.Consumer) {
-	p.kv.Subscribe(p.key, ctx, consumer)
+	p.kv.SubscribeKey(p.key, ctx, consumer)
 }

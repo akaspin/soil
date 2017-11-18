@@ -28,6 +28,7 @@ func TestKV_Configure(t *testing.T) {
 	assert.NoError(t, kv.Open())
 
 	kvConfig := cluster.DefaultConfig()
+	kvConfig.NodeID = "localhost"
 	kvConfig.RetryInterval = time.Millisecond * 10
 
 	watcherCtx, _ := context.WithCancel(context.Background())
@@ -49,7 +50,7 @@ func TestKV_Configure(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-permanent", map[string]string{"1": "1"}), false},
 		})
-		kv.Subscribe("down", watcherCtx, watcher)
+		kv.SubscribeKey("down", watcherCtx, watcher)
 	})
 	t.Run(`start backend`, func(t *testing.T) {
 		go func() {
@@ -99,6 +100,7 @@ func TestKV_Submit(t *testing.T) {
 	})
 	t.Run(`configure 1`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
+		config.NodeID = "localhost"
 		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
 		go func() {
@@ -148,6 +150,7 @@ func TestKV_Submit(t *testing.T) {
 	})
 	t.Run(`ensure noop after equal config`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
+		config.NodeID = "localhost"
 		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
 
@@ -241,11 +244,12 @@ func TestKV_Subscribe(t *testing.T) {
 	waitConfig := fixture.DefaultWaitConfig()
 
 	t.Run(`subscribe 1`, func(t *testing.T) {
-		kv.Subscribe("test/1", ctx1, cons1)
+		kv.SubscribeKey("test/1", ctx1, cons1)
 		time.Sleep(time.Millisecond * 100)
 	})
 	t.Run(`configure 1`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
+		config.NodeID = "localhost"
 		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
 		time.Sleep(time.Millisecond * 100)
@@ -267,7 +271,7 @@ func TestKV_Subscribe(t *testing.T) {
 		))
 	})
 	t.Run(`subscribe 2`, func(t *testing.T) {
-		kv.Subscribe("test/1", ctx2, cons2)
+		kv.SubscribeKey("test/1", ctx2, cons2)
 		fixture.WaitNoError(t, waitConfig, cons2.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
@@ -304,4 +308,58 @@ func TestKV_Subscribe(t *testing.T) {
 		time.Sleep(time.Second)
 	})
 
+}
+
+func TestStore_ConsumeMessage(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	consumer := bus.NewTestingConsumer(ctx)
+	backendCfg := cluster.TestingBackendConfig{
+		Consumer:    consumer,
+		ReadyChan:   make(chan struct{}, 1),
+		CrashChan:   make(chan struct{}, 1),
+		MessageChan: nil,
+	}
+	kv := cluster.NewKV(context.Background(), logx.GetLog("test"), cluster.NewTestingBackendFactory(backendCfg))
+	assert.NoError(t, kv.Open())
+	backendCfg.ReadyChan <- struct{}{}
+
+	t.Run(`configure`, func(t *testing.T) {
+		config := cluster.DefaultConfig()
+		config.NodeID = "localhost"
+		config.RetryInterval = time.Millisecond * 10
+		kv.Configure(config)
+		time.Sleep(time.Millisecond * 100)
+	})
+	t.Run(`volatile with prefix`, func(t *testing.T) {
+		store := kv.VolatileStore("prefix")
+		store.ConsumeMessage(bus.NewMessage("1", map[string]string{
+			"1": "1",
+		}))
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
+			bus.NewMessage("test", map[string]interface{}{
+				"prefix/1": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  true,
+				},
+			}),
+		))
+		store.ConsumeMessage(bus.NewMessage("", map[string]string{
+			"1": "2",
+		}))
+		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
+			bus.NewMessage("test", map[string]interface{}{
+				"prefix/1": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  true,
+				},
+			}),
+			bus.NewMessage("test", map[string]interface{}{
+				"prefix": map[string]interface{}{
+					"Data": map[string]string{"1": "2"},
+					"TTL":  true,
+				},
+			}),
+		))
+	})
 }

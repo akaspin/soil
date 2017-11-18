@@ -12,6 +12,35 @@ type kvConfigRequest struct {
 	internal bool
 }
 
+type operatorConsumer struct {
+	kv       *KV
+	log      *logx.Log
+	prefix   string
+	volatile bool
+}
+
+func (c *operatorConsumer) ConsumeMessage(message bus.Message) {
+	if message.GetID() == "" {
+		c.log.Warning(`skip: empty message id`)
+		return
+	}
+	c.kv.Submit([]StoreOp{
+		{
+			Message: bus.NewMessage(NormalizeKey(c.prefix, message.GetID()), message.Payload()),
+			WithTTL: c.volatile,
+		},
+	})
+}
+
+type operatorProducer struct {
+	key string
+	kv  *KV
+}
+
+func (p *operatorProducer) Subscribe(ctx context.Context, consumer bus.Consumer) {
+	p.kv.SubscribeKey(p.key, ctx, consumer)
+}
+
 type KV struct {
 	*supervisor.Control
 	log     *logx.Log
@@ -66,6 +95,34 @@ func (k *KV) Open() (err error) {
 	return
 }
 
+func (k *KV) VolatileStore(prefix string) (consumer bus.Consumer) {
+	consumer = &operatorConsumer{
+		kv:       k,
+		log:      k.log.GetLog("cluster", "kv", "store", "volatile", prefix),
+		prefix:   prefix,
+		volatile: true,
+	}
+	return
+}
+
+func (k *KV) PermanentStore(prefix string) (consumer bus.Consumer) {
+	consumer = &operatorConsumer{
+		kv:       k,
+		log:      k.log.GetLog("cluster", "kv", "store", "permanent", prefix),
+		prefix:   prefix,
+		volatile: false,
+	}
+	return
+}
+
+func (k *KV) Producer(key string) (producer bus.Producer) {
+	producer = &operatorProducer{
+		kv:  k,
+		key: key,
+	}
+	return
+}
+
 func (k *KV) Configure(config Config) {
 	select {
 	case <-k.Control.Ctx().Done():
@@ -88,7 +145,7 @@ func (k *KV) Submit(ops []StoreOp) {
 }
 
 // Subscribe for changes
-func (k *KV) Subscribe(key string, ctx context.Context, consumer bus.Consumer) {
+func (k *KV) SubscribeKey(key string, ctx context.Context, consumer bus.Consumer) {
 	select {
 	case <-k.Control.Ctx().Done():
 		k.log.Warningf(`ignore subscribe: %v`, k.Control.Ctx().Err())

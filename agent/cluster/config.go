@@ -24,7 +24,7 @@ func DefaultConfig() (c Config) {
 	c = Config{
 		BackendURL:    "local://localhost/soil",
 		Advertise:     "localhost:7654",
-		NodeID:        "localhost",
+		NodeID:        "",
 		TTL:           time.Minute * 3,
 		RetryInterval: time.Second * 30,
 	}

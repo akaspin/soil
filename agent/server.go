@@ -13,6 +13,7 @@ import (
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
+	"github.com/akaspin/soil/proto"
 	"github.com/akaspin/supervisor"
 )
 
@@ -82,6 +83,9 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		api.NewAgentDrainDelete(drainFn),
 	)
 
+	// watchers
+	s.kv.Producer("nodes").Subscribe(ctx, apiRouter)
+
 	s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
 		SystemPaths: systemPaths,
@@ -93,12 +97,12 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	s.sv = supervisor.NewChain(ctx,
+		api_server.NewServer(ctx, s.log, s.options.Address, apiRouter),
 		s.kv,
 		supervisor.NewGroup(ctx, resourceArbiter, provisionArbiter),
 		s.resourceEvaluator,
 		provisionEvaluator,
 		s.privateRegistryConsumer.(supervisor.Component),
-		api_server.NewServer(ctx, s.log, s.options.Address, apiRouter),
 	)
 	return
 }
@@ -146,8 +150,17 @@ func (s *Server) Configure() {
 	}
 
 	s.kv.Configure(clusterConfig)
+
+	// announce node
+	//switch clusterConfig.NodeID {
+	s.kv.VolatileStore("nodes").ConsumeMessage(bus.NewMessage(clusterConfig.NodeID, proto.ClusterNode{
+		ID:        clusterConfig.NodeID,
+		Advertise: clusterConfig.Advertise,
+	}))
+
 	s.confPipe.ConsumeMessage(bus.NewMessage("meta", serverCfg.Meta))
 	s.confPipe.ConsumeMessage(bus.NewMessage("system", serverCfg.System))
+
 	s.resourceEvaluator.Configure(resourceConfigs)
 	s.privateRegistryConsumer.ConsumeRegistry(registry)
 	s.log.Debug("configure: done")

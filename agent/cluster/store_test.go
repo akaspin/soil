@@ -17,9 +17,15 @@ func TestStore_ConsumeMessage(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	consumer := bus.NewTestingConsumer(ctx)
-	crashChan := make(chan struct{})
-	kv := cluster.NewKV(context.Background(), logx.GetLog("test"), cluster.NewTestingBackendFactory(consumer, crashChan, nil))
+	backendCfg := cluster.TestingBackendConfig{
+		Consumer:    consumer,
+		ReadyChan:   make(chan struct{}, 1),
+		CrashChan:   make(chan struct{}, 1),
+		MessageChan: nil,
+	}
+	kv := cluster.NewKV(context.Background(), logx.GetLog("test"), cluster.NewTestingBackendFactory(backendCfg))
 	assert.NoError(t, kv.Open())
+	backendCfg.ReadyChan <- struct{}{}
 
 	t.Run(`configure`, func(t *testing.T) {
 		config := cluster.DefaultConfig()

@@ -24,12 +24,17 @@ func newBaseBackend(ctx context.Context, log *logx.Log, config BackendConfig) (b
 	b = &baseBackend{
 		log:              log,
 		config:           config,
-		commitsChan:      make(chan []StoreCommit),
-		watchResultsChan: make(chan WatchResult),
+		commitsChan:      make(chan []StoreCommit, 1),
+		watchResultsChan: make(chan WatchResult, 1),
 	}
-	b.failCtx, b.failCancel = context.WithCancel(ctx)
+	b.failCtx, b.failCancel = context.WithCancel(context.Background())
 	b.ctx, b.cancel = context.WithCancel(b.failCtx)
 	b.readyCtx, b.readyCancel = context.WithCancel(context.Background())
+	// also close local context on close parent
+	go func() {
+		<-ctx.Done()
+		b.cancel()
+	}()
 	return
 }
 

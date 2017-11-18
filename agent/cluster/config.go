@@ -80,7 +80,7 @@ func (c *Config) unmarshal(r io.Reader) (err error) {
 		}
 		// try to parse TTL and retry
 		config := &mapstructure.DecoderConfig{
-			DecodeHook: mapstructure.StringToTimeDurationHookFunc(),
+			DecodeHook:       mapstructure.StringToTimeDurationHookFunc(),
 			Metadata:         nil,
 			Result:           c,
 			WeaklyTypedInput: true,

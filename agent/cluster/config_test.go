@@ -17,11 +17,11 @@ func TestConfig_Unmarshal(t *testing.T) {
 		var config cluster.Config
 		assert.NoError(t, (&config).Unmarshal(buffers.GetReaders()...))
 		assert.Equal(t, cluster.Config{
-			NodeID:"node-1-add",
-			BackendURL:"consul://127.0.0.1:8500",
-			Advertise:"127.0.0.1:7654",
-			TTL:time.Minute * 11,
-			RetryInterval:time.Second * 30,
+			NodeID:        "node-1-add",
+			BackendURL:    "consul://127.0.0.1:8500",
+			Advertise:     "127.0.0.1:7654",
+			TTL:           time.Minute * 11,
+			RetryInterval: time.Second * 30,
 		}, config)
 	})
 }

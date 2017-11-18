@@ -18,8 +18,72 @@ func TestKV_Configure(t *testing.T) {
 	defer cancel()
 
 	consumer := bus.NewTestingConsumer(ctx)
-	crashChan := make(chan struct{})
-	kv := cluster.NewKV(ctx, logx.GetLog("test"), cluster.NewTestingBackendFactory(consumer, crashChan, nil))
+	backendCfg := cluster.TestingBackendConfig{
+		Consumer:    consumer,
+		ReadyChan:   make(chan struct{}, 1),
+		CrashChan:   make(chan struct{}, 1),
+		MessageChan: make(chan map[string]map[string]interface{}),
+	}
+	kv := cluster.NewKV(ctx, logx.GetLog("test"), cluster.NewTestingBackendFactory(backendCfg))
+	assert.NoError(t, kv.Open())
+
+	kvConfig := cluster.DefaultConfig()
+	kvConfig.RetryInterval = time.Millisecond * 10
+
+	watcherCtx, _ := context.WithCancel(context.Background())
+	watcher := bus.NewTestingConsumer(ctx)
+
+	waitConfig := fixture.DefaultWaitConfig()
+
+	t.Run(`configure and crash after 100ms`, func(t *testing.T) {
+		kv.Configure(kvConfig)
+		go func() {
+			<-time.After(time.Millisecond * 100)
+			backendCfg.CrashChan <- struct{}{}
+		}()
+	})
+	t.Run(`store and watch`, func(t *testing.T) {
+		kv.Submit([]cluster.StoreOp{
+			{bus.NewMessage("pre-volatile", map[string]string{"1": "1"}), true},
+		})
+		kv.Submit([]cluster.StoreOp{
+			{bus.NewMessage("pre-permanent", map[string]string{"1": "1"}), false},
+		})
+		kv.Subscribe("down", watcherCtx, watcher)
+	})
+	t.Run(`start backend`, func(t *testing.T) {
+		go func() {
+			<-time.After(time.Millisecond * 200)
+			backendCfg.ReadyChan <- struct{}{}
+		}()
+		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+			bus.NewMessage("crash", map[string]interface{}{}),
+			bus.NewMessage("test", map[string]interface{}{
+				"pre-volatile": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  true,
+				},
+				"pre-permanent": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  false,
+				},
+			}),
+		))
+	})
+}
+
+func TestKV_Submit(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	consumer := bus.NewTestingConsumer(ctx)
+	backendCfg := cluster.TestingBackendConfig{
+		Consumer:    consumer,
+		ReadyChan:   make(chan struct{}, 1),
+		CrashChan:   make(chan struct{}, 1),
+		MessageChan: make(chan map[string]map[string]interface{}),
+	}
+	kv := cluster.NewKV(ctx, logx.GetLog("test"), cluster.NewTestingBackendFactory(backendCfg))
 	assert.NoError(t, kv.Open())
 
 	waitConfig := fixture.DefaultWaitConfig()
@@ -35,9 +99,12 @@ func TestKV_Configure(t *testing.T) {
 	})
 	t.Run(`configure 1`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
-		config.RetryInterval = time.Millisecond * 100
+		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
-
+		go func() {
+			<-time.After(time.Millisecond * 100)
+			backendCfg.ReadyChan <- struct{}{}
+		}()
 	})
 	t.Run(`ensure submit after config`, func(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
@@ -54,8 +121,11 @@ func TestKV_Configure(t *testing.T) {
 		))
 	})
 	t.Run(`ensure resubmit volatile after crash`, func(t *testing.T) {
-		crashChan <- struct{}{}
-
+		backendCfg.CrashChan <- struct{}{}
+		go func() {
+			<-time.After(time.Millisecond * 100)
+			backendCfg.ReadyChan <- struct{}{}
+		}()
 		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
@@ -67,6 +137,7 @@ func TestKV_Configure(t *testing.T) {
 					"TTL":  false,
 				},
 			}),
+			bus.NewMessage("crash", map[string]interface{}{}),
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -77,7 +148,7 @@ func TestKV_Configure(t *testing.T) {
 	})
 	t.Run(`ensure noop after equal config`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
-		config.RetryInterval = time.Millisecond * 100
+		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
 
 		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
@@ -91,6 +162,7 @@ func TestKV_Configure(t *testing.T) {
 					"TTL":  false,
 				},
 			}),
+			bus.NewMessage("crash", map[string]interface{}{}),
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -119,6 +191,7 @@ func TestKV_Configure(t *testing.T) {
 					"TTL":  false,
 				},
 			}),
+			bus.NewMessage("crash", map[string]interface{}{}),
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -140,7 +213,6 @@ func TestKV_Configure(t *testing.T) {
 		))
 	})
 
-
 	kv.Close()
 	kv.Wait()
 }
@@ -149,11 +221,17 @@ func TestKV_Subscribe(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	consumer := bus.NewTestingConsumer(ctx)
-	crashChan := make(chan struct{})
 	msgChan := make(chan map[string]map[string]interface{})
 
-	kv := cluster.NewKV(ctx, logx.GetLog("test"), cluster.NewTestingBackendFactory(consumer, crashChan, msgChan))
+	backendCfg := cluster.TestingBackendConfig{
+		Consumer:    consumer,
+		ReadyChan:   make(chan struct{}, 1),
+		CrashChan:   make(chan struct{}, 1),
+		MessageChan: msgChan,
+	}
+	kv := cluster.NewKV(ctx, logx.GetLog("test"), cluster.NewTestingBackendFactory(backendCfg))
 	assert.NoError(t, kv.Open())
+	backendCfg.ReadyChan <- struct{}{}
 
 	cons1 := bus.NewTestingConsumer(ctx)
 	ctx1, _ := context.WithCancel(context.Background())
@@ -168,7 +246,7 @@ func TestKV_Subscribe(t *testing.T) {
 	})
 	t.Run(`configure 1`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
-		config.RetryInterval = time.Millisecond * 100
+		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
 		time.Sleep(time.Millisecond * 100)
 	})
@@ -176,7 +254,6 @@ func TestKV_Subscribe(t *testing.T) {
 		msgChan <- map[string]map[string]interface{}{
 			"test/1": {"1": "1"},
 		}
-
 		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
@@ -196,7 +273,11 @@ func TestKV_Subscribe(t *testing.T) {
 		))
 	})
 	t.Run(`crash`, func(t *testing.T) {
-		crashChan <- struct{}{}
+		backendCfg.CrashChan <- struct{}{}
+		go func() {
+			time.After(time.Millisecond * 100)
+			backendCfg.ReadyChan <- struct{}{}
+		}()
 		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))

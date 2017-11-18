@@ -30,10 +30,10 @@ type Server struct {
 
 	sv supervisor.Component
 
-	confPipe bus.Consumer
+	confPipe                bus.Consumer
 	resourceEvaluator       *resource.Evaluator
 	privateRegistryConsumer scheduler.RegistryConsumer
-	kv *cluster.KV
+	kv                      *cluster.KV
 }
 
 func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Server) {

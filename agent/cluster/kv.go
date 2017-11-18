@@ -46,12 +46,12 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 		volatile: map[string]bus.Message{},
 		pending:  map[string]StoreOp{},
 
-		configRequestChan: make(chan kvConfigRequest),
-		storeRequestsChan: make(chan []StoreOp),
-		watchRequestsChan: make(chan watcher),
-		commitsChan:       make(chan []StoreCommit),
-		watchResultsChan:  make(chan WatchResult),
-		invokePendingChan: make(chan struct{}),
+		configRequestChan: make(chan kvConfigRequest, 1),
+		storeRequestsChan: make(chan []StoreOp, 1),
+		watchRequestsChan: make(chan watcher, 1),
+		commitsChan:       make(chan []StoreCommit, 1),
+		watchResultsChan:  make(chan WatchResult, 1),
+		invokePendingChan: make(chan struct{}, 1),
 
 		watchGroups:          map[string]*watchGroup{},
 		pendingWatchGroups:   map[string]struct{}{},
@@ -107,6 +107,7 @@ func (k *KV) loop() {
 	log := k.log.GetLog("cluster", "kv", "loop")
 	k.log.Info(`open`)
 	k.backend = NewZeroBackend(k.Control.Ctx(), k.log)
+	config := Config{}
 LOOP:
 	for {
 		select {
@@ -120,8 +121,8 @@ LOOP:
 				needReconfigure = true
 			default:
 			}
-			if !req.internal && !k.config.IsEqual(req.config) {
-				log.Debugf(`external: %v->%v`, k.config, req.config)
+			if !req.internal && !config.IsEqual(req.config) {
+				log.Debugf(`external: %v->%v`, config, req.config)
 				k.backend.Close()
 				needReconfigure = true
 			}
@@ -129,7 +130,7 @@ LOOP:
 				log.Tracef(`ignore reconfiguration`)
 				continue LOOP
 			}
-			k.config = req.config
+			config = req.config
 			for id, message := range k.volatile {
 				k.pending[id] = StoreOp{
 					Message: message,

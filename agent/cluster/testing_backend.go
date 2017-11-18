@@ -9,7 +9,14 @@ import (
 	"net/url"
 )
 
-func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, msgChan chan map[string]map[string]interface{}) (f BackendFactory) {
+type TestingBackendConfig struct {
+	Consumer    bus.Consumer                           // Track consumer
+	ReadyChan   chan struct{}                          // ready channel
+	CrashChan   chan struct{}                          // Crash channel
+	MessageChan chan map[string]map[string]interface{} // Messages
+}
+
+func NewTestingBackendFactory(backendConfig TestingBackendConfig) (f BackendFactory) {
 	f = func(ctx context.Context, log *logx.Log, config Config) (b Backend, err error) {
 		kvConfig := BackendConfig{
 			Kind:    "local",
@@ -32,7 +39,7 @@ func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, ms
 		case "zero":
 			b = NewZeroBackend(ctx, kvLog)
 		default:
-			b = NewTestingBackend(ctx, log, consumer, crashChan, msgChan)
+			b = NewTestingBackend(ctx, log, backendConfig)
 		}
 		return
 	}
@@ -42,22 +49,27 @@ func NewTestingBackendFactory(consumer bus.Consumer, crashChan chan struct{}, ms
 // Backend for testing purposes
 type TestingBackend struct {
 	*baseBackend
-	consumer bus.Consumer
-	msgChan  chan map[string]map[string]interface{}
+	config TestingBackendConfig
 }
 
-func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer, crashChan chan struct{}, msgChan chan map[string]map[string]interface{}) (b *TestingBackend) {
+func NewTestingBackend(ctx context.Context, log *logx.Log, config TestingBackendConfig) (b *TestingBackend) {
 	b = &TestingBackend{
 		baseBackend: newBaseBackend(ctx, log, BackendConfig{}),
-		consumer:    consumer,
-		msgChan:     msgChan,
+		config:      config,
 	}
-	b.readyCancel()
+	go func() {
+		select {
+		case <-b.Ctx().Done():
+		case <-config.ReadyChan:
+			b.readyCancel()
+		}
+	}()
 	go func() {
 		select {
 		case <-b.ctx.Done():
-		case <-crashChan:
+		case <-config.CrashChan:
 			log.Trace(`crash`)
+			b.config.Consumer.ConsumeMessage(bus.NewMessage("crash", map[string]interface{}{}))
 			b.fail(fmt.Errorf(`crash`))
 		}
 	}()
@@ -66,7 +78,7 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, consumer bus.Consumer
 			select {
 			case <-b.ctx.Done():
 				return
-			case msg := <-b.msgChan:
+			case msg := <-b.config.MessageChan:
 				for key, values := range msg {
 					result := WatchResult{
 						Key:  key,
@@ -116,7 +128,7 @@ func (b *TestingBackend) Submit(ops []StoreOp) {
 		b.log.Tracef(`skip send commits %v: backend closed`)
 	case b.commitsChan <- commits:
 		b.log.Tracef(`commits sent: %v`, commits)
-		b.consumer.ConsumeMessage(bus.NewMessage("test", data))
+		b.config.Consumer.ConsumeMessage(bus.NewMessage("test", data))
 	}
 }
 

@@ -27,19 +27,19 @@ type TestingConsumer struct {
 func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
 	c = &TestingConsumer{
 		ctx:         ctx,
-		messageChan: make(chan Message),
+		messageChan: make(chan Message, 1),
 		assertChan: make(chan struct {
 			expect  []Message
 			resChan chan error
-		}),
+		}, 1),
 		assertLastChan: make(chan struct {
 			expect  Message
 			resChan chan error
-		}),
+		}, 1),
 		assertByIdChan: make(chan struct {
 			expect  map[string][]Message
 			resChan chan error
-		}),
+		}, 1),
 	}
 	go c.loop()
 	return

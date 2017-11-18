@@ -1,4 +1,4 @@
-// +build ide test_cluster
+// +build ide test_cluster,!test_systemd
 
 package cluster_test
 
@@ -230,7 +230,6 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 			},
 		})
 	})
-
 	t.Run(`ensure empty messages`, func(t *testing.T) {
 		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
 			"1": {

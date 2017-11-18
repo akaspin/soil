@@ -61,9 +61,9 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 	if err == nil {
 		kvConfig.Kind = u.Scheme
 		kvConfig.Address = u.Host
-		kvConfig.Chroot = u.Path
+		kvConfig.Chroot = NormalizeKey(u.Path)
 	}
-	kvLog := log.GetLog("cluster", "backend", kvConfig.Kind)
+	kvLog := log.GetLog("cluster", "backend", config.BackendURL, config.NodeID)
 	switch kvConfig.Kind {
 	case backendConsul:
 		c = NewConsulBackend(ctx, kvLog, kvConfig)

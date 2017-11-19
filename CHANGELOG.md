@@ -1,4 +1,4 @@
-## 0.4.1
+## 0.4.1 (19.11.2017)
 
 This release reintroduces clustering.
 

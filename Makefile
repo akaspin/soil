@@ -34,8 +34,8 @@ deps: Gopkg.toml $(SRC)	## update vendor
 test: test-unit test-systemd test-cluster		## run all tests
 
 clean-test: clean-test-systemd		## clean test artifacts
-	find . -name ".test_*" -exec rm -rf {} \;
-	find /tmp -name ".test_*" -exec rm -rf {} \;
+	-find . -name ".test_*" -exec rm -rf {} \;
+	-find /tmp -name ".test_*" -exec rm -rf {} \;
 
 test-unit: 		## run unit tests
 	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)
@@ -60,8 +60,8 @@ testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	touch testdata/systemd/.vagrant-ok
 
 clean-test-systemd:	## clean Systemd tests artifacts
-	cd testdata/systemd && vagrant destroy -f
-	rm -rf testdata/systemd/.vagrant*
+	-cd testdata/systemd && vagrant destroy -f
+	-rm -rf testdata/systemd/.vagrant*
 
 ###
 ### Dist

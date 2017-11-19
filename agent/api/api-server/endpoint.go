@@ -85,6 +85,7 @@ func (e *Endpoint) getHandleFunc(log *logx.Log) (h func(w http.ResponseWriter, r
 			return
 		}
 		w.Write(raw)
+		log.Debugf(`ok %s %s: %v`, req.Method, req.URL.String(), data)
 	}
 	return
 }

@@ -1,12 +1,12 @@
 ---
 title: Namespaces
 layout: default
-weight: 200
+weight: 2000
 ---
 
 # Agent namespaces
 
-> Only "private" is supported at this time.
+> outdated
 
 Agent registers pods in two namespaces: "private" and "public".
 

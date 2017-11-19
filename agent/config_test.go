@@ -1,4 +1,4 @@
-// +build ide test_unit
+// build ide test_unit
 
 package agent_test
 
@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+func TestServerVersion(t *testing.T) {
+	t.Log(agent.ServerVersion)
+}
 
 func TestConfig_Unmarshal(t *testing.T) {
 	t.Run("no-error", func(t *testing.T) {

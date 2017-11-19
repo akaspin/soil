@@ -1,4 +1,4 @@
-// build ide test_unit
+// +build ide test_unit
 
 package api_server_test
 
@@ -115,12 +115,12 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 		)
 	})
 	t.Run(`configure node-1 and node-2`, func(t *testing.T) {
-		nodesProducer.ConsumeMessage(bus.NewMessage("nodes", map[string]interface{}{
-			"node-1": proto.ClusterNode{
+		nodesProducer.ConsumeMessage(bus.NewMessage("nodes", []interface{}{
+			proto.NodeInfo{
 				ID:        "node-1",
 				Advertise: ts1.Listener.Addr().String(),
 			},
-			"node-2": proto.ClusterNode{
+			proto.NodeInfo{
 				ID:        "node-2",
 				Advertise: ts2.Listener.Addr().String(),
 			},
@@ -171,12 +171,12 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 		)
 	})
 	t.Run(`configure node-2 to node-3`, func(t *testing.T) {
-		nodesProducer.ConsumeMessage(bus.NewMessage("nodes", map[string]interface{}{
-			"node-1": proto.ClusterNode{
+		nodesProducer.ConsumeMessage(bus.NewMessage("nodes", []interface{}{
+			proto.NodeInfo{
 				ID:        "node-1",
 				Advertise: ts1.Listener.Addr().String(),
 			},
-			"node-3": proto.ClusterNode{
+			proto.NodeInfo{
 				ID:        "node-3",
 				Advertise: ts2.Listener.Addr().String(),
 			},

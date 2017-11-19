@@ -20,10 +20,6 @@ type operatorConsumer struct {
 }
 
 func (c *operatorConsumer) ConsumeMessage(message bus.Message) {
-	if message.GetID() == "" {
-		c.log.Warning(`skip: empty message id`)
-		return
-	}
 	c.kv.Submit([]StoreOp{
 		{
 			Message: bus.NewMessage(NormalizeKey(c.prefix, message.GetID()), message.Payload()),
@@ -180,14 +176,29 @@ LOOP:
 			}
 			if !req.internal && !config.IsEqual(req.config) {
 				log.Debugf(`external: %v->%v`, config, req.config)
-				k.backend.Close()
 				needReconfigure = true
 			}
 			if !needReconfigure {
 				log.Tracef(`ignore reconfiguration`)
 				continue LOOP
 			}
+			if config.NodeID != req.config.NodeID {
+				log.Infof(`leaving cluster: node id changed %s->%s`, config.NodeID, req.config.NodeID)
+				k.backend.Leave()
+			} else {
+				k.backend.Close()
+			}
+			var err error
+			var backend Backend
+			if backend, err = k.factory(k.Control.Ctx(), k.log, req.config); err != nil {
+				k.log.Errorf(`can't create backend %v: %v'`, req.config, err)
+				continue LOOP
+			}
+			newWatchdog(k, backend, req.config)
 			config = req.config
+			k.backend = backend
+			k.log.Infof(`backend created: %v`, req.config)
+
 			for id, message := range k.volatile {
 				k.pending[id] = StoreOp{
 					Message: message,
@@ -197,7 +208,6 @@ LOOP:
 			for key := range k.watchGroups {
 				k.pendingWatchGroups[key] = struct{}{}
 			}
-			k.backend = k.createBackend(req.config)
 		case ops := <-k.storeRequestsChan:
 			log.Tracef(`submit: %v`, ops)
 			for _, op := range ops {
@@ -305,14 +315,4 @@ LOOP:
 		}
 	}
 	k.log.Info(`close`)
-}
-
-func (k *KV) createBackend(config Config) (backend Backend) {
-	var kvErr error
-	if backend, kvErr = k.factory(k.Control.Ctx(), k.log, config); kvErr != nil {
-		k.log.Error(kvErr)
-	}
-	newWatchdog(k, backend, config)
-	k.log.Infof(`backend created: %v`, config)
-	return
 }

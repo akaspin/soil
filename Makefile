@@ -16,7 +16,7 @@ SRC 		= $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 SRC_VENDOR	= $(shell find ./vendor -type f -iname '*.go')
 
 V           = $(shell git describe --always --tags --dirty)
-GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
+GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/proto.Version=$(V)'
 GOBIN       ?= $(GOPATH)/bin
 
 

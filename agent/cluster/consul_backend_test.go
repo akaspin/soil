@@ -100,6 +100,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 		Address: srv.Address(),
 		TTL:     time.Second * 2,
 		Chroot:  "soil",
+		ID:      "node",
 	})
 	defer kv.Close()
 
@@ -138,9 +139,9 @@ func TestConsulBackend_Submit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, res, 2)
 	})
-	t.Run("ensure ttl", func(t *testing.T) {
+	t.Run("ensure volatile", func(t *testing.T) {
 		time.Sleep(time.Second * 2)
-		res, _, err := cli.KV().Get("soil/test/02", nil)
+		res, _, err := cli.KV().Get("soil/test/02/node", nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 		assert.Equal(t, []byte(`"02"`), res.Value)
@@ -152,6 +153,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 			},
 			{
 				Message: bus.NewMessage("test/02", nil),
+				WithTTL: true,
 			},
 			{
 				Message: bus.NewMessage("test/03", nil),
@@ -162,7 +164,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
 			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true},
 			{ID: "test/01", Hash: 0x0, WithTTL: false},
-			{ID: "test/02", Hash: 0x0, WithTTL: false},
+			{ID: "test/02", Hash: 0x0, WithTTL: true},
 			{ID: "test/03", Hash: 0x0, WithTTL: false}})
 		res, _, err := cli.KV().List("soil/test/", nil)
 		assert.NoError(t, err)

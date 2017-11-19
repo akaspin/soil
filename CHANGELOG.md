@@ -1,5 +1,16 @@
 ## 0.4.1
 
+This release reintroduces clustering.
+
+### Features
+
+* Clustering
+* (API) `GET` `/v1/cluster/nodes`
+
+### Deprecated
+
+* `--id` command-line option for `soil agent` 
+
 ## 0.4.0 (26.10.2017)
 
 This release introduces resources.

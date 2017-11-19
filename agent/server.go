@@ -17,6 +17,8 @@ import (
 	"github.com/akaspin/supervisor"
 )
 
+var ServerVersion string
+
 type ServerOptions struct {
 	AgentId    string
 	ConfigPath []string
@@ -73,6 +75,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		provisionDrainPipe.Divert(on)
 	}
 
+	apiClusterNodesGet := api.NewClusterNodesGet(log)
 	apiRouter := api_server.NewRouter(s.log,
 		// status
 		api.NewStatusPingGet(),
@@ -81,10 +84,15 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		api.NewAgentReloadPut(s.Configure),
 		api.NewAgentDrainPut(drainFn),
 		api.NewAgentDrainDelete(drainFn),
+
+		// cluster
+		apiClusterNodesGet,
 	)
 
 	// watchers
-	s.kv.Producer("nodes").Subscribe(ctx, apiRouter)
+	s.kv.Producer("nodes").Subscribe(ctx, bus.NewSlicerPipe(log, bus.NewTeePipe(
+		apiRouter, apiClusterNodesGet.Processor().(bus.Consumer),
+	)))
 
 	s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
@@ -145,6 +153,7 @@ func (s *Server) Configure() {
 		s.log.Errorf("unmarshal registry: %v", err)
 	}
 	clusterConfig := cluster.DefaultConfig()
+	clusterConfig.NodeID = s.options.AgentId
 	if err := (&clusterConfig).Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal cluster config: %v", err)
 	}
@@ -152,10 +161,11 @@ func (s *Server) Configure() {
 	s.kv.Configure(clusterConfig)
 
 	// announce node
-	//switch clusterConfig.NodeID {
-	s.kv.VolatileStore("nodes").ConsumeMessage(bus.NewMessage(clusterConfig.NodeID, proto.ClusterNode{
+	s.kv.VolatileStore("nodes").ConsumeMessage(bus.NewMessage("", proto.NodeInfo{
 		ID:        clusterConfig.NodeID,
 		Advertise: clusterConfig.Advertise,
+		Version:   proto.Version,
+		API:       proto.APIV1Version,
 	}))
 
 	s.confPipe.ConsumeMessage(bus.NewMessage("meta", serverCfg.Meta))

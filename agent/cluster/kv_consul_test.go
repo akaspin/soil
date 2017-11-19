@@ -39,7 +39,7 @@ func TestKV_ConsulBackend(t *testing.T) {
 		kv.Configure(cluster.Config{
 			NodeID:        "node",
 			Advertise:     "127.0.0.1:7654",
-			RetryInterval: time.Millisecond * 100,
+			RetryInterval: time.Second,
 			TTL:           time.Second * 30,
 			BackendURL:    fmt.Sprintf("consul://%s/first", srv.Address()),
 		})
@@ -73,13 +73,28 @@ func TestKV_ConsulBackend(t *testing.T) {
 			return
 		})
 	})
-	t.Run(`reconfigure with second chroot`, func(t *testing.T) {
+	t.Run(`reconfigure with new node id`, func(t *testing.T) {
 		kv.Configure(cluster.Config{
-			NodeID:        "node-1",
+			NodeID:        "node-2",
 			Advertise:     "127.0.0.1:7654",
-			RetryInterval: time.Millisecond * 100,
+			RetryInterval: time.Second,
 			TTL:           time.Second * 30,
 			BackendURL:    fmt.Sprintf("consul://%s/second", srv.Address()),
+		})
+	})
+	t.Run(`ensure no messages in first`, func(t *testing.T) {
+		wc2 := fixture.DefaultWaitConfig()
+		wc2.Retries = 2
+		fixture.WaitNoError(t, wc2, func() (err error) {
+
+			res, _, err := cli.KV().List("first/up", nil)
+			if err != nil {
+				return
+			}
+			if len(res) != 0 {
+				err = fmt.Errorf(`expected no keys in first/up`)
+			}
+			return
 		})
 	})
 	t.Run(`ensure stored messages in second`, func(t *testing.T) {
@@ -89,7 +104,7 @@ func TestKV_ConsulBackend(t *testing.T) {
 				return
 			}
 			if len(res) != 2 {
-				err = fmt.Errorf(`expected two keys in first/up`)
+				err = fmt.Errorf(`expected two keys in second/up`)
 			}
 			return
 		})

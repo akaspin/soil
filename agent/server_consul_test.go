@@ -82,7 +82,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 			}
 			var found bool
 			for _, raw := range res {
-				var node proto.ClusterNode
+				var node proto.NodeInfo
 				if err = json.NewDecoder(bytes.NewReader(raw.Value)).Decode(&node); err != nil {
 					return
 				}
@@ -99,7 +99,46 @@ func TestServer_Configure_Consul(t *testing.T) {
 	})
 	t.Run(`ping node`, func(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {
-			_, err = http.Get(fmt.Sprintf("http://%s/status/ping?node=node", configEnv["AgentAddress"]))
+			resp, err := http.Get(fmt.Sprintf("http://%s/v1/status/ping?node=node", configEnv["AgentAddress"]))
+			if err != nil {
+				return
+			}
+			if resp == nil {
+				err = fmt.Errorf(`no resp`)
+				return
+			}
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
+			}
+			return
+		})
+	})
+	t.Run(`get nodes`, func(t *testing.T) {
+		fixture.WaitNoError(t, waitConfig, func() (err error) {
+			resp, err := http.Get(fmt.Sprintf("http://%s/v1/status/nodes", configEnv["AgentAddress"]))
+			if err != nil {
+				return
+			}
+			if resp == nil {
+				err = fmt.Errorf(`no resp`)
+				return
+			}
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
+				return
+			}
+			var v proto.NodesInfo
+			if err = json.NewDecoder(resp.Body).Decode(&v); err != nil {
+				return
+			}
+			defer resp.Body.Close()
+			if len(v) == 0 {
+				err = fmt.Errorf(`no nodes`)
+				return
+			}
+			if v[0].ID != "node" {
+				err = fmt.Errorf(`bad node id: %v`, v)
+			}
 			return
 		})
 	})

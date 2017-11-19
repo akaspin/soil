@@ -67,6 +67,8 @@ func (b *ConsulBackend) loop() {
 LOOP:
 	for {
 		select {
+		case <-b.leaveChan:
+			break LOOP
 		case <-b.ctx.Done():
 			break LOOP
 		case ops := <-b.opsChan:
@@ -134,7 +136,12 @@ func (b *ConsulBackend) processStoreOpts(ops []StoreOp) {
 	var kvOps api.KVTxnOps
 	var commits []StoreCommit
 	for _, op := range ops {
-		key := NormalizeKey(b.config.Chroot, op.Message.GetID())
+		var key string
+		if op.WithTTL {
+			key = NormalizeKey(b.config.Chroot, op.Message.GetID(), b.config.ID)
+		} else {
+			key = NormalizeKey(b.config.Chroot, op.Message.GetID())
+		}
 		commits = append(commits, StoreCommit{
 			ID:      op.Message.GetID(),
 			Hash:    op.Message.Payload().Hash(),
@@ -213,8 +220,9 @@ func (b *ConsulBackend) connect() {
 	}
 	if b.sessionID == "" {
 		b.sessionID, _, err = b.conn.Session().Create(&api.SessionEntry{
-			Name: b.config.ID,
-			TTL:  b.config.TTL.String(),
+			Name:     b.config.ID,
+			TTL:      b.config.TTL.String(),
+			Behavior: api.SessionBehaviorDelete,
 		}, (&api.WriteOptions{}).WithContext(b.ctx))
 		if err != nil {
 			b.fail(err)
@@ -222,15 +230,21 @@ func (b *ConsulBackend) connect() {
 		}
 	}
 
-	b.log.Info(`connected`)
-	b.readyCancel()
-
 	// start watchdog
 	go func() {
 		b.log.Trace(`renew: open`)
-		if renewErr := b.conn.Session().RenewPeriodic(b.config.TTL.String(), b.sessionID, (&api.WriteOptions{}).WithContext(b.ctx), nil); renewErr != nil && renewErr != context.Canceled {
-			b.fail(fmt.Errorf(`renew: %v`, renewErr))
+		renewErr := b.conn.Session().RenewPeriodic(b.config.TTL.String(), b.sessionID, (&api.WriteOptions{}).WithContext(b.ctx), b.leaveChan)
+		select {
+		case <-b.leaveChan:
+			b.Close()
+			b.log.Infof(`leaved (session: %s)`, b.sessionID)
+		default:
+			if renewErr != nil && renewErr != context.Canceled {
+				b.fail(fmt.Errorf(`renew: %v`, renewErr))
+			}
 		}
-		b.log.Debug(`renew: close`)
+		b.log.Trace(`renew: closed`)
 	}()
+	b.log.Infof(`connected (session: %s)`, b.sessionID)
+	b.readyCancel()
 }

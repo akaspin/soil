@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"context"
+	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"io"
@@ -42,6 +43,7 @@ type Backend interface {
 	Subscribe(req []WatchRequest)
 	CommitChan() chan []StoreCommit
 	WatchResultsChan() chan WatchResult
+	Leave() // Leave cluster
 }
 
 type BackendFactory func(ctx context.Context, log *logx.Log, config Config) (c Backend, err error)
@@ -64,6 +66,10 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 		kvConfig.Chroot = NormalizeKey(u.Path)
 	}
 	kvLog := log.GetLog("cluster", "backend", config.BackendURL, config.NodeID)
+	if kvConfig.ID == "" {
+		err = fmt.Errorf(`empty node id`)
+		return
+	}
 	switch kvConfig.Kind {
 	case backendConsul:
 		c = NewConsulBackend(ctx, kvLog, kvConfig)

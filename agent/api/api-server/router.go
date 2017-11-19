@@ -45,7 +45,7 @@ func NewRouter(log *logx.Log, endpoints ...*Endpoint) (r *Router) {
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.log.Tracef("accepted %s %s", req.Method, req.URL)
+	r.log.Debugf("accepted %s %s", req.Method, req.URL)
 
 	nodeId := req.FormValue(queryParamNode)
 	switch nodeId {
@@ -87,12 +87,12 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// ConsumeMessage accepts message with map string:proto.ClusterNode
+// ConsumeMessage accepts message with proto.NodesInfo
 func (r *Router) ConsumeMessage(message bus.Message) {
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()
-		var value map[string]proto.ClusterNode
+		var value proto.NodesInfo
 		if err := message.Payload().Unmarshal(&value); err != nil {
 			r.log.Error(err)
 			return

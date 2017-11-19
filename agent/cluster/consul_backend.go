@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/hashicorp/consul/api"
-	"path"
 	"time"
 )
 
@@ -24,10 +23,9 @@ type ConsulBackend struct {
 func NewConsulBackend(ctx context.Context, log *logx.Log, config BackendConfig) (w *ConsulBackend) {
 	w = &ConsulBackend{
 		baseBackend:      newBaseBackend(ctx, log, config),
-		opsChan:          make(chan []StoreOp),
-		watchRequestChan: make(chan []WatchRequest),
+		opsChan:          make(chan []StoreOp, 1),
+		watchRequestChan: make(chan []WatchRequest, 1),
 	}
-	w.ctx, w.cancel = context.WithCancel(ctx)
 	go w.connect()
 	go w.loop()
 	return
@@ -57,18 +55,20 @@ func (b *ConsulBackend) Subscribe(req []WatchRequest) {
 }
 
 func (b *ConsulBackend) loop() {
-	b.log.Debug(`waiting for connect`)
+	b.log.Debug(`open`)
 	select {
 	case <-b.ctx.Done():
-		b.log.Error(`parent context is done on connect`)
+		b.log.Error(`backend prematurely closed`)
 		return
 	case <-b.readyCtx.Done():
-		b.log.Debug(`clean state reached`)
+		b.log.Trace(`clean state reached`)
 	}
 
 LOOP:
 	for {
 		select {
+		case <-b.leaveChan:
+			break LOOP
 		case <-b.ctx.Done():
 			break LOOP
 		case ops := <-b.opsChan:
@@ -79,12 +79,13 @@ LOOP:
 			}
 		}
 	}
+	b.log.Debug(`close`)
 }
 
 func (b *ConsulBackend) watch(req WatchRequest) {
-	directory := path.Join(b.config.Chroot, req.Key)
+	directory := NormalizeKey(b.config.Chroot, req.Key)
 	log := b.log.GetLog(b.log.Prefix(), append(b.log.Tags(), "watch", req.Key)...)
-	log.Debugf(`open`)
+	log.Debug(`open`)
 
 	watchCtx, watchCancel := context.WithCancel(b.ctx)
 	go func() {
@@ -128,14 +129,19 @@ LOOP:
 		case b.watchResultsChan <- result:
 		}
 	}
-	log.Info(`closed`)
+	log.Debug(`close`)
 }
 
 func (b *ConsulBackend) processStoreOpts(ops []StoreOp) {
 	var kvOps api.KVTxnOps
 	var commits []StoreCommit
 	for _, op := range ops {
-		key := path.Join(b.config.Chroot, op.Message.GetID())
+		var key string
+		if op.WithTTL {
+			key = NormalizeKey(b.config.Chroot, op.Message.GetID(), b.config.ID)
+		} else {
+			key = NormalizeKey(b.config.Chroot, op.Message.GetID())
+		}
 		commits = append(commits, StoreCommit{
 			ID:      op.Message.GetID(),
 			Hash:    op.Message.Payload().Hash(),
@@ -191,7 +197,7 @@ func (b *ConsulBackend) processStoreOpts(ops []StoreOp) {
 }
 
 func (b *ConsulBackend) connect() {
-	b.log.Debugf(`connecting: %s`, b.config.Address)
+	b.log.Tracef(`connecting: %s`, b.config.Address)
 	var err error
 	if b.conn, err = api.NewClient(&api.Config{
 		Address: b.config.Address,
@@ -199,14 +205,13 @@ func (b *ConsulBackend) connect() {
 		b.fail(err)
 		return
 	}
-	// try to find session
+
 	sessions, _, err := b.conn.Session().List((&api.QueryOptions{}).WithContext(b.ctx))
 	if err != nil {
 		b.fail(err)
 		return
 	}
-
-	sessionName := path.Join(b.config.Chroot, b.config.ID)
+	sessionName := NormalizeKey(b.config.Chroot, b.config.ID)
 	for _, session := range sessions {
 		if session.Name == sessionName {
 			b.sessionID = session.ID
@@ -215,8 +220,9 @@ func (b *ConsulBackend) connect() {
 	}
 	if b.sessionID == "" {
 		b.sessionID, _, err = b.conn.Session().Create(&api.SessionEntry{
-			Name: b.config.ID,
-			TTL:  b.config.TTL.String(),
+			Name:     b.config.ID,
+			TTL:      b.config.TTL.String(),
+			Behavior: api.SessionBehaviorDelete,
 		}, (&api.WriteOptions{}).WithContext(b.ctx))
 		if err != nil {
 			b.fail(err)
@@ -224,15 +230,21 @@ func (b *ConsulBackend) connect() {
 		}
 	}
 
-	b.log.Infof(`connected`)
-	b.readyCancel()
-
 	// start watchdog
 	go func() {
-		b.log.Trace(`starting renew`)
-		if renewErr := b.conn.Session().RenewPeriodic(b.config.TTL.String(), b.sessionID, (&api.WriteOptions{}).WithContext(b.ctx), nil); renewErr != nil && renewErr != context.Canceled {
-			b.fail(fmt.Errorf(`renew failed: %v`, renewErr))
+		b.log.Trace(`renew: open`)
+		renewErr := b.conn.Session().RenewPeriodic(b.config.TTL.String(), b.sessionID, (&api.WriteOptions{}).WithContext(b.ctx), b.leaveChan)
+		select {
+		case <-b.leaveChan:
+			b.Close()
+			b.log.Infof(`leaved (session: %s)`, b.sessionID)
+		default:
+			if renewErr != nil && renewErr != context.Canceled {
+				b.fail(fmt.Errorf(`renew: %v`, renewErr))
+			}
 		}
-		b.log.Trace(`renew closed`)
+		b.log.Trace(`renew: closed`)
 	}()
+	b.log.Infof(`connected (session: %s)`, b.sessionID)
+	b.readyCancel()
 }

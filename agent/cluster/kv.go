@@ -12,6 +12,31 @@ type kvConfigRequest struct {
 	internal bool
 }
 
+type operatorConsumer struct {
+	kv       *KV
+	log      *logx.Log
+	prefix   string
+	volatile bool
+}
+
+func (c *operatorConsumer) ConsumeMessage(message bus.Message) {
+	c.kv.Submit([]StoreOp{
+		{
+			Message: bus.NewMessage(NormalizeKey(c.prefix, message.GetID()), message.Payload()),
+			WithTTL: c.volatile,
+		},
+	})
+}
+
+type operatorProducer struct {
+	key string
+	kv  *KV
+}
+
+func (p *operatorProducer) Subscribe(ctx context.Context, consumer bus.Consumer) {
+	p.kv.SubscribeKey(p.key, ctx, consumer)
+}
+
 type KV struct {
 	*supervisor.Control
 	log     *logx.Log
@@ -40,18 +65,18 @@ type KV struct {
 func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 	b = &KV{
 		Control:  supervisor.NewControl(ctx),
-		log:      log.GetLog("cluster", "backend"),
+		log:      log.GetLog("cluster", "kv"),
 		factory:  factory,
 		config:   Config{},
 		volatile: map[string]bus.Message{},
 		pending:  map[string]StoreOp{},
 
-		configRequestChan: make(chan kvConfigRequest),
-		storeRequestsChan: make(chan []StoreOp),
-		watchRequestsChan: make(chan watcher),
-		commitsChan:       make(chan []StoreCommit),
-		watchResultsChan:  make(chan WatchResult),
-		invokePendingChan: make(chan struct{}),
+		configRequestChan: make(chan kvConfigRequest, 1),
+		storeRequestsChan: make(chan []StoreOp, 1),
+		watchRequestsChan: make(chan watcher, 1),
+		commitsChan:       make(chan []StoreCommit, 1),
+		watchResultsChan:  make(chan WatchResult, 1),
+		invokePendingChan: make(chan struct{}, 1),
 
 		watchGroups:          map[string]*watchGroup{},
 		pendingWatchGroups:   map[string]struct{}{},
@@ -63,6 +88,34 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 func (k *KV) Open() (err error) {
 	go k.loop()
 	err = k.Control.Open()
+	return
+}
+
+func (k *KV) VolatileStore(prefix string) (consumer bus.Consumer) {
+	consumer = &operatorConsumer{
+		kv:       k,
+		log:      k.log.GetLog("cluster", "kv", "store", "volatile", prefix),
+		prefix:   prefix,
+		volatile: true,
+	}
+	return
+}
+
+func (k *KV) PermanentStore(prefix string) (consumer bus.Consumer) {
+	consumer = &operatorConsumer{
+		kv:       k,
+		log:      k.log.GetLog("cluster", "kv", "store", "permanent", prefix),
+		prefix:   prefix,
+		volatile: false,
+	}
+	return
+}
+
+func (k *KV) Producer(key string) (producer bus.Producer) {
+	producer = &operatorProducer{
+		kv:  k,
+		key: key,
+	}
 	return
 }
 
@@ -88,7 +141,7 @@ func (k *KV) Submit(ops []StoreOp) {
 }
 
 // Subscribe for changes
-func (k *KV) Subscribe(key string, ctx context.Context, consumer bus.Consumer) {
+func (k *KV) SubscribeKey(key string, ctx context.Context, consumer bus.Consumer) {
 	select {
 	case <-k.Control.Ctx().Done():
 		k.log.Warningf(`ignore subscribe: %v`, k.Control.Ctx().Err())
@@ -104,13 +157,14 @@ func (k *KV) Subscribe(key string, ctx context.Context, consumer bus.Consumer) {
 }
 
 func (k *KV) loop() {
-	log := k.log.GetLog("cluster", "backend", "loop")
+	log := k.log.GetLog("cluster", "kv", "loop")
+	k.log.Info(`open`)
 	k.backend = NewZeroBackend(k.Control.Ctx(), k.log)
+	config := Config{}
 LOOP:
 	for {
 		select {
 		case <-k.Control.Ctx().Done():
-			log.Debugf(`control closed`)
 			break LOOP
 		case req := <-k.configRequestChan:
 			log.Tracef(`received config: %v`, req)
@@ -120,16 +174,31 @@ LOOP:
 				needReconfigure = true
 			default:
 			}
-			if !req.internal && !k.config.IsEqual(req.config) {
-				log.Debugf(`external: %v->%v`, k.config, req.config)
-				k.backend.Close()
+			if !req.internal && !config.IsEqual(req.config) {
+				log.Debugf(`external: %v->%v`, config, req.config)
 				needReconfigure = true
 			}
 			if !needReconfigure {
 				log.Tracef(`ignore reconfiguration`)
 				continue LOOP
 			}
-			k.config = req.config
+			if config.NodeID != req.config.NodeID {
+				log.Infof(`leaving cluster: node id changed %s->%s`, config.NodeID, req.config.NodeID)
+				k.backend.Leave()
+			} else {
+				k.backend.Close()
+			}
+			var err error
+			var backend Backend
+			if backend, err = k.factory(k.Control.Ctx(), k.log, req.config); err != nil {
+				k.log.Errorf(`can't create backend %v: %v'`, req.config, err)
+				continue LOOP
+			}
+			newWatchdog(k, backend, req.config)
+			config = req.config
+			k.backend = backend
+			k.log.Infof(`backend created: %v`, req.config)
+
 			for id, message := range k.volatile {
 				k.pending[id] = StoreOp{
 					Message: message,
@@ -139,7 +208,6 @@ LOOP:
 			for key := range k.watchGroups {
 				k.pendingWatchGroups[key] = struct{}{}
 			}
-			k.backend = k.createBackend(req.config)
 		case ops := <-k.storeRequestsChan:
 			log.Tracef(`submit: %v`, ops)
 			for _, op := range ops {
@@ -246,15 +314,5 @@ LOOP:
 			delete(k.watchGroups, id)
 		}
 	}
-}
-
-func (k *KV) createBackend(config Config) (backend Backend) {
-	var kvErr error
-	if backend, kvErr = k.factory(k.Control.Ctx(), k.log, config); kvErr != nil {
-		k.log.Error(kvErr)
-	}
-	newWatchdog(k, backend, config)
-
-	k.log.Debugf(`created: %v`, config)
-	return
+	k.log.Info(`close`)
 }

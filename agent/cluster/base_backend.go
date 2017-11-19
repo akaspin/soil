@@ -15,6 +15,7 @@ type baseBackend struct {
 	readyCancel context.CancelFunc
 	failCtx     context.Context
 	failCancel  context.CancelFunc
+	leaveChan   chan struct{}
 
 	commitsChan      chan []StoreCommit
 	watchResultsChan chan WatchResult
@@ -24,12 +25,18 @@ func newBaseBackend(ctx context.Context, log *logx.Log, config BackendConfig) (b
 	b = &baseBackend{
 		log:              log,
 		config:           config,
-		commitsChan:      make(chan []StoreCommit),
-		watchResultsChan: make(chan WatchResult),
+		commitsChan:      make(chan []StoreCommit, 1),
+		watchResultsChan: make(chan WatchResult, 1),
+		leaveChan:        make(chan struct{}),
 	}
-	b.failCtx, b.failCancel = context.WithCancel(ctx)
+	b.failCtx, b.failCancel = context.WithCancel(context.Background())
 	b.ctx, b.cancel = context.WithCancel(b.failCtx)
 	b.readyCtx, b.readyCancel = context.WithCancel(context.Background())
+	// also close local context on close parent
+	go func() {
+		<-ctx.Done()
+		b.cancel()
+	}()
 	return
 }
 
@@ -56,6 +63,10 @@ func (b *baseBackend) CommitChan() chan []StoreCommit {
 
 func (b *baseBackend) WatchResultsChan() chan WatchResult {
 	return b.watchResultsChan
+}
+
+func (b *baseBackend) Leave() {
+	close(b.leaveChan)
 }
 
 func (b *baseBackend) fail(err error) {

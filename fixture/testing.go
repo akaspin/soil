@@ -31,17 +31,20 @@ func WaitNoError(t *testing.T, config WaitConfig, fn func() error) {
 	}
 }
 
+func WaitNoError10(t *testing.T, fn func() error) {
+	t.Helper()
+	WaitNoError(t, DefaultWaitConfig(), fn)
+}
+
 type WaitConfig struct {
 	Retry   time.Duration
 	Retries int
-	Timeout time.Duration
 }
 
 func DefaultWaitConfig() (c WaitConfig) {
 	c = WaitConfig{
 		Retry:   time.Millisecond * 100,
 		Retries: 100,
-		Timeout: time.Minute,
 	}
 	return
 }

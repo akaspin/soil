@@ -11,9 +11,6 @@ import (
 
 // Agent - specific config
 type Config struct {
-	Agent struct {
-		Id string
-	}
 	Meta   map[string]string `hcl:"meta" json:"meta"`
 	System map[string]string `hcl:"system" json:"system"`
 }

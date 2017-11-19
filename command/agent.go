@@ -18,7 +18,7 @@ type AgentOptions struct {
 }
 
 func (o *AgentOptions) Bind(cc *cobra.Command) {
-	cc.Flags().StringVarP(&o.ServerOptions.AgentId, "id", "", "localhost", "agent id")
+	cc.Flags().StringVarP(&o.ServerOptions.AgentId, "id", "", "", "agent id (deprecated)")
 	cc.Flags().StringArrayVarP(&o.ServerOptions.ConfigPath, "config", "", []string{"/etc/soil/config.hcl"}, "configuration file")
 	cc.Flags().StringArrayVarP(&o.Meta, "meta", "", nil, "node metadata in form field=value")
 	cc.Flags().StringVarP(&o.ServerOptions.Address, "address", "", ":7654", "listen address")

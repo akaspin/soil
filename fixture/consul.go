@@ -175,7 +175,45 @@ func (s *ConsulServer) Up() {
 		s.t.FailNow()
 		return
 	}
-	s.t.Logf(`started: %s`, s.containerID)
+	s.t.Logf(`started: %s on %s`, TestName(s.t), s.Address())
+}
+
+func (s *ConsulServer) Pause() {
+	s.t.Helper()
+	ctx := context.Background()
+	filterBy, _ := filters.ParseFlag(fmt.Sprintf("name=^/%s$", TestName(s.t)), filters.NewArgs())
+
+	list, err := s.dockerCli.ContainerList(ctx, types.ContainerListOptions{
+		All:     true,
+		Filters: filterBy,
+	})
+	if err != nil {
+		s.t.Error(err)
+		s.t.FailNow()
+	}
+	for _, orphan := range list {
+		s.dockerCli.ContainerPause(ctx, orphan.ID)
+		s.t.Logf(`paused container: %s`, orphan.ID)
+	}
+}
+
+func (s *ConsulServer) Unpause() {
+	s.t.Helper()
+	ctx := context.Background()
+	filterBy, _ := filters.ParseFlag(fmt.Sprintf("name=^/%s$", TestName(s.t)), filters.NewArgs())
+
+	list, err := s.dockerCli.ContainerList(ctx, types.ContainerListOptions{
+		All:     true,
+		Filters: filterBy,
+	})
+	if err != nil {
+		s.t.Error(err)
+		s.t.FailNow()
+	}
+	for _, orphan := range list {
+		s.dockerCli.ContainerUnpause(ctx, orphan.ID)
+		s.t.Logf(`resumed container: %s`, orphan.ID)
+	}
 }
 
 func (s *ConsulServer) cleanupContainer() {

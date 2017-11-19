@@ -4,6 +4,7 @@ BIN		= soil
 TESTS	      = .
 TEST_TAGS     =
 TEST_ARGS     =
+TEST_SYSTEMD_TAGS ?= test_cluster
 BENCH	      = .
 
 PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./... | grep -v /vendor/)
@@ -15,7 +16,7 @@ SRC 		= $(shell find . -type f -name '*.go' -not -path "./vendor/*")
 SRC_VENDOR	= $(shell find ./vendor -type f -iname '*.go')
 
 V           = $(shell git describe --always --tags --dirty)
-GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/command.V=$(V)'
+GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/proto.Version=$(V)'
 GOBIN       ?= $(GOPATH)/bin
 
 
@@ -37,10 +38,10 @@ clean-test: clean-test-systemd		## clean test artifacts
 	find /tmp -name ".test_*" -exec rm -rf {} \;
 
 test-unit: 		## run unit tests
-	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)  | sed 's/^/$@ /'
+	go test -run=$(TESTS) $(TEST_ARGS) -tags="test_unit $(TEST_TAGS)" $(TEST_PACKAGES)
 
 test-cluster:
-	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
+	go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_cluster $(TEST_TAGS)" $(TEST_PACKAGES)
 
 test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	docker -H 127.0.0.1:2475 run --net=host --rm --name=test \
@@ -52,7 +53,7 @@ test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /vagrant:/go/src/github.com/akaspin/soil \
 	-v /tmp:/tmp \
-	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(TEST_PACKAGES) | sed 's/^/$@ /'
+	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_SYSTEMD_TAGS) $(TEST_TAGS)" $(TEST_PACKAGES)
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel

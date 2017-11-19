@@ -1,4 +1,4 @@
-// +build ide test_unit
+// build ide test_unit
 
 package agent_test
 
@@ -8,10 +8,13 @@ import (
 	"testing"
 )
 
+func TestServerVersion(t *testing.T) {
+	t.Log(agent.ServerVersion)
+}
+
 func TestConfig_Unmarshal(t *testing.T) {
 	t.Run("no-error", func(t *testing.T) {
 		config := agent.DefaultConfig()
-		config.Agent.Id = "2"
 		assert.NoError(t, config.Read(
 			"testdata/config1.hcl",
 			"testdata/config2.hcl",
@@ -19,7 +22,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 			"testdata/config3.json",
 		))
 		assert.Equal(t, &agent.Config{
-			Agent: struct{ Id string }{Id: "1"},
 			System: map[string]string{
 				"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			},
@@ -45,7 +47,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 			"testdata/non-exists.hcl",
 		))
 		assert.Equal(t, &agent.Config{
-			Agent: struct{ Id string }{Id: "1"},
 			System: map[string]string{
 				"pod_exec": "ExecStart=/usr/bin/sleep inf",
 			},

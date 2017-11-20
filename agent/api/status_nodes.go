@@ -33,13 +33,14 @@ func (p *clusterNodesProcessor) Process(ctx context.Context, u *url.URL, v inter
 	return
 }
 
-func (p *clusterNodesProcessor) ConsumeMessage(message bus.Message) {
+func (p *clusterNodesProcessor) ConsumeMessage(message bus.Message) (err error) {
 	var v proto.NodesInfo
-	if err := message.Payload().Unmarshal(&v); err != nil {
+	if err = message.Payload().Unmarshal(&v); err != nil {
 		p.log.Error(err)
 		return
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.nodes = v
+	return
 }

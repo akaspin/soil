@@ -75,12 +75,13 @@ func (w *Worker) Submit(podName string, requests []manifest.Resource) {
 }
 
 // Consume message with values from worker. Message prefix should be resource id.
-func (w *Worker) ConsumeMessage(message bus.Message) {
+func (w *Worker) ConsumeMessage(message bus.Message) (err error) {
 	w.log.Tracef(`message consumed: %v`, message)
 	select {
 	case <-w.ctx.Done():
 	case w.valuesChan <- message:
 	}
+	return
 }
 
 func (w *Worker) Close() (err error) {

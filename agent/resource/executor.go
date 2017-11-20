@@ -58,7 +58,7 @@ func (i *ExecutorInstance) Close() (err error) {
 	return
 }
 
-func (i *ExecutorInstance) ConsumeMessage(message bus.Message) {
+func (i *ExecutorInstance) ConsumeMessage(message bus.Message) (err error) {
 	go func() {
 		select {
 		case <-i.ctx.Done():
@@ -67,6 +67,7 @@ func (i *ExecutorInstance) ConsumeMessage(message bus.Message) {
 			i.consumer.ConsumeMessage(message)
 		}
 	}()
+	return
 }
 
 func NewExecutorMessage(id string, err error, values map[string]string) (res bus.Message) {

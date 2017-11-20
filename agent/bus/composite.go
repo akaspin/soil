@@ -29,7 +29,7 @@ func NewCompositePipe(name string, log *logx.Log, downstream Consumer, declared 
 	return
 }
 
-func (p *CompositePipe) ConsumeMessage(message Message) {
+func (p *CompositePipe) ConsumeMessage(message Message) (err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -48,15 +48,15 @@ func (p *CompositePipe) ConsumeMessage(message Message) {
 			return
 		}
 		var chunk map[string]string
-		err := msg.Payload().Unmarshal(&chunk)
-		if err != nil {
-			p.log.Error(err)
+
+		if mErr := msg.Payload().Unmarshal(&chunk); mErr != nil {
+			p.log.Error(mErr)
 			continue
 		}
 		for k, v := range chunk {
 			payload[prefix+"."+k] = v
 		}
 	}
-	p.downstream.ConsumeMessage(NewMessage(p.name, payload))
+	err = p.downstream.ConsumeMessage(NewMessage(p.name, payload))
 	return
 }

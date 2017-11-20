@@ -88,7 +88,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 // ConsumeMessage accepts message with proto.NodesInfo
-func (r *Router) ConsumeMessage(message bus.Message) {
+func (r *Router) ConsumeMessage(message bus.Message) (err error) {
 	go func() {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()
@@ -104,6 +104,7 @@ func (r *Router) ConsumeMessage(message bus.Message) {
 		r.nodes = nodes
 		r.log.Infof("nodes updated: %v", r.nodes)
 	}()
+	return
 }
 
 func (r *Router) newHandler(endpoints []*Endpoint) (fn func(w http.ResponseWriter, req *http.Request)) {

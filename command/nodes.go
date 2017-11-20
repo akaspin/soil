@@ -1,20 +1,19 @@
 package command
 
 import (
+	"fmt"
 	"github.com/akaspin/cut"
 	"github.com/spf13/cobra"
-	"fmt"
 	"net/http"
 )
 
 type ClientURLOptions struct {
-	URL string
-	NodeID string
+	URL      string
+	NodeID   string
 	Redirect bool
 }
 
 type ClientOutputOptions struct {
-	
 }
 
 type Nodes struct {

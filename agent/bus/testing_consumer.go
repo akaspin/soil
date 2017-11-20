@@ -45,11 +45,12 @@ func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
 	return
 }
 
-func (c *TestingConsumer) ConsumeMessage(message Message) {
+func (c *TestingConsumer) ConsumeMessage(message Message) (err error) {
 	select {
 	case <-c.ctx.Done():
 	case c.messageChan <- message:
 	}
+	return
 }
 
 func (c *TestingConsumer) ExpectMessagesFn(expect ...Message) (fn func() error) {

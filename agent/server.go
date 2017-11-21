@@ -15,6 +15,7 @@ import (
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/soil/proto"
 	"github.com/akaspin/supervisor"
+	"regexp"
 )
 
 var ServerVersion string
@@ -56,6 +57,9 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	// Resource
 	resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
+		ConstraintOnly: []*regexp.Regexp{
+			regexp.MustCompile(`^evaluation\..+`),
+		},
 	})
 	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	resourceCompositePipe := bus.NewCompositePipe("private", log, resourceDrainPipe, "meta", "system", "resource")
@@ -64,6 +68,9 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision",
 		scheduler.ArbiterConfig{
 			Required: manifest.Constraint{"${agent.drain}": "!= true"},
+			ConstraintOnly: []*regexp.Regexp{
+				regexp.MustCompile(`^evaluation\..+`),
+			},
 		})
 	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	provisionCompositePipe := bus.NewCompositePipe("private", log, provisionDrainPipe, "meta", "system", "resource")

@@ -2,6 +2,7 @@ package bus
 
 import (
 	"encoding/json"
+	"fmt"
 	"hash/crc64"
 )
 
@@ -43,6 +44,6 @@ func (p Payload) Unmarshal(v interface{}) error {
 }
 
 func (p Payload) String() (res string) {
-	res = string(p.data)
+	res = fmt.Sprintf("%s(%d)", string(p.data), p.Hash())
 	return
 }

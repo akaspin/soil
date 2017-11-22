@@ -13,7 +13,7 @@ func NewFnPipe(fn func(message Message) Message, consumers ...Consumer) (p *FnPi
 	return
 }
 
-func (p *FnPipe) ConsumeMessage(message Message) {
+func (p *FnPipe) ConsumeMessage(message Message) (err error) {
 	res := message
 	if p.fn != nil {
 		res = p.fn(res)
@@ -21,4 +21,5 @@ func (p *FnPipe) ConsumeMessage(message Message) {
 	for _, consumer := range p.consumers {
 		consumer.ConsumeMessage(res)
 	}
+	return
 }

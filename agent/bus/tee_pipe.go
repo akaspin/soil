@@ -12,8 +12,9 @@ func NewTeePipe(downstreams ...Consumer) (p *TeePipe) {
 	return
 }
 
-func (p *TeePipe) ConsumeMessage(message Message) {
+func (p *TeePipe) ConsumeMessage(message Message) (err error) {
 	for _, downstream := range p.downstreams {
 		downstream.ConsumeMessage(message)
 	}
+	return
 }

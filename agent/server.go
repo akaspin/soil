@@ -15,6 +15,7 @@ import (
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/soil/proto"
 	"github.com/akaspin/supervisor"
+	"regexp"
 )
 
 var ServerVersion string
@@ -56,17 +57,23 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	// Resource
 	resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
+		ConstraintOnly: []*regexp.Regexp{
+			regexp.MustCompile(`^provision\..+`),
+		},
 	})
 	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	resourceCompositePipe := bus.NewCompositePipe("private", log, resourceDrainPipe, "meta", "system", "resource")
+	resourceCompositePipe := bus.NewCompositePipe("private", log, resourceDrainPipe, "meta", "system", "resource", "provision")
 
 	// provision
 	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision",
 		scheduler.ArbiterConfig{
 			Required: manifest.Constraint{"${agent.drain}": "!= true"},
+			ConstraintOnly: []*regexp.Regexp{
+				regexp.MustCompile(`^provision\..+`),
+			},
 		})
 	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	provisionCompositePipe := bus.NewCompositePipe("private", log, provisionDrainPipe, "meta", "system", "resource")
+	provisionCompositePipe := bus.NewCompositePipe("private", log, provisionDrainPipe, "meta", "system", "resource", "provision")
 
 	s.confPipe = bus.NewTeePipe(resourceCompositePipe, provisionCompositePipe)
 
@@ -94,10 +101,14 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		apiRouter, apiClusterNodesGet.Processor().(bus.Consumer),
 	)))
 
+	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
+		resourceCompositePipe, provisionCompositePipe,
+	))
 	s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
-		SystemPaths: systemPaths,
-		Recovery:    state,
+		SystemPaths:    systemPaths,
+		Recovery:       state,
+		StatusConsumer: provisionStateConsumer,
 	})
 	s.privateRegistryConsumer = scheduler.NewSink(ctx, s.log, state,
 		scheduler.NewBoundedEvaluator(resourceArbiter, s.resourceEvaluator),

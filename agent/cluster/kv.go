@@ -19,13 +19,14 @@ type operatorConsumer struct {
 	volatile bool
 }
 
-func (c *operatorConsumer) ConsumeMessage(message bus.Message) {
+func (c *operatorConsumer) ConsumeMessage(message bus.Message) (err error) {
 	c.kv.Submit([]StoreOp{
 		{
 			Message: bus.NewMessage(NormalizeKey(c.prefix, message.GetID()), message.Payload()),
 			WithTTL: c.volatile,
 		},
 	})
+	return
 }
 
 type operatorProducer struct {

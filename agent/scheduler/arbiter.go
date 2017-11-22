@@ -80,11 +80,12 @@ func (a *Arbiter) Unbind(id string, callback func()) {
 	}
 }
 
-func (a *Arbiter) ConsumeMessage(message bus.Message) {
+func (a *Arbiter) ConsumeMessage(message bus.Message) (err error) {
 	select {
 	case <-a.Control.Ctx().Done():
 	case a.messageChan <- message:
 	}
+	return
 }
 
 func (a *Arbiter) loop() {

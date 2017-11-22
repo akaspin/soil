@@ -158,6 +158,21 @@ func TestServer_Configure_Local(t *testing.T) {
 			"/run/systemd/system/unit-1.service":        0x5ea112942f0c47e8,
 		})
 	})
+	t.Run("8 with dependency failed", func(t *testing.T) {
+		writeConfig(t, "testdata/server_test_8.hcl", nil)
+		server.Configure()
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
+	})
+	t.Run("9 with dependency ok", func(t *testing.T) {
+		writeConfig(t, "testdata/server_test_9.hcl", nil)
+		server.Configure()
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+			"pod-private-1.service": "active",
+			"unit-1.service":        "active",
+			"pod-private-2.service": "active",
+			"unit-2.service":        "active",
+		}))
+	})
 
 	server.Close()
 	server.Wait()

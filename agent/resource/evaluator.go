@@ -103,7 +103,7 @@ func (e *Evaluator) Configure(configs Configs) {
 }
 
 // Consume message from worker
-func (e *Evaluator) ConsumeMessage(message bus.Message) {
+func (e *Evaluator) ConsumeMessage(message bus.Message) (err error) {
 	e.log.Tracef("message consumed: %v", message)
 	go func() {
 		select {
@@ -112,6 +112,7 @@ func (e *Evaluator) ConsumeMessage(message bus.Message) {
 		case e.messageChan <- message:
 		}
 	}()
+	return
 }
 
 func (e *Evaluator) loop() {

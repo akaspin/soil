@@ -23,13 +23,14 @@ func NewDivertPipe(consumer Consumer, divert Message) (p *DivertPipe) {
 	return
 }
 
-func (p *DivertPipe) ConsumeMessage(message Message) {
+func (p *DivertPipe) ConsumeMessage(message Message) (err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.last = message
 	if !p.isDiverting {
 		p.consumer.ConsumeMessage(p.last)
 	}
+	return
 }
 
 func (p *DivertPipe) Divert(on bool) {

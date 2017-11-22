@@ -19,11 +19,11 @@ func NewSlicerPipe(log *logx.Log, consumer Consumer) (p *SlicerPipe) {
 	return
 }
 
-func (p *SlicerPipe) ConsumeMessage(message Message) {
+func (p *SlicerPipe) ConsumeMessage(message Message) (err error) {
 	var v map[string]interface{}
 	var keys []string
 	var res []interface{}
-	if err := message.Payload().Unmarshal(&v); err != nil {
+	if err = message.Payload().Unmarshal(&v); err != nil {
 		p.log.Errorf(`can't unmarshal %s to map[string]interface{}: %v`, message, err)
 		return
 	}
@@ -35,4 +35,5 @@ func (p *SlicerPipe) ConsumeMessage(message Message) {
 		res = append(res, v[k])
 	}
 	p.consumer.ConsumeMessage(NewMessage(message.GetID(), res))
+	return
 }

@@ -14,7 +14,7 @@ import (
 type EvaluatorConfig struct {
 	SystemPaths    allocation.SystemPaths
 	Recovery       allocation.Recovery // recovery state
-	StatusConsumer bus.Consumer        // consumer for "status.pod.*"
+	StatusConsumer bus.Consumer        // consumer for "evaluation.<pod>.*"
 }
 
 type Evaluator struct {
@@ -32,6 +32,19 @@ func NewEvaluator(ctx context.Context, log *logx.Log, config EvaluatorConfig) (e
 		config:  config,
 		state:   NewEvaluatorState(config.Recovery),
 	}
+	return
+}
+
+func (e *Evaluator) Open() (err error) {
+	resetData := map[string]map[string]string{}
+	for _, recovered := range e.config.Recovery {
+		resetData[recovered.Name] = map[string]string{
+			"present": "true",
+			"state":   "dirty",
+		}
+	}
+	e.config.StatusConsumer.ConsumeMessage(bus.NewMessage("", resetData))
+	err = e.Control.Open()
 	return
 }
 
@@ -78,9 +91,23 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	}
 	defer conn.Close()
 
-	currentPhase := -1
+	plan := evaluation.Plan()
+	name := evaluation.Name()
 	var phase []Instruction
-	for _, instruction := range evaluation.Plan() {
+	currentPhase := -1
+
+	state := "update"
+	if evaluation.Right == nil {
+		state = "destroy"
+	} else if evaluation.Left == nil {
+		state = "create"
+	}
+	e.config.StatusConsumer.ConsumeMessage(bus.NewMessage(name, map[string]string{
+		"present": "true",
+		"state":   state,
+	}))
+
+	for _, instruction := range plan {
 		if currentPhase < instruction.Phase() {
 			currentPhase = instruction.Phase()
 			failures = append(failures, e.executePhase(phase, conn)...)
@@ -90,10 +117,18 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	}
 	failures = append(failures, e.executePhase(phase, conn)...)
 
-	e.log.Debugf("plan done: %s:%s (failures:%v)", evaluation, evaluation.plan, failures)
+	e.log.Debugf("plan done: %s:%s (failures:%v)", evaluation, plan, failures)
 	e.log.Infof("evaluation done: %s (failures:%v)", evaluation, failures)
-	next := e.state.Commit(evaluation.Name())
+	if evaluation.Right != nil {
+		e.config.StatusConsumer.ConsumeMessage(bus.NewMessage(name, map[string]string{
+			"present": "true",
+			"state":   "done",
+		}))
+	} else {
+		e.config.StatusConsumer.ConsumeMessage(bus.NewMessage(evaluation.Name(), nil))
+	}
 
+	next := e.state.Commit(evaluation.Name())
 	e.fanOut(next)
 	return
 }
@@ -126,7 +161,7 @@ func (e *Evaluator) executePhase(phase []Instruction, conn *dbus.Conn) (failures
 		}
 	}()
 	wg.Wait()
-	e.log.Tracef("finish phase %v", phase)
+	e.log.Debugf("finish phase %v", phase)
 
 	return
 }

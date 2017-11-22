@@ -29,8 +29,9 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	var state allocation.Recovery
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 	evaluator := provision.NewEvaluator(ctx, log, provision.EvaluatorConfig{
-		SystemPaths: allocation.DefaultSystemPaths(),
-		Recovery:    state,
+		SystemPaths:    allocation.DefaultSystemPaths(),
+		Recovery:       state,
+		StatusConsumer: &bus.BlackholePipe{},
 	})
 	sink := scheduler.NewSink(ctx, log, state,
 		scheduler.NewBoundedEvaluator(arbiter, evaluator))

@@ -15,6 +15,7 @@ pod "my-pod" {
     "${meta.rack}" = "rack-1"
     "${provision.other-pod.present}" = "true"
     "${provision.other-pod.state}" = "!= destroy"
+    "${meta.with.default|yes}" = "yes"
   }
 
   unit "${pod.name}-unit-1" {
@@ -32,6 +33,8 @@ pod "my-pod" {
   }
 }
 ```
+
+Interpolation may be defined with default value. Default value is constant delimited by pipe sign (`|`). If variable is not defined Soil will use default value.
 
 ## Interpolated Areas
 

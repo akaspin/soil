@@ -3,6 +3,7 @@
 ### Features
 
 * `provision` variables for interpolations
+* default values in interpolations
 
 ## 0.4.1 (19.11.2017)
 

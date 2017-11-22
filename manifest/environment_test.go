@@ -19,3 +19,26 @@ func TestExtractEnv(t *testing.T) {
 		assert.Equal(t, []string{"one.two", "one.one"}, res)
 	})
 }
+
+func TestInterpolate(t *testing.T) {
+	t.Run(`ok`, func(t *testing.T) {
+		assert.Equal(t, "1", manifest.Interpolate(`${test.env}`, map[string]string{
+			"test.env": "1",
+		}))
+	})
+	t.Run(`not found`, func(t *testing.T) {
+		assert.Equal(t, "${test.env}", manifest.Interpolate(`${test.env}`, map[string]string{
+			"test.env1": "1",
+		}))
+	})
+	t.Run(`default not found`, func(t *testing.T) {
+		assert.Equal(t, "2", manifest.Interpolate(`${test.env|2}`, map[string]string{
+			"test.env1": "1",
+		}))
+	})
+	t.Run(`default ok`, func(t *testing.T) {
+		assert.Equal(t, "1", manifest.Interpolate(`${test.env|2}`, map[string]string{
+			"test.env": "1",
+		}))
+	})
+}

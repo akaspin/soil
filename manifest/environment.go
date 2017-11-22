@@ -1,14 +1,14 @@
 package manifest
 
 import (
-	"encoding/json"
 	"regexp"
+	"strings"
 )
 
 const hiddenPrefix = "__"
 
 var (
-	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_/\-.]+}`)
+	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_/\-.|]+}`)
 )
 
 func ExtractEnv(v string) (res []string) {
@@ -21,22 +21,24 @@ func ExtractEnv(v string) (res []string) {
 
 func Interpolate(v string, env ...map[string]string) (res string) {
 	res = envRe.ReplaceAllStringFunc(v, func(arg string) string {
+		var hasDefaultValue bool
+		var defaultValue string
 		stripped := arg[2 : len(arg)-1]
+		split := strings.SplitN(stripped, "|", 2)
+		if len(split) == 2 {
+			hasDefaultValue = true
+			defaultValue = split[1]
+			stripped = split[0]
+		}
 		for _, envChunk := range env {
 			if value, ok := envChunk[stripped]; ok {
 				return value
 			}
 		}
+		if hasDefaultValue {
+			return defaultValue
+		}
 		return arg
 	})
-	return
-}
-
-func MapToJson(v map[string]string) (res string, err error) {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return
-	}
-	res = string(data)
 	return
 }

@@ -1,3 +1,9 @@
+## 0.4.2
+
+### Features
+
+* `provision` variables for interpolations
+
 ## 0.4.1 (19.11.2017)
 
 This release reintroduces clustering.

@@ -8,7 +8,7 @@ import (
 const hiddenPrefix = "__"
 
 var (
-	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_\-.]+}`)
+	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_/\-.]+}`)
 )
 
 func ExtractEnv(v string) (res []string) {

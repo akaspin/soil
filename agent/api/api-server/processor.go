@@ -8,7 +8,7 @@ import (
 // Processor handles RPC path-method
 type Processor interface {
 
-	// Empty returns empty structure or <nil> if processor doesn't receive data
+	// Empty returns empty structure for request unmarshal or <nil> if request doesn't send any data.
 	Empty() interface{}
 
 	// Process handles URL and ingest structure and returns data or error

@@ -174,11 +174,38 @@ func TestKV_Submit(t *testing.T) {
 			}),
 		))
 	})
-	t.Run(`add and remove`, func(t *testing.T) {
+	t.Run(`add`, func(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-volatile", nil), true},
 		})
-		time.Sleep(time.Millisecond * 100)
+
+		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+			bus.NewMessage("test", map[string]interface{}{
+				"pre-volatile": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  true,
+				},
+				"pre-permanent": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  false,
+				},
+			}),
+			bus.NewMessage("crash", map[string]interface{}{}),
+			bus.NewMessage("test", map[string]interface{}{
+				"pre-volatile": map[string]interface{}{
+					"Data": map[string]string{"1": "1"},
+					"TTL":  true,
+				},
+			}),
+			bus.NewMessage("test", map[string]interface{}{
+				"pre-volatile": map[string]interface{}{
+					"Data": nil,
+					"TTL":  true,
+				},
+			}),
+		))
+	})
+	t.Run(`add and remove`, func(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("post-volatile", map[string]string{"1": "1"}), true},
 		})

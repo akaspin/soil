@@ -8,13 +8,13 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/go-connections/nat"
-	"github.com/eapache/go-resiliency/retrier"
 	"github.com/moby/moby/client"
 	"github.com/nu7hatch/gouuid"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -90,12 +90,14 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 		configFn(s.Config)
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	var err error
-	if s.dockerCli, err = client.NewEnvClient(); err != nil {
-		t.Error(err)
-		t.FailNow()
+	// wait for cli
+	WaitNoError(t, WaitConfig{
+		Retry:   time.Millisecond * 500,
+		Retries: 100,
+	}, func() (err error) {
+		s.dockerCli, err = client.NewEnvClient()
 		return
-	}
+	})
 	s.cleanupContainer()
 	os.RemoveAll(s.wd)
 	return
@@ -227,7 +229,7 @@ func (s *ConsulServer) cleanupContainer() {
 	})
 	if err != nil {
 		s.t.Error(err)
-		s.t.FailNow()
+		s.t.Fail()
 	}
 	for _, orphan := range list {
 		s.dockerCli.ContainerStop(ctx, orphan.ID, nil)
@@ -253,13 +255,20 @@ func (s *ConsulServer) Clean() {
 
 func (s *ConsulServer) WaitAlive() {
 	s.t.Helper()
-	rtr := retrier.New(retrier.ConstantBackoff(100, time.Millisecond*50), retrier.DefaultClassifier{})
-	err := rtr.Run(func() (err error) {
+
+	WaitNoError(s.t, WaitConfig{
+		Retry:   time.Millisecond * 500,
+		Retries: 100,
+	}, func() (err error) {
 		resp, err := http.Get(fmt.Sprintf("http://%s/v1/agent/self", s.Address()))
 		if err != nil {
 			return
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			err = fmt.Errorf("bad status code: %d", resp.StatusCode)
+			return
+		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return
@@ -269,11 +278,63 @@ func (s *ConsulServer) WaitAlive() {
 		}
 		return
 	})
-	if err != nil {
-		s.t.Error(err)
-		s.t.FailNow()
+	s.t.Logf(`consul %s is alive`, s.Address())
+}
+
+func (s *ConsulServer) WaitLeader() {
+	s.t.Helper()
+
+	var index int64
+	WaitNoError(s.t, WaitConfig{
+		Retry:   time.Millisecond * 500,
+		Retries: 100,
+	}, func() (err error) {
+		resp, err := http.Get(fmt.Sprintf("http://%s/v1/catalog/nodes?index=%d", s.Address(), index))
+		if err != nil {
+			return
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != 200 {
+			err = fmt.Errorf("bad status code: %d", resp.StatusCode)
+			return
+		}
+
+		// Ensure we have a leader and a node registration.
+		if leader := resp.Header.Get("X-Consul-KnownLeader"); leader != "true" {
+			err = fmt.Errorf("consul leader status: %#v", leader)
+			return
+		}
+		index, err = strconv.ParseInt(resp.Header.Get("X-Consul-Index"), 10, 64)
+		if err != nil {
+			err = fmt.Errorf("bad consul index: %v", err)
+			return
+		}
+		if index == 0 {
+			err = fmt.Errorf("consul index is 0")
+			return
+		}
+
+		// Watch for the anti-entropy sync to finish.
+		var v []map[string]interface{}
+		dec := json.NewDecoder(resp.Body)
+		if err = dec.Decode(&v); err != nil {
+			return
+		}
+		if len(v) < 1 {
+			err = fmt.Errorf("no nodes")
+			return
+		}
+		taggedAddresses, ok := v[0]["TaggedAddresses"].(map[string]interface{})
+		if !ok {
+			err = fmt.Errorf("missing tagged addresses")
+			return
+		}
+		if _, ok = taggedAddresses["lan"]; !ok {
+			err = fmt.Errorf("no lan tagged addresses")
+		}
 		return
-	}
+	})
+	s.t.Logf(`consul %s leader is alive`, s.Address())
 }
 
 func (s *ConsulServer) writeConfig() {
@@ -295,8 +356,4 @@ func (s *ConsulServer) writeConfig() {
 		s.t.FailNow()
 		return
 	}
-}
-
-func (s *ConsulServer) waitForLeader() {
-
 }

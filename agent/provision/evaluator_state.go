@@ -6,7 +6,7 @@ import (
 )
 
 type EvaluatorState struct {
-	mu sync.RWMutex
+	mu sync.Mutex
 
 	// Finished evaluations
 	finished map[string]*allocation.Pod

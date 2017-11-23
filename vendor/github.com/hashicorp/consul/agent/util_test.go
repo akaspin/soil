@@ -7,24 +7,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/testutil"
+	"github.com/pascaldekloe/goe/verify"
 )
-
-func TestAEScale(t *testing.T) {
-	t.Parallel()
-	intv := time.Minute
-	if v := aeScale(intv, 100); v != intv {
-		t.Fatalf("Bad: %v", v)
-	}
-	if v := aeScale(intv, 200); v != 2*intv {
-		t.Fatalf("Bad: %v", v)
-	}
-	if v := aeScale(intv, 1000); v != 4*intv {
-		t.Fatalf("Bad: %v", v)
-	}
-	if v := aeScale(intv, 10000); v != 8*intv {
-		t.Fatalf("Bad: %v", v)
-	}
-}
 
 func TestStringHash(t *testing.T) {
 	t.Parallel()
@@ -91,4 +75,47 @@ func TestSetFilePermissions(t *testing.T) {
 	if fi.Mode().String() != "-rwxrwxrwx" {
 		t.Fatalf("bad: %s", fi.Mode())
 	}
+}
+
+func TestDurationFixer(t *testing.T) {
+	obj := map[string]interface{}{
+		"key1": []map[string]interface{}{
+			{
+				"subkey1": "10s",
+			},
+			{
+				"subkey2": "5d",
+			},
+		},
+		"key2": map[string]interface{}{
+			"subkey3": "30s",
+			"subkey4": "20m",
+		},
+		"key3": "11s",
+		"key4": "49h",
+	}
+	expected := map[string]interface{}{
+		"key1": []map[string]interface{}{
+			{
+				"subkey1": 10 * time.Second,
+			},
+			{
+				"subkey2": "5d",
+			},
+		},
+		"key2": map[string]interface{}{
+			"subkey3": "30s",
+			"subkey4": 20 * time.Minute,
+		},
+		"key3": "11s",
+		"key4": 49 * time.Hour,
+	}
+
+	fixer := NewDurationFixer("key4", "subkey1", "subkey4")
+	if err := fixer.FixupDurations(obj); err != nil {
+		t.Fatal(err)
+	}
+
+	// Ensure we only processed the intended fieldnames
+	verify.Values(t, "", obj, expected)
 }

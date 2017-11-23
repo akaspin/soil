@@ -20,8 +20,8 @@ import (
 	"github.com/hashicorp/consul/agent/consul"
 	"github.com/hashicorp/consul/agent/structs"
 	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/lib/freeport"
 	"github.com/hashicorp/consul/logger"
-	"github.com/hashicorp/consul/test/porter"
 	"github.com/hashicorp/consul/testutil/retry"
 	uuid "github.com/hashicorp/go-uuid"
 )
@@ -65,9 +65,9 @@ type TestAgent struct {
 	// Key is the optional encryption key for the LAN and WAN keyring.
 	Key string
 
-	// NoInitialSync determines whether an anti-entropy run
-	// will be scheduled after the agent started.
-	NoInitialSync bool
+	// UseTLS, if true, will disable the HTTP port and enable the HTTPS
+	// one.
+	UseTLS bool
 
 	// dns is a reference to the first started DNS endpoint.
 	// It is valid after Start().
@@ -115,13 +115,13 @@ func (a *TestAgent) Start() *TestAgent {
 		}
 		hclDataDir = `data_dir = "` + d + `"`
 	}
-	id := UniqueID()
+	id := NodeID()
 
 	for i := 10; i >= 0; i-- {
 		a.Config = TestConfig(
 			config.Source{Name: a.Name, Format: "hcl", Data: a.HCL},
 			config.Source{Name: a.Name + ".data_dir", Format: "hcl", Data: hclDataDir},
-			randomPortsSource(),
+			randomPortsSource(a.UseTLS),
 		)
 
 		// write the keyring
@@ -148,7 +148,7 @@ func (a *TestAgent) Start() *TestAgent {
 		agent.LogOutput = logOutput
 		agent.LogWriter = a.LogWriter
 		agent.logger = log.New(logOutput, a.Name+" - ", log.LstdFlags|log.Lmicroseconds)
-		agent.MemSink = &metrics.InmemSink{}
+		agent.MemSink = metrics.NewInmemSink(1*time.Second, time.Minute)
 
 		// we need the err var in the next exit condition
 		if err := agent.Start(); err == nil {
@@ -175,9 +175,9 @@ func (a *TestAgent) Start() *TestAgent {
 			}
 		}
 	}
-	if !a.NoInitialSync {
-		a.Agent.StartSync()
-	}
+
+	// Start the anti-entropy syncer
+	a.Agent.StartSync()
 
 	var out structs.IndexedNodes
 	retry.Run(&panicFailer{}, func(r *retry.R) {
@@ -200,7 +200,7 @@ func (a *TestAgent) Start() *TestAgent {
 				r.Fatal(a.Name, "No leader")
 			}
 			if out.Index == 0 {
-				r.Fatal(a.Name, "Consul index is 0")
+				r.Fatal(a.Name, ": Consul index is 0")
 			}
 		} else {
 			req, _ := http.NewRequest("GET", "/v1/agent/self", nil)
@@ -280,14 +280,6 @@ func (a *TestAgent) consulConfig() *consul.Config {
 	return c
 }
 
-func UniqueID() string {
-	id := strconv.FormatUint(rand.Uint64(), 36)
-	for len(id) < 16 {
-		id += " "
-	}
-	return id
-}
-
 // pickRandomPorts selects random ports from fixed size random blocks of
 // ports. This does not eliminate the chance for port conflict but
 // reduces it significanltly with little overhead. Furthermore, asking
@@ -296,10 +288,12 @@ func UniqueID() string {
 // chance of port conflicts for concurrently executed test binaries.
 // Instead of relying on one set of ports to be sufficient we retry
 // starting the agent with different ports on port conflict.
-func randomPortsSource() config.Source {
-	ports, err := porter.RandomPorts(5)
-	if err != nil {
-		panic(err)
+func randomPortsSource(tls bool) config.Source {
+	ports := freeport.Get(6)
+	if tls {
+		ports[1] = -1
+	} else {
+		ports[2] = -1
 	}
 	return config.Source{
 		Name:   "ports",
@@ -308,10 +302,10 @@ func randomPortsSource() config.Source {
 			ports = {
 				dns = ` + strconv.Itoa(ports[0]) + `
 				http = ` + strconv.Itoa(ports[1]) + `
-				https = -1
-				serf_lan = ` + strconv.Itoa(ports[2]) + `
-				serf_wan = ` + strconv.Itoa(ports[3]) + `
-				server = ` + strconv.Itoa(ports[4]) + `
+				https = ` + strconv.Itoa(ports[2]) + `
+				serf_lan = ` + strconv.Itoa(ports[3]) + `
+				serf_wan = ` + strconv.Itoa(ports[4]) + `
+				server = ` + strconv.Itoa(ports[5]) + `
 			}
 		`,
 	}

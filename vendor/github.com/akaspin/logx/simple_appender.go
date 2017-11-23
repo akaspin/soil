@@ -2,15 +2,15 @@ package logx
 
 import (
 	"io"
-	"time"
 	"runtime"
+	"time"
 	"unicode"
 )
 
 const (
-	lInfo = "INFO"
-	lWarning = "WARNING"
-	lError = "ERROR"
+	lInfo     = "INFO"
+	lWarning  = "WARNING"
+	lError    = "ERROR"
 	lCritical = "CRITICAL"
 
 	// Ldate adds the date in the local time zone: 2009/01/23
@@ -42,13 +42,13 @@ const (
 
 type SimpleAppender struct {
 	output io.Writer
-	flags int
+	flags  int
 }
 
 func NewSimpleAppender(output io.Writer, flags int) *SimpleAppender {
 	return &SimpleAppender{
 		output: output,
-		flags: flags,
+		flags:  flags,
 	}
 }
 

@@ -4,26 +4,16 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
-	"math"
 	"os"
 	"os/exec"
 	"os/signal"
 	osuser "os/user"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/consul/types"
 	"github.com/hashicorp/go-msgpack/codec"
-)
-
-const (
-	// This scale factor means we will add a minute after we cross 128 nodes,
-	// another at 256, another at 512, etc. By 8192 nodes, we will scale up
-	// by a factor of 8.
-	//
-	// If you update this, you may need to adjust the tuning of
-	// CoordinateUpdatePeriod and CoordinateUpdateMaxBatchSize.
-	aeScaleThreshold = 128
 )
 
 // msgpackHandle is a shared handle for encoding/decoding of
@@ -31,18 +21,6 @@ const (
 var msgpackHandle = &codec.MsgpackHandle{
 	RawToString: true,
 	WriteExt:    true,
-}
-
-// aeScale is used to scale the time interval at which anti-entropy updates take
-// place. It is used to prevent saturation as the cluster size grows.
-func aeScale(interval time.Duration, n int) time.Duration {
-	// Don't scale until we cross the threshold
-	if n <= aeScaleThreshold {
-		return interval
-	}
-
-	multiplier := math.Ceil(math.Log2(float64(n))-math.Log2(aeScaleThreshold)) + 1.0
-	return time.Duration(multiplier) * interval
 }
 
 // decodeMsgPack is used to decode a MsgPack encoded object
@@ -116,15 +94,6 @@ GROUP:
 	return nil
 }
 
-// ExecSubprocess returns a command to execute a subprocess directly.
-func ExecSubprocess(args []string) (*exec.Cmd, error) {
-	if len(args) == 0 {
-		return nil, fmt.Errorf("need an executable to run")
-	}
-
-	return exec.Command(args[0], args[1:]...), nil
-}
-
 // ForwardSignals will fire up a goroutine to forward signals to the given
 // subprocess until the shutdown channel is closed.
 func ForwardSignals(cmd *exec.Cmd, logFn func(error), shutdownCh <-chan struct{}) {
@@ -145,4 +114,57 @@ func ForwardSignals(cmd *exec.Cmd, logFn func(error), shutdownCh <-chan struct{}
 			}
 		}
 	}()
+}
+
+type durationFixer map[string]bool
+
+func NewDurationFixer(fields ...string) durationFixer {
+	d := make(map[string]bool)
+	for _, field := range fields {
+		d[field] = true
+	}
+	return d
+}
+
+// FixupDurations is used to handle parsing any field names in the map to time.Durations
+func (d durationFixer) FixupDurations(raw interface{}) error {
+	rawMap, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	for key, val := range rawMap {
+		switch val.(type) {
+		case map[string]interface{}:
+			if err := d.FixupDurations(val); err != nil {
+				return err
+			}
+
+		case []interface{}:
+			for _, v := range val.([]interface{}) {
+				if err := d.FixupDurations(v); err != nil {
+					return err
+				}
+			}
+
+		case []map[string]interface{}:
+			for _, v := range val.([]map[string]interface{}) {
+				if err := d.FixupDurations(v); err != nil {
+					return err
+				}
+			}
+
+		default:
+			if d[strings.ToLower(key)] {
+				// Convert a string value into an integer
+				if vStr, ok := val.(string); ok {
+					dur, err := time.ParseDuration(vStr)
+					if err != nil {
+						return err
+					}
+					rawMap[key] = dur
+				}
+			}
+		}
+	}
+	return nil
 }

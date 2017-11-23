@@ -31,22 +31,6 @@ func TestLog_PrefixEmpty(t *testing.T) {
 	assert.Equal(t, "", l.Prefix())
 }
 
-//func TestLog_SetOutput(t *testing.T) {
-//	w1 := &bytes.Buffer{}
-//	l := logx.NewLog(logx.NewSimpleAppender(w1, logx.Lshortfile), "")
-//	l.Info("1")
-//
-//	w2 := &bytes.Buffer{}
-//	l.SetOutput(w2)
-//	l.Warning("2")
-//
-//	assert.Contains(t, w1.String(), "INFO log_test.go")
-//	assert.NotContains(t, w1.String(), "WARNING log_test.go")
-//
-//	assert.Contains(t, w2.String(), "WARNING log_test.go")
-//	assert.NotContains(t, w2.String(), "INFO log_test.go")
-//}
-
 func TestLog_GetLog(t *testing.T) {
 	w := &bytes.Buffer{}
 	l := logx.NewLog(logx.NewSimpleAppender(w, logx.Lshortfile), "")

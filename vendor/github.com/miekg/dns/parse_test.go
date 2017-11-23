@@ -1406,6 +1406,18 @@ func TestParseAVC(t *testing.T) {
 	}
 }
 
+func TestParseBadNAPTR(t *testing.T) {
+	// Should look like: mplus.ims.vodafone.com.	3600	IN	NAPTR	10 100 "S" "SIP+D2U" "" _sip._udp.mplus.ims.vodafone.com.
+	naptr := `mplus.ims.vodafone.com.	3600	IN	NAPTR	10 100 S SIP+D2U  _sip._udp.mplus.ims.vodafone.com.`
+	_, err := NewRR(naptr) // parse fails, we should not have leaked a goroutine.
+	if err == nil {
+		t.Fatalf("parsing NAPTR should have failed: %s", naptr)
+	}
+	if err := goroutineLeaked(); err != nil {
+		t.Errorf("leaked goroutines: %s", err)
+	}
+}
+
 func TestUnbalancedParens(t *testing.T) {
 	sig := `example.com. 3600 IN RRSIG MX 15 2 3600 (
               1440021600 1438207200 3613 example.com. (
@@ -1413,6 +1425,23 @@ func TestUnbalancedParens(t *testing.T) {
               x8A4M3e23mRZ9VrbpMngwcrqNAg== )`
 	_, err := NewRR(sig)
 	if err == nil {
-		t.Fatalf("Failed to detect extra opening brace")
+		t.Fatalf("failed to detect extra opening brace")
+	}
+}
+
+func TestBad(t *testing.T) {
+	tests := []string{
+		`" TYPE257 9 1E12\x00\x105"`,
+		`" TYPE256  9 5"`,
+		`" TYPE257 0\"00000000000000400000000000000000000\x00\x10000000000000000000000000000000000 9 l\x16\x01\x005266"`,
+	}
+	for i := range tests {
+		s, err := strconv.Unquote(tests[i])
+		if err != nil {
+			t.Fatalf("failed to unquote: %q: %s", tests[i], err)
+		}
+		if _, err = NewRR(s); err == nil {
+			t.Errorf("correctly parsed %q", s)
+		}
 	}
 }

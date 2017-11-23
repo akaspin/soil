@@ -227,7 +227,7 @@ func (s *ConsulServer) cleanupContainer() {
 	})
 	if err != nil {
 		s.t.Error(err)
-		s.t.FailNow()
+		s.t.Fail()
 	}
 	for _, orphan := range list {
 		s.dockerCli.ContainerStop(ctx, orphan.ID, nil)

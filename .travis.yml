@@ -1,0 +1,13 @@
+sudo: required
+
+language: go
+
+services:
+- docker
+
+go:
+  - 1.9.2
+
+script:
+- go test -tags="test_unit" ./...
+- go test -v -p=1 -tags="test_cluster" ./...

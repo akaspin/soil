@@ -286,8 +286,9 @@ populate it with the following:
 package cmd
 
 import (
-  "github.com/spf13/cobra"
   "fmt"
+
+  "github.com/spf13/cobra"
 )
 
 func init() {
@@ -518,7 +519,7 @@ around it. In fact, you can provide your own if you want.
 ### Defining your own help
 
 You can provide your own Help command or your own template for the default command to use
-with followind functions:
+with following functions:
 
 ```go
 cmd.SetHelpCommand(cmd *Command)

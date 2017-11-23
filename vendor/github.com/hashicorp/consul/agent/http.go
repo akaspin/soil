@@ -31,24 +31,12 @@ func (e MethodNotAllowedError) Error() string {
 // HTTPServer provides an HTTP api for an agent.
 type HTTPServer struct {
 	*http.Server
+	ln        net.Listener
 	agent     *Agent
 	blacklist *Blacklist
 
 	// proto is filled by the agent to "http" or "https".
 	proto string
-	addr  net.Addr
-}
-
-func NewHTTPServer(addr net.Addr, a *Agent) *HTTPServer {
-	s := &HTTPServer{
-		Server:    &http.Server{Addr: addr.String()},
-		agent:     a,
-		blacklist: NewBlacklist(a.config.HTTPBlockEndpoints),
-		addr:      addr,
-	}
-
-	s.Server.Handler = s.handler(a.config.EnableDebug)
-	return s
 }
 
 // handler is used to attach our handlers to the mux
@@ -79,7 +67,8 @@ func (s *HTTPServer) handler(enableDebug bool) http.Handler {
 		wrapper := func(resp http.ResponseWriter, req *http.Request) {
 			start := time.Now()
 			handler(resp, req)
-			key := append([]string{"consul", "http", req.Method}, parts...)
+			key := append([]string{"http", req.Method}, parts...)
+			metrics.MeasureSince(append([]string{"consul"}, key...), start)
 			metrics.MeasureSince(key, start)
 		}
 		mux.HandleFunc(pattern, wrapper)
@@ -139,9 +128,13 @@ func (s *HTTPServer) handler(enableDebug bool) http.Handler {
 	if !s.agent.config.DisableCoordinates {
 		handleFuncMetrics("/v1/coordinate/datacenters", s.wrap(s.CoordinateDatacenters))
 		handleFuncMetrics("/v1/coordinate/nodes", s.wrap(s.CoordinateNodes))
+		handleFuncMetrics("/v1/coordinate/node/", s.wrap(s.CoordinateNode))
+		handleFuncMetrics("/v1/coordinate/update", s.wrap(s.CoordinateUpdate))
 	} else {
 		handleFuncMetrics("/v1/coordinate/datacenters", s.wrap(coordinateDisabled))
 		handleFuncMetrics("/v1/coordinate/nodes", s.wrap(coordinateDisabled))
+		handleFuncMetrics("/v1/coordinate/node/", s.wrap(coordinateDisabled))
+		handleFuncMetrics("/v1/coordinate/update", s.wrap(coordinateDisabled))
 	}
 	handleFuncMetrics("/v1/event/fire/", s.wrap(s.EventFire))
 	handleFuncMetrics("/v1/event/list", s.wrap(s.EventList))
@@ -274,7 +267,7 @@ func (s *HTTPServer) wrap(handler func(resp http.ResponseWriter, req *http.Reque
 		// Invoke the handler
 		start := time.Now()
 		defer func() {
-			s.agent.logger.Printf("[DEBUG] http: Request %s %v (%v) from=%s", req.Method, logURL, time.Now().Sub(start), req.RemoteAddr)
+			s.agent.logger.Printf("[DEBUG] http: Request %s %v (%v) from=%s", req.Method, logURL, time.Since(start), req.RemoteAddr)
 		}()
 		obj, err := handler(resp, req)
 		if err != nil {

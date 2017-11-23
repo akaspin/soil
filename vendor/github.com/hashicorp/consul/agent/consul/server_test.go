@@ -3,7 +3,6 @@ package consul
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"net"
 	"os"
 	"strings"
@@ -13,17 +12,13 @@ import (
 
 	"github.com/hashicorp/consul/agent/metadata"
 	"github.com/hashicorp/consul/agent/token"
-	"github.com/hashicorp/consul/test/porter"
+	"github.com/hashicorp/consul/lib/freeport"
 	"github.com/hashicorp/consul/testrpc"
 	"github.com/hashicorp/consul/testutil"
 	"github.com/hashicorp/consul/testutil/retry"
 	"github.com/hashicorp/consul/types"
 	"github.com/hashicorp/go-uuid"
 )
-
-func getPort() int {
-	return 1030 + int(rand.Int31n(64400))
-}
 
 func configureTLS(config *Config) {
 	config.CAFile = "../../test/ca/root.cer"
@@ -41,10 +36,7 @@ func testServerConfig(t *testing.T) (string, *Config) {
 	dir := testutil.TempDir(t, "consul")
 	config := DefaultConfig()
 
-	ports, err := porter.RandomPorts(3)
-	if err != nil {
-		t.Fatal("RandomPorts:", err)
-	}
+	ports := freeport.Get(3)
 	config.NodeName = uniqueNodeName(t.Name())
 	config.Bootstrap = true
 	config.Datacenter = "dc1"
@@ -389,17 +381,22 @@ func TestServer_LeaveLeader(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	defer s1.Shutdown()
 
-	// Second server not in bootstrap mode
 	dir2, s2 := testServerDCBootstrap(t, "dc1", false)
 	defer os.RemoveAll(dir2)
 	defer s2.Shutdown()
 
-	// Try to join
-	joinLAN(t, s2, s1)
+	dir3, s3 := testServerDCBootstrap(t, "dc1", false)
+	defer os.RemoveAll(dir3)
+	defer s3.Shutdown()
 
 	testrpc.WaitForLeader(t, s1.RPC, "dc1")
-	testrpc.WaitForLeader(t, s2.RPC, "dc1")
-
+	joinLAN(t, s2, s1)
+	joinLAN(t, s3, s1)
+	retry.Run(t, func(r *retry.R) {
+		r.Check(wantPeers(s1, 3))
+		r.Check(wantPeers(s2, 3))
+		r.Check(wantPeers(s3, 3))
+	})
 	// Issue a leave to the leader
 	var leader *Server
 	switch {
@@ -407,6 +404,8 @@ func TestServer_LeaveLeader(t *testing.T) {
 		leader = s1
 	case s2.IsLeader():
 		leader = s2
+	case s3.IsLeader():
+		leader = s3
 	default:
 		t.Fatal("no leader")
 	}
@@ -416,8 +415,9 @@ func TestServer_LeaveLeader(t *testing.T) {
 
 	// Should lose a peer
 	retry.Run(t, func(r *retry.R) {
-		r.Check(wantPeers(s1, 1))
-		r.Check(wantPeers(s2, 1))
+		r.Check(wantPeers(s1, 2))
+		r.Check(wantPeers(s2, 2))
+		r.Check(wantPeers(s3, 2))
 	})
 }
 

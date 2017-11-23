@@ -30,8 +30,8 @@ func NewEvaluator(ctx context.Context, log *logx.Log, config EvaluatorConfig) (e
 		Control: supervisor.NewControl(ctx),
 		log:     log.GetLog("provision", "evaluator"),
 		config:  config,
-		state:   NewEvaluatorState(config.Recovery),
 	}
+	e.state = NewEvaluatorState(e.log, config.Recovery)
 	return
 }
 

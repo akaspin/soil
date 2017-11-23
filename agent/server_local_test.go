@@ -13,6 +13,7 @@ import (
 	"os"
 	"testing"
 	"text/template"
+	"time"
 )
 
 func writeConfig(t *testing.T, source string, env map[string]interface{}) {
@@ -149,7 +150,10 @@ func TestServer_Configure_Local(t *testing.T) {
 	t.Run("7 with resource", func(t *testing.T) {
 		writeConfig(t, "testdata/server_test_7.hcl", nil)
 		server.Configure()
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoError(t, fixture.WaitConfig{
+			Retry:   time.Millisecond * 500,
+			Retries: 100,
+		}, sd.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 		}))

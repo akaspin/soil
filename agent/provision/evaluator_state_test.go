@@ -3,6 +3,7 @@
 package provision_test
 
 import (
+	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -12,7 +13,7 @@ func TestEvaluatorState_Submit(t *testing.T) {
 	zeroEvaluatorState := func(t *testing.T) (s *provision.EvaluatorState) {
 		t.Helper()
 		recovered := makeAllocations(t, "testdata/evaluator_state_test_0.hcl")
-		s = provision.NewEvaluatorState(recovered)
+		s = provision.NewEvaluatorState(logx.GetLog("test"), recovered)
 		return
 	}
 

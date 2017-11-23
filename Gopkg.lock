@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/Azure/go-autorest"
   packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/to","autorest/validation"]
-  revision = "ab5671379918d9af294b6f0e3d8aaa98c829416d"
-  version = "v9.4.0"
+  revision = "c67b24a8e30d876542a85022ebbdecf0e5a935e8"
+  version = "v9.4.1"
 
 [[projects]]
   name = "github.com/DataDog/datadog-go"
@@ -52,8 +52,8 @@
 [[projects]]
   name = "github.com/akaspin/logx"
   packages = ["."]
-  revision = "7c55d7f64f5d0b97f19d02fda9b72f56f2e88c78"
-  version = "1.2.0"
+  revision = "e954024879a231650143e016799faa339043d916"
+  version = "2.0.0"
 
 [[projects]]
   branch = "master"
@@ -71,7 +71,7 @@
   branch = "master"
   name = "github.com/armon/go-metrics"
   packages = [".","circonus","datadog"]
-  revision = "9a4b6e10bed6220a1665955aa2b75afc91eb10b3"
+  revision = "7aa49fde808223f8dadfdbfd3a20ff6c19e5f9ec"
 
 [[projects]]
   branch = "master"
@@ -82,8 +82,8 @@
 [[projects]]
   name = "github.com/aws/aws-sdk-go"
   packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/shareddefaults","private/protocol","private/protocol/ec2query","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/ec2","service/sts"]
-  revision = "a201bf33b18ad4ab54344e4bc26b87eb6ad37b8e"
-  version = "v1.12.25"
+  revision = "cd721c97ef6fcfcb76b4feb14fcfead57fb01e5e"
+  version = "v1.12.33"
 
 [[projects]]
   name = "github.com/bgentry/speakeasy"
@@ -125,7 +125,7 @@
   branch = "master"
   name = "github.com/denverdino/aliyungo"
   packages = ["common","ecs","util"]
-  revision = "d34931dceb5262ddd370b0e92a01fcdf57b984a6"
+  revision = "ad01ac2146526bb515e9f174bb042cf9fc1baab3"
 
 [[projects]]
   name = "github.com/dgrijalva/jwt-go"
@@ -190,8 +190,8 @@
 [[projects]]
   name = "github.com/go-ini/ini"
   packages = ["."]
-  revision = "f280b3ba517bf5fc98922624f21fb0e7a92adaec"
-  version = "v1.30.3"
+  revision = "32e4c1e6bc4e7d0d8451aa6b75200d19e37a536a"
+  version = "v1.32.0"
 
 [[projects]]
   name = "github.com/go-ole/go-ole"
@@ -209,7 +209,7 @@
   branch = "master"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
-  revision = "1643683e1b54a9e88ad26d98f81400c8c9d9f4f9"
+  revision = "1e59b77b52bf8e4b449a57e6f79f21226d571845"
 
 [[projects]]
   branch = "master"
@@ -227,13 +227,13 @@
   branch = "master"
   name = "github.com/gophercloud/gophercloud"
   packages = [".","openstack","openstack/compute/v2/flavors","openstack/compute/v2/images","openstack/compute/v2/servers","openstack/identity/v2/tenants","openstack/identity/v2/tokens","openstack/identity/v3/tokens","openstack/utils","pagination"]
-  revision = "2e3f94408098821208798903a8cd3736a8fa2325"
+  revision = "db5f840b1d1a595280d643defc09ce277996959e"
 
 [[projects]]
   name = "github.com/hashicorp/consul"
-  packages = [".","acl","agent","agent/config","agent/consul","agent/consul/prepared_query","agent/consul/state","agent/metadata","agent/pool","agent/router","agent/structs","agent/systemd","agent/token","api","command","configutil","ipaddr","lib","logger","sentinel","snapshot","test/porter","testutil/retry","tlsutil","types","version","watch"]
-  revision = "51ea240df8476e02215d53fbfad5838bf0d44d21"
-  version = "v1.0.0"
+  packages = [".","acl","agent","agent/ae","agent/checks","agent/config","agent/consul","agent/consul/prepared_query","agent/consul/state","agent/exec","agent/local","agent/metadata","agent/pool","agent/router","agent/structs","agent/systemd","agent/token","api","command","command/agent","command/catalog","command/catalog/list/dc","command/catalog/list/nodes","command/catalog/list/services","command/event","command/exec","command/flags","command/forceleave","command/info","command/join","command/keygen","command/keyring","command/kv","command/kv/del","command/kv/exp","command/kv/get","command/kv/imp","command/kv/impexp","command/kv/put","command/leave","command/lock","command/maint","command/members","command/monitor","command/operator","command/operator/autopilot","command/operator/autopilot/get","command/operator/autopilot/set","command/operator/raft","command/operator/raft/listpeers","command/operator/raft/removepeer","command/reload","command/rtt","command/snapshot","command/snapshot/inspect","command/snapshot/restore","command/snapshot/save","command/validate","command/version","command/watch","ipaddr","lib","lib/freeport","logger","sentinel","snapshot","testutil/retry","tlsutil","types","version","watch"]
+  revision = "9564c2978b59c060aed0657e662a4eb1c6f35356"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -257,7 +257,7 @@
   branch = "master"
   name = "github.com/hashicorp/go-discover"
   packages = [".","provider/aliyun","provider/aws","provider/azure","provider/digitalocean","provider/gce","provider/os","provider/scaleway","provider/softlayer"]
-  revision = "c98e36ab72ce62b7d8fbc7f7e76f9a60e163cb45"
+  revision = "ec0cf28946abe5acceeaaf29be7c64a6a4d529cb"
 
 [[projects]]
   branch = "master"
@@ -412,7 +412,7 @@
   branch = "master"
   name = "github.com/miekg/dns"
   packages = [".","internal/socket"]
-  revision = "9fc4eb252eedf0ef8adc05169ce35da5e31beaba"
+  revision = "acff9ce3fa5f04b7abb500613e6ee80c45321c47"
 
 [[projects]]
   branch = "master"
@@ -431,6 +431,12 @@
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
   revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-testing-interface"
+  packages = ["."]
+  revision = "a61a99592b77c9ba629d254a693acffaeb4b7e28"
 
 [[projects]]
   branch = "master"
@@ -526,13 +532,13 @@
   branch = "master"
   name = "github.com/softlayer/softlayer-go"
   packages = ["config","datatypes","filter","services","session","sl"]
-  revision = "17470076bfd71eee8ed8e592c72a8b305826f809"
+  revision = "7fd053690157807b18b2e5b2d306c9ab798531aa"
 
 [[projects]]
   branch = "master"
   name = "github.com/spf13/cobra"
   packages = ["."]
-  revision = "2da4a54c5ceefcee7ca5dd0eea1e18a3b6366489"
+  revision = "fb02817f3c2930f6a29c18a046759de969290022"
 
 [[projects]]
   name = "github.com/spf13/pflag"
@@ -579,14 +585,14 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = ["context","context/ctxhttp","proxy"]
-  revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
+  packages = ["context","context/ctxhttp","http2","http2/hpack","idna","lex/httplex","proxy"]
+  revision = "fb018015d54fd2e3bfd5362a041991d350fde9d7"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/oauth2"
   packages = [".","google","internal","jws","jwt"]
-  revision = "9ff8ebcc8e241d46f52ecc5bff0e5a2f2dbef402"
+  revision = "f95fa95eaa936d9d87489b15d1d18b97c1ba9c28"
 
 [[projects]]
   branch = "master"
@@ -598,12 +604,12 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "1e2299c37cc91a509f1b12369872d27be0ce98a6"
+  revision = "82aafbf43bf885069dc71b7e7c2f9d7a614d47da"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/text"
-  packages = ["encoding","encoding/charmap","encoding/internal","encoding/internal/identifier","internal/gen","transform","unicode/cldr"]
+  packages = ["collate","collate/build","encoding","encoding/charmap","encoding/internal","encoding/internal/identifier","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
   revision = "88f656faf3f37f690df1a32515b479415e1a6769"
 
 [[projects]]
@@ -616,7 +622,7 @@
   branch = "master"
   name = "google.golang.org/api"
   packages = ["compute/v1","gensupport","googleapi","googleapi/internal/uritemplates"]
-  revision = "a0c31fb0028e0111b942a29b9fc2e9235202c48b"
+  revision = "92db9b55d2aa90e54a33cfaa8caf354afae68157"
 
 [[projects]]
   name = "google.golang.org/appengine"
@@ -627,6 +633,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "f7439ebe924e9f0ee19f65cb0b7bfb20c915ac02f570a955768e202b83b2fc7e"
+  inputs-digest = "f4f404d23cc86afd3d4c821694b96084d3a5efd0792f9f081770ac0a24a6e353"
   solver-name = "gps-cdcl"
   solver-version = 1

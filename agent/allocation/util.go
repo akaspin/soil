@@ -16,7 +16,7 @@ func IsEqual(left, right *Pod) (ok bool) {
 }
 
 // Returns true if right allocation is blocked by left allocation.
-func IsBlocked(left, right *Pod) (blocked bool) {
+func IsBlocked(left, right *Pod) (err error) {
 	if left == nil || right == nil {
 		return
 	}
@@ -25,12 +25,12 @@ func IsBlocked(left, right *Pod) (blocked bool) {
 		leftUnits[unit.UnitName()] = struct{}{}
 	}
 	for _, unit := range right.Units {
-		if _, ok := leftUnits[unit.UnitName()]; ok {
-			blocked = true
+		name := unit.UnitName()
+		if _, ok := leftUnits[name]; ok {
+			err = fmt.Errorf(`%s blocked by %s(unit:%s)`, left.Name, right.Name, right.Name)
 			return
 		}
 	}
-
 	return
 }
 

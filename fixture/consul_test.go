@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/soil/fixture"
 	"github.com/hashicorp/consul/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
@@ -37,7 +38,7 @@ func TestConsulServer(t *testing.T) {
 		assert.NoError(t, err)
 		res, _, err := cli.Session().Info(sess1, nil)
 		assert.NoError(t, err)
-		assert.NotNil(t, res)
+		require.NotNil(t, res)
 		assert.Equal(t, res.Name, "sess1")
 	})
 	t.Run("get session 2", func(t *testing.T) {
@@ -48,7 +49,7 @@ func TestConsulServer(t *testing.T) {
 		assert.NoError(t, err)
 		res, _, err := cli.Session().Info(sess2, nil)
 		assert.NoError(t, err)
-		assert.NotNil(t, res)
+		require.NotNil(t, res)
 		assert.Equal(t, res.Name, "sess2")
 	})
 	t.Run("acquire with sess1", func(t *testing.T) {

@@ -83,6 +83,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	}
 
 	apiClusterNodesGet := api.NewClusterNodesGet(log)
+
 	apiRouter := api_server.NewRouter(s.log,
 		// status
 		api.NewStatusPingGet(),
@@ -94,6 +95,9 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 
 		// cluster
 		apiClusterNodesGet,
+
+		// registry
+		//api.NewRegistryPodsPut(s.kv.PermanentStore("registry")),
 	)
 
 	// watchers

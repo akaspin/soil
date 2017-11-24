@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewConsulBackend(t *testing.T) {
@@ -59,6 +60,7 @@ func TestNewConsulBackend(t *testing.T) {
 		}
 		sessions, _, err := cli.Session().List(nil)
 		assert.NoError(t, err)
+		require.NotNil(t, sessions)
 		assert.Len(t, sessions, 1)
 		assert.Equal(t, "test-node", sessions[0].Name)
 	})
@@ -77,6 +79,7 @@ func TestNewConsulBackend(t *testing.T) {
 		}
 		sessions, _, err := cli.Session().List(nil)
 		assert.NoError(t, err)
+		require.NotNil(t, sessions)
 		assert.Len(t, sessions, 1)
 		assert.Equal(t, "test-node", sessions[0].Name)
 	})

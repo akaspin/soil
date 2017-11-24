@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -31,6 +32,14 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 	srv := httptest.NewServer(router)
 	defer srv.Close()
 
+	t.Run(`empty`, func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/registry", srv.URL), strings.NewReader("[]"))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		assert.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, resp.StatusCode, 400)
+	})
 	t.Run(`upload`, func(t *testing.T) {
 		v := manifest.Registry{
 			{
@@ -46,10 +55,9 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 		assert.NoError(t, json.NewEncoder(buf).Encode(v))
 
 		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/v1/registry", srv.URL), bytes.NewReader(buf.Bytes()))
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
-		require.NotNil(t, req)
 
 		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("1", manifest.Pod{
@@ -60,6 +68,37 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 				Name:      "2",
 				Namespace: manifest.PublicNamespace,
 			}),
+		))
+	})
+}
+
+func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cons := bus.NewTestingConsumer(ctx)
+	endpoint := api.NewRegistryPodsDelete(logx.GetLog("test"), cons)
+	router := api_server.NewRouter(logx.GetLog("test"), endpoint)
+	srv := httptest.NewServer(router)
+	defer srv.Close()
+
+	t.Run(`empty query`, func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry", srv.URL), nil)
+		assert.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		assert.NoError(t, err)
+		require.NotNil(t, req)
+		assert.Equal(t, resp.StatusCode, 400)
+	})
+	t.Run(`with two pods`, func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry?pods=1&pods=2", srv.URL), nil)
+		require.NoError(t, err)
+		_, err = http.DefaultClient.Do(req)
+		assert.NoError(t, err)
+
+		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+			bus.NewMessage("1", nil),
+			bus.NewMessage("2", nil),
 		))
 	})
 }

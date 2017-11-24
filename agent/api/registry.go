@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/manifest"
+	"net/http"
 	"net/url"
 	"sync"
 )
@@ -63,11 +64,41 @@ func (p *registryPodsPutProcessor) Empty() interface{} {
 func (p *registryPodsPutProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	v1, ok := v.(*manifest.Registry)
 	if !ok || v1 == nil || len(*v1) == 0 {
-		err = fmt.Errorf(`bad pods %v`, v)
+		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
 		return
 	}
 	for _, pod := range *v1 {
 		if consumeErr := p.consumer.ConsumeMessage(bus.NewMessage(pod.Name, pod)); consumeErr != nil {
+			p.log.Error(err)
+		}
+	}
+	return
+}
+
+func NewRegistryPodsDelete(log *logx.Log, consumer bus.Consumer) (e *api_server.Endpoint) {
+	return api_server.DELETE("/v1/registry", &registryPodsDeleteProcessor{
+		log:      log.WithTags("delete", "/v1/registry"),
+		consumer: consumer,
+	})
+}
+
+type registryPodsDeleteProcessor struct {
+	log      *logx.Log
+	consumer bus.Consumer
+}
+
+func (p *registryPodsDeleteProcessor) Empty() interface{} {
+	return nil
+}
+
+func (p *registryPodsDeleteProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
+	pods, ok := u.Query()["pods"]
+	if !ok || pods == nil || len(pods) == 0 {
+		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods query: %s", u.RawQuery))
+		return
+	}
+	for _, pod := range pods {
+		if consumeErr := p.consumer.ConsumeMessage(bus.NewMessage(pod, nil)); consumeErr != nil {
 			p.log.Error(err)
 		}
 	}

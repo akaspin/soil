@@ -81,6 +81,12 @@ $ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry
 
 Submit pod manifests to public namespace.
 
+### Sample Request
+
+```shell
+$ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry
+```
+
 ### Sample Payload
 
 ```json
@@ -108,11 +114,6 @@ Submit pod manifests to public namespace.
 ]
 ```
 
-### Sample Response
-
-```shell
-$ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry
-```
 
 ## Delete Pods Manifests
 

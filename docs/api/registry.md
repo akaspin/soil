@@ -6,20 +6,20 @@ weight: 200
 
 # Registry API
 
-`/registry/` API operates with Agent registry.
+`/registry` API operates with Agent registry.
 
 ## Retrieve Pods Manifests
 
 |Method |Path|Result
 |-
-|`GET` |`/v1/registry/pods`|application/json
+|`GET` |`/v1/registry`|application/json
 
 Retrieves pods manifests from registry.
 
 ### Sample Request
 
 ```shell
-$ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry/pods
+$ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry
 ```
 
 ### Sample Response
@@ -77,9 +77,15 @@ $ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry/pods
 
 |Method |Path|Result
 |-
-|`PUT` |`/v1/registry/pods`|application/json
+|`PUT` |`/v1/registry`|application/json
 
 Submit pod manifests to public namespace.
+
+### Sample Request
+
+```shell
+$ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry
+```
 
 ### Sample Payload
 
@@ -108,23 +114,18 @@ Submit pod manifests to public namespace.
 ]
 ```
 
-### Sample Response
-
-```shell
-$ curl -XPUT -d @sample.json http://127.0.0.1:7654/v1/registry/pods
-```
 
 ## Delete Pods Manifests
 
 |Method |Path|Result
 |-
-|`DELETE` |`/v1/registry/pods`|application/json
+|`DELETE` |`/v1/registry`|application/json
 
 Delete pod manifests from public namespace.
 
 ### Sample Request
 
 ```shell
-$ curl -XDELETE -d `["one","two"]` http://127.0.0.1:7654/v1/registry/pods
+$ curl -XDELETE -d `["one","two"]` http://127.0.0.1:7654/v1/registry
 ```
 

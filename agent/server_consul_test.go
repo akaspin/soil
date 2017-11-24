@@ -10,11 +10,16 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/fixture"
+	"github.com/akaspin/soil/lib"
+	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/soil/proto"
 	"github.com/hashicorp/consul/api"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -42,10 +47,10 @@ func TestServer_Configure_Consul(t *testing.T) {
 	consulServer.WaitAlive()
 	consulServer.Pause()
 
-	cli, err := api.NewClient(&api.Config{
+	cli, cliErr := api.NewClient(&api.Config{
 		Address: consulServer.Address(),
 	})
-	assert.NoError(t, err)
+	assert.NoError(t, cliErr)
 
 	configEnv := map[string]interface{}{
 		"ConsulAddress": consulServer.Address(),
@@ -58,7 +63,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 	}
 
 	t.Run(`start agent`, func(t *testing.T) {
-		assert.NoError(t, server.Open())
+		require.NoError(t, server.Open())
 	})
 	t.Run(`0 configure with consul`, func(t *testing.T) {
 		writeConfig(t, "testdata/TestServer_Configure_Consul_0.hcl", configEnv)
@@ -141,5 +146,106 @@ func TestServer_Configure_Consul(t *testing.T) {
 			}
 			return
 		})
+	})
+	t.Run(`10 put /v1/registry`, func(t *testing.T) {
+		var pods manifest.Registry
+		rs := &lib.StaticBuffers{}
+		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_10.hcl"))
+		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
+
+		buf := &bytes.Buffer{}
+		assert.NoError(t, json.NewEncoder(buf).Encode(pods))
+		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]), bytes.NewReader(buf.Bytes()))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, resp.StatusCode, 200)
+	})
+	t.Run(`get /v1/registry`, func(t *testing.T) {
+		var pods manifest.Registry
+		rs := &lib.StaticBuffers{}
+		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_10.hcl"))
+		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
+
+		fixture.WaitNoError10(t, func() (err error) {
+			resp, err := http.Get(fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]))
+			if err != nil {
+				return
+			}
+			if resp == nil {
+				err = fmt.Errorf(`response is nil`)
+				return
+			}
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
+				return
+			}
+			var res manifest.Registry
+			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+				return
+			}
+			defer resp.Body.Close()
+			if !reflect.DeepEqual(res, pods) {
+				err = fmt.Errorf(`not equal: (expect)%v != (actual)%v`, pods, res)
+			}
+			return
+		})
+	})
+	t.Run(`ensure public pods`, func(t *testing.T) {
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+			"pod-private-1.service":       "active",
+			"unit-1.service":              "active",
+			"pod-public-1-public.service": "active",
+			"unit-1-public.service":       "active",
+			"pod-public-2-public.service": "active",
+			"unit-2-public.service":       "active",
+		}))
+	})
+	t.Run(`delete /v1/registry 2-public`, func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]), strings.NewReader(`["2-public"]`))
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		assert.Equal(t, resp.StatusCode, 200)
+	})
+	t.Run(`11 get /v1/registry`, func(t *testing.T) {
+		var pods manifest.Registry
+		rs := &lib.StaticBuffers{}
+		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_11.hcl"))
+		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
+
+		fixture.WaitNoError10(t, func() (err error) {
+			resp, err := http.Get(fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]))
+			if err != nil {
+				return
+			}
+			if resp == nil {
+				err = fmt.Errorf(`response is nil`)
+				return
+			}
+			if resp.StatusCode != 200 {
+				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
+				return
+			}
+			var res manifest.Registry
+			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+				return
+			}
+			defer resp.Body.Close()
+			if !reflect.DeepEqual(res, pods) {
+				err = fmt.Errorf(`not equal: (expect)%v != (actual)%v`, pods, res)
+			}
+			return
+		})
+	})
+	t.Run(`ensure 2-public is removed`, func(t *testing.T) {
+		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+			"pod-private-1.service":       "active",
+			"unit-1.service":              "active",
+			"pod-public-1-public.service": "active",
+			"unit-1-public.service":       "active",
+		}))
 	})
 }

@@ -44,6 +44,17 @@ func NewRouter(log *logx.Log, endpoints ...*Endpoint) (r *Router) {
 	return
 }
 
+func (r *Router) GetEndpoint(method, path string) (e *Endpoint, err error) {
+	for _, endpoint := range r.endpoints {
+		if endpoint.method == method && endpoint.path == path {
+			e = endpoint
+			return
+		}
+	}
+	err = fmt.Errorf(`endpoint %s %s not found`, method, path)
+	return
+}
+
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.log.Debugf("accepted %s %s", req.Method, req.URL)
 

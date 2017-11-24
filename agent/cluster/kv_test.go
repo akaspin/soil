@@ -174,7 +174,7 @@ func TestKV_Submit(t *testing.T) {
 			}),
 		))
 	})
-	t.Run(`add`, func(t *testing.T) {
+	t.Run(`remove`, func(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-volatile", nil), true},
 		})
@@ -205,7 +205,7 @@ func TestKV_Submit(t *testing.T) {
 			}),
 		))
 	})
-	t.Run(`add and remove`, func(t *testing.T) {
+	t.Run(`add`, func(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("post-volatile", map[string]string{"1": "1"}), true},
 		})

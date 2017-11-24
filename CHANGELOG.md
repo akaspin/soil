@@ -4,6 +4,7 @@
 
 * `provision` variables for interpolations
 * default values in interpolations
+* `/v1/registry` API
 
 ## 0.4.1 (19.11.2017)
 

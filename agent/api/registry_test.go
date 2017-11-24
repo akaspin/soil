@@ -91,7 +91,7 @@ func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, 400)
 	})
 	t.Run(`with two pods`, func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry?pods=1&pods=2", srv.URL), nil)
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry?pod=1&pod=2", srv.URL), nil)
 		require.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)

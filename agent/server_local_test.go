@@ -9,6 +9,7 @@ import (
 	"github.com/akaspin/soil/agent"
 	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"net/http"
 	"os"
 	"testing"
@@ -52,7 +53,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		Address: fmt.Sprintf(":%d", fixture.RandomPort(t)),
 	}
 	server := agent.NewServer(context.Background(), logx.GetLog("test"), serverOptions)
-	assert.NoError(t, server.Open())
+	require.NoError(t, server.Open())
 
 	allUnitNames := []string{
 		"pod-*",

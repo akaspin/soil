@@ -12,8 +12,12 @@ import (
 	"sync"
 )
 
+const (
+	V1Registry = "/v1/registry"
+)
+
 func NewRegistryPodsGet() (e *api_server.Endpoint) {
-	return api_server.GET("/v1/registry", &registryPodsGetProcessor{
+	return api_server.GET(V1Registry, &registryPodsGetProcessor{
 		pods: manifest.Registry{},
 	})
 }
@@ -46,8 +50,8 @@ func (p *registryPodsGetProcessor) ConsumeMessage(message bus.Message) (err erro
 }
 
 func NewRegistryPodsPut(log *logx.Log, consumer bus.Consumer) (e *api_server.Endpoint) {
-	return api_server.PUT("/v1/registry", &registryPodsPutProcessor{
-		log:      log.WithTags("put", "/v1/registry"),
+	return api_server.PUT(V1Registry, &registryPodsPutProcessor{
+		log:      log.GetLog("api", "put", V1Registry),
 		consumer: consumer,
 	})
 }
@@ -76,8 +80,8 @@ func (p *registryPodsPutProcessor) Process(ctx context.Context, u *url.URL, v in
 }
 
 func NewRegistryPodsDelete(log *logx.Log, consumer bus.Consumer) (e *api_server.Endpoint) {
-	return api_server.DELETE("/v1/registry", &registryPodsDeleteProcessor{
-		log:      log.WithTags("delete", "/v1/registry"),
+	return api_server.DELETE(V1Registry, &registryPodsDeleteProcessor{
+		log:      log.GetLog("api", "delete", V1Registry),
 		consumer: consumer,
 	})
 }
@@ -92,9 +96,9 @@ func (p *registryPodsDeleteProcessor) Empty() interface{} {
 }
 
 func (p *registryPodsDeleteProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	pods, ok := u.Query()["pods"]
+	pods, ok := u.Query()["pod"]
 	if !ok || pods == nil || len(pods) == 0 {
-		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods query: %s", u.RawQuery))
+		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pod query: %s", u.RawQuery))
 		return
 	}
 	for _, pod := range pods {

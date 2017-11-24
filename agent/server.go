@@ -29,19 +29,26 @@ type ServerOptions struct {
 
 // Agent instance
 type Server struct {
+	ctx     context.Context
 	log     *logx.Log
 	options ServerOptions
 
 	sv supervisor.Component
 
-	confPipe                bus.Consumer
-	resourceEvaluator       *resource.Evaluator
-	privateRegistryConsumer scheduler.RegistryConsumer
-	kv                      *cluster.KV
+	confPipe          bus.Consumer
+	resourceEvaluator *resource.Evaluator
+	sink              *scheduler.Sink
+	kv                *cluster.KV
+	api               *api_server.Router
+	endpoints         struct {
+		registryGet    *api_server.Endpoint
+		statusNodesGet *api_server.Endpoint
+	}
 }
 
 func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Server) {
 	s = &Server{
+		ctx:     ctx,
 		log:     log.GetLog("server"),
 		options: options,
 	}
@@ -82,9 +89,10 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		provisionDrainPipe.Divert(on)
 	}
 
-	apiClusterNodesGet := api.NewClusterNodesGet(log)
+	s.endpoints.statusNodesGet = api.NewClusterNodesGet(log)
+	s.endpoints.registryGet = api.NewRegistryPodsGet()
 
-	apiRouter := api_server.NewRouter(s.log,
+	s.api = api_server.NewRouter(s.log,
 		// status
 		api.NewStatusPingGet(),
 
@@ -94,16 +102,13 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		api.NewAgentDrainDelete(drainFn),
 
 		// cluster
-		apiClusterNodesGet,
+		s.endpoints.statusNodesGet,
 
 		// registry
-		//api.NewRegistryPodsPut(s.kv.PermanentStore("registry")),
+		s.endpoints.registryGet,
+		api.NewRegistryPodsPut(s.log, s.kv.PermanentStore("registry")),
+		api.NewRegistryPodsDelete(s.log, s.kv.PermanentStore("registry")),
 	)
-
-	// watchers
-	s.kv.Producer("nodes").Subscribe(ctx, bus.NewSlicerPipe(log, bus.NewTeePipe(
-		apiRouter, apiClusterNodesGet.Processor().(bus.Consumer),
-	)))
 
 	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
 		resourceCompositePipe, provisionCompositePipe,
@@ -114,18 +119,18 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		Recovery:       state,
 		StatusConsumer: provisionStateConsumer,
 	})
-	s.privateRegistryConsumer = scheduler.NewSink(ctx, s.log, state,
+	s.sink = scheduler.NewSink(ctx, s.log, state,
 		scheduler.NewBoundedEvaluator(resourceArbiter, s.resourceEvaluator),
 		scheduler.NewBoundedEvaluator(provisionArbiter, provisionEvaluator),
 	)
 
 	s.sv = supervisor.NewChain(ctx,
-		api_server.NewServer(ctx, s.log, s.options.Address, apiRouter),
 		s.kv,
 		supervisor.NewGroup(ctx, resourceArbiter, provisionArbiter),
 		s.resourceEvaluator,
 		provisionEvaluator,
-		s.privateRegistryConsumer.(supervisor.Component),
+		s.sink,
+		api_server.NewServer(ctx, s.log, s.options.Address, s.api),
 	)
 	return
 }
@@ -134,6 +139,16 @@ func (s *Server) Open() (err error) {
 	if err = s.sv.Open(); err != nil {
 		return
 	}
+
+	s.kv.Producer("nodes").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, bus.NewTeePipe(
+		s.api,
+		s.endpoints.statusNodesGet.Processor().(bus.Consumer),
+	)))
+	s.kv.Producer("registry").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, bus.NewTeePipe(
+		s.sink,
+		s.endpoints.registryGet.Processor().(bus.Consumer),
+	)))
+
 	s.Configure()
 	return
 }
@@ -187,6 +202,6 @@ func (s *Server) Configure() {
 	s.confPipe.ConsumeMessage(bus.NewMessage("system", serverCfg.System))
 
 	s.resourceEvaluator.Configure(resourceConfigs)
-	s.privateRegistryConsumer.ConsumeRegistry(registry)
+	s.sink.ConsumeRegistry(registry)
 	s.log.Debug("configure: done")
 }

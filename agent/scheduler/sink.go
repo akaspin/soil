@@ -12,11 +12,19 @@ import (
 
 type Sink struct {
 	*supervisor.Control
-	log *logx.Log
-
+	log               *logx.Log
 	boundedEvaluators []BoundedEvaluator
 
 	state *SinkState
+}
+
+func (s *Sink) ConsumeMessage(message bus.Message) (err error) {
+	var pods manifest.Registry
+	if err = message.Payload().Unmarshal(&pods); err != nil {
+		return
+	}
+	s.ConsumeRegistry(pods)
+	return
 }
 
 func NewSink(ctx context.Context, log *logx.Log, state allocation.Recovery, boundedEvaluators ...BoundedEvaluator) (s *Sink) {

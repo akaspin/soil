@@ -1,4 +1,4 @@
-// +build ide test_unit
+// build ide test_unit
 
 package api_test
 
@@ -83,7 +83,7 @@ func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
 	defer srv.Close()
 
 	t.Run(`empty query`, func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry", srv.URL), nil)
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry", srv.URL), strings.NewReader("[]"))
 		assert.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		assert.NoError(t, err)
@@ -91,7 +91,10 @@ func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, 400)
 	})
 	t.Run(`with two pods`, func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry?pod=1&pod=2", srv.URL), nil)
+		v := []string{"1", "2"}
+		buf := &bytes.Buffer{}
+		require.NoError(t, json.NewEncoder(buf).Encode(v))
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/registry", srv.URL), bytes.NewReader(buf.Bytes()))
 		require.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)

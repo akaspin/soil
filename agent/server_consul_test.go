@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -201,8 +202,8 @@ func TestServer_Configure_Consul(t *testing.T) {
 			"unit-2-public.service":       "active",
 		}))
 	})
-	t.Run(`delete /v1/registry?pod=2-public`, func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s/v1/registry?pod=2-public", configEnv["AgentAddress"]), nil)
+	t.Run(`delete /v1/registry 2-public`, func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]), strings.NewReader(`["2-public"]`))
 		require.NoError(t, err)
 		resp, err := http.DefaultClient.Do(req)
 		require.NoError(t, err)

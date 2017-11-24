@@ -92,16 +92,16 @@ type registryPodsDeleteProcessor struct {
 }
 
 func (p *registryPodsDeleteProcessor) Empty() interface{} {
-	return nil
+	return &[]string{}
 }
 
 func (p *registryPodsDeleteProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	pods, ok := u.Query()["pod"]
-	if !ok || pods == nil || len(pods) == 0 {
-		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pod query: %s", u.RawQuery))
+	pods, ok := v.(*[]string)
+	if !ok || pods == nil || len(*pods) == 0 {
+		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
 		return
 	}
-	for _, pod := range pods {
+	for _, pod := range *pods {
 		if consumeErr := p.consumer.ConsumeMessage(bus.NewMessage(pod, nil)); consumeErr != nil {
 			p.log.Error(err)
 		}

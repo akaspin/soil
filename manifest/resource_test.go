@@ -10,9 +10,8 @@ import (
 
 func TestResource(t *testing.T) {
 	res := manifest.Resource{
-		Kind:     "port",
-		Name:     "8080",
-		Required: true,
+		Kind: "port",
+		Name: "8080",
 		Config: map[string]interface{}{
 			"a": 1,
 		},

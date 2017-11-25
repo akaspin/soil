@@ -114,7 +114,7 @@ func TestNewFromManifest(t *testing.T) {
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{
 				Name:      "pod-1",
-				PodMark:   12593169462593272090,
+				PodMark:   0xd1d3178bd3fb77a4,
 				AgentMark: 17576127034913539037,
 				Namespace: "private",
 			},
@@ -124,16 +124,15 @@ func TestNewFromManifest(t *testing.T) {
 					Runtime: "/run/systemd/system",
 				},
 				Path:   "/run/systemd/system/pod-private-pod-1.service",
-				Source: "### POD pod-1 {\"AgentMark\":17576127034913539037,\"Namespace\":\"private\",\"PodMark\":12593169462593272090}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				Source: "### POD pod-1 {\"AgentMark\":17576127034913539037,\"Namespace\":\"private\",\"PodMark\":15119454263337252772}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 			},
 			Units: nil,
 			Blobs: nil,
 			Resources: []*allocation.Resource{
 				{
 					Request: manifest.Resource{
-						Name:     "8080",
-						Kind:     "port",
-						Required: true,
+						Name: "8080",
+						Kind: "port",
 						Config: map[string]interface{}{
 							"fixed": int(8080),
 						},
@@ -142,9 +141,8 @@ func TestNewFromManifest(t *testing.T) {
 				},
 				{
 					Request: manifest.Resource{
-						Name:     "main",
-						Kind:     "counter",
-						Required: true,
+						Name: "main",
+						Kind: "counter",
 						Config: map[string]interface{}{
 							"count": int(3),
 						},

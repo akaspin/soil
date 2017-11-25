@@ -21,16 +21,13 @@ type Resource struct {
 	// Resource type
 	Kind string `hcl:"-"`
 
-	// Add "resource.<Type>.<PodName>.<Name>" = "true" to pod allocation constraint
-	Required bool
-
 	// Request config
 	Config map[string]interface{} `hcl:"-"`
 }
 
 func defaultResource() (r Resource) {
 	r = Resource{
-		Required: true,
+	//Required: true,
 	}
 	return
 }
@@ -58,9 +55,7 @@ func (r *Resource) GetRequestConstraint() (res Constraint) {
 // Returns required constraint for provision with allocated resource
 func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	res = Constraint{}
-	if r.Required {
-		res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Kind, r.GetID(podName))] = "true"
-	}
+	res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Kind, r.GetID(podName))] = "true"
 	return
 }
 

@@ -22,6 +22,7 @@ type Pod struct {
 	Units      []Unit
 	Blobs      []Blob
 	Resources  []Resource
+	Providers  []Provider
 }
 
 func DefaultPod(namespace string) (p *Pod) {

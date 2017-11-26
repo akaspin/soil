@@ -19,7 +19,7 @@ type Sink struct {
 }
 
 func (s *Sink) ConsumeMessage(message bus.Message) (err error) {
-	var pods manifest.Registry
+	var pods manifest.Pods
 	if err = message.Payload().Unmarshal(&pods); err != nil {
 		return
 	}
@@ -41,8 +41,8 @@ func NewSink(ctx context.Context, log *logx.Log, state allocation.Recovery, boun
 	return
 }
 
-func (s *Sink) ConsumeRegistry(registry manifest.Registry) {
-	byNamespace := map[string]manifest.Registry{}
+func (s *Sink) ConsumeRegistry(registry manifest.Pods) {
+	byNamespace := map[string]manifest.Pods{}
 	for _, pod := range registry {
 		byNamespace[pod.Namespace] = append(byNamespace[pod.Namespace], pod)
 	}

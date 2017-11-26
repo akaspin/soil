@@ -178,7 +178,7 @@ func (s *Server) Configure() {
 	if err := resourceConfigs.Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal resource configs: %v", err)
 	}
-	var registry manifest.Registry
+	var registry manifest.Pods
 	if err := registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal registry: %v", err)
 	}

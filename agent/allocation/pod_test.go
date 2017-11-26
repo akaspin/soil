@@ -20,7 +20,7 @@ func TestNewFromManifest(t *testing.T) {
 	t.Run("0 simple names", func(t *testing.T) {
 		var buffers lib.StaticBuffers
 		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_0.hcl"))
-		var pods manifest.Registry
+		var pods manifest.Pods
 		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
 
 		m := pods[0]
@@ -60,7 +60,7 @@ func TestNewFromManifest(t *testing.T) {
 	})
 	t.Run("interpolate names", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var pods manifest.Registry
+		var pods manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_1.hcl"))
 		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
 
@@ -69,24 +69,29 @@ func TestNewFromManifest(t *testing.T) {
 		assert.NoError(t, res.FromManifest(m, env))
 
 		assert.Equal(t, &allocation.Pod{
-			Header: allocation.Header{Name: "pod-2", PodMark: 17609867442630654674, AgentMark: 0x623669d2cde83725, Namespace: "private"},
+			Header: allocation.Header{
+				Name:      "pod-2",
+				PodMark:   17122768065259164291,
+				AgentMark: 0x623669d2cde83725,
+				Namespace: "private",
+			},
 			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-2.service",
-				Source:      "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":17609867442630654674}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=pod-2-unit-1.service private-unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
+				Source:      "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":17122768065259164291}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=private-unit-2.service pod-2-unit-1.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
 			Units: []*allocation.Unit{
-				{
-					UnitFile: allocation.UnitFile{
-						SystemPaths: allocation.DefaultSystemPaths(),
-						Path:        "/run/systemd/system/pod-2-unit-1.service",
-						Source:      "# true multi-user.target"},
-					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
-				},
 				{
 					UnitFile: allocation.UnitFile{
 						SystemPaths: allocation.DefaultSystemPaths(),
 						Path:        "/run/systemd/system/private-unit-2.service",
 						Source:      "# true 10090666253179731817"},
+					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
+				},
+				{
+					UnitFile: allocation.UnitFile{
+						SystemPaths: allocation.DefaultSystemPaths(),
+						Path:        "/run/systemd/system/pod-2-unit-1.service",
+						Source:      "# true multi-user.target"},
 					Transition: manifest.Transition{Create: "start", Update: "", Destroy: "stop", Permanent: false},
 				},
 			},
@@ -104,7 +109,7 @@ func TestNewFromManifest(t *testing.T) {
 		}
 
 		var buffers lib.StaticBuffers
-		var pods manifest.Registry
+		var pods manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/test_new_from_manifest_2.hcl"))
 		assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
 

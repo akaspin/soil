@@ -18,13 +18,13 @@ const (
 
 func NewRegistryPodsGet() (e *api_server.Endpoint) {
 	return api_server.GET(V1Registry, &registryPodsGetProcessor{
-		pods: manifest.Registry{},
+		pods: manifest.Pods{},
 	})
 }
 
 type registryPodsGetProcessor struct {
 	mu   sync.Mutex
-	pods manifest.Registry
+	pods manifest.Pods
 }
 
 func (p *registryPodsGetProcessor) Empty() interface{} {
@@ -39,7 +39,7 @@ func (p *registryPodsGetProcessor) Process(ctx context.Context, u *url.URL, v in
 }
 
 func (p *registryPodsGetProcessor) ConsumeMessage(message bus.Message) (err error) {
-	var v manifest.Registry
+	var v manifest.Pods
 	if err = message.Payload().Unmarshal(&v); err != nil {
 		return
 	}
@@ -62,11 +62,11 @@ type registryPodsPutProcessor struct {
 }
 
 func (p *registryPodsPutProcessor) Empty() interface{} {
-	return &manifest.Registry{}
+	return &manifest.Pods{}
 }
 
 func (p *registryPodsPutProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	v1, ok := v.(*manifest.Registry)
+	v1, ok := v.(*manifest.Pods)
 	if !ok || v1 == nil || len(*v1) == 0 {
 		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
 		return

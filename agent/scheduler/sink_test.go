@@ -75,7 +75,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 
 	t.Run("0 consume", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -99,7 +99,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 	})
 	t.Run("2 modify third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -123,7 +123,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 	})
 	t.Run("4 remove third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)

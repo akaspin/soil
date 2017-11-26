@@ -2,7 +2,7 @@ package lib
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/hashicorp/go-multierror"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,15 +11,13 @@ import (
 type StaticBuffers [][]byte
 
 func (s *StaticBuffers) ReadFiles(paths ...string) (err error) {
-	var failures []error
+	err = &multierror.Error{}
 	for _, path := range paths {
 		if failure := s.read(path); failure != nil {
-			failures = append(failures, failure)
+			err = multierror.Append(err, failure)
 		}
 	}
-	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
-	}
+	err = err.(*multierror.Error).ErrorOrNil()
 	return
 }
 

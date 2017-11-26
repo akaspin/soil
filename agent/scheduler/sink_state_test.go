@@ -22,7 +22,7 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 	)
 	t.Run("0 sync private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var ingest manifest.Registry
+		var ingest manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_state_test_0.hcl"))
 		assert.NoError(t, ingest.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -34,7 +34,7 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 	})
 	t.Run("1 sync public", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var ingest manifest.Registry
+		var ingest manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_state_test_1.hcl"))
 		assert.NoError(t, ingest.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
@@ -46,7 +46,7 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 	})
 	t.Run("2 remove pod-1 from private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var ingest manifest.Registry
+		var ingest manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_state_test_2.hcl"))
 		assert.NoError(t, ingest.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		changes := state.SyncNamespace(manifest.PrivateNamespace, ingest)
@@ -55,7 +55,7 @@ func TestSchedulerState_SyncNamespace(t *testing.T) {
 	})
 	t.Run("3 add pod-1 to private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var ingest manifest.Registry
+		var ingest manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_state_test_3.hcl"))
 		assert.NoError(t, ingest.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 

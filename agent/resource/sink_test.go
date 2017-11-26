@@ -123,7 +123,7 @@ func TestSink_Flow(t *testing.T) {
 	})
 	t.Run("1 submit", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/TestSink_Flow/1.hcl"))
 		assert.NoError(t, registry.Unmarshal("private", buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)

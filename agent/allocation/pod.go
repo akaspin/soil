@@ -28,6 +28,7 @@ type Pod struct {
 	Units     []*Unit
 	Blobs     []*Blob
 	Resources []*Resource
+	Providers Providers
 }
 
 func NewPod(systemPaths SystemPaths) (p *Pod) {

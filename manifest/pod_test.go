@@ -18,9 +18,11 @@ func TestPods_Unmarshal(t *testing.T) {
 			"testdata/nonexistent.hcl",
 			"testdata/TestPods_Unmarshal_0_1.hcl",
 			"testdata/TestPods_Unmarshal_0_2.hcl",
+			"testdata/TestPods_Unmarshal_0_3.hcl",
 		))
 		var res manifest.Pods
-		assert.Error(t, res.Unmarshal("private", buffers.GetReaders()...))
+		err := res.Unmarshal("private", buffers.GetReaders()...)
+		assert.Error(t, err)
 		assert.Equal(t, manifest.Pods{
 			{
 				Namespace: manifest.PrivateNamespace,

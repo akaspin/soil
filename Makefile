@@ -20,11 +20,11 @@ GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/proto.Version=$(V)'
 GOBIN       ?= $(GOPATH)/bin
 
 
-sources: $(SRC) 		## go fmt and vet
+sources: 		## go fmt and vet
 	go fmt $(PACKAGES)
 	go vet $(PACKAGES)
 
-deps: Gopkg.toml $(SRC)	## update vendor
+deps:			## update vendor
 	dep ensure --update -v
 
 ###
@@ -67,49 +67,49 @@ clean-test-systemd:	## clean Systemd tests artifacts
 ### Dist
 ###
 
-dist: \
-	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \
-	dist/$(BIN)-$(V)-linux-amd64.tar.gz
-
-dist/$(BIN)-$(V)-%-amd64.tar.gz: dist/%/$(BIN) dist/%/$(BIN)-debug
-	tar -czf $@ -C ${<D} $(notdir $^)
-
-dist/%/$(BIN): $(SRC) $(ALL_SRC)
-	@mkdir -p $(@D)
-	GOPATH=$(GOPATH) CGO_ENABLED=0 GOOS=$* go build $(GOOPTS) -o $@ $(REPO)/command/$(BIN)
-
-dist/%/$(BIN)-debug: $(SRC) $(ALL_SRC)
-	@mkdir -p $(@D)
-	GOPATH=$(GOPATH) CGO_ENABLED=0 GOOS=$* go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
-
-docker-image: dist/$(BIN)-$(V)-linux-amd64.tar.gz
-	docker build --build-arg V=$(V) -t soil-local:$(V) -f Dockerfile.local .
-
-clean-dist:
-	rm -rf dist
+#dist: \
+#	dist/$(BIN)-$(V)-darwin-amd64.tar.gz \
+#	dist/$(BIN)-$(V)-linux-amd64.tar.gz
+#
+#dist/$(BIN)-$(V)-%-amd64.tar.gz: dist/%/$(BIN) dist/%/$(BIN)-debug
+#	tar -czf $@ -C ${<D} $(notdir $^)
+#
+#dist/%/$(BIN): $(SRC) $(ALL_SRC)
+#	@mkdir -p $(@D)
+#	GOPATH=$(GOPATH) CGO_ENABLED=0 GOOS=$* go build $(GOOPTS) -o $@ $(REPO)/command/$(BIN)
+#
+#dist/%/$(BIN)-debug: $(SRC) $(ALL_SRC)
+#	@mkdir -p $(@D)
+#	GOPATH=$(GOPATH) CGO_ENABLED=0 GOOS=$* go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
+#
+#docker-image: dist/$(BIN)-$(V)-linux-amd64.tar.gz
+#	docker build --build-arg V=$(V) -t soil-local:$(V) -f Dockerfile.local .
+#
+#clean-dist:
+#	rm -rf dist
 
 ###
 ###	Install
 ###
 
-install: $(GOBIN)/$(BIN)
-install-debug: $(GOBIN)/$(BIN)-debug
-
-$(GOBIN)/$(BIN): $(SRC) $(ALL_SRC)
-	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -o $@ $(REPO)/command/$(BIN)
-
-$(GOBIN)/$(BIN)-debug: $(SRC) $(ALL_SRC)
-	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
-
-uninstall:
-	rm -rf $(GOBIN)/$(BIN)
-	rm -rf $(GOBIN)/$(BIN)-debug
+#install: $(GOBIN)/$(BIN)
+#install-debug: $(GOBIN)/$(BIN)-debug
+#
+#$(GOBIN)/$(BIN): $(SRC) $(ALL_SRC)
+#	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -o $@ $(REPO)/command/$(BIN)
+#
+#$(GOBIN)/$(BIN)-debug: $(SRC) $(ALL_SRC)
+#	GOPATH=$(GOPATH) CGO_ENABLED=0 go build $(GOOPTS) -tags debug -o $@ $(REPO)/command/$(BIN)
+#
+#uninstall:
+#	rm -rf $(GOBIN)/$(BIN)
+#	rm -rf $(GOBIN)/$(BIN)-debug
 
 ###
 ### clean
 ###
 
-clean: clean-dist uninstall clean-docs clean-test
+clean: clean-docs clean-test
 
 ###
 ### docs
@@ -126,4 +126,4 @@ clean-docs:
 	docs \
 	test test-unit \
 	test-systemd \
-	clean clean-dist uninstall clean-test clean-docs
+	clean

@@ -25,10 +25,10 @@ func TestProviders(t *testing.T) {
 			Config: map[string]interface{}{},
 		},
 	}
-	src := "### SOIL provider {\"Nature\":\"test\",\"Kind\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### SOIL provider {\"Nature\":\"test\",\"Kind\":\"test2\",\"Config\":{}}\n"
+	src := "### PROVIDER {\"Nature\":\"test\",\"Kind\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### PROVIDER {\"Nature\":\"test\",\"Kind\":\"test2\",\"Config\":{}}\n"
 	t.Run(`restore`, func(t *testing.T) {
 		var v allocation.Providers
-		err := allocation.Recover(&v, &allocation.Provider{}, src, []string{"### SOIL provider"})
+		err := allocation.Recover(&v, &allocation.Provider{}, src, []string{"### PROVIDER "})
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
 	})
@@ -43,7 +43,7 @@ func TestProvider(t *testing.T) {
 			"b": `aa "bb"`,
 		},
 	}
-	line := "### SOIL provider {\"Nature\":\"test\",\"Kind\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n"
+	line := "### PROVIDER {\"Nature\":\"test\",\"Kind\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n"
 	t.Run(`store`, func(t *testing.T) {
 		buf := &bytes.Buffer{}
 		err := expect.StoreState(buf)

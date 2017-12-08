@@ -116,6 +116,9 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 			return
 		}
 	}
+	// TODO: refactor all other stuff
+	src := p.UnitFile.Source
+	err = Recover(&p.Providers, &Provider{}, src, []string{providerHeadPrefix})
 	return
 }
 

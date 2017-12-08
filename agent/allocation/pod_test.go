@@ -182,6 +182,7 @@ func TestNewFromFS(t *testing.T) {
 			Source: `### POD test-1 {"AgentMark":456,"Namespace":"private","PodMark":123}
 ### UNIT testdata/test-1-0.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
 ### UNIT testdata/test-1-1.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
+### PROVIDER {"Nature":"test","Kind":"test","Config":{"a":1,"b":"aa \"bb\""}}
 [Unit]
 Description=test-1
 Before=test-1-0.service test-1-1.service
@@ -231,5 +232,16 @@ WantedBy=multi-user.target
 				},
 			},
 		},
-	}, alloc)
+		Providers: allocation.Providers{
+			{
+				Nature: "test",
+				Kind:   "test",
+				Config: map[string]interface{}{
+					"a": float64(1),
+					"b": `aa "bb"`,
+				},
+			},
+		},
+	},
+		alloc)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	providerHeadPrefix = "### SOIL provider"
+	providerHeadPrefix = "### PROVIDER "
 )
 
 type Providers []*Provider
@@ -27,7 +27,7 @@ func (p *Provider) RestoreState(line string) (err error) {
 }
 
 func (p *Provider) StoreState(w io.Writer) (err error) {
-	if _, err = fmt.Fprintf(w, "%s ", providerHeadPrefix); err != nil {
+	if _, err = fmt.Fprintf(w, "%s", providerHeadPrefix); err != nil {
 		return
 	}
 	err = json.NewEncoder(w).Encode(p)

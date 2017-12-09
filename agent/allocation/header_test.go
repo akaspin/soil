@@ -76,7 +76,7 @@ func TestHeader(t *testing.T) {
 		PodMark:   345,
 	}
 	t.Run("marshal", func(t *testing.T) {
-		res, err := expectHeader.Marshal("pod-1", expectUnits, expectBlobs, expectResources)
+		res, err := expectHeader.Marshal("pod-1", expectUnits, expectBlobs, expectResources, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, res, src)
 	})

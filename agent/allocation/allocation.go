@@ -9,23 +9,28 @@ import (
 
 // Slice of recoverable entities
 type RecoverableSlice interface {
-	Append(v Recoverable)
+	Append(v ItemUnmarshaller)
 }
 
-// Recoverable entity can recover own state
-type Recoverable interface {
-	RestoreState(line string) (err error)
-	StoreState(w io.Writer) (err error)
+// ItemUnmarshaller entity can recover own state
+type ItemUnmarshaller interface {
+	UnmarshalLine(line string) (err error)
 }
 
-func Recover(v RecoverableSlice, empty Recoverable, source string, prefixes []string) (err error) {
+// Marshal item to pod manifest
+type ItemMarshaller interface {
+	MarshalLine(w io.Writer) (err error)
+}
+
+// Recover items from pod unit header
+func Recover(v RecoverableSlice, empty ItemUnmarshaller, source string, prefixes []string) (err error) {
 	err = &multierror.Error{}
 	for _, line := range strings.Split(source, "\n") {
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(line, prefix) {
 				cp, _ := copystructure.Copy(empty)
-				v1 := cp.(Recoverable)
-				if rErr := v1.RestoreState(line); rErr != nil {
+				v1 := cp.(ItemUnmarshaller)
+				if rErr := v1.UnmarshalLine(line); rErr != nil {
 					err = multierror.Append(err, rErr)
 					continue
 				}

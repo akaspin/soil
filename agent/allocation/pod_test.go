@@ -10,6 +10,76 @@ import (
 	"testing"
 )
 
+func TestPod_FromManifest(t *testing.T) {
+	env := map[string]string{
+		"meta.consul":     "true",
+		"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
+	}
+	var buffers lib.StaticBuffers
+	assert.NoError(t, buffers.ReadFiles("testdata/TestPod_FromManifest_0.hcl"))
+	var pods manifest.Pods
+	assert.NoError(t, pods.Unmarshal("private", buffers.GetReaders()...))
+
+	var allocs []*allocation.Pod
+	for _, m := range pods {
+		var alloc allocation.Pod
+		if err := alloc.FromManifest(m, env); err != nil {
+			t.Error(err)
+			t.Fail()
+			continue
+		}
+		allocs = append(allocs, &alloc)
+	}
+	assert.Equal(t,
+		[]*allocation.Pod{
+			{
+				Header: allocation.Header{Name: "pod-1", PodMark: 0xf3aa42bf3ef7bcae, AgentMark: 0x623669d2cde83725, Namespace: "private"},
+				UnitFile: allocation.UnitFile{
+					SystemPaths: allocation.SystemPaths{},
+					Path:        "pod-private-pod-1.service",
+					Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":17557919486419909806}\n### RESOURCE pod-1.port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{}}\n### RESOURCE global.counter main {\"Request\":{\"count\":3},\"Values\":{}}\n### PROVIDER {\"Nature\":\"range\",\"Kind\":\"port\",\"Config\":{\"max\":2000,\"min\":900}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				},
+				Units: nil,
+				Blobs: nil,
+				Resources: []*allocation.Resource{
+					{
+						Request: manifest.Resource{
+							Name: "8080",
+							Kind: "pod-1.port",
+							Config: map[string]interface{}{
+								"fixed": int(8080),
+							},
+						},
+						Values: map[string]string{},
+					},
+					{
+						Request: manifest.Resource{
+							Name: "main",
+							Kind: "global.counter",
+							Config: map[string]interface{}{
+								"count": int(3),
+							},
+						},
+						Values: map[string]string{},
+					},
+				},
+				Providers: allocation.Providers{
+					&allocation.Provider{
+						Nature: "range",
+						Kind:   "port",
+						Config: map[string]interface{}{
+
+							"min": int(900),
+
+							"max": int(2000),
+						},
+					},
+				},
+			},
+		},
+		allocs)
+}
+
 func TestNewFromManifest(t *testing.T) {
 
 	env := map[string]string{

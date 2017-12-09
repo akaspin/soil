@@ -89,8 +89,9 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 	for _, resource := range m.Resources {
 		p.Resources = append(p.Resources, newResource(p.Name, resource, env))
 	}
+	p.Providers.FromManifest(*m, env)
 
-	p.Source, err = p.Header.Marshal(p.Name, p.Units, p.Blobs, p.Resources)
+	p.Source, err = p.Header.Marshal(p.Name, p.Units, p.Blobs, p.Resources, p.Providers)
 	p.Source += manifest.Interpolate(podUnitTemplate, baseEnv, baseSourceEnv, map[string]string{
 		"pod.units": strings.Join(unitNames, " "),
 	}, env)

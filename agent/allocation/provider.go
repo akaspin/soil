@@ -31,6 +31,10 @@ func (p *Providers) Append(v ItemUnmarshaller) {
 
 type Provider manifest.Provider
 
+func (p *Provider) GetID(parent ...string) string {
+	return strings.Join(append(parent, p.Name), ".")
+}
+
 // Restore state from header line
 func (p *Provider) UnmarshalLine(line string) (err error) {
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerHeadPrefix)), p)

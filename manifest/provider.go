@@ -21,26 +21,26 @@ func (p *Providers) Append(v interface{}) (err error) {
 
 // Resource provider
 type Provider struct {
-	Nature string // Resource nature: range, pool ...
-	Kind   string // Logical kind
+	Kind   string // Resource kind: range, pool ...
+	Name   string // Logical name unique within pod
 	Config map[string]interface{}
 }
 
 func (p Provider) GetID(parent ...string) string {
-	return strings.Join(append(parent, p.Nature, p.Kind), ".")
+	return strings.Join(append(parent, p.Name), ".")
 }
 
 func (p Provider) ID(parent string) string {
-	return parent + `.` + p.Nature + `.` + p.Kind
+	return parent + `.` + p.Kind + `.` + p.Name
 }
 
 func (p *Provider) ParseAST(raw *ast.ObjectItem) (err error) {
 	if len(raw.Keys) != 2 {
-		err = fmt.Errorf(`provuder should be "nature" "kind"`)
+		err = fmt.Errorf(`provuder should be "nature" "name"`)
 		return
 	}
-	p.Nature = raw.Keys[0].Token.Value().(string)
-	p.Kind = raw.Keys[1].Token.Value().(string)
+	p.Kind = raw.Keys[0].Token.Value().(string)
+	p.Name = raw.Keys[1].Token.Value().(string)
 	if err = hcl.DecodeObject(p, raw); err != nil {
 		return
 	}

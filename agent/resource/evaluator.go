@@ -36,7 +36,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConf
 		downstreamConsumer: downstream,
 		upstreamConsumer:   upstream,
 
-		workers:      map[string]*Worker{},
+		workers:      map[string]*Worker{}, // pod.provider
 		dirtyWorkers: map[string]struct{}{},
 		cache:        map[string]bus.Message{},
 
@@ -84,6 +84,7 @@ func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
 	}()
 }
 
+// Deallocate
 func (e *Evaluator) Deallocate(name string) {
 	go func() {
 		select {

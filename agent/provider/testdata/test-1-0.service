@@ -1,0 +1,6 @@
+[Unit]
+Description=Unit test-1-0.service
+[Service]
+ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target

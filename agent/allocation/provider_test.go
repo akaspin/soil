@@ -13,20 +13,20 @@ import (
 func TestProviders(t *testing.T) {
 	expect := allocation.Providers{
 		{
-			Nature: "test",
-			Kind:   "test",
+			Kind: "test",
+			Name: "test",
 			Config: map[string]interface{}{
 				"a": float64(1),
 				"b": `aa "bb"`,
 			},
 		},
 		{
-			Nature: "test",
-			Kind:   "test2",
+			Kind:   "test",
+			Name:   "test2",
 			Config: map[string]interface{}{},
 		},
 	}
-	src := "### PROVIDER {\"Nature\":\"test\",\"Kind\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### PROVIDER {\"Nature\":\"test\",\"Kind\":\"test2\",\"Config\":{}}\n"
+	src := "### PROVIDER {\"Kind\":\"test\",\"Name\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### PROVIDER {\"Kind\":\"test\",\"Name\":\"test2\",\"Config\":{}}\n"
 	t.Run(`restore`, func(t *testing.T) {
 		var v allocation.Providers
 		err := allocation.Recover(&v, &allocation.Provider{}, src, []string{"### PROVIDER "})
@@ -37,14 +37,14 @@ func TestProviders(t *testing.T) {
 
 func TestProvider(t *testing.T) {
 	expect := &allocation.Provider{
-		Nature: "test",
-		Kind:   "test",
+		Kind: "test",
+		Name: "test",
 		Config: map[string]interface{}{
 			"a": float64(1),
 			"b": `aa "bb"`,
 		},
 	}
-	line := "### PROVIDER {\"Nature\":\"test\",\"Kind\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n"
+	line := "### PROVIDER {\"Kind\":\"test\",\"Name\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n"
 	t.Run(`store`, func(t *testing.T) {
 		buf := &bytes.Buffer{}
 		err := expect.MarshalLine(buf)
@@ -63,16 +63,16 @@ func TestProviders_FromManifest(t *testing.T) {
 	man := manifest.Pod{
 		Providers: manifest.Providers{
 			{
-				Nature: "test",
-				Kind:   "test",
+				Kind: "test",
+				Name: "test",
 				Config: map[string]interface{}{
 					"a": float64(1),
 					"b": `aa "bb"`,
 				},
 			},
 			{
-				Nature: "test",
-				Kind:   "test2",
+				Kind:   "test",
+				Name:   "test2",
 				Config: map[string]interface{}{},
 			},
 		},
@@ -81,16 +81,16 @@ func TestProviders_FromManifest(t *testing.T) {
 	assert.NoError(t, providers.FromManifest(man, nil))
 	assert.Equal(t, allocation.Providers{
 		{
-			Nature: "test",
-			Kind:   "test",
+			Kind: "test",
+			Name: "test",
 			Config: map[string]interface{}{
 				"a": float64(1),
 				"b": `aa "bb"`,
 			},
 		},
 		{
-			Nature: "test",
-			Kind:   "test2",
+			Kind:   "test",
+			Name:   "test2",
 			Config: map[string]interface{}{},
 		},
 	},

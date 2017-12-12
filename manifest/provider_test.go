@@ -1,4 +1,4 @@
-// build ide test_unit
+// +build ide test_unit
 
 package manifest_test
 
@@ -20,13 +20,10 @@ func TestProvider_ParseAST(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t,
 			manifest.Providers{
-				{Nature: "a", Kind: "1", Config: map[string]interface{}{}},
-				{Nature: "a", Kind: "2", Config: map[string]interface{}{}},
-				{Nature: "c", Kind: "1", Config: map[string]interface{}{"any": 1}}},
+				{Kind: "a", Name: "1", Config: map[string]interface{}{}},
+				{Kind: "a", Name: "2", Config: map[string]interface{}{}},
+				{Kind: "c", Name: "3", Config: map[string]interface{}{"any": 1}},
+			},
 			providers)
 	})
-}
-
-func TestProvider_GetID(t *testing.T) {
-
 }

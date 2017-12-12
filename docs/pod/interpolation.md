@@ -71,6 +71,21 @@ All allocated resources can be referenced as `${resource.<kind>.<pod>.<resource>
 
 All resources are available within all pods on Agent. If resource can't be allocated it will be marked with `allocated`:`false` and `failure` with error.
 
+```hcl
+pod "common" {
+  provider "range" "port" {}
+}
+
+por "1" {
+  resource "common.port" "8080" {}
+  unit "1.service" {
+    source = <<EOF
+      ${resource.common.port.1.8080}
+    EOF
+  }
+}
+```
+
 ## `provision`
 
 Scheduler reports about provision states for all pods to `${provision.<pod-name>.*}`. These variables are available in constraints for all pods. 

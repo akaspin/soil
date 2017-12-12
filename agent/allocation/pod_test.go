@@ -33,11 +33,16 @@ func TestPod_FromManifest(t *testing.T) {
 	assert.Equal(t,
 		[]*allocation.Pod{
 			{
-				Header: allocation.Header{Name: "pod-1", PodMark: 0xf3aa42bf3ef7bcae, AgentMark: 0x623669d2cde83725, Namespace: "private"},
+				Header: allocation.Header{
+					Name:      "pod-1",
+					PodMark:   3038050396487760088,
+					AgentMark: 0x623669d2cde83725,
+					Namespace: "private",
+				},
 				UnitFile: allocation.UnitFile{
 					SystemPaths: allocation.SystemPaths{},
 					Path:        "pod-private-pod-1.service",
-					Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":17557919486419909806}\n### RESOURCE pod-1.port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{}}\n### RESOURCE global.counter main {\"Request\":{\"count\":3},\"Values\":{}}\n### PROVIDER {\"Nature\":\"range\",\"Kind\":\"port\",\"Config\":{\"max\":2000,\"min\":900}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+					Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":3038050396487760088}\n### RESOURCE pod-1.port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{}}\n### RESOURCE global.counter main {\"Request\":{\"count\":3},\"Values\":{}}\n### PROVIDER {\"Kind\":\"range\",\"Name\":\"port\",\"Config\":{\"max\":2000,\"min\":900}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 				},
 				Units: nil,
 				Blobs: nil,
@@ -65,8 +70,8 @@ func TestPod_FromManifest(t *testing.T) {
 				},
 				Providers: allocation.Providers{
 					&allocation.Provider{
-						Nature: "range",
-						Kind:   "port",
+						Kind: "range",
+						Name: "port",
 						Config: map[string]interface{}{
 
 							"min": int(900),
@@ -252,7 +257,7 @@ func TestNewFromFS(t *testing.T) {
 			Source: `### POD test-1 {"AgentMark":456,"Namespace":"private","PodMark":123}
 ### UNIT testdata/test-1-0.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
 ### UNIT testdata/test-1-1.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
-### PROVIDER {"Nature":"test","Kind":"test","Config":{"a":1,"b":"aa \"bb\""}}
+### PROVIDER {"Kind":"test","Name":"test","Config":{"a":1,"b":"aa \"bb\""}}
 [Unit]
 Description=test-1
 Before=test-1-0.service test-1-1.service
@@ -304,8 +309,8 @@ WantedBy=multi-user.target
 		},
 		Providers: allocation.Providers{
 			{
-				Nature: "test",
-				Kind:   "test",
+				Kind: "test",
+				Name: "test",
 				Config: map[string]interface{}{
 					"a": float64(1),
 					"b": `aa "bb"`,

@@ -76,3 +76,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/kr/pretty"
+
+[[constraint]]
+  name = "github.com/docker/docker"
+  version = "v1.13.1"

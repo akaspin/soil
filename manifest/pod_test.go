@@ -108,7 +108,7 @@ func TestManifest(t *testing.T) {
 		var res manifest.Pods
 		assert.NoError(t, res.Unmarshal("private", buffers.GetReaders()...))
 		for i, mark := range []uint64{
-			0x3d8f6a3e5d220c15, 0x4c71ae7db1bf2da7,
+			0x70772b3a058359d6, 0x795e0bcb9909acbd,
 		} {
 			assert.Equal(t, mark, res[i].Mark())
 		}
@@ -135,19 +135,19 @@ func TestManifest(t *testing.T) {
 				Blobs: nil,
 				Resources: []manifest.Resource{
 					{
-						Name:   "1",
-						Kind:   "counter",
-						Config: map[string]interface{}{"count": "3"},
+						Name:     "1",
+						Provider: "counter",
+						Config:   map[string]interface{}{"count": "3"},
 					},
 					{
-						Name:   "2",
-						Kind:   "counter",
-						Config: map[string]interface{}{"count": "1", "a": "b"},
+						Name:     "2",
+						Provider: "counter",
+						Config:   map[string]interface{}{"count": "1", "a": "b"},
 					},
 					{
-						Name:   "8080",
-						Kind:   "port",
-						Config: map[string]interface{}{"fixed": "8080"},
+						Name:     "8080",
+						Provider: "port",
+						Config:   map[string]interface{}{"fixed": "8080"},
 					},
 				},
 			},
@@ -170,7 +170,7 @@ func TestManifest_JSON(t *testing.T) {
 
 	data, err := json.Marshal(pods[0])
 	assert.NoError(t, err)
-	assert.Equal(t, "{\"Namespace\":\"private\",\"Name\":\"first\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"${meta.one}\":\"one\",\"${meta.two}\":\"two\"},\"Units\":[{\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":true,\"Name\":\"first-1.service\",\"Source\":\"[Service]\\n# ${meta.consul}\\nExecStart=/usr/bin/sleep inf\\nExecStopPost=/usr/bin/systemctl stop first-2.service\\n\"},{\"Create\":\"\",\"Update\":\"start\",\"Destroy\":\"\",\"Permanent\":false,\"Name\":\"first-2.service\",\"Source\":\"[Service]\\n# ${NONEXISTENT}\\nExecStart=/usr/bin/sleep inf\\n\"}],\"Blobs\":[{\"Name\":\"/etc/vpn/users/env\",\"Permissions\":420,\"Leave\":false,\"Source\":\"My file\\n\"}],\"Resources\":null,\"Providers\":null}",
+	assert.Equal(t, "{\"Namespace\":\"private\",\"Name\":\"first\",\"Runtime\":true,\"Target\":\"multi-user.target\",\"Constraint\":{\"${meta.one}\":\"one\",\"${meta.two}\":\"two\"},\"Units\":[{\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":true,\"Name\":\"first-1.service\",\"Source\":\"[Service]\\n# ${meta.consul}\\nExecStart=/usr/bin/sleep inf\\nExecStopPost=/usr/bin/systemctl stop first-2.service\\n\"},{\"Create\":\"\",\"Update\":\"start\",\"Destroy\":\"\",\"Permanent\":false,\"Name\":\"first-2.service\",\"Source\":\"[Service]\\n# ${NONEXISTENT}\\nExecStart=/usr/bin/sleep inf\\n\"}],\"Blobs\":[{\"Name\":\"/etc/vpn/users/env\",\"Permissions\":420,\"Source\":\"My file\\n\"}]}",
 		string(data))
 
 	// unmarshal

@@ -55,8 +55,8 @@ func TestEvaluator_Allocate(t *testing.T) {
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
-				"/run/systemd/system/pod-private-pod-1.service": 0xa1c15e24db4051c6,
 				"/run/systemd/system/unit-1.service":            0xbca69ea672e79d81,
+				"/run/systemd/system/pod-private-pod-1.service": 0xde611f40e523bcae,
 			},
 		)
 	})
@@ -78,8 +78,8 @@ func TestEvaluator_Allocate(t *testing.T) {
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
-				"/run/systemd/system/pod-private-pod-1.service": 0x39e8da67c89c9632,
 				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
+				"/run/systemd/system/pod-private-pod-1.service": 0xcba412475013e825,
 			},
 		)
 	})
@@ -95,8 +95,8 @@ func TestEvaluator_Allocate(t *testing.T) {
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
-				"/run/systemd/system/pod-private-pod-1.service": 0x39e8da67c89c9632,
 				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
+				"/run/systemd/system/pod-private-pod-1.service": 0xcba412475013e825,
 			},
 		)
 	})
@@ -106,10 +106,6 @@ func TestEvaluator_Allocate(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{}))
-		sd.AssertUnitHashes(t,
-			[]string{"pod-private-pod-1.service", "unit-1.service"},
-			map[string]uint64{},
-		)
 	})
 
 	assert.NoError(t, evaluator.Close())

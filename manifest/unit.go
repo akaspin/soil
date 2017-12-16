@@ -25,7 +25,7 @@ func (u *Units) Append(v interface{}) (err error) {
 }
 
 type Unit struct {
-	Transition `hcl:",squash"`
+	Transition `json:",omitempty" hcl:",squash"`
 	Name       string
 	Source     string
 }

@@ -48,7 +48,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConf
 	byKind := map[string][]Alloc{}
 	for _, alloc := range state {
 		for _, r := range alloc.Resources {
-			rKind := r.Request.Kind
+			rKind := r.Request.Provider
 			byKind[rKind] = append(byKind[rKind], Alloc{
 				PodName: alloc.Name,
 				Request: r.Request.Clone(),
@@ -204,7 +204,7 @@ func (e *Evaluator) handleAlloc(podName string, pod *manifest.Pod) {
 	byKind := map[string][]manifest.Resource{}
 	if pod != nil {
 		for _, r := range pod.Resources {
-			byKind[r.Kind] = append(byKind[r.Kind], r)
+			byKind[r.Provider] = append(byKind[r.Provider], r)
 		}
 	}
 	for workerName, v := range e.workers {

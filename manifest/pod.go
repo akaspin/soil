@@ -1,12 +1,13 @@
 package manifest
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/akaspin/soil/lib"
 	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
-	"github.com/mitchellh/hashstructure"
+	"hash/crc64"
 	"io"
 	"strings"
 )
@@ -54,11 +55,11 @@ type Pod struct {
 	Name       string
 	Runtime    bool
 	Target     string
-	Constraint Constraint
-	Units      Units     `hcl:"-"`
-	Blobs      Blobs     `hcl:"-"`
-	Resources  Resources `hcl:"-"`
-	Providers  Providers `hcl:"-"`
+	Constraint Constraint `json:",omitempty"`
+	Units      Units      `json:",omitempty" hcl:"-"`
+	Blobs      Blobs      `json:",omitempty" hcl:"-"`
+	Resources  Resources  `json:",omitempty" hcl:"-"`
+	Providers  Providers  `json:",omitempty" hcl:"-"`
 }
 
 func (p Pod) GetID(parent ...string) string {
@@ -93,7 +94,8 @@ func DefaultPod(namespace string) (p *Pod) {
 }
 
 func (p *Pod) Mark() (res uint64) {
-	res, _ = hashstructure.Hash(p, nil)
+	buf, _ := json.Marshal(p)
+	res = crc64.Checksum(buf, crc64.MakeTable(crc64.ECMA))
 	return
 }
 

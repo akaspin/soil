@@ -30,7 +30,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 	t.Run("0 recovered in range", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
 			PodName: "1",
-			Request: manifest.Resource{Kind: "port",
+			Request: manifest.Resource{Provider: "port",
 				Name: "8080",
 			},
 			Values: bus.NewMessage("1.8080", map[string]string{"value": "8002"}),
@@ -42,7 +42,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 	t.Run("0 recovered not in range", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
 			PodName: "1",
-			Request: manifest.Resource{Kind: "port", Name: "8081"},
+			Request: manifest.Resource{Provider: "port", Name: "8081"},
 			Values:  bus.NewMessage("1.8080", map[string]string{"value": "1000"}),
 		})
 		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
@@ -53,7 +53,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 	t.Run("0 allocate", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
 			PodName: "1",
-			Request: manifest.Resource{Kind: "port", Name: "8082"},
+			Request: manifest.Resource{Provider: "port", Name: "8082"},
 		})
 
 		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(
@@ -65,12 +65,12 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 	t.Run("0 not available", func(t *testing.T) {
 		executor.Allocate(resource.Alloc{
 			PodName: "1",
-			Request: manifest.Resource{Kind: "port", Name: "8083"},
+			Request: manifest.Resource{Provider: "port", Name: "8083"},
 		})
 		time.Sleep(time.Millisecond * 100)
 		executor.Allocate(resource.Alloc{
 			PodName: "1",
-			Request: manifest.Resource{Kind: "port", Name: "failed"},
+			Request: manifest.Resource{Provider: "port", Name: "failed"},
 		})
 
 		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons.ExpectMessagesFn(

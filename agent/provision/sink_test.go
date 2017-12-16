@@ -81,10 +81,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-first.service":  0x42552996e6deba52,
-				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
-				"/run/systemd/system/pod-private-second.service": 0x967a3661747e5983,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-first.service":  0xf69839128ca3fe8,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
 			})
 	})
 	t.Run("1 deploy public", func(t *testing.T) {
@@ -106,10 +106,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
+				"/run/systemd/system/pod-private-first.service":  0xf69839128ca3fe8,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
-				"/run/systemd/system/pod-private-first.service":  0x42552996e6deba52,
-				"/run/systemd/system/pod-private-second.service": 0x967a3661747e5983,
-				"/run/systemd/system/pod-public-third.service":   0x7ea2ffac5a0a1b96,
+				"/run/systemd/system/pod-public-third.service":   0xe70c2f5dbfa1a477,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/third-1.service":            0xdcdd742d1352ae8e,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
 			})
@@ -130,10 +130,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
-				"/run/systemd/system/pod-private-first.service":  0x42552996e6deba52,
-				"/run/systemd/system/pod-private-second.service": 0x967a3661747e5983,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-first.service":  0xf69839128ca3fe8,
 			})
 	})
 	t.Run("3 remove private first", func(t *testing.T) {
@@ -150,7 +150,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-second.service": 0x967a3661747e5983,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
@@ -170,10 +170,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-second.service": 0x918a2f1a57136223,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
-				"/run/systemd/system/pod-public-first.service":   0x73ec639c3434642d,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0x8e06cfae34eaf759,
+				"/run/systemd/system/pod-public-first.service":   0xd5444a1f0ea5e74,
 			})
 	})
 	t.Run("5 add private first to registry", func(t *testing.T) {
@@ -192,10 +192,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
-				"/run/systemd/system/pod-private-first.service":  0x4a119305f1a13473,
-				"/run/systemd/system/pod-private-second.service": 0x918a2f1a57136223,
+				"/run/systemd/system/pod-private-first.service":  0x77e42ddf938fb97a,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0x8e06cfae34eaf759,
 			})
 	})
 	t.Run("6 change first_private in meta", func(t *testing.T) {
@@ -213,7 +213,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-second.service": 0xb57ff0c462e8e8c4,
+				"/run/systemd/system/pod-private-second.service": 0xb029d4f4a5b282e9,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
@@ -233,10 +233,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-second.service": 0xb57ff0c462e8e8c4,
-				"/run/systemd/system/pod-public-first.service":   0x43188d38cbda3df3,
-				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-public-first.service":   0x21937a33627bb7e7,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0xb029d4f4a5b282e9,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	t.Run("8 simulate reload with changed registry and meta", func(t *testing.T) {
@@ -262,8 +262,8 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-first.service":  0x4a119305f1a13473,
-				"/run/systemd/system/pod-private-second.service": 0x918a2f1a57136223,
+				"/run/systemd/system/pod-private-second.service": 0x8e06cfae34eaf759,
+				"/run/systemd/system/pod-private-first.service":  0x77e42ddf938fb97a,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
 			})

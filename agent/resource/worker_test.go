@@ -22,8 +22,8 @@ func TestWorker_Submit(t *testing.T) {
 		{
 			PodName: "1",
 			Request: manifest.Resource{
-				Kind: "dummy1",
-				Name: "res-1",
+				Provider: "dummy1",
+				Name:     "res-1",
 				Config: map[string]interface{}{
 					"1": 2,
 				},
@@ -35,9 +35,9 @@ func TestWorker_Submit(t *testing.T) {
 		{
 			PodName: "2",
 			Request: manifest.Resource{
-				Kind:   "dummy1",
-				Name:   "res-2",
-				Config: map[string]interface{}{},
+				Provider: "dummy1",
+				Name:     "res-2",
+				Config:   map[string]interface{}{},
 			},
 			Values: bus.NewMessage("2.res-2", map[string]string{
 				"1": "2",
@@ -84,8 +84,8 @@ func TestWorker_Submit(t *testing.T) {
 	t.Run("2 change 1.res1", func(t *testing.T) {
 		worker.Submit("1", []manifest.Resource{
 			{
-				Kind: "dummy1",
-				Name: "res-1",
+				Provider: "dummy1",
+				Name:     "res-1",
 				Config: map[string]interface{}{
 					"1": 1,
 				},
@@ -115,8 +115,8 @@ func TestWorker_Submit(t *testing.T) {
 	t.Run("3 no changes", func(t *testing.T) {
 		worker.Submit("1", []manifest.Resource{
 			{
-				Kind: "dummy1",
-				Name: "res-1",
+				Provider: "dummy1",
+				Name:     "res-1",
 				Config: map[string]interface{}{
 					"1": 1,
 				},
@@ -146,14 +146,14 @@ func TestWorker_Submit(t *testing.T) {
 	t.Run("4 add 2", func(t *testing.T) {
 		worker.Submit("2", []manifest.Resource{
 			{
-				Kind:   "dummy1",
-				Name:   "res-1",
-				Config: map[string]interface{}{},
+				Provider: "dummy1",
+				Name:     "res-1",
+				Config:   map[string]interface{}{},
 			},
 			{
-				Kind:   "dummy1",
-				Name:   "res-2",
-				Config: map[string]interface{}{},
+				Provider: "dummy1",
+				Name:     "res-2",
+				Config:   map[string]interface{}{},
 			},
 		})
 

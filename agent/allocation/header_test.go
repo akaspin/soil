@@ -48,8 +48,8 @@ func TestHeader(t *testing.T) {
 	expectResources := []*allocation.Resource{
 		{
 			Request: manifest.Resource{
-				Kind: "port",
-				Name: "8080",
+				Provider: "port",
+				Name:     "8080",
 				Config: map[string]interface{}{
 					"fixed": float64(8080),
 					"other": "aaa bbb",
@@ -61,9 +61,9 @@ func TestHeader(t *testing.T) {
 		},
 		{
 			Request: manifest.Resource{
-				Kind:   "counter",
-				Name:   "1",
-				Config: map[string]interface{}{},
+				Provider: "counter",
+				Name:     "1",
+				Config:   map[string]interface{}{},
 			},
 			Values: map[string]string{
 				"value": "1",

@@ -24,7 +24,7 @@ func (b *Blobs) Append(v interface{}) (err error) {
 type Blob struct {
 	Name        string
 	Permissions int
-	Leave       bool
+	Leave       bool `json:",omitempty"`
 	Source      string
 }
 

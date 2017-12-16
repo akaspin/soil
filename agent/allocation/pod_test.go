@@ -35,22 +35,22 @@ func TestPod_FromManifest(t *testing.T) {
 			{
 				Header: allocation.Header{
 					Name:      "pod-1",
-					PodMark:   3038050396487760088,
+					PodMark:   1325958445368147906,
 					AgentMark: 0x623669d2cde83725,
 					Namespace: "private",
 				},
 				UnitFile: allocation.UnitFile{
 					SystemPaths: allocation.SystemPaths{},
 					Path:        "pod-private-pod-1.service",
-					Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":3038050396487760088}\n### RESOURCE pod-1.port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{}}\n### RESOURCE global.counter main {\"Request\":{\"count\":3},\"Values\":{}}\n### PROVIDER {\"Kind\":\"range\",\"Name\":\"port\",\"Config\":{\"max\":2000,\"min\":900}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+					Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":1325958445368147906}\n### RESOURCE pod-1.port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{}}\n### RESOURCE global.counter main {\"Request\":{\"count\":3},\"Values\":{}}\n### PROVIDER {\"Kind\":\"range\",\"Name\":\"port\",\"Config\":{\"max\":2000,\"min\":900}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 				},
 				Units: nil,
 				Blobs: nil,
 				Resources: []*allocation.Resource{
 					{
 						Request: manifest.Resource{
-							Name: "8080",
-							Kind: "pod-1.port",
+							Name:     "8080",
+							Provider: "pod-1.port",
 							Config: map[string]interface{}{
 								"fixed": int(8080),
 							},
@@ -59,8 +59,8 @@ func TestPod_FromManifest(t *testing.T) {
 					},
 					{
 						Request: manifest.Resource{
-							Name: "main",
-							Kind: "global.counter",
+							Name:     "main",
+							Provider: "global.counter",
 							Config: map[string]interface{}{
 								"count": int(3),
 							},
@@ -73,9 +73,7 @@ func TestPod_FromManifest(t *testing.T) {
 						Kind: "range",
 						Name: "port",
 						Config: map[string]interface{}{
-
 							"min": int(900),
-
 							"max": int(2000),
 						},
 					},
@@ -105,13 +103,13 @@ func TestNewFromManifest(t *testing.T) {
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{
 				Name:      "pod-1",
-				PodMark:   5028014810488605184,
+				PodMark:   5080533118280780141,
 				AgentMark: 0x623669d2cde83725,
 				Namespace: "private"},
 			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-1.service",
-				Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":5028014810488605184}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
+				Source:      "### POD pod-1 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":5080533118280780141}\n### UNIT /run/systemd/system/unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-1\nBefore=unit-1.service unit-2.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
 			Units: []*allocation.Unit{
 				{
 					UnitFile: allocation.UnitFile{
@@ -146,14 +144,14 @@ func TestNewFromManifest(t *testing.T) {
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{
 				Name:      "pod-2",
-				PodMark:   17122768065259164291,
+				PodMark:   1088507945796461565,
 				AgentMark: 0x623669d2cde83725,
 				Namespace: "private",
 			},
 			UnitFile: allocation.UnitFile{
 				SystemPaths: allocation.DefaultSystemPaths(),
 				Path:        "/run/systemd/system/pod-private-pod-2.service",
-				Source:      "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":17122768065259164291}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=private-unit-2.service pod-2-unit-1.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
+				Source:      "### POD pod-2 {\"AgentMark\":7076960218577909541,\"Namespace\":\"private\",\"PodMark\":1088507945796461565}\n### UNIT /run/systemd/system/private-unit-2.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### UNIT /run/systemd/system/pod-2-unit-1.service {\"Create\":\"start\",\"Update\":\"\",\"Destroy\":\"stop\",\"Permanent\":false}\n### BLOB /pod-2/etc/test {\"Leave\":false,\"Permissions\":420}\n\n[Unit]\nDescription=pod-2\nBefore=private-unit-2.service pod-2-unit-1.service\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n"},
 			Units: []*allocation.Unit{
 				{
 					UnitFile: allocation.UnitFile{
@@ -195,7 +193,7 @@ func TestNewFromManifest(t *testing.T) {
 		assert.Equal(t, &allocation.Pod{
 			Header: allocation.Header{
 				Name:      "pod-1",
-				PodMark:   5133150592239279453,
+				PodMark:   14200287983005636898,
 				AgentMark: 17576127034913539037,
 				Namespace: "private",
 			},
@@ -205,15 +203,15 @@ func TestNewFromManifest(t *testing.T) {
 					Runtime: "/run/systemd/system",
 				},
 				Path:   "/run/systemd/system/pod-private-pod-1.service",
-				Source: "### POD pod-1 {\"AgentMark\":17576127034913539037,\"Namespace\":\"private\",\"PodMark\":5133150592239279453}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
+				Source: "### POD pod-1 {\"AgentMark\":17576127034913539037,\"Namespace\":\"private\",\"PodMark\":14200287983005636898}\n### RESOURCE port 8080 {\"Request\":{\"fixed\":8080},\"Values\":{\"value\":\"8080\"}}\n### RESOURCE counter main {\"Request\":{\"count\":3},\"Values\":{\"value\":\"1\"}}\n\n[Unit]\nDescription=pod-1\nBefore=\n[Service]\nExecStart=/usr/bin/sleep inf\n[Install]\nWantedBy=multi-user.target\n",
 			},
 			Units: nil,
 			Blobs: nil,
 			Resources: []*allocation.Resource{
 				{
 					Request: manifest.Resource{
-						Name: "8080",
-						Kind: "port",
+						Name:     "8080",
+						Provider: "port",
 						Config: map[string]interface{}{
 							"fixed": int(8080),
 						},
@@ -222,8 +220,8 @@ func TestNewFromManifest(t *testing.T) {
 				},
 				{
 					Request: manifest.Resource{
-						Name: "main",
-						Kind: "counter",
+						Name:     "main",
+						Provider: "counter",
 						Config: map[string]interface{}{
 							"count": int(3),
 						},

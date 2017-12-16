@@ -32,10 +32,10 @@ type Resource struct {
 	Name string `hcl:"-"`
 
 	// Resource type
-	Kind string `hcl:"-"`
+	Provider string `hcl:"-"`
 
 	// Request config
-	Config map[string]interface{} `hcl:"-"`
+	Config map[string]interface{} `json:",omitempty" hcl:"-"`
 }
 
 func (r Resource) GetID(parent ...string) string {
@@ -44,10 +44,10 @@ func (r Resource) GetID(parent ...string) string {
 
 func (r *Resource) ParseAST(raw *ast.ObjectItem) (err error) {
 	if len(raw.Keys) != 2 {
-		err = fmt.Errorf(`resource should be "type" "name"`)
+		err = fmt.Errorf(`resource should be "provider" "name"`)
 		return
 	}
-	r.Kind = raw.Keys[0].Token.Value().(string)
+	r.Provider = raw.Keys[0].Token.Value().(string)
 	r.Name = raw.Keys[1].Token.Value().(string)
 	if err = hcl.DecodeObject(r, raw); err != nil {
 		return
@@ -69,7 +69,7 @@ func (r Resource) Clone() (res Resource) {
 // Returns "resource.request.<kind>.allow": "true"
 func (r *Resource) GetRequestConstraint() (res Constraint) {
 	res = Constraint{
-		fmt.Sprintf("${%s.%s.allow}", resourceRequestPrefix, r.Kind): "true",
+		fmt.Sprintf("${%s.%s.allow}", resourceRequestPrefix, r.Provider): "true",
 	}
 	return
 }
@@ -77,12 +77,12 @@ func (r *Resource) GetRequestConstraint() (res Constraint) {
 // Returns required constraint for provision with allocated resource
 func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
 	res = Constraint{}
-	res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Kind, r.GetID(podName))] = "true"
+	res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Provider, r.GetID(podName))] = "true"
 	return
 }
 
 // Returns `resource.<kind>.<pod>.<name>.__values_json`
 func (r *Resource) GetValuesKey(podName string) (res string) {
-	res = fmt.Sprintf("%s.%s.%s.__values", openResourcePrefix, r.Kind, r.GetID(podName))
+	res = fmt.Sprintf("%s.%s.%s.__values", openResourcePrefix, r.Provider, r.GetID(podName))
 	return
 }

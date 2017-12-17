@@ -68,7 +68,7 @@ func TestPod_FromManifest(t *testing.T) {
 						Values: map[string]string{},
 					},
 				},
-				Providers: allocation.Providers{
+				Providers: allocation.ProviderSlice{
 					&allocation.Provider{
 						Kind: "range",
 						Name: "port",
@@ -305,7 +305,7 @@ WantedBy=multi-user.target
 				},
 			},
 		},
-		Providers: allocation.Providers{
+		Providers: allocation.ProviderSlice{
 			{
 				Kind: "test",
 				Name: "test",

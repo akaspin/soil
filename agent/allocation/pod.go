@@ -28,7 +28,7 @@ type Pod struct {
 	Units     []*Unit
 	Blobs     []*Blob
 	Resources []*Resource
-	Providers Providers
+	Providers ProviderSlice
 }
 
 func NewPod(systemPaths SystemPaths) (p *Pod) {
@@ -49,6 +49,12 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 		AgentMark: agentMark,
 		Namespace: m.Namespace,
 	}
+	e := manifest.Environment{
+		"pod.name":      m.Name,
+		"pod.namespace": m.Namespace,
+		"pod.target":    m.Target,
+	}.Merge(env)
+
 	p.UnitFile = NewUnitFile(fmt.Sprintf("pod-%s-%s.service", m.Namespace, m.Name), p.SystemPaths, m.Runtime)
 	baseEnv := map[string]string{
 		"pod.name":      m.Name,
@@ -59,18 +65,20 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 	}
 
 	// Blobs
-	fileHashes := map[string]string{}
+	fileHashes1 := manifest.Environment{}
 	for _, b := range m.Blobs {
 		ab := &Blob{
 			Name:        manifest.Interpolate(b.Name, baseEnv),
 			Permissions: b.Permissions,
 			Leave:       b.Leave,
-			Source:      manifest.Interpolate(b.Source, baseEnv, baseSourceEnv, env),
+			Source:      e.Interpolate(b.Source),
 		}
 		p.Blobs = append(p.Blobs, ab)
 		fileHash, _ := hashstructure.Hash(ab.Source, nil)
-		fileHashes[fmt.Sprintf("blob.%s", strings.Replace(strings.Trim(ab.Name, "/"), "/", "-", -1))] = fmt.Sprintf("%d", fileHash)
+		fileHashes1[fmt.Sprintf(
+			"blob.%s", strings.Replace(strings.Trim(ab.Name, "/"), "/", "-", -1))] = fmt.Sprintf("%d", fileHash)
 	}
+	e = e.Merge(fileHashes1)
 
 	// Units
 	var unitNames []string
@@ -80,7 +88,7 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 			Transition: u.Transition,
 			UnitFile:   NewUnitFile(unitName, p.SystemPaths, m.Runtime),
 		}
-		pu.Source = manifest.Interpolate(u.Source, baseEnv, baseSourceEnv, fileHashes, env)
+		pu.Source = e.Interpolate(u.Source)
 		p.Units = append(p.Units, pu)
 		unitNames = append(unitNames, unitName)
 	}

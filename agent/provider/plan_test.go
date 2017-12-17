@@ -10,7 +10,7 @@ import (
 )
 
 func TestPlan(t *testing.T) {
-	left := allocation.Providers{
+	left := allocation.ProviderSlice{
 		{
 			Kind: "1",
 			Name: "1",
@@ -23,7 +23,7 @@ func TestPlan(t *testing.T) {
 			},
 		},
 	}
-	right := allocation.Providers{
+	right := allocation.ProviderSlice{
 		{
 			Kind: "2",
 			Name: "2",
@@ -51,13 +51,13 @@ func TestPlan(t *testing.T) {
 	})
 	t.Run(`change c3 u2 d1`, func(t *testing.T) {
 		c, u, d := provider.Plan(left, right)
-		assert.Equal(t, allocation.Providers{
+		assert.Equal(t, allocation.ProviderSlice{
 			{
 				Kind: "test",
 				Name: "3",
 			},
 		}, c)
-		assert.Equal(t, allocation.Providers{
+		assert.Equal(t, allocation.ProviderSlice{
 			&allocation.Provider{
 				Kind: "2",
 				Name: "2",

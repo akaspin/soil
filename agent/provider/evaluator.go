@@ -15,7 +15,7 @@ type Evaluator struct {
 	log       *logx.Log
 	estimator Estimator
 
-	state map[string]allocation.Providers
+	state map[string]allocation.ProviderSlice
 	dirty map[string]struct{} // dirty
 
 	allocateChan   chan *allocation.Pod
@@ -27,7 +27,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, estimator Estimator, state
 		Control:        supervisor.NewControl(ctx),
 		log:            log.GetLog("provider", "evaluator"),
 		estimator:      estimator,
-		state:          map[string]allocation.Providers{},
+		state:          map[string]allocation.ProviderSlice{},
 		dirty:          map[string]struct{}{},
 		allocateChan:   make(chan *allocation.Pod),
 		deallocateChan: make(chan string),
@@ -35,7 +35,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, estimator Estimator, state
 	for _, pod := range state {
 		if pod.Providers != nil || len(pod.Providers) > 0 {
 			v, _ := copystructure.Copy(pod.Providers)
-			e.state[pod.Name] = v.(allocation.Providers)
+			e.state[pod.Name] = v.(allocation.ProviderSlice)
 			e.dirty[pod.Name] = struct{}{}
 		}
 	}
@@ -48,11 +48,11 @@ func (e *Evaluator) Open() (err error) {
 	return
 }
 
-// Returns base constraint from manifest
+// Returns base constraint from manifest. For pods without resources GetConstraint adds constraint "__provider.allocate = false".
 func (e *Evaluator) GetConstraint(pod *manifest.Pod) manifest.Constraint {
 	if pod.Providers == nil || len(pod.Providers) == 0 {
 		return pod.Constraint.Merge(manifest.Constraint{
-			"${provider.allocate}": "!= true",
+			"__provider.allocate": "= false",
 		})
 	}
 	return pod.Constraint.Clone()
@@ -101,8 +101,8 @@ LOOP:
 	log.Tracef("close")
 }
 
-func (e *Evaluator) evaluate(name string, providers allocation.Providers) {
-	var left allocation.Providers
+func (e *Evaluator) evaluate(name string, providers allocation.ProviderSlice) {
+	var left allocation.ProviderSlice
 
 	if _, isDirty := e.dirty[name]; !isDirty {
 		left = e.state[name]
@@ -129,7 +129,7 @@ func (e *Evaluator) evaluate(name string, providers allocation.Providers) {
 	}
 }
 
-func (e *Evaluator) updateState(name string, providers allocation.Providers) {
+func (e *Evaluator) updateState(name string, providers allocation.ProviderSlice) {
 	if _, ok := e.dirty[name]; ok {
 		delete(e.dirty, name)
 		e.log.Debugf(`pod %s reached clean state`, name)

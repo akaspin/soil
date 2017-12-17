@@ -8,16 +8,44 @@ import (
 	"strings"
 )
 
-const resourceHeaderPrefix = "### RESOURCE"
+const (
+	resourceHeaderPrefix   = "### RESOURCE "
+	resourceHeaderPrefixV2 = "### RESOURCE.V2 "
+)
+
+// Allocation resources
+type ResourceSlice []*Resource
+
+func (r *ResourceSlice) Append(v ItemUnmarshaller) {
+	*r = append(*r, v.(*Resource))
+}
 
 // Allocated resource
 type Resource struct {
-
 	// Requested resource
 	Request manifest.Resource
 
 	// Allocated values are in "resource.type.pod-name.resource-name._"
-	Values map[string]string
+	Values map[string]string `json:",omitempty"`
+}
+
+func (r *Resource) FromManifest(podName string, req manifest.Resource, env map[string]string) (err error) {
+	return
+}
+
+// Marshal resource line
+func (r *Resource) MarshalLine(w io.Writer) (err error) {
+	if _, err = fmt.Fprint(w, resourceHeaderPrefixV2); err != nil {
+		return
+	}
+	err = json.NewEncoder(w).Encode(r)
+	return
+}
+
+func (r *Resource) UnmarshalLine(line string) (err error) {
+	// old resources are skipped
+	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceHeaderPrefixV2)), r)
+	return
 }
 
 func defaultResource() (r *Resource) {
@@ -51,10 +79,10 @@ func (r *Resource) marshalHeader(w io.Writer, encoder *json.Encoder) (err error)
 }
 
 func (r *Resource) unmarshalHeader(line string) (err error) {
-	if _, err = fmt.Sscanf(line, resourceHeaderPrefix+" %s %s ", &r.Request.Provider, &r.Request.Name); err != nil {
+	if _, err = fmt.Sscanf(line, resourceHeaderPrefix+"%s %s ", &r.Request.Provider, &r.Request.Name); err != nil {
 		return
 	}
-	jsonV := strings.TrimPrefix(line, fmt.Sprintf(resourceHeaderPrefix+" %s %s ", r.Request.Provider, r.Request.Name))
+	jsonV := strings.TrimPrefix(line, fmt.Sprintf(resourceHeaderPrefix+"%s %s ", r.Request.Provider, r.Request.Name))
 	var receiver resourceHeader
 	err = json.NewDecoder(strings.NewReader(jsonV)).Decode(&receiver)
 	r.Request.Config = receiver.Request

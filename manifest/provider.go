@@ -21,9 +21,9 @@ func (p *Providers) Append(v interface{}) (err error) {
 
 // Resource provider
 type Provider struct {
-	Kind   string // Resource kind: range, pool ...
-	Name   string // Logical name unique within pod
-	Config map[string]interface{}
+	Kind   string                 // Resource kind: range, pool ...
+	Name   string                 // Logical name unique within pod
+	Config map[string]interface{} `json:",omitempty"`
 }
 
 func (p Provider) GetID(parent ...string) string {

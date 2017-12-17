@@ -11,7 +11,7 @@ import (
 )
 
 func TestProviders(t *testing.T) {
-	expect := allocation.Providers{
+	expect := allocation.ProviderSlice{
 		{
 			Kind: "test",
 			Name: "test",
@@ -28,7 +28,7 @@ func TestProviders(t *testing.T) {
 	}
 	src := "### PROVIDER {\"Kind\":\"test\",\"Name\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### PROVIDER {\"Kind\":\"test\",\"Name\":\"test2\",\"Config\":{}}\n"
 	t.Run(`restore`, func(t *testing.T) {
-		var v allocation.Providers
+		var v allocation.ProviderSlice
 		err := allocation.Recover(&v, &allocation.Provider{}, src, []string{"### PROVIDER "})
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
@@ -77,9 +77,9 @@ func TestProviders_FromManifest(t *testing.T) {
 			},
 		},
 	}
-	var providers allocation.Providers
+	var providers allocation.ProviderSlice
 	assert.NoError(t, providers.FromManifest(man, nil))
-	assert.Equal(t, allocation.Providers{
+	assert.Equal(t, allocation.ProviderSlice{
 		{
 			Kind: "test",
 			Name: "test",

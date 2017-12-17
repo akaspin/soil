@@ -6,7 +6,7 @@ import (
 )
 
 // Plan determines changes between left and right for one pod
-func Plan(left, right allocation.Providers) (create, update allocation.Providers, destroy []string) {
+func Plan(left, right allocation.ProviderSlice) (create, update allocation.ProviderSlice, destroy []string) {
 	leftByName := map[string]*allocation.Provider{}
 	rightByName := map[string]struct{}{}
 	for _, prov := range left {

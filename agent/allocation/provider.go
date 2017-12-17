@@ -13,9 +13,10 @@ const (
 	providerHeadPrefix = "### PROVIDER "
 )
 
-type Providers []*Provider
+// Allocation providers
+type ProviderSlice []*Provider
 
-func (p *Providers) FromManifest(pod manifest.Pod, env map[string]string) (err error) {
+func (p *ProviderSlice) FromManifest(pod manifest.Pod, env map[string]string) (err error) {
 	for _, decl := range pod.Providers {
 		// clone provider
 		v, _ := copystructure.Copy(decl)
@@ -25,7 +26,7 @@ func (p *Providers) FromManifest(pod manifest.Pod, env map[string]string) (err e
 	return
 }
 
-func (p *Providers) Append(v ItemUnmarshaller) {
+func (p *ProviderSlice) Append(v ItemUnmarshaller) {
 	*p = append(*p, v.(*Provider))
 }
 

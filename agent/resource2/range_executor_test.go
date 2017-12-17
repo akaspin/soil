@@ -1,12 +1,12 @@
 // +build ide test_unit
 
-package resource_test
+package resource2_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/resource2"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"testing"
@@ -19,7 +19,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 	defer cancel()
 
 	cons := bus.NewTestingConsumer(ctx)
-	executor := resource.NewRangeExecutor(logx.GetLog("test"), resource.Config{
+	executor := resource2.NewRangeExecutor(logx.GetLog("test"), resource2.Config{
 		Nature: "range",
 		Kind:   "port",
 		Properties: map[string]interface{}{
@@ -29,7 +29,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 	}, cons)
 
 	t.Run("0 recovered in range", func(t *testing.T) {
-		executor.Allocate(resource.Alloc{
+		executor.Allocate(resource2.Alloc{
 			PodName: "1",
 			Request: manifest.Resource{Provider: "port",
 				Name: "8080",
@@ -41,7 +41,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 		))
 	})
 	t.Run("0 recovered not in range", func(t *testing.T) {
-		executor.Allocate(resource.Alloc{
+		executor.Allocate(resource2.Alloc{
 			PodName: "1",
 			Request: manifest.Resource{Provider: "port", Name: "8081"},
 			Values:  bus.NewMessage("1.8080", map[string]string{"value": "1000"}),
@@ -52,7 +52,7 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 		))
 	})
 	t.Run("0 allocate", func(t *testing.T) {
-		executor.Allocate(resource.Alloc{
+		executor.Allocate(resource2.Alloc{
 			PodName: "1",
 			Request: manifest.Resource{Provider: "port", Name: "8082"},
 		})
@@ -64,12 +64,12 @@ func TestRangeExecutor_Allocate(t *testing.T) {
 		))
 	})
 	t.Run("0 not available", func(t *testing.T) {
-		executor.Allocate(resource.Alloc{
+		executor.Allocate(resource2.Alloc{
 			PodName: "1",
 			Request: manifest.Resource{Provider: "port", Name: "8083"},
 		})
 		time.Sleep(time.Millisecond * 100)
-		executor.Allocate(resource.Alloc{
+		executor.Allocate(resource2.Alloc{
 			PodName: "1",
 			Request: manifest.Resource{Provider: "port", Name: "failed"},
 		})

@@ -1,12 +1,12 @@
 // +build ide test_unit
 
-package resource_test
+package resource2_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/resource2"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"testing"
@@ -18,11 +18,11 @@ func TestDummyExecutor_Allocate(t *testing.T) {
 	defer cancel()
 
 	cons1 := bus.NewTestingConsumer(ctx)
-	executor := resource.NewDummyExecutor(logx.GetLog("kind-1"), resource.Config{
+	executor := resource2.NewDummyExecutor(logx.GetLog("kind-1"), resource2.Config{
 		Kind: "kind-1",
 	}, cons1)
 
-	executor.Allocate(resource.Alloc{
+	executor.Allocate(resource2.Alloc{
 		PodName: "pod-1",
 		Request: manifest.Resource{
 			Provider: "kind-1",

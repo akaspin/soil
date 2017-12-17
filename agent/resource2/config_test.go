@@ -1,9 +1,9 @@
 // +build ide test_unit
 
-package resource_test
+package resource2_test
 
 import (
-	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/resource2"
 	"github.com/akaspin/soil/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -13,10 +13,10 @@ func TestConfigs_Unmarshal(t *testing.T) {
 	t.Skip()
 	var buffers lib.StaticBuffers
 	assert.NoError(t, buffers.ReadFiles("testdata/config_test_0.hcl", "testdata/config_test_1.hcl"))
-	var configs resource.Configs
+	var configs resource2.Configs
 	assert.NoError(t, configs.Unmarshal(buffers.GetReaders()...))
-	assert.Equal(t, resource.Configs{
-		resource.Config{
+	assert.Equal(t, resource2.Configs{
+		resource2.Config{
 			Nature: "dummy",
 			Kind:   "1",
 			Properties: map[string]interface{}{
@@ -24,7 +24,7 @@ func TestConfigs_Unmarshal(t *testing.T) {
 				"conf_two": "two",
 			},
 		},
-		resource.Config{
+		resource2.Config{
 			Nature: "range",
 			Kind:   "port",
 			Properties: map[string]interface{}{
@@ -32,7 +32,7 @@ func TestConfigs_Unmarshal(t *testing.T) {
 				"min": 8000,
 			},
 		},
-		resource.Config{
+		resource2.Config{
 			Nature: "range",
 			Kind:   "port_two",
 			Properties: map[string]interface{}{

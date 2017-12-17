@@ -1,13 +1,13 @@
 // +build ide test_unit
 
-package resource_test
+package resource2_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/resource2"
 	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -18,14 +18,14 @@ func TestEvaluator_Configure(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	runTest := func(t *testing.T, config []resource.Config, state allocation.Recovery, downstream, upstream []bus.Message) {
+	runTest := func(t *testing.T, config []resource2.Config, state allocation.Recovery, downstream, upstream []bus.Message) {
 		t.Helper()
 		ctx1, cancel := context.WithCancel(ctx)
 		defer cancel()
 
 		downstreamCons := bus.NewTestingConsumer(ctx1)
 		upstreamCons := bus.NewTestingConsumer(ctx1)
-		evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, downstreamCons, upstreamCons)
+		evaluator := resource2.NewEvaluator(ctx, log, resource2.EvaluatorConfig{}, state, downstreamCons, upstreamCons)
 		assert.NoError(t, evaluator.Open())
 		evaluator.Configure(config)
 
@@ -43,7 +43,7 @@ func TestEvaluator_Configure(t *testing.T) {
 	})
 	t.Run("1 empty with configs", func(t *testing.T) {
 		runTest(t,
-			[]resource.Config{
+			[]resource2.Config{
 				{
 					Kind:   "fake1",
 					Nature: "dummy",
@@ -77,7 +77,7 @@ func TestEvaluator_Configure(t *testing.T) {
 
 	t.Run("0 configs and allocations", func(t *testing.T) {
 		runTest(t,
-			[]resource.Config{
+			[]resource2.Config{
 				{
 					Kind:   "fake1",
 					Nature: "dummy",
@@ -108,7 +108,7 @@ func TestEvaluator_Configure(t *testing.T) {
 	})
 	t.Run("0 configs and extra allocations", func(t *testing.T) {
 		runTest(t,
-			[]resource.Config{
+			[]resource2.Config{
 				{
 					Kind:   "fake1",
 					Nature: "dummy",

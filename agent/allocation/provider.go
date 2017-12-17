@@ -16,7 +16,7 @@ const (
 // Allocation providers
 type ProviderSlice []*Provider
 
-func (p *ProviderSlice) FromManifest(pod manifest.Pod, env map[string]string) (err error) {
+func (p *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.Environment) (err error) {
 	for _, decl := range pod.Providers {
 		// clone provider
 		v, _ := copystructure.Copy(decl)

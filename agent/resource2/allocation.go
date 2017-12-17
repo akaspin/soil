@@ -1,4 +1,4 @@
-package resource
+package resource2
 
 import (
 	"github.com/akaspin/soil/agent/bus"

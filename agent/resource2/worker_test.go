@@ -1,12 +1,12 @@
 // +build ide test_unit
 
-package resource_test
+package resource2_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/resource2"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
 	"testing"
@@ -19,7 +19,7 @@ func TestWorker_Submit(t *testing.T) {
 	log := logx.GetLog("test")
 	cons1 := bus.NewTestingConsumer(ctx)
 
-	recovered := []resource.Alloc{
+	recovered := []resource2.Alloc{
 		{
 			PodName: "1",
 			Request: manifest.Resource{
@@ -46,11 +46,11 @@ func TestWorker_Submit(t *testing.T) {
 		},
 	}
 
-	worker := resource.NewWorker(ctx, log, "dummy1", cons1, resource.EvaluatorConfig{}, recovered)
+	worker := resource2.NewWorker(ctx, log, "dummy1", cons1, resource2.EvaluatorConfig{}, recovered)
 
 	waitConfig := fixture.DefaultWaitConfig()
 	t.Run("0 configure", func(t *testing.T) {
-		worker.Configure(resource.Config{
+		worker.Configure(resource2.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 		})
@@ -188,7 +188,7 @@ func TestWorker_Submit(t *testing.T) {
 		))
 	})
 	t.Run("5 reconfigure", func(t *testing.T) {
-		worker.Configure(resource.Config{
+		worker.Configure(resource2.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 			Properties: map[string]interface{}{
@@ -238,7 +238,7 @@ func TestWorker_Submit(t *testing.T) {
 		))
 	})
 	t.Run("5 reconfigure with equal config", func(t *testing.T) {
-		worker.Configure(resource.Config{
+		worker.Configure(resource2.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 			Properties: map[string]interface{}{
@@ -304,8 +304,8 @@ func TestWorker_Configure(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 		cons := bus.NewTestingConsumer(ctx)
-		worker := resource.NewWorker(context.Background(), logx.GetLog(""), "dummy1", cons, resource.EvaluatorConfig{}, nil)
-		worker.Configure(resource.Config{
+		worker := resource2.NewWorker(context.Background(), logx.GetLog(""), "dummy1", cons, resource2.EvaluatorConfig{}, nil)
+		worker.Configure(resource2.Config{
 			Nature: "dummy",
 			Kind:   "dummy1",
 		})

@@ -1,13 +1,13 @@
 // +build ide test_unit
 
-package resource_test
+package resource2_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
-	"github.com/akaspin/soil/agent/resource"
+	"github.com/akaspin/soil/agent/resource2"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/lib"
@@ -32,7 +32,7 @@ func TestSink_Flow_NoRecovery(t *testing.T) {
 
 	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
-	evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, nil, downstreamCons, upstream)
+	evaluator := resource2.NewEvaluator(ctx, log, resource2.EvaluatorConfig{}, nil, downstreamCons, upstream)
 	sink := scheduler.NewSink(ctx, log, nil, scheduler.NewBoundedEvaluator(
 		arbiter, evaluator,
 	))
@@ -80,7 +80,7 @@ func TestSink_Flow(t *testing.T) {
 			"testdata/TestSink_Flow/pod-test-1.service",
 			"testdata/TestSink_Flow/pod-test-2.service",
 		)))
-	evaluator := resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, downstreamCons, upstream)
+	evaluator := resource2.NewEvaluator(ctx, log, resource2.EvaluatorConfig{}, state, downstreamCons, upstream)
 	sink := scheduler.NewSink(ctx, log, state, scheduler.NewBoundedEvaluator(
 		arbiter, evaluator,
 	))
@@ -93,7 +93,7 @@ func TestSink_Flow(t *testing.T) {
 	assert.NoError(t, sv.Open())
 
 	t.Run("0 configure with recovery", func(t *testing.T) {
-		evaluator.Configure([]resource.Config{
+		evaluator.Configure([]resource2.Config{
 			{
 				Nature: "dummy",
 				Kind:   "fake1",

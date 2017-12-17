@@ -25,11 +25,21 @@ type Resource struct {
 	// Requested resource
 	Request manifest.Resource
 
-	// Allocated values are in "resource.type.pod-name.resource-name._"
-	Values map[string]string `json:",omitempty"`
+	// Allocated values stored in "resource.pod-name.<provider-name>.<resource-name>.__values" environment
+	Values manifest.Environment `json:",omitempty"`
 }
 
-func (r *Resource) FromManifest(podName string, req manifest.Resource, env map[string]string) (err error) {
+func (r *Resource) FromManifest(podName string, req manifest.Resource, env manifest.Environment) (err error) {
+	r.Request = req
+
+	// try to recover values from env
+
+	return
+}
+
+// Returns values bag key without provider
+func (r *Resource) ValuesKey() (res string) {
+	res = r.Request.Name + "."
 	return
 }
 

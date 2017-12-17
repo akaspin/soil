@@ -25,7 +25,7 @@ func (r *Resources) Append(v interface{}) (err error) {
 	return
 }
 
-// Resources are referenced by ${resource.<kind>.<pod>.name}
+// Resources are referenced by ${resource.<pod>.<provider>.<name>}
 type Resource struct {
 
 	// Resource name unique within pod

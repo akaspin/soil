@@ -14,6 +14,7 @@ import (
 )
 
 func TestEvaluator_Configure(t *testing.T) {
+	t.Skip()
 	ctx := context.Background()
 	log := logx.GetLog("test")
 

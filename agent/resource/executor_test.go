@@ -9,6 +9,7 @@ import (
 )
 
 func TestExecutorConfig_IsEqual(t *testing.T) {
+	t.Skip()
 	left := resource.Config{
 		Nature: "test",
 		Kind:   "test",

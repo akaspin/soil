@@ -19,6 +19,7 @@ import (
 )
 
 func TestSink_Flow_NoRecovery(t *testing.T) {
+	t.Skip()
 	ctx := context.Background()
 	log := logx.GetLog("test")
 	arbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{})

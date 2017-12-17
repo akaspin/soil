@@ -10,6 +10,7 @@ import (
 )
 
 func TestConfigs_Unmarshal(t *testing.T) {
+	t.Skip()
 	var buffers lib.StaticBuffers
 	assert.NoError(t, buffers.ReadFiles("testdata/config_test_0.hcl", "testdata/config_test_1.hcl"))
 	var configs resource.Configs

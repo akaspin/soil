@@ -13,6 +13,7 @@ import (
 )
 
 func TestWorker_Submit(t *testing.T) {
+	t.Skip()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	log := logx.GetLog("test")
@@ -298,6 +299,7 @@ func TestWorker_Submit(t *testing.T) {
 }
 
 func TestWorker_Configure(t *testing.T) {
+	t.Skip()
 	t.Run("0 empty", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()

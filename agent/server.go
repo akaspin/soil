@@ -34,12 +34,12 @@ type Server struct {
 
 	sv supervisor.Component
 
-	confPipe          bus.Consumer
+	confPipe bus.Consumer
 	//resourceEvaluator *resource.Evaluator
-	sink              *scheduler.Sink
-	kv                *cluster.KV
-	api               *api_server.Router
-	endpoints         struct {
+	sink      *scheduler.Sink
+	kv        *cluster.KV
+	api       *api_server.Router
+	endpoints struct {
 		registryGet    *api_server.Endpoint
 		statusNodesGet *api_server.Endpoint
 	}
@@ -130,8 +130,8 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	})
 	s.sink = scheduler.NewSink(ctx, s.log, state,
 		//scheduler.NewBoundedEvaluator(
-			//resourceArbiter,
-			//s.resourceEvaluator,
+		//resourceArbiter,
+		//s.resourceEvaluator,
 		//),
 		scheduler.NewBoundedEvaluator(provisionArbiter, provisionEvaluator),
 	)

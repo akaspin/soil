@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestProviders(t *testing.T) {
+func TestProviderSlice_Append(t *testing.T) {
 	expect := allocation.ProviderSlice{
 		{
 			Kind: "test",

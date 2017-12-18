@@ -58,6 +58,7 @@ func TestSink_Flow_NoRecovery(t *testing.T) {
 }
 
 func TestSink_Flow(t *testing.T) {
+	t.Skip()
 	ctx := context.Background()
 	log := logx.GetLog("test")
 	waitTime := time.Millisecond * 300

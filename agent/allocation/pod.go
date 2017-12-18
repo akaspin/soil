@@ -27,7 +27,7 @@ type Pod struct {
 	UnitFile
 	Units     []*Unit
 	Blobs     []*Blob
-	Resources []*Resource
+	Resources ResourceSlice
 	Providers ProviderSlice
 }
 
@@ -94,9 +94,7 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 	}
 
 	// Resources
-	for _, resource := range m.Resources {
-		p.Resources = append(p.Resources, newResource(p.Name, resource, env))
-	}
+	p.Resources.FromManifest(*m, env)
 	p.Providers.FromManifest(*m, env)
 
 	p.Source, err = p.Header.Marshal(p.Name, p.Units, p.Blobs, p.Resources, p.Providers)
@@ -111,7 +109,7 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	if err = p.UnitFile.Read(); err != nil {
 		return
 	}
-	if p.Units, p.Blobs, p.Resources, err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
+	if p.Units, p.Blobs, err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
 		return
 	}
 
@@ -127,6 +125,7 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	}
 	// TODO: refactor all other stuff
 	src := p.UnitFile.Source
+	err = Recover(&p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
 	err = Recover(&p.Providers, &Provider{}, src, []string{providerHeadPrefix})
 	return
 }

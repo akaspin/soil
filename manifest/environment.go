@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"encoding/json"
 	"regexp"
 	"strings"
 )
@@ -11,13 +12,13 @@ var (
 	envRe = regexp.MustCompile(`\$\{[a-zA-Z0-9_/\-.|]+}`)
 )
 
-// Environment
-type Environment map[string]string
+// FlatMap
+type FlatMap map[string]string
 
 // Merge values with environment
-func (e Environment) Merge(env ...Environment) (res Environment) {
-	res = Environment{}
-	for _, e1 := range append([]Environment{e}, env...) {
+func (e FlatMap) Merge(env ...FlatMap) (res FlatMap) {
+	res = FlatMap{}
+	for _, e1 := range append([]FlatMap{e}, env...) {
 		for k, v := range e1 {
 			res[k] = v
 		}
@@ -25,8 +26,16 @@ func (e Environment) Merge(env ...Environment) (res Environment) {
 	return
 }
 
+func (e FlatMap) WithJSON(key string) (j FlatMap) {
+	buf, _ := json.Marshal(e)
+	j = e.Merge(FlatMap{
+		key: string(buf),
+	})
+	return
+}
+
 // Interpolate source
-func (e Environment) Interpolate(source string) (res string) {
+func (e FlatMap) Interpolate(source string) (res string) {
 	res = envRe.ReplaceAllStringFunc(source, func(arg string) string {
 		var hasDefaultValue bool
 		var defaultValue string

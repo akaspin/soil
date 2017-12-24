@@ -61,6 +61,19 @@ func TestResource_UnmarshalLine(t *testing.T) {
 			},
 		}, r)
 	})
+	t.Run(`with values no config`, func(t *testing.T) {
+		r := &allocation.Resource{}
+		assert.NoError(t, r.UnmarshalLine("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\"},\"Values\":{\"a\":\"123\"}}\n"))
+		assert.Equal(t, &allocation.Resource{
+			Request: manifest.Resource{
+				Provider: "test",
+				Name:     "1",
+			},
+			Values: map[string]string{
+				"a": "123",
+			},
+		}, r)
+	})
 	t.Run(`without values`, func(t *testing.T) {
 		r := &allocation.Resource{}
 		assert.NoError(t, r.UnmarshalLine("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\",\"Config\":{\"a\":1}}}\n"))
@@ -86,7 +99,7 @@ func TestResource_FromManifest(t *testing.T) {
 	}
 	t.Run(`with values`, func(t *testing.T) {
 		r := &allocation.Resource{}
-		err := r.FromManifest("test", m, manifest.Environment{
+		err := r.FromManifest("test", m, manifest.FlatMap{
 			"resource.test.1.__values": `
 				{
 					"allocated": "true",
@@ -111,7 +124,7 @@ func TestResource_FromManifest(t *testing.T) {
 	})
 	t.Run(`without values`, func(t *testing.T) {
 		r := &allocation.Resource{}
-		err := r.FromManifest("test", m, manifest.Environment{})
+		err := r.FromManifest("test", m, manifest.FlatMap{})
 		assert.NoError(t, err)
 		assert.Equal(t, &allocation.Resource{
 			Request: manifest.Resource{

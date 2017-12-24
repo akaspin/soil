@@ -68,5 +68,32 @@ func TestPlan(t *testing.T) {
 		}, u)
 		assert.Equal(t, []string{"1"}, d)
 	})
+	t.Run(`change 2`, func(t *testing.T) {
+		r1 := allocation.ProviderSlice{
+			{
+				Kind: "1",
+				Name: "1",
+			},
+			{
+				Kind: "1",
+				Name: "2",
+				Config: map[string]interface{}{
+					"a": 2,
+				},
+			},
+		}
+		c, u, d := provider.Plan(left, r1)
+		assert.Empty(t, c)
+		assert.Equal(t, allocation.ProviderSlice{
+			{
+				Kind: "1",
+				Name: "2",
+				Config: map[string]interface{}{
+					"a": 2,
+				},
+			},
+		}, u)
+		assert.Empty(t, d)
+	})
 
 }

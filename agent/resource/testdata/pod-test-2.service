@@ -1,0 +1,10 @@
+### POD test-2 {"AgentMark":456,"Namespace":"private","PodMark":123}
+### RESOURCE {"Request":{"Name":"8081","Provider":"test-0.port"},"Values":{"value":"9001"}}
+### RESOURCE {"Request":{"Name":"8082","Provider":"test-1.port"},"Values":{"value":"9002"}}
+[Unit]
+Description=test-2
+Before=
+[Service]
+ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target

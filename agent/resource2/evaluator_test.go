@@ -18,7 +18,7 @@ func TestEvaluator_Configure(t *testing.T) {
 	ctx := context.Background()
 	log := logx.GetLog("test")
 
-	runTest := func(t *testing.T, config []resource2.Config, state allocation.Recovery, downstream, upstream []bus.Message) {
+	runTest := func(t *testing.T, config []resource2.Config, state allocation.PodSlice, downstream, upstream []bus.Message) {
 		t.Helper()
 		ctx1, cancel := context.WithCancel(ctx)
 		defer cancel()
@@ -64,7 +64,7 @@ func TestEvaluator_Configure(t *testing.T) {
 				})},
 		)
 	})
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	assert.NoError(t, state.FromFilesystem(
 		allocation.SystemPaths{
 			Local:   "testdata/etc",

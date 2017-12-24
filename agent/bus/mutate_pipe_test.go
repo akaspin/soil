@@ -15,7 +15,6 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 	defer cancel()
 
 	c1 := bus.NewTestingConsumer(ctx)
-	c2 := bus.NewTestingConsumer(ctx)
 
 	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
 		var chunk map[string]string
@@ -24,7 +23,7 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 		delete(chunk, "a")
 		res = bus.NewMessage(message.GetID(), chunk)
 		return
-	}, c1, c2)
+	}, c1)
 
 	pipe.ConsumeMessage(bus.NewMessage("test", map[string]string{
 		"a": "1",
@@ -32,9 +31,6 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 	}))
 
 	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), c1.ExpectMessagesFn(
-		bus.NewMessage("test", map[string]string{"b": "2"}),
-	))
-	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), c2.ExpectMessagesFn(
 		bus.NewMessage("test", map[string]string{"b": "2"}),
 	))
 }

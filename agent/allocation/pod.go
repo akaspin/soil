@@ -49,7 +49,7 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 		AgentMark: agentMark,
 		Namespace: m.Namespace,
 	}
-	e := manifest.Environment{
+	e := manifest.FlatMap{
 		"pod.name":      m.Name,
 		"pod.namespace": m.Namespace,
 		"pod.target":    m.Target,
@@ -65,7 +65,7 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 	}
 
 	// Blobs
-	fileHashes1 := manifest.Environment{}
+	fileHashes1 := manifest.FlatMap{}
 	for _, b := range m.Blobs {
 		ab := &Blob{
 			Name:        manifest.Interpolate(b.Name, baseEnv),

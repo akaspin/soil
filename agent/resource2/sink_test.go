@@ -71,7 +71,7 @@ func TestSink_Flow(t *testing.T) {
 	checkCons := bus.NewTestingConsumer(consCtx)
 	upstream := bus.NewTeePipe(arbiterCompositePipe, checkCons)
 
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	assert.NoError(t, state.FromFilesystem(
 		allocation.SystemPaths{
 			Local:   "testdata/etc",

@@ -19,7 +19,7 @@ const (
 // Allocation resources
 type ResourceSlice []*Resource
 
-func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.Environment) (err error) {
+func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err error) {
 	err = &multierror.Error{}
 	for _, decl := range m.Resources {
 		v, _ := copystructure.Copy(decl)
@@ -27,6 +27,7 @@ func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.Environment) (
 		if err1 := (&resource).FromManifest(m.Name, v.(manifest.Resource), env); err1 != nil {
 			err = multierror.Append(err, err1)
 		}
+		*r = append(*r, &resource)
 	}
 	err = err.(*multierror.Error).ErrorOrNil()
 	return
@@ -42,11 +43,15 @@ type Resource struct {
 	Request manifest.Resource
 
 	// Allocated values stored in "resource.pod-name.<provider-name>.<resource-name>.__values" environment
-	Values manifest.Environment `json:",omitempty"`
+	Values manifest.FlatMap `json:",omitempty"`
+}
+
+func (r Resource) String() string {
+	return fmt.Sprint(r.Request, r.Values)
 }
 
 // Unmarshal resource allocation from manifest
-func (r *Resource) FromManifest(podName string, req manifest.Resource, env manifest.Environment) (err error) {
+func (r *Resource) FromManifest(podName string, req manifest.Resource, env manifest.FlatMap) (err error) {
 	r.Request = req
 
 	// try to recover values from env
@@ -74,5 +79,11 @@ func (r *Resource) MarshalLine(w io.Writer) (err error) {
 func (r *Resource) UnmarshalLine(line string) (err error) {
 	// old resources are skipped
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceHeaderPrefix)), r)
+	return
+}
+
+func (r *Resource) Clone() (res *Resource) {
+	i, _ := copystructure.Copy(r)
+	res = i.(*Resource)
 	return
 }

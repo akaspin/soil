@@ -25,13 +25,13 @@ func (r *Resources) Append(v interface{}) (err error) {
 	return
 }
 
-// Resources are referenced by ${resource.<pod>.<provider>.<name>}
+// Resources are referenced by ${resource.<pod>.<name>}
 type Resource struct {
 
 	// Resource name unique within pod
 	Name string `hcl:"-"`
 
-	// Resource type
+	// Provider
 	Provider string `hcl:"-"`
 
 	// Request config

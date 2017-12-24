@@ -1,8 +1,10 @@
 package bus
 
-import "sync"
+import (
+	"sync"
+)
 
-// Catalog pipe holds set catalog of consumed map[string]string messages and propagates them to downstream as map[name+message-id+k]=v. To reset catalog pipe send map[id]map[k]string message with empty message id
+// Catalog pipe holds set catalog of consumed map[string]string messages and propagates them to downstream as name:map[message-id+k]=v. To reset catalog pipe send map[id]map[k]string message with empty message id
 type CatalogPipe struct {
 	name     string
 	consumer Consumer

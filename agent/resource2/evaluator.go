@@ -28,7 +28,7 @@ type Evaluator struct {
 	messageChan    chan bus.Message
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConfig, state allocation.Recovery, downstream, upstream bus.Consumer) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, workerConfig EvaluatorConfig, state allocation.PodSlice, downstream, upstream bus.Consumer) (e *Evaluator) {
 	e = &Evaluator{
 		Control:            supervisor.NewControl(ctx),
 		log:                log.GetLog("resource", "evaluator"),

@@ -15,7 +15,7 @@ type EvaluatorState struct {
 	pending    map[string]*allocation.Pod // Pending allocations
 }
 
-func NewEvaluatorState(log *logx.Log, recovered allocation.Recovery) (s *EvaluatorState) {
+func NewEvaluatorState(log *logx.Log, recovered allocation.PodSlice) (s *EvaluatorState) {
 	s = &EvaluatorState{
 		log:        log.WithTags("evaluator", "state"),
 		finished:   map[string]*allocation.Pod{},

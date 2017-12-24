@@ -53,7 +53,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	}
 	s.kv = cluster.NewKV(ctx, log, cluster.DefaultBackendFactory)
 
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	if recoveryErr := state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
 		s.log.Errorf("recovered with failure: %v", recoveryErr)
 	}

@@ -13,7 +13,7 @@ import (
 type Evaluator struct {
 	*supervisor.Control
 	log       *logx.Log
-	estimator Estimator
+	estimator Manager
 
 	state map[string]allocation.ProviderSlice
 	dirty map[string]struct{} // dirty
@@ -22,7 +22,7 @@ type Evaluator struct {
 	deallocateChan chan string
 }
 
-func NewEvaluator(ctx context.Context, log *logx.Log, estimator Estimator, state allocation.Recovery) (e *Evaluator) {
+func NewEvaluator(ctx context.Context, log *logx.Log, estimator Manager, state allocation.PodSlice) (e *Evaluator) {
 	e = &Evaluator{
 		Control:        supervisor.NewControl(ctx),
 		log:            log.GetLog("provider", "evaluator"),

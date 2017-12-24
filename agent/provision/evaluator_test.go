@@ -23,7 +23,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 
 	ctx := context.Background()
 
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
 	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), provision.EvaluatorConfig{
@@ -123,7 +123,7 @@ func TestEvaluator_Report(t *testing.T) {
 	defer cancel()
 	stat := bus.NewTestingConsumer(ctx)
 
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 
 	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), provision.EvaluatorConfig{

@@ -26,7 +26,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	log := logx.GetLog("test")
 
 	arbiter := scheduler.NewArbiter(ctx, log, "test", scheduler.ArbiterConfig{})
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 	evaluator := provision.NewEvaluator(ctx, log, provision.EvaluatorConfig{
 		SystemPaths:    allocation.DefaultSystemPaths(),

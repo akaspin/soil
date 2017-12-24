@@ -2,8 +2,8 @@ package provider
 
 import "github.com/akaspin/soil/agent/allocation"
 
-// Estimator can reconfigure resources from providers
-type Estimator interface {
+// Manager can reconfigure resources from providers
+type Manager interface {
 
 	// Create provider
 	CreateProvider(id string, alloc *allocation.Provider)

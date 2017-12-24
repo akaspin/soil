@@ -13,7 +13,7 @@ import (
 
 type EvaluatorConfig struct {
 	SystemPaths    allocation.SystemPaths
-	Recovery       allocation.Recovery // recovery state
+	Recovery       allocation.PodSlice // recovery state
 	StatusConsumer bus.Consumer        // consumer for "evaluation.<pod>.*"
 }
 

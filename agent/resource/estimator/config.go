@@ -15,4 +15,5 @@ type Config struct {
 	Ctx      context.Context
 	Log      *logx.Log
 	Provider *allocation.Provider
+	Id       string // Full provider ID
 }

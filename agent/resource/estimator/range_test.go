@@ -15,7 +15,7 @@ import (
 )
 
 func TestRange(t *testing.T) {
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		t.Run(fmt.Sprintf("i%d", i), func(t *testing.T) {
 			t.Parallel()
 			ctx, cancel := context.WithCancel(context.Background())

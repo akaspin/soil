@@ -5,8 +5,20 @@ package manifest_test
 import (
 	"github.com/akaspin/soil/manifest"
 	"github.com/stretchr/testify/assert"
+	"regexp"
 	"testing"
 )
+
+func TestFlatMap_Filter(t *testing.T) {
+	m1 := manifest.FlatMap{
+		"1.provider": "a",
+		"1.value":    "b",
+	}
+	m2 := m1.Filter(regexp.MustCompile(`\.provider$`))
+	assert.Equal(t, manifest.FlatMap{
+		"1.value": "b",
+	}, m2)
+}
 
 func TestExtractEnv(t *testing.T) {
 

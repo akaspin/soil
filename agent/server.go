@@ -34,8 +34,7 @@ type Server struct {
 
 	sv supervisor.Component
 
-	confPipe bus.Consumer
-	//resourceEvaluator *resource.Evaluator
+	confPipe  bus.Consumer
 	sink      *scheduler.Sink
 	kv        *cluster.KV
 	api       *api_server.Router
@@ -60,16 +59,6 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 
 	systemPaths := allocation.DefaultSystemPaths()
 
-	// Resource
-	//resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
-	//	Required: manifest.Constraint{"${agent.drain}": "!= true"},
-	//	ConstraintOnly: []*regexp.Regexp{
-	//		regexp.MustCompile(`^provision\..+`),
-	//	},
-	//})
-	//resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	//resourceCompositePipe := bus.NewCompositePipe("private", log, resourceDrainPipe, "meta", "system", "resource", "provision")
-
 	// provision
 	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision",
 		scheduler.ArbiterConfig{
@@ -88,12 +77,10 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	s.confPipe = bus.NewTeePipe(
-		//resourceCompositePipe,
 		provisionCompositePipe,
 	)
 
 	drainFn := func(on bool) {
-		//resourceDrainPipe.Divert(on)
 		provisionDrainPipe.Divert(on)
 	}
 
@@ -119,20 +106,14 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	)
 
 	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
-		//resourceCompositePipe,
 		provisionCompositePipe,
 	))
-	//s.resourceEvaluator = resource.NewEvaluator(ctx, log, resource.EvaluatorConfig{}, state, provisionCompositePipe, resourceCompositePipe)
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
 		SystemPaths:    systemPaths,
 		Recovery:       state,
 		StatusConsumer: provisionStateConsumer,
 	})
 	s.sink = scheduler.NewSink(ctx, s.log, state,
-		//scheduler.NewBoundedEvaluator(
-		//resourceArbiter,
-		//s.resourceEvaluator,
-		//),
 		scheduler.NewBoundedEvaluator(provisionArbiter, provisionEvaluator),
 	)
 
@@ -185,10 +166,6 @@ func (s *Server) Configure() {
 	if err := serverCfg.Unmarshal(buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal server configs: %v", err)
 	}
-	//var resourceConfigs resource.Configs
-	//if err := resourceConfigs.Unmarshal(buffers.GetReaders()...); err != nil {
-	//	s.log.Errorf("unmarshal resource configs: %v", err)
-	//}
 	var registry manifest.Pods
 	if err := registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...); err != nil {
 		s.log.Errorf("unmarshal registry: %v", err)
@@ -212,7 +189,6 @@ func (s *Server) Configure() {
 	s.confPipe.ConsumeMessage(bus.NewMessage("meta", serverCfg.Meta))
 	s.confPipe.ConsumeMessage(bus.NewMessage("system", serverCfg.System))
 
-	//s.resourceEvaluator.Configure(resourceConfigs)
 	s.sink.ConsumeRegistry(registry)
 	s.log.Debug("configure: done")
 }

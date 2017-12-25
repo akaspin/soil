@@ -9,6 +9,7 @@ import (
 	"github.com/akaspin/soil/agent/resource/estimator"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
+	"regexp"
 )
 
 const (
@@ -69,7 +70,9 @@ func (e *Evaluator) Open() (err error) {
 		for _, res := range resources {
 			downstream[pod+"."+res.Request.Name] = res.Values
 			if res.Values != nil {
-				downstream[pod+"."+res.Request.Name] = res.Values.WithJSON("__values")
+				downstream[pod+"."+res.Request.Name] = res.Values.WithJSON("__values").Merge(manifest.FlatMap{
+					"provider": res.Request.Provider,
+				})
 			}
 		}
 	}
@@ -292,6 +295,6 @@ func (e *Evaluator) jsonPipeFn(message bus.Message) (res bus.Message) {
 		e.log.Errorf(`failed to unmarshal %s: %v`, message, err)
 		return
 	}
-	res = bus.NewMessage(message.GetID(), payload.Merge(payload.WithJSON("__values")))
+	res = bus.NewMessage(message.GetID(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON("__values")))
 	return
 }

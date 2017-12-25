@@ -26,6 +26,21 @@ func (e FlatMap) Merge(env ...FlatMap) (res FlatMap) {
 	return
 }
 
+// Return flatmap without regex
+func (e FlatMap) Filter(r ...*regexp.Regexp) (res FlatMap) {
+	res = FlatMap{}
+LOOP:
+	for k, v := range e {
+		for _, r1 := range r {
+			if r1.MatchString(k) {
+				continue LOOP
+			}
+			res[k] = v
+		}
+	}
+	return
+}
+
 func (e FlatMap) WithJSON(key string) (j FlatMap) {
 	buf, _ := json.Marshal(e)
 	j = e.Merge(FlatMap{

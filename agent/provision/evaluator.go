@@ -2,6 +2,7 @@ package provision
 
 import (
 	"context"
+	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
@@ -48,10 +49,16 @@ func (e *Evaluator) Open() (err error) {
 	return
 }
 
-// GetConstraint returns defined pod constraints with constraints for
-// required resources.
+// Returns all base constraints including resources
 func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
-	res = pod.GetResourceAllocationConstraint()
+	res = pod.Constraint.Clone()
+	if len(pod.Resources) > 0 {
+		c1 := manifest.Constraint{}
+		for _, r := range pod.Resources {
+			c1[fmt.Sprintf(`${resource.%s.%s.allocated}`, pod.Name, r.Name)] = "true"
+		}
+		res = res.Merge(c1)
+	}
 	return
 }
 

@@ -170,7 +170,9 @@ LOOP:
 					continue LOOP
 				}
 				state.Values = payload
-				s.config.Downstream.ConsumeMessage(bus.NewMessage(res.Message.GetID(), payload))
+				s.config.Downstream.ConsumeMessage(bus.NewMessage(res.Message.GetID(), payload.Merge(manifest.FlatMap{
+					"provider": s.id,
+				})))
 				continue LOOP
 			}
 			s.log.Errorf(`resource not found %s`, res.Message)
@@ -221,6 +223,7 @@ func (s *Sandbox) reconfigure(p *allocation.Provider) {
 		Ctx:      s.ctx,
 		Log:      s.log.GetLog("resource", "estimator", p.Kind, s.id),
 		Provider: p,
+		Id:       s.id,
 	})
 	if err != nil {
 		s.log.Error(err)

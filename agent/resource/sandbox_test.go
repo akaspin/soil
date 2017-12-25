@@ -15,9 +15,10 @@ import (
 )
 
 func TestSandbox(t *testing.T) {
-	t.Parallel()
 	for i := 0; i < 5; i++ {
 		t.Run(fmt.Sprintf("i-%d", i), func(t *testing.T) {
+			t.Parallel()
+
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
@@ -81,8 +82,10 @@ func TestSandbox(t *testing.T) {
 				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("0", map[string]string{
 						"1.allocated": "true",
+						"1.provider":  "pod1.test",
 						"1.value":     "8080",
 						"2.allocated": "true",
+						"2.provider":  "pod1.test",
 						"2.value":     "8081",
 					}),
 				))
@@ -102,6 +105,7 @@ func TestSandbox(t *testing.T) {
 				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("0", map[string]string{
 						"2.allocated": "true",
+						"2.provider":  "pod1.test",
 						"2.value":     "8081",
 					}),
 				))
@@ -118,6 +122,7 @@ func TestSandbox(t *testing.T) {
 				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("0", map[string]string{
 						"2.allocated": "true",
+						"2.provider":  "pod1.test",
 						"2.value":     "3000",
 					}),
 				))
@@ -146,8 +151,10 @@ func TestSandbox(t *testing.T) {
 				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("0", map[string]string{
 						"2.allocated": "true",
+						"2.provider":  "pod1.test",
 						"2.value":     "3000",
 						"3.allocated": "true",
+						"3.provider":  "pod1.test",
 						"3.value":     "3001",
 					}),
 				))
@@ -157,6 +164,7 @@ func TestSandbox(t *testing.T) {
 				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("0", map[string]string{
 						"3.allocated": "true",
+						"3.provider":  "pod1.test",
 						"3.value":     "3001",
 					}),
 				))

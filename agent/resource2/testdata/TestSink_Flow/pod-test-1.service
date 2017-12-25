@@ -1,8 +1,0 @@
-### POD test-2 {"AgentMark":456,"Namespace":"private","PodMark":123}
-[Unit]
-Description=test-1
-Before=
-[Service]
-ExecStart=/usr/bin/sleep inf
-[Install]
-WantedBy=multi-user.target

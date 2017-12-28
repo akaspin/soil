@@ -41,7 +41,7 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, 400)
 	})
 	t.Run(`upload`, func(t *testing.T) {
-		v := manifest.Registry{
+		v := manifest.Pods{
 			{
 				Name:      "1",
 				Namespace: manifest.PublicNamespace,
@@ -115,13 +115,13 @@ func TestRegistryPodsGetProcessor_Process(t *testing.T) {
 	t.Run(`empty`, func(t *testing.T) {
 		resp, err := http.Get(fmt.Sprintf("%s/v1/registry", srv.URL))
 		require.NoError(t, err)
-		var pods manifest.Registry
+		var pods manifest.Pods
 		assert.NoError(t, json.NewDecoder(resp.Body).Decode(&pods))
 		defer resp.Body.Close()
-		assert.Equal(t, manifest.Registry{}, pods)
+		assert.Equal(t, manifest.Pods{}, pods)
 	})
 	t.Run(`not empty`, func(t *testing.T) {
-		v := manifest.Registry{
+		v := manifest.Pods{
 			{
 				Name:      "1",
 				Namespace: manifest.PublicNamespace,
@@ -141,7 +141,7 @@ func TestRegistryPodsGetProcessor_Process(t *testing.T) {
 				err = fmt.Errorf(`no response`)
 				return
 			}
-			var pods manifest.Registry
+			var pods manifest.Pods
 			if err = json.NewDecoder(resp.Body).Decode(&pods); err != nil {
 				return
 			}

@@ -26,7 +26,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	log := logx.GetLog("test")
 
 	arbiter := scheduler.NewArbiter(ctx, log, "test", scheduler.ArbiterConfig{})
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	assert.NoError(t, state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc))
 	evaluator := provision.NewEvaluator(ctx, log, provision.EvaluatorConfig{
 		SystemPaths:    allocation.DefaultSystemPaths(),
@@ -67,7 +67,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 
 	t.Run("0 deploy private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_0.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -81,15 +81,15 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-first.service":  0x96a7afc007ee24d2,
-				"/run/systemd/system/pod-private-second.service": 0xd8fefca310e10e7d,
-				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-first.service":  0xf69839128ca3fe8,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
 			})
 	})
 	t.Run("1 deploy public", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_1.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
@@ -106,18 +106,17 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-first.service":  0x96a7afc007ee24d2,
-				"/run/systemd/system/pod-private-second.service": 0xd8fefca310e10e7d,
-				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-first.service":  0xf69839128ca3fe8,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
-				// new
-				"/run/systemd/system/pod-public-third.service": 0x3636b248bd46a1f2,
-				"/run/systemd/system/third-1.service":          0xdcdd742d1352ae8e,
+				"/run/systemd/system/pod-public-third.service":   0xe70c2f5dbfa1a477,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
+				"/run/systemd/system/third-1.service":            0xdcdd742d1352ae8e,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
 			})
 	})
 	t.Run("2 change constraints of public third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_2.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
@@ -131,15 +130,15 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-first.service":  0x96a7afc007ee24d2,
-				"/run/systemd/system/pod-private-second.service": 0xd8fefca310e10e7d,
-				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-first.service":  0xf69839128ca3fe8,
 			})
 	})
 	t.Run("3 remove private first", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_3.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -151,7 +150,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-second.service": 0xd8fefca310e10e7d,
+				"/run/systemd/system/pod-private-second.service": 0xcc0faaace5441982,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
@@ -171,17 +170,15 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				// pods are changed
-				"/run/systemd/system/pod-public-first.service":   0x202af84aaa381b0e,
-				"/run/systemd/system/pod-private-second.service": 0x5cc6d9813c197831,
-				// units are not changed
-				"/run/systemd/system/first-1.service":  0x6ac69815b89bddee,
-				"/run/systemd/system/second-1.service": 0x6ac69815b89bddee,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0x8e06cfae34eaf759,
+				"/run/systemd/system/pod-public-first.service":   0xd5444a1f0ea5e74,
 			})
 	})
 	t.Run("5 add private first to registry", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_5.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -195,13 +192,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				// first pod now is private
-				"/run/systemd/system/pod-private-first.service": 0x4fcf100324fc09f5,
-				// second pod is not changed
-				"/run/systemd/system/pod-private-second.service": 0x5cc6d9813c197831,
-				// units are not changed
-				"/run/systemd/system/first-1.service":  0x6ac69815b89bddee,
-				"/run/systemd/system/second-1.service": 0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-first.service":  0x77e42ddf938fb97a,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0x8e06cfae34eaf759,
 			})
 	})
 	t.Run("6 change first_private in meta", func(t *testing.T) {
@@ -219,15 +213,13 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				// second pod is changed
-				"/run/systemd/system/pod-private-second.service": 0xa73e5753028138f0,
-				// units are not changed
-				"/run/systemd/system/second-1.service": 0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0xb029d4f4a5b282e9,
+				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
 	t.Run("7 remove private first from registry", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_7.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -241,9 +233,9 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-public-first.service":   0x83a6119e4a9f647d,
-				"/run/systemd/system/pod-private-second.service": 0xa73e5753028138f0,
+				"/run/systemd/system/pod-public-first.service":   0x21937a33627bb7e7,
 				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0xb029d4f4a5b282e9,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
 			})
 	})
@@ -255,7 +247,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.second_private": "1",
 		}))
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_8.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -270,10 +262,10 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			}))
 		sd.AssertUnitHashes(t, allUnitNames,
 			map[string]uint64{
-				"/run/systemd/system/pod-private-first.service":  0x4fcf100324fc09f5,
-				"/run/systemd/system/pod-private-second.service": 0x5cc6d9813c197831,
-				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
+				"/run/systemd/system/pod-private-second.service": 0x8e06cfae34eaf759,
+				"/run/systemd/system/pod-private-first.service":  0x77e42ddf938fb97a,
 				"/run/systemd/system/second-1.service":           0x6ac69815b89bddee,
+				"/run/systemd/system/first-1.service":            0x6ac69815b89bddee,
 			})
 	})
 

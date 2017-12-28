@@ -16,7 +16,7 @@ $ soil agent --id agent-1 --config=config.hcl --meta rack=left
 ## Command line options
 
 `id` `(string: "localhost")`
-: Agent ID. This value is matters only if Agent uses *public* namespace and should be unique within cluster.
+: Agent ID (deprecated). This value is matters only if Agent uses *public* namespace and should be unique within cluster.
 
 `config` `([]string: "etc/soil/config.hcl")`
 : Path to agent configuration file. This option can be repeated many times. Agent will parse configuration files in defined order. Each configuration file will be merged with previous.
@@ -49,12 +49,6 @@ meta {
   "rack" = "left"
 }
 
-resource "range" "port" {
-  min = 20000
-  max = 23000
-}
-
-
 pod "first-pod" {
   // ...
 }
@@ -72,9 +66,6 @@ pod "second-pod" {
 
 `meta` `(map: {})` 
 : Agent metadata. These values can be used in pod [constraints]({{site.baseurl}}/pod/constraint) and [interpolations]({{site.baseurl}}/pod/interpolation) as `${meta.<key>}`.
-
-`resource` 
-: [Resources]({{site.baseurl}}/agent/resources) configurations.
 
 `pod`
 : Each [pod stansa]({{site.baseurl}}/pod) defines pod in private namespace.

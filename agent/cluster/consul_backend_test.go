@@ -146,7 +146,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 		time.Sleep(time.Second * 2)
 		res, _, err := cli.KV().Get("soil/test/02/node", nil)
 		assert.NoError(t, err)
-		assert.NotNil(t, res)
+		require.NotNil(t, res)
 		assert.Equal(t, []byte(`"02"`), res.Value)
 	})
 	t.Run("submit delete", func(t *testing.T) {

@@ -14,7 +14,6 @@ import (
 	"os"
 	"testing"
 	"text/template"
-	"time"
 )
 
 func writeConfig(t *testing.T, source string, env map[string]interface{}) {
@@ -63,9 +62,11 @@ func TestServer_Configure_Local(t *testing.T) {
 	waitConfig := fixture.DefaultWaitConfig()
 
 	t.Run("0 pods should not be present", func(t *testing.T) {
+		//t.Skip()
 		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("1 deploy first configuration", func(t *testing.T) {
+		//t.Skip()
 		writeConfig(t, "testdata/server_test_1.hcl", nil)
 		server.Configure()
 		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
@@ -74,14 +75,9 @@ func TestServer_Configure_Local(t *testing.T) {
 			"unit-1.service":        "active",
 			"unit-2.service":        "active",
 		}))
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-			"/run/systemd/system/pod-private-1.service": 0xf114f766af424710,
-			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
-			"/run/systemd/system/unit-1.service":        0x7f15d00cb10c1836,
-			"/etc/systemd/system/unit-2.service":        0xfef5c98efe4f711f,
-		})
 	})
 	t.Run("2 remove 2 from meta", func(t *testing.T) {
+		//t.Skip()
 		writeConfig(t, "testdata/server_test_2.hcl", nil)
 		server.Configure()
 
@@ -89,18 +85,16 @@ func TestServer_Configure_Local(t *testing.T) {
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 		}))
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-			"/run/systemd/system/pod-private-1.service": 0xce80849ad12813cc,
-			"/run/systemd/system/unit-1.service":        0xce7b239c1e94def4,
-		})
 	})
 	t.Run("3 ping", func(t *testing.T) {
+		//t.Skip()
 		res, err := http.Get(fmt.Sprintf("http://127.0.0.1%s/v1/status/ping", serverOptions.Address))
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 		assert.Equal(t, res.StatusCode, 200)
 	})
 	t.Run("4 reload", func(t *testing.T) {
+		//t.Skip()
 		writeConfig(t, "testdata/server_test_4.hcl", nil)
 		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://127.0.0.1%s/v1/agent/reload", serverOptions.Address), nil)
 		assert.NoError(t, err)
@@ -113,14 +107,9 @@ func TestServer_Configure_Local(t *testing.T) {
 			"unit-1.service":        "active",
 			"unit-2.service":        "active",
 		}))
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-			"/run/systemd/system/pod-private-1.service": 0xf114f766af424710,
-			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
-			"/run/systemd/system/unit-1.service":        0x7f15d00cb10c1836,
-			"/etc/systemd/system/unit-2.service":        0xfef5c98efe4f711f,
-		})
 	})
 	t.Run("5 drain on", func(t *testing.T) {
+		//t.Skip()
 		req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("http://127.0.0.1%s/v1/agent/drain", serverOptions.Address), nil)
 		assert.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
@@ -130,6 +119,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{})
 	})
 	t.Run("6 drain off", func(t *testing.T) {
+		//t.Skip()
 		req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("http://127.0.0.1%s/v1/agent/drain", serverOptions.Address), nil)
 		assert.NoError(t, err)
 		_, err = http.DefaultClient.Do(req)
@@ -141,34 +131,15 @@ func TestServer_Configure_Local(t *testing.T) {
 			"unit-1.service":        "active",
 			"unit-2.service":        "active",
 		}))
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-			"/run/systemd/system/pod-private-1.service": 0xf114f766af424710,
-			"/etc/systemd/system/pod-private-2.service": 0xf8bc5d840f0f6b52,
-			"/run/systemd/system/unit-1.service":        0x7f15d00cb10c1836,
-			"/etc/systemd/system/unit-2.service":        0xfef5c98efe4f711f,
-		})
-	})
-	t.Run("7 with resource", func(t *testing.T) {
-		writeConfig(t, "testdata/server_test_7.hcl", nil)
-		server.Configure()
-		fixture.WaitNoError(t, fixture.WaitConfig{
-			Retry:   time.Millisecond * 500,
-			Retries: 100,
-		}, sd.UnitStatesFn(allUnitNames, map[string]string{
-			"pod-private-1.service": "active",
-			"unit-1.service":        "active",
-		}))
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{
-			"/run/systemd/system/pod-private-1.service": 0x9e2aa3b3b95275df,
-			"/run/systemd/system/unit-1.service":        0x5ea112942f0c47e8,
-		})
 	})
 	t.Run("8 with dependency failed", func(t *testing.T) {
+		//t.Skip()
 		writeConfig(t, "testdata/server_test_8.hcl", nil)
 		server.Configure()
 		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("9 with dependency ok", func(t *testing.T) {
+		//t.Skip()
 		writeConfig(t, "testdata/server_test_9.hcl", nil)
 		server.Configure()
 		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
@@ -178,8 +149,18 @@ func TestServer_Configure_Local(t *testing.T) {
 			"unit-2.service":        "active",
 		}))
 	})
+	t.Run("10 with resource", func(t *testing.T) {
+		//t.Skip()
+		writeConfig(t, "testdata/server_test_10.hcl", nil)
+		server.Configure()
+		fixture.WaitNoError10(t, sd.UnitStatesFn(allUnitNames, map[string]string{
+			"pod-private-r1.service": "active",
+			"unit-0.service":         "active",
+			"pod-private-r2.service": "active",
+			"unit-2.service":         "active",
+		}))
+	})
 
 	server.Close()
 	server.Wait()
-
 }

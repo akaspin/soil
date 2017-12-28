@@ -39,4 +39,9 @@ func TestEvaluation_Plan(t *testing.T) {
 		evaluation := provision.NewEvaluation(left1, right)
 		assert.Equal(t, "[0:stop:/etc/systemd/system/pod-private-pod-1.service 0:stop:/etc/systemd/system/unit-1.service 0:stop:/etc/systemd/system/unit-2.service 1:delete-unit:/etc/systemd/system/pod-private-pod-1.service 1:delete-unit:/etc/systemd/system/unit-1.service 1:delete-unit:/etc/systemd/system/unit-2.service 2:write-unit:/run/systemd/system/pod-private-pod-1.service 2:write-unit:/run/systemd/system/unit-1.service 2:write-unit:/run/systemd/system/unit-2.service 3:enable-unit:/run/systemd/system/pod-private-pod-1.service 3:enable-unit:/run/systemd/system/unit-1.service 3:enable-unit:/run/systemd/system/unit-2.service 4:start:/run/systemd/system/pod-private-pod-1.service 4:start:/run/systemd/system/unit-1.service 4:start:/run/systemd/system/unit-2.service]", evaluation.Explain())
 	})
+	t.Run("6 destroy with no units", func(t *testing.T) {
+		left := makeAllocations(t, "testdata/evaluation_test_6_left.hcl")[0]
+		evaluation := provision.NewEvaluation(left, nil)
+		assert.Equal(t, "[0:stop:/run/systemd/system/pod-private-pod-1.service 1:delete-unit:/run/systemd/system/pod-private-pod-1.service]", evaluation.Explain())
+	})
 }

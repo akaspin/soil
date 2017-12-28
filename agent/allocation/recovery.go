@@ -5,9 +5,9 @@ import (
 )
 
 // Allocations state
-type Recovery []*Pod
+type PodSlice []*Pod
 
-func (s *Recovery) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
+func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
 	paths, err := discoveryFunc()
 	var failures []error
 	for _, path := range paths {
@@ -24,7 +24,7 @@ func (s *Recovery) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() 
 	return
 }
 
-func (s Recovery) Find(name string) (res Header) {
+func (s PodSlice) Find(name string) (res Header) {
 	for _, alloc := range s {
 		if alloc.Name == name {
 			res = alloc.Header

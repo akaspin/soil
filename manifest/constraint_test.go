@@ -8,6 +8,13 @@ import (
 	"testing"
 )
 
+func TestConstraint_Merge(t *testing.T) {
+	t.Run(`nil`, func(t *testing.T) {
+		res := manifest.Constraint{"a": "b"}.Merge(nil)
+		assert.Equal(t, manifest.Constraint{"a": "b"}, res)
+	})
+}
+
 func TestConstraint_Check(t *testing.T) {
 
 	t.Run("equal", func(t *testing.T) {

@@ -21,7 +21,7 @@ func (h *Header) Mark() (res uint64) {
 	return
 }
 
-func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs []*Blob, resources []*Resource, err error) {
+func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs []*Blob, err error) {
 	split := strings.Split(src, "\n")
 	// extract header
 	var jsonSrc string
@@ -57,19 +57,11 @@ func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs 
 			}
 			blobs = append(blobs, b)
 		}
-		if strings.HasPrefix(line, resourceHeaderPrefix) {
-			resource := defaultResource()
-			if err = resource.unmarshalHeader(line); err != nil {
-				return
-			}
-			resources = append(resources, resource)
-		}
-
 	}
 	return
 }
 
-func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []*Resource) (res string, err error) {
+func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []*Resource, providers ProviderSlice) (res string, err error) {
 	buf := &bytes.Buffer{}
 	encoder := json.NewEncoder(buf)
 
@@ -95,7 +87,12 @@ func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []
 		}
 	}
 	for _, resource := range resources {
-		if err = resource.marshalHeader(buf, encoder); err != nil {
+		if err = resource.MarshalLine(buf); err != nil {
+			return
+		}
+	}
+	for _, provider := range providers {
+		if err = provider.MarshalLine(buf); err != nil {
 			return
 		}
 	}

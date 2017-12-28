@@ -22,6 +22,15 @@ const (
 // Right field can also begins with compare operation: "<", ">" or "~" (in).
 type Constraint map[string]string
 
+// Returns clone of constraint
+func (c Constraint) Clone() (res Constraint) {
+	res = Constraint{}
+	for left, right := range c {
+		res[left] = right
+	}
+	return
+}
+
 // Merge returns constraint merged with given constraints
 func (c Constraint) Merge(constraint ...Constraint) (res Constraint) {
 	res = Constraint{}

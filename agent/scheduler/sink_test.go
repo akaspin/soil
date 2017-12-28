@@ -75,7 +75,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 
 	t.Run("0 consume", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -89,76 +89,51 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 			"meta.second": "true",
 		}))
 		time.Sleep(time.Millisecond * 100)
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
+		assert.Equal(t,
+			map[string][]dummyEvRecord{
+				"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
+				"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
+				"third":  {{alloc: false, pod: 0x0, env: 0x0}},
 			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-		})
+			evaluator1.records)
 	})
 	t.Run("2 modify third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0xd1819c8095902f10, env: 0x88be0fba4063a209},
-			},
-		}, "third should be updated")
+		assert.Equal(t, map[string][]dummyEvRecord{
+			"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
+			"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
+			"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}},
+		},
+			evaluator1.records, "third should be updated")
 	})
 	t.Run("3 deactivate", func(t *testing.T) {
 		arbiter1.ConsumeMessage(bus.NewMessage("", nil))
 		time.Sleep(time.Millisecond * 100)
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0xd1819c8095902f10, env: 0x88be0fba4063a209},
-			},
-		}, "no updates: inactive")
+		assert.Equal(t, map[string][]dummyEvRecord{
+			"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
+			"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
+			"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}},
+		}, evaluator1.records, "no updates: inactive")
 	})
 	t.Run("4 remove third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Registry
+		var registry manifest.Pods
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
 		time.Sleep(time.Millisecond * 100)
 
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0xd1819c8095902f10, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-		}, "no updates: inactive")
+		assert.Equal(t, map[string][]dummyEvRecord{
+			"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
+			"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
+			"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
+		}, evaluator1.records, "no updates: inactive")
 	})
 	t.Run("5 activate", func(t *testing.T) {
 		arbiter1.ConsumeMessage(bus.NewMessage("", map[string]string{
@@ -166,21 +141,11 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 			"meta.second": "true",
 		}))
 		time.Sleep(time.Millisecond * 100)
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0xd1819c8095902f10, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-		})
+		assert.Equal(t, map[string][]dummyEvRecord{
+			"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
+			"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
+			"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
+		}, evaluator1.records)
 
 	})
 	t.Run("6 drain", func(t *testing.T) {
@@ -188,23 +153,11 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 			"drain": "true",
 		}))
 		time.Sleep(time.Millisecond * 100)
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0xd1819c8095902f10, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-		}, "drain")
+		assert.Equal(t, map[string][]dummyEvRecord{
+			"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
+			"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
+			"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
+		}, evaluator1.records, "drain")
 	})
 	t.Run("7 remove drain", func(t *testing.T) {
 		arbiter1.ConsumeMessage(bus.NewMessage("", map[string]string{
@@ -212,25 +165,11 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 			"meta.second": "true",
 		}))
 		time.Sleep(time.Millisecond * 100)
-		assert.Equal(t, evaluator1.records, map[string][]dummyEvRecord{
-			"first": {
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0x5adf1b783ee18a25, env: 0x88be0fba4063a209},
-			},
-			"second": {
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0x56667e953f83ec9d, env: 0x88be0fba4063a209},
-			},
-			"third": {
-				{alloc: false, pod: 0x0, env: 0x0},
-				{alloc: true, pod: 0xd1819c8095902f10, env: 0x88be0fba4063a209},
-				{alloc: false, pod: 0x0, env: 0x0},
-			},
-		}, "remove drain")
+		assert.Equal(t, map[string][]dummyEvRecord{
+			"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
+			"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
+			"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
+		}, evaluator1.records, "remove drain")
 	})
 
 	sv.Close()

@@ -13,7 +13,7 @@ func TestState_FromFS(t *testing.T) {
 		Local:   "testdata/etc",
 		Runtime: "testdata",
 	}
-	var state allocation.Recovery
+	var state allocation.PodSlice
 	err := state.FromFilesystem(paths, allocation.GetZeroDiscoveryFunc("testdata/pod-test-1.service"))
 	assert.NoError(t, err)
 	assert.Len(t, state, 1)

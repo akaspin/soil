@@ -1,6 +1,8 @@
 ### POD test-1 {"AgentMark":456,"Namespace":"private","PodMark":123}
 ### UNIT testdata/test-1-0.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
 ### UNIT testdata/test-1-1.service {"Create":"start","Destroy":"stop","Permanent":true,"Update":"restart"}
+### PROVIDER {"Kind":"test","Name":"test","Config":{"a":1,"b":"aa \"bb\""}}
+### RESOURCE {"Request":{"Name":"8080","Provider":"pod-1.port","Config":{"a":1}},"Values":{"value":"9000"}}
 [Unit]
 Description=test-1
 Before=test-1-0.service test-1-1.service

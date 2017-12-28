@@ -2,26 +2,49 @@ package manifest
 
 import (
 	"fmt"
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/hcl/hcl/ast"
+	"sort"
 )
 
-func parseFromAST(namespace string, list *ast.ObjectList) (res []*Pod, err error) {
-	matches := list.Filter("pod")
-	if len(matches.Items) == 0 {
-		return
-	}
+type ListParser interface {
+	Empty() ObjectParser
+	Append(v interface{}) (err error)
+}
 
-	var failures []error
-	for _, m := range matches.Items {
-		p := DefaultPod(namespace)
-		var pErr error
-		if pErr = p.parseAst(m); pErr != nil {
-			failures = append(failures, pErr)
+type ObjectParser interface {
+	WithID
+	ParseAST(raw *ast.ObjectItem) (err error)
+}
+
+func ParseList(lists []*ast.ObjectList, key string, parser ListParser) (err error) {
+	var res1 []ObjectParser
+	err = &multierror.Error{}
+
+	for _, list := range lists {
+		for _, obj := range list.Filter(key).Items {
+			objParser := parser.Empty()
+			if parseErr := objParser.ParseAST(obj); parseErr != nil {
+				multierror.Append(err, parseErr)
+				continue
+			}
+			res1 = append(res1, objParser)
 		}
-		res = append(res, p)
 	}
-	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+	sort.Slice(res1, func(i, j int) bool {
+		return res1[i].GetID() < res1[j].GetID()
+	})
+	var lastId = ""
+	for _, obj := range res1 {
+		if id := obj.GetID(); lastId != id {
+			lastId = id
+			if appendErr := parser.Append(obj); appendErr != nil {
+				multierror.Append(err, appendErr)
+			}
+		} else {
+			multierror.Append(err, fmt.Errorf(`%s with %s already defined`, key, id))
+		}
 	}
+	err = err.(*multierror.Error).ErrorOrNil()
 	return
 }

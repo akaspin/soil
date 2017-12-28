@@ -1,10 +1,15 @@
 package manifest
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/akaspin/soil/lib"
+	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
-	"github.com/mitchellh/hashstructure"
+	"hash/crc64"
+	"io"
+	"strings"
 )
 
 const (
@@ -13,15 +18,70 @@ const (
 	PublicNamespace  = "public"
 )
 
+type Pods []*Pod
+
+func (r *Pods) Empty() ObjectParser {
+	return &Pod{
+		Namespace: PrivateNamespace,
+		Target:    defaultPodTarget,
+		Runtime:   true,
+	}
+}
+
+func (r *Pods) Append(v interface{}) (err error) {
+	*r = append(*r, v.(*Pod))
+	return
+}
+
+func (r *Pods) SetNamespace(namespace string) {
+	for _, pod := range *r {
+		pod.Namespace = namespace
+	}
+}
+
+func (r *Pods) Unmarshal(namespace string, reader ...io.Reader) (err error) {
+	err = &multierror.Error{}
+	roots, parseErr := lib.ParseHCL(reader...)
+	err = multierror.Append(err, parseErr)
+	err = multierror.Append(err, ParseList(roots, "pod", r))
+	r.SetNamespace(namespace)
+	err = err.(*multierror.Error).ErrorOrNil()
+	return
+}
+
+// Pod manifest
 type Pod struct {
 	Namespace  string
 	Name       string
 	Runtime    bool
 	Target     string
-	Constraint Constraint
-	Units      []Unit
-	Blobs      []Blob
-	Resources  []Resource
+	Constraint Constraint `json:",omitempty"`
+	Units      Units      `json:",omitempty" hcl:"-"`
+	Blobs      Blobs      `json:",omitempty" hcl:"-"`
+	Resources  Resources  `json:",omitempty" hcl:"-"`
+	Providers  Providers  `json:",omitempty" hcl:"-"`
+}
+
+func (p Pod) GetID(parent ...string) string {
+	return strings.Join(append(parent, p.Namespace, p.Name), ".")
+}
+
+func (p *Pod) ParseAST(raw *ast.ObjectItem) (err error) {
+	err = &multierror.Error{}
+	list := raw.Val.(*ast.ObjectType).List
+
+	if err = multierror.Append(err, hcl.DecodeObject(p, raw)); err.(*multierror.Error).ErrorOrNil() != nil {
+		return
+	}
+	p.Name = raw.Keys[0].Token.Value().(string)
+
+	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "unit", &p.Units))
+	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "blob", &p.Blobs))
+	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "resource", &p.Resources))
+	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "provider", &p.Providers))
+
+	err = err.(*multierror.Error).ErrorOrNil()
+	return
 }
 
 func DefaultPod(namespace string) (p *Pod) {
@@ -33,36 +93,9 @@ func DefaultPod(namespace string) (p *Pod) {
 	return
 }
 
-func (p *Pod) parseAst(raw *ast.ObjectItem) (err error) {
-	err = hcl.DecodeObject(p, raw)
-	p.Name = raw.Keys[0].Token.Value().(string)
-
-	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("unit").Items {
-		unit := defaultUnit()
-		if err = unit.parseAst(f); err != nil {
-			return
-		}
-		p.Units = append(p.Units, unit)
-	}
-	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("blob").Items {
-		blob := defaultBlob()
-		if err = blob.parseAst(f); err != nil {
-			return
-		}
-		p.Blobs = append(p.Blobs, blob)
-	}
-	for _, f := range raw.Val.(*ast.ObjectType).List.Filter("resource").Items {
-		resource := defaultResource()
-		if err = resource.parseAst(f); err != nil {
-			return
-		}
-		p.Resources = append(p.Resources, resource)
-	}
-	return
-}
-
 func (p *Pod) Mark() (res uint64) {
-	res, _ = hashstructure.Hash(p, nil)
+	buf, _ := json.Marshal(p)
+	res = crc64.Checksum(buf, crc64.MakeTable(crc64.ECMA))
 	return
 }
 

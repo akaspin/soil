@@ -7,7 +7,7 @@ TEST_ARGS     =
 TEST_SYSTEMD_TAGS ?= test_cluster
 BENCH	      = .
 
-PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./... | grep -v /vendor/)
+PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./...)
 TEST_PACKAGES ?= $(PACKAGES)
 
 GO_IMAGE    = golang:1.9.2

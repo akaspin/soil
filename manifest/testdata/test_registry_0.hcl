@@ -12,7 +12,6 @@ pod "second" {
     count = "3"
   }
   resource "counter" "2" {
-    required = false
     count = "1"
     a = "b"
   }

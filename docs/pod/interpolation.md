@@ -66,10 +66,22 @@ All allocated resources can be referenced as `${resource.<kind>.<pod>.<resource>
 |Variable   |Areas
 |-
 |`allocated`:`{true,false}`    | `constraint`
+|`provider`                    | `constraint`, `unit->source`, `blob->source`
 |`*`                           | `constraint`, `unit->source`, `blob->source`
 |`failure`                     | `constraint`, `unit->source`, `blob->source`
 
 All resources are available within all pods on Agent. If resource can't be allocated it will be marked with `allocated`:`false` and `failure` with error.
+
+```hcl
+por "1" {
+  resource "common.port" "8080" {}
+  unit "1.service" {
+    source = <<EOF
+      ${resource.common.port.8080.value}
+    EOF
+  }
+}
+```
 
 ## `provision`
 

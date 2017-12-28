@@ -1,4 +1,10 @@
-## 0.4.3
+## 0.5.0
+
+### Breaking changes
+
+* Resource provision is fully refactored. From this release all resources use
+  providers as source. Providers are located inside pods and obey pod 
+  constraints.
 
 ## 0.4.2 (24.11.2017)
 

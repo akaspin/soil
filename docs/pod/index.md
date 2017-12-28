@@ -16,7 +16,11 @@ pod "my-pod" {
   constraint {
     "my" = "~ ${meta.groups}"
   }
-  resource "port" "8080" {}
+  provider "range" "port" {
+    min = 3000
+    max = 4000
+  }
+  resource "my-pod.port" "8080" {}
   unit "my-unit-1.service" {
     permanent = false
     create = "start"
@@ -24,6 +28,7 @@ pod "my-pod" {
     destroy = "stop"
     source = <<EOF
       [Unit]
+      # ${resource.my-pod.8080.value}
       Description=%p with ${blob.etc-my-pod-sample}
       
       [Service]
@@ -52,6 +57,9 @@ All properties is optional. In fact you can define empty pod without anything.
 
 `constraint` `(map: {})`
 : Defines pod deployments [constraints]({{site.baseurl}}/pod/constraint).
+
+`provider` `(map: {})`
+: Resource providers.
 
 `resource` `(map: {})`
 : Resource requests.

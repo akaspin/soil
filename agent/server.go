@@ -8,7 +8,9 @@ import (
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/cluster"
+	"github.com/akaspin/soil/agent/provider"
 	"github.com/akaspin/soil/agent/provision"
+	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/lib"
 	"github.com/akaspin/soil/manifest"
@@ -52,14 +54,16 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	}
 	s.kv = cluster.NewKV(ctx, log, cluster.DefaultBackendFactory)
 
+	// Recovery
+
+	systemPaths := allocation.DefaultSystemPaths()
 	var state allocation.PodSlice
-	if recoveryErr := state.FromFilesystem(allocation.DefaultSystemPaths(), allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
+	if recoveryErr := state.FromFilesystem(systemPaths, allocation.DefaultDbusDiscoveryFunc); recoveryErr != nil {
 		s.log.Errorf("recovered with failure: %v", recoveryErr)
 	}
 
-	systemPaths := allocation.DefaultSystemPaths()
-
 	// provision
+
 	provisionArbiter := scheduler.NewArbiter(ctx, log, "provision",
 		scheduler.ArbiterConfig{
 			Required: manifest.Constraint{"${agent.drain}": "!= true"},
@@ -72,15 +76,63 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		"private", log, provisionDrainPipe,
 		"meta",
 		"system",
-		//"resource",
-		"provision",
+		"resource",  // downstream from provision evaluator
+		"provision", // upstream from provision executor
 	)
+	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
+		provisionCompositePipe,
+	))
+	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
+		SystemPaths:    systemPaths,
+		Recovery:       state,
+		StatusConsumer: provisionStateConsumer,
+	})
+
+	// Resource
+
+	resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
+		Required: manifest.Constraint{"${agent.drain}": "!= true"},
+	})
+	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	resourceCompositePipe := bus.NewCompositePipe(
+		"private", log, resourceDrainPipe,
+		"meta",
+		"system",
+		"provider", // resource evaluator upstream
+	)
+	resourceEvaluator := resource.NewEvaluator(ctx, log,
+		resourceCompositePipe,
+		provisionCompositePipe,
+		state)
+
+	// Provider evaluator
+
+	providerArbiter := scheduler.NewArbiter(ctx, log, "provider", scheduler.ArbiterConfig{
+		Required: manifest.Constraint{"${agent.drain}": "!= true"},
+		ConstraintOnly: []*regexp.Regexp{
+			regexp.MustCompile(`^provider\..+`),
+			regexp.MustCompile(`^provision\..+`),
+		},
+	})
+	providerDrainPipe := bus.NewDivertPipe(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	providerCompositePipe := bus.NewCompositePipe(
+		"private", log, providerDrainPipe,
+		"meta",
+		"system",
+	)
+	providerEvaluator := provider.NewEvaluator(ctx, log, resourceEvaluator, state)
+
+	// Meta and system
 
 	s.confPipe = bus.NewTeePipe(
+		providerCompositePipe,
+		resourceCompositePipe,
 		provisionCompositePipe,
 	)
 
 	drainFn := func(on bool) {
+		providerDrainPipe.Divert(on)
+		resourceDrainPipe.Divert(on)
 		provisionDrainPipe.Divert(on)
 	}
 
@@ -105,22 +157,22 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		api.NewRegistryPodsDelete(s.log, s.kv.PermanentStore("registry")),
 	)
 
-	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
-		provisionCompositePipe,
-	))
-	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
-		SystemPaths:    systemPaths,
-		Recovery:       state,
-		StatusConsumer: provisionStateConsumer,
-	})
 	s.sink = scheduler.NewSink(ctx, s.log, state,
+		scheduler.NewBoundedEvaluator(providerArbiter, providerEvaluator),
+		scheduler.NewBoundedEvaluator(resourceArbiter, resourceEvaluator),
 		scheduler.NewBoundedEvaluator(provisionArbiter, provisionEvaluator),
 	)
 
 	s.sv = supervisor.NewChain(ctx,
 		s.kv,
-		provisionArbiter,
-		provisionEvaluator,
+		supervisor.NewGroup(ctx,
+			providerArbiter,
+			resourceArbiter,
+			provisionArbiter),
+		supervisor.NewGroup(ctx,
+			providerEvaluator,
+			resourceEvaluator,
+			provisionEvaluator),
 		s.sink,
 		api_server.NewServer(ctx, s.log, s.options.Address, s.api),
 	)

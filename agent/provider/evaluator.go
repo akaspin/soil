@@ -60,26 +60,30 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) manifest.Constraint {
 
 // Allocate providers in given pod
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
-	var alloc allocation.Pod
-	if err := alloc.FromManifest(pod, env); err != nil {
-		return
-	}
-	select {
-	case <-e.Control.Ctx().Done():
-		e.log.Errorf(`skip allocate %s: %v`, pod.Name, e.Control.Ctx().Err())
-	case e.allocateChan <- &alloc:
-		e.log.Tracef(`allocate: %s %d`, pod.Name, pod.Mark())
-	}
+	go func() {
+		var alloc allocation.Pod
+		if err := alloc.FromManifest(pod, env); err != nil {
+			return
+		}
+		select {
+		case <-e.Control.Ctx().Done():
+			e.log.Errorf(`skip allocate %s: %v`, pod.Name, e.Control.Ctx().Err())
+		case e.allocateChan <- &alloc:
+			e.log.Tracef(`allocate: %s %d`, pod.Name, pod.Mark())
+		}
+	}()
 }
 
 // Deallocate all providers in given pod
 func (e *Evaluator) Deallocate(name string) {
-	select {
-	case <-e.Control.Ctx().Done():
-		e.log.Errorf(`skip deallocate %s: %v`, name, e.Control.Ctx().Err())
-	case e.deallocateChan <- name:
-		e.log.Tracef(`deallocate: %s`, name)
-	}
+	go func() {
+		select {
+		case <-e.Control.Ctx().Done():
+			e.log.Errorf(`skip deallocate %s: %v`, name, e.Control.Ctx().Err())
+		case e.deallocateChan <- name:
+			e.log.Tracef(`deallocate: %s`, name)
+		}
+	}()
 }
 
 func (e *Evaluator) loop() {

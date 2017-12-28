@@ -64,6 +64,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, upstream, downstream bus.C
 }
 
 func (e *Evaluator) Open() (err error) {
+	go e.loop()
 	// reset upstream and downstream
 	downstream := map[string]manifest.FlatMap{}
 	for pod, resources := range e.allocations {
@@ -100,7 +101,6 @@ func (e *Evaluator) Open() (err error) {
 		})
 	}
 
-	go e.loop()
 	err = e.Control.Open()
 	return
 }
@@ -123,25 +123,29 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (c manifest.Constraint) {
 }
 
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
-	var alloc allocation.Pod
-	if err := (&alloc).FromManifest(pod, env); err != nil {
-		e.log.Error(err)
-	}
-	select {
-	case <-e.Control.Ctx().Done():
-		e.log.Warningf(`skip allocate "%s": %v`, pod, e.Control.Ctx().Err())
-	case e.allocateChan <- &alloc:
-		e.log.Tracef(`allocate sent: "%s"`, alloc)
-	}
+	go func() {
+		var alloc allocation.Pod
+		if err := (&alloc).FromManifest(pod, env); err != nil {
+			e.log.Error(err)
+		}
+		select {
+		case <-e.Control.Ctx().Done():
+			e.log.Warningf(`skip allocate "%s": %v`, pod, e.Control.Ctx().Err())
+		case e.allocateChan <- &alloc:
+			e.log.Tracef(`allocate sent: "%s"`, alloc)
+		}
+	}()
 }
 
 func (e *Evaluator) Deallocate(name string) {
-	select {
-	case <-e.Control.Ctx().Done():
-		e.log.Warningf(`skip deallocate "%s": %v`, name, e.Control.Ctx().Err())
-	case e.deallocateChan <- name:
-		e.log.Tracef(`deallocate sent: "%s"`, name)
-	}
+	go func() {
+		select {
+		case <-e.Control.Ctx().Done():
+			e.log.Warningf(`skip deallocate "%s": %v`, name, e.Control.Ctx().Err())
+		case e.deallocateChan <- name:
+			e.log.Tracef(`deallocate sent: "%s"`, name)
+		}
+	}()
 }
 
 // Create provider
@@ -254,7 +258,7 @@ LOOP:
 				e.log.Infof(`deallocated "%s"`, podName)
 				continue LOOP
 			}
-			e.log.Errorf(`deallocate pod "%s": not found`, podName)
+			e.log.Debugf(`deallocate pod "%s": not found`, podName)
 		}
 	}
 }
@@ -286,6 +290,7 @@ func (e *Evaluator) createSandbox(id string, alloc *allocation.Provider) (s *San
 }
 
 func (e *Evaluator) jsonPipeFn(message bus.Message) (res bus.Message) {
+	e.log.Tracef(`got message %s`, message)
 	res = message
 	if message.Payload().IsEmpty() {
 		return

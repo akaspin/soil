@@ -66,58 +66,66 @@ func NewSandbox(config SandboxConfig, id string, provider *allocation.Provider) 
 
 // Update provider
 func (s *Sandbox) Configure(p *allocation.Provider) (err error) {
-	select {
-	case <-s.ctx.Done():
-		err = s.ctx.Err()
-		s.log.Warningf(`skip reconfigure %v: %v`, p, err)
-	case s.reconfigureChan <- p:
-		s.log.Tracef(`provider configuration sent: %v`, p)
-	}
+	go func() {
+		select {
+		case <-s.ctx.Done():
+			err = s.ctx.Err()
+			s.log.Warningf(`skip reconfigure %v: %v`, p, err)
+		case s.reconfigureChan <- p:
+			s.log.Tracef(`provider configuration sent: %v`, p)
+		}
+	}()
 	return
 }
 
 // Create resource with id
 func (s *Sandbox) Create(id string, req *allocation.Resource) {
-	select {
-	case <-s.ctx.Done():
-		err := s.ctx.Err()
-		s.log.Warningf(`skip create %s:%v: %v`, id, req, err)
-	case s.opChan <- &opResource{
-		op:       opResourceCreate,
-		id:       id,
-		resource: req.Clone(),
-	}:
-		s.log.Tracef(`create sent: %s:%v`, id, req)
-	}
+	go func() {
+		select {
+		case <-s.ctx.Done():
+			err := s.ctx.Err()
+			s.log.Warningf(`skip create %s:%v: %v`, id, req, err)
+		case s.opChan <- &opResource{
+			op:       opResourceCreate,
+			id:       id,
+			resource: req.Clone(),
+		}:
+			s.log.Tracef(`create sent: %s:%v`, id, req)
+		}
+	}()
 	return
 }
 
 func (s *Sandbox) Update(id string, req *allocation.Resource) {
-	select {
-	case <-s.ctx.Done():
-		err := s.ctx.Err()
-		s.log.Warningf(`skip update %s:%v: %v`, id, req, err)
-	case s.opChan <- &opResource{
-		op:       opResourceUpdate,
-		id:       id,
-		resource: req.Clone(),
-	}:
-		s.log.Tracef(`update sent: %s:%v`, id, req)
-	}
+	go func() {
+		select {
+		case <-s.ctx.Done():
+			err := s.ctx.Err()
+			s.log.Warningf(`skip update %s:%v: %v`, id, req, err)
+		case s.opChan <- &opResource{
+			op:       opResourceUpdate,
+			id:       id,
+			resource: req.Clone(),
+		}:
+			s.log.Tracef(`update sent: %s:%v`, id, req)
+		}
+	}()
 	return
 }
 
 func (s *Sandbox) Destroy(id string) {
-	select {
-	case <-s.ctx.Done():
-		err := s.ctx.Err()
-		s.log.Warningf(`skip destroy %s: %v`, id, err)
-	case s.opChan <- &opResource{
-		op: opResourceDestroy,
-		id: id,
-	}:
-		s.log.Tracef(`destroy sent: %s`, id)
-	}
+	go func() {
+		select {
+		case <-s.ctx.Done():
+			err := s.ctx.Err()
+			s.log.Warningf(`skip destroy %s: %v`, id, err)
+		case s.opChan <- &opResource{
+			op: opResourceDestroy,
+			id: id,
+		}:
+			s.log.Tracef(`destroy sent: %s`, id)
+		}
+	}()
 	return
 }
 
@@ -186,7 +194,7 @@ LOOP:
 			switch op.op {
 			case opResourceCreate:
 				if _, ok := s.resources[op.id]; ok {
-					s.log.Errorf(`create: resource already exists: %v`, op)
+					s.log.Debugf(`create: resource already exists: %v`, op)
 					continue LOOP
 				}
 				s.resources[op.id] = op.resource
@@ -195,7 +203,7 @@ LOOP:
 				}
 			case opResourceUpdate:
 				if _, ok := s.resources[op.id]; !ok {
-					s.log.Errorf(`update: resource not found: %v`, op)
+					s.log.Debugf(`update: resource not found: %v`, op)
 					continue LOOP
 				}
 				s.resources[op.id] = op.resource
@@ -204,7 +212,7 @@ LOOP:
 				}
 			case opResourceDestroy:
 				if _, ok := s.resources[op.id]; !ok {
-					s.log.Errorf(`destroy: resource not found: %s`, op.id)
+					s.log.Debugf(`destroy: resource not found: %s`, op.id)
 					continue LOOP
 				}
 				delete(s.resources, op.id)
@@ -240,12 +248,12 @@ func (s *Sandbox) reconfigure(p *allocation.Provider) {
 		s.log.Tracef(`recovered %v sent to estimator %s`, r, s.estimatorUuid)
 	}
 
-	payload := bus.NewPayload(map[string]string{
+	msg := bus.NewMessage(s.id, map[string]string{
 		"allocated": "true",
 		"kind":      p.Kind,
 	})
-	s.config.Upstream.ConsumeMessage(bus.NewMessage(s.id, payload))
-	s.log.Tracef(`upstream notified: %s`, payload)
+	s.config.Upstream.ConsumeMessage(msg)
+	s.log.Debugf(`upstream notified: %s`, msg)
 }
 
 //

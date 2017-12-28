@@ -55,8 +55,8 @@ func newBase(globalConfig GlobalConfig, config Config, engine baseEngine) (b *ba
 		config:       config,
 		engine:       engine,
 
-		resultChan:   make(chan *Result),
-		opChan:       make(chan *resourceOp),
+		resultChan:   make(chan *Result, 1),
+		opChan:       make(chan *resourceOp, 1),
 		shutdownChan: make(chan struct{}),
 	}
 	b.ctx, b.cancel = context.WithCancel(config.Ctx)

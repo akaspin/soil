@@ -1,4 +1,4 @@
-// +build ide test_cluster
+// +build ide test_cluster,!test_systemd
 
 package fixture_test
 
@@ -29,6 +29,7 @@ func TestConsulServer(t *testing.T) {
 	t.Run("up", func(t *testing.T) {
 		s.Up()
 		s.WaitAlive()
+		s.WaitLeader()
 	})
 	t.Run("get session 1", func(t *testing.T) {
 		sess1, _, err = cli.Session().Create(&api.SessionEntry{

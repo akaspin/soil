@@ -21,7 +21,6 @@ import (
 
 type ConsulServerConfig struct {
 	RepoTag       string   `json:"-"`
-	Join          []string `json:"retry_join"`
 	NodeName      string   `json:"node_name"`
 	NodeID        string   `json:"node_id"`
 	AdvertiseAddr string   `json:"advertise_addr"`
@@ -35,8 +34,6 @@ type ConsulServerConfig struct {
 	SessionTTLMin string `json:"session_ttl_min"`
 	Ports         struct {
 		HTTP    int
-		Server  int
-		SerfLan int `json:"serf_lan"`
 	}
 }
 
@@ -45,6 +42,7 @@ type ConsulServer struct {
 	cancel context.CancelFunc
 
 	t           *testing.T
+	addr string
 	Config      *ConsulServerConfig
 	wd          string
 	dockerCli   *client.Client
@@ -54,19 +52,17 @@ type ConsulServer struct {
 func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s *ConsulServer) {
 	t.Helper()
 	wd := "/tmp"
-	wd = filepath.Join(wd, fmt.Sprintf(".test_%s", TestName(t)))
+	wd = filepath.Join(wd, fmt.Sprintf(".test_consul_%s", TestName(t)))
 	id, _ := uuid.NewV5(uuid.NamespaceDNS, []byte(wd))
-	ip := GetLocalIP(t)
 	ports := RandomPorts(t, 3)
 	s = &ConsulServer{
 		t:  t,
 		wd: wd,
+		addr: GetLocalIP(t),
 		Config: &ConsulServerConfig{
 			RepoTag:       "docker.io/library/consul",
 			NodeName:      TestName(t),
 			NodeID:        id.String(),
-			AdvertiseAddr: ip,
-			Join:          []string{ip},
 			ClientAddr:    "0.0.0.0",
 			Bootstrap:     true,
 			Server:        true,
@@ -77,12 +73,8 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 			SessionTTLMin: ".5s",
 			Ports: struct {
 				HTTP    int
-				Server  int
-				SerfLan int `json:"serf_lan"`
 			}{
 				HTTP:    ports[0],
-				Server:  ports[1],
-				SerfLan: ports[2],
 			},
 		},
 	}
@@ -104,7 +96,7 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 }
 
 func (s *ConsulServer) Address() (res string) {
-	res = fmt.Sprintf("%s:%d", s.Config.AdvertiseAddr, s.Config.Ports.HTTP)
+	res = fmt.Sprintf("%s:%d", s.addr, s.Config.Ports.HTTP)
 	return
 }
 
@@ -130,8 +122,6 @@ func (s *ConsulServer) Up() {
 			},
 			ExposedPorts: nat.PortSet{
 				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.HTTP)):    struct{}{},
-				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.Server)):  struct{}{},
-				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.SerfLan)): struct{}{},
 			},
 			AttachStderr: true,
 			AttachStdout: true,
@@ -143,18 +133,6 @@ func (s *ConsulServer) Up() {
 					{
 						HostIP:   "0.0.0.0",
 						HostPort: fmt.Sprintf("%d", s.Config.Ports.HTTP),
-					},
-				},
-				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.Server)): []nat.PortBinding{
-					{
-						HostIP:   "0.0.0.0",
-						HostPort: fmt.Sprintf("%d", s.Config.Ports.Server),
-					},
-				},
-				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.SerfLan)): []nat.PortBinding{
-					{
-						HostIP:   "0.0.0.0",
-						HostPort: fmt.Sprintf("%d", s.Config.Ports.SerfLan),
 					},
 				},
 			},

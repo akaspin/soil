@@ -20,20 +20,20 @@ import (
 )
 
 type ConsulServerConfig struct {
-	RepoTag       string   `json:"-"`
-	NodeName      string   `json:"node_name"`
-	NodeID        string   `json:"node_id"`
-	AdvertiseAddr string   `json:"advertise_addr"`
-	ClientAddr    string   `json:"client_addr"`
-	Bootstrap     bool     `json:"bootstrap"`
-	Server        bool     `json:"server"`
-	UI            bool     `json:"ui"`
+	RepoTag       string `json:"-"`
+	NodeName      string `json:"node_name"`
+	NodeID        string `json:"node_id"`
+	AdvertiseAddr string `json:"advertise_addr"`
+	ClientAddr    string `json:"client_addr"`
+	Bootstrap     bool   `json:"bootstrap"`
+	Server        bool   `json:"server"`
+	UI            bool   `json:"ui"`
 	Performance   struct {
 		RaftMultiplier int `json:"raft_multiplier"`
 	} `json:"performance"`
 	SessionTTLMin string `json:"session_ttl_min"`
 	Ports         struct {
-		HTTP    int
+		HTTP int
 	}
 }
 
@@ -42,7 +42,7 @@ type ConsulServer struct {
 	cancel context.CancelFunc
 
 	t           *testing.T
-	addr string
+	addr        string
 	Config      *ConsulServerConfig
 	wd          string
 	dockerCli   *client.Client
@@ -56,25 +56,25 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 	id, _ := uuid.NewV5(uuid.NamespaceDNS, []byte(wd))
 	ports := RandomPorts(t, 3)
 	s = &ConsulServer{
-		t:  t,
-		wd: wd,
+		t:    t,
+		wd:   wd,
 		addr: GetLocalIP(t),
 		Config: &ConsulServerConfig{
-			RepoTag:       "docker.io/library/consul",
-			NodeName:      TestName(t),
-			NodeID:        id.String(),
-			ClientAddr:    "0.0.0.0",
-			Bootstrap:     true,
-			Server:        true,
-			UI:            true,
+			RepoTag:    "docker.io/library/consul",
+			NodeName:   TestName(t),
+			NodeID:     id.String(),
+			ClientAddr: "0.0.0.0",
+			Bootstrap:  true,
+			Server:     true,
+			UI:         true,
 			Performance: struct {
 				RaftMultiplier int `json:"raft_multiplier"`
 			}{RaftMultiplier: 1},
 			SessionTTLMin: ".5s",
 			Ports: struct {
-				HTTP    int
+				HTTP int
 			}{
-				HTTP:    ports[0],
+				HTTP: ports[0],
 			},
 		},
 	}
@@ -121,7 +121,7 @@ func (s *ConsulServer) Up() {
 				"-config-file", "/opt/config/consul.json",
 			},
 			ExposedPorts: nat.PortSet{
-				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.HTTP)):    struct{}{},
+				nat.Port(fmt.Sprintf("%d/tcp", s.Config.Ports.HTTP)): struct{}{},
 			},
 			AttachStderr: true,
 			AttachStdout: true,

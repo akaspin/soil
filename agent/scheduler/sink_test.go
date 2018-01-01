@@ -4,6 +4,7 @@ package scheduler_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
 	"github.com/akaspin/soil/agent/scheduler"
@@ -28,8 +29,16 @@ type dummyEv struct {
 	records map[string][]dummyEvRecord
 }
 
-func (e *dummyEv) GetConstraint(pod *manifest.Pod) manifest.Constraint {
-	return pod.GetResourceAllocationConstraint()
+func (e *dummyEv) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
+	res = pod.Constraint.Clone()
+	if len(pod.Resources) > 0 {
+		c1 := manifest.Constraint{}
+		for _, r := range pod.Resources {
+			c1[fmt.Sprintf(`${resource.%s.%s.allocated}`, pod.Name, r.Name)] = "true"
+		}
+		res = res.Merge(c1)
+	}
+	return
 }
 
 func (e *dummyEv) Allocate(pod *manifest.Pod, env map[string]string) {
@@ -75,7 +84,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 
 	t.Run("0 consume", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -99,7 +108,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 	})
 	t.Run("2 modify third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -123,7 +132,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 	})
 	t.Run("4 remove third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)

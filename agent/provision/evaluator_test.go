@@ -38,7 +38,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 	time.Sleep(time.Millisecond * 500)
 	t.Run("0 create pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_Allocate_0.hcl"))
 		assert.NoError(t, registry.Unmarshal("private", buffers.GetReaders()...))
 
@@ -62,7 +62,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 	})
 	t.Run("1 update pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_Allocate_1.hcl"))
 		assert.NoError(t, registry.Unmarshal("private", buffers.GetReaders()...))
 		evaluator.Allocate(registry[0], map[string]string{
@@ -162,7 +162,7 @@ func TestEvaluator_Report(t *testing.T) {
 	})
 	t.Run("1 create pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_Report_1.hcl"))
 		assert.NoError(t, registry.Unmarshal("private", buffers.GetReaders()...))
 

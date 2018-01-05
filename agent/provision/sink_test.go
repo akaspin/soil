@@ -67,7 +67,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 
 	t.Run("0 deploy private", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_0.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -89,7 +89,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	})
 	t.Run("1 deploy public", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_1.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
@@ -116,7 +116,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	})
 	t.Run("2 change constraints of public third", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_2.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PublicNamespace, buffers.GetReaders()...))
 
@@ -138,7 +138,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	})
 	t.Run("3 remove private first", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_3.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -178,7 +178,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	})
 	t.Run("5 add private first to registry", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_5.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		sink.ConsumeRegistry(registry)
@@ -219,7 +219,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	})
 	t.Run("7 remove private first from registry", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_7.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -247,7 +247,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 			"meta.second_private": "1",
 		}))
 		var buffers lib.StaticBuffers
-		var registry manifest.Pods
+		var registry manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/evaluator_test_SinkFlow_8.hcl"))
 		assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 

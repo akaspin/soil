@@ -10,7 +10,7 @@ import (
 func makeAllocations(t *testing.T, path string) (recovered []*allocation.Pod) {
 	t.Helper()
 	var buffers lib.StaticBuffers
-	var pods manifest.Pods
+	var pods manifest.PodSlice
 	if err := buffers.ReadFiles(path); err != nil {
 		t.Error(err)
 		t.Fail()

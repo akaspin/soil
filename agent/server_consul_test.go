@@ -148,7 +148,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		})
 	})
 	t.Run(`10 put /v1/registry`, func(t *testing.T) {
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		rs := &lib.StaticBuffers{}
 		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_10.hcl"))
 		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
@@ -163,7 +163,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, 200)
 	})
 	t.Run(`get /v1/registry`, func(t *testing.T) {
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		rs := &lib.StaticBuffers{}
 		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_10.hcl"))
 		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
@@ -181,7 +181,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
 				return
 			}
-			var res manifest.Pods
+			var res manifest.PodSlice
 			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 				return
 			}
@@ -211,7 +211,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		assert.Equal(t, resp.StatusCode, 200)
 	})
 	t.Run(`11 get /v1/registry`, func(t *testing.T) {
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		rs := &lib.StaticBuffers{}
 		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_11.hcl"))
 		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
@@ -229,7 +229,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
 				return
 			}
-			var res manifest.Pods
+			var res manifest.PodSlice
 			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 				return
 			}

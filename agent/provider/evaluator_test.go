@@ -50,7 +50,7 @@ func TestEvaluator_Open(t *testing.T) {
 	t.Run(`0 after recovery`, func(t *testing.T) {
 		var buf lib.StaticBuffers
 		assert.NoError(t, buf.ReadFiles("testdata/TestEvaluator_Open_0.hcl"))
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		assert.NoError(t, pods.Unmarshal("private", buf.GetReaders()...))
 
 		for _, pod := range pods {
@@ -63,7 +63,7 @@ func TestEvaluator_Open(t *testing.T) {
 	t.Run(`1 -test +port`, func(t *testing.T) {
 		var buf lib.StaticBuffers
 		assert.NoError(t, buf.ReadFiles("testdata/TestEvaluator_Open_1.hcl"))
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		assert.NoError(t, pods.Unmarshal("private", buf.GetReaders()...))
 
 		for _, pod := range pods {
@@ -79,7 +79,7 @@ func TestEvaluator_Open(t *testing.T) {
 	t.Run(`2 update port`, func(t *testing.T) {
 		var buf lib.StaticBuffers
 		assert.NoError(t, buf.ReadFiles("testdata/TestEvaluator_Open_2.hcl"))
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		assert.NoError(t, pods.Unmarshal("private", buf.GetReaders()...))
 
 		for _, pod := range pods {

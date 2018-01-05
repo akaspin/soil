@@ -20,10 +20,10 @@ func TestPods_Unmarshal(t *testing.T) {
 			"testdata/TestPods_Unmarshal_0_2.hcl",
 			"testdata/TestPods_Unmarshal_0_3.hcl",
 		))
-		var res manifest.Pods
+		var res manifest.PodSlice
 		err := res.Unmarshal("private", buffers.GetReaders()...)
 		assert.Error(t, err)
-		assert.Equal(t, manifest.Pods{
+		assert.Equal(t, manifest.PodSlice{
 			{
 				Namespace: manifest.PrivateNamespace,
 				Name:      "1",
@@ -59,9 +59,9 @@ func TestManifest(t *testing.T) {
 	t.Run("parse", func(t *testing.T) {
 		var buffers lib.StaticBuffers
 		assert.NoError(t, buffers.ReadFiles("testdata/example-multi.hcl"))
-		var res manifest.Pods
+		var res manifest.PodSlice
 		assert.NoError(t, res.Unmarshal("private", buffers.GetReaders()...))
-		assert.Equal(t, res, manifest.Pods{
+		assert.Equal(t, res, manifest.PodSlice{
 			&manifest.Pod{
 				Namespace: "private",
 				Name:      "first",
@@ -105,7 +105,7 @@ func TestManifest(t *testing.T) {
 	t.Run("mark", func(t *testing.T) {
 		var buffers lib.StaticBuffers
 		assert.NoError(t, buffers.ReadFiles("testdata/example-multi.hcl"))
-		var res manifest.Pods
+		var res manifest.PodSlice
 		assert.NoError(t, res.Unmarshal("private", buffers.GetReaders()...))
 		for i, mark := range []uint64{
 			0x70772b3a058359d6, 0x795e0bcb9909acbd,
@@ -115,10 +115,10 @@ func TestManifest(t *testing.T) {
 	})
 	t.Run("0 with resources", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/test_registry_0.hcl"))
 		assert.NoError(t, pods.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
-		assert.Equal(t, pods, manifest.Pods{
+		assert.Equal(t, pods, manifest.PodSlice{
 			&manifest.Pod{
 				Namespace:  "private",
 				Name:       "second",
@@ -155,7 +155,7 @@ func TestManifest(t *testing.T) {
 	})
 	t.Run("intro", func(t *testing.T) {
 		var buffers lib.StaticBuffers
-		var pods manifest.Pods
+		var pods manifest.PodSlice
 		assert.NoError(t, buffers.ReadFiles("testdata/files_1.hcl", "testdata/files_2.hcl"))
 		assert.NoError(t, pods.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 		assert.Len(t, pods, 3)
@@ -164,7 +164,7 @@ func TestManifest(t *testing.T) {
 
 func TestManifest_JSON(t *testing.T) {
 	var buffers lib.StaticBuffers
-	var pods manifest.Pods
+	var pods manifest.PodSlice
 	assert.NoError(t, buffers.ReadFiles("testdata/json.hcl"))
 	assert.NoError(t, pods.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 
@@ -174,7 +174,7 @@ func TestManifest_JSON(t *testing.T) {
 		string(data))
 
 	// unmarshal
-	pod := manifest.DefaultPod("private")
+	var pod manifest.Pod
 	err = json.Unmarshal(data, &pod)
 	data1, err := json.Marshal(pod)
 	assert.Equal(t, string(data), string(data1))

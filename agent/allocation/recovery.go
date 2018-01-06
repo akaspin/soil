@@ -24,16 +24,6 @@ func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() 
 	return
 }
 
-func (s PodSlice) Find(name string) (res Header) {
-	for _, alloc := range s {
-		if alloc.Name == name {
-			res = alloc.Header
-			break
-		}
-	}
-	return
-}
-
 type SystemPaths struct {
 	Local   string
 	Runtime string

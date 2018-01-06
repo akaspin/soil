@@ -1,3 +1,9 @@
+## 0.5.1 (06.01.2018)
+
+### Features
+
+* Handle invalid resource providers
+
 ## 0.5.0 (28.12.2017)
 
 ### Breaking changes

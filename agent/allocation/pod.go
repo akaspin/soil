@@ -125,8 +125,8 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	}
 	// TODO: refactor all other stuff
 	src := p.UnitFile.Source
-	err = Recover(&p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
-	err = Recover(&p.Providers, &Provider{}, src, []string{providerHeadPrefix})
+	err = UnmershalItemSlice(&p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
+	err = UnmershalItemSlice(&p.Providers, &Provider{}, src, []string{providerHeadPrefix})
 	return
 }
 

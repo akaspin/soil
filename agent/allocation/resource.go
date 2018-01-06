@@ -33,7 +33,7 @@ func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err 
 	return
 }
 
-func (r *ResourceSlice) Append(v ItemUnmarshaller) {
+func (r *ResourceSlice) AppendItem(v ItemUnmarshaller) {
 	*r = append(*r, v.(*Resource))
 }
 
@@ -76,7 +76,7 @@ func (r *Resource) MarshalLine(w io.Writer) (err error) {
 	return
 }
 
-func (r *Resource) UnmarshalLine(line string) (err error) {
+func (r *Resource) UnmarshalItem(line string) (err error) {
 	// old resources are skipped
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceHeaderPrefix)), r)
 	return

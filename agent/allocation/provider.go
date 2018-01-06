@@ -26,7 +26,7 @@ func (p *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.FlatMap) (er
 	return
 }
 
-func (p *ProviderSlice) Append(v ItemUnmarshaller) {
+func (p *ProviderSlice) AppendItem(v ItemUnmarshaller) {
 	*p = append(*p, v.(*Provider))
 }
 
@@ -37,7 +37,7 @@ func (p *Provider) GetID(parent ...string) string {
 }
 
 // Restore state from header line
-func (p *Provider) UnmarshalLine(line string) (err error) {
+func (p *Provider) UnmarshalItem(line string) (err error) {
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerHeadPrefix)), p)
 	return
 }

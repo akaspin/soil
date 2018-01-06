@@ -2,4 +2,7 @@ package estimator
 
 import "errors"
 
-var NotAvailableError = errors.New("not-available")
+var (
+	ErrNotAvailable    = errors.New("not-available")
+	ErrInvalidProvider = errors.New("invalid-provider-kind")
+)

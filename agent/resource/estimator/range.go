@@ -144,7 +144,7 @@ func (r *Range) allocateBitmap() (res uint32, err error) {
 	for iter.HasNext() {
 		candidate := iter.Next() + 1
 		if candidate > r.max {
-			err = NotAvailableError
+			err = ErrNotAvailable
 			return
 		}
 		if ok := r.bitmap.CheckedAdd(candidate); ok {
@@ -152,7 +152,7 @@ func (r *Range) allocateBitmap() (res uint32, err error) {
 			return
 		}
 	}
-	err = NotAvailableError
+	err = ErrNotAvailable
 	return
 }
 

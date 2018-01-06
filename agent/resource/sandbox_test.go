@@ -169,6 +169,81 @@ func TestSandbox(t *testing.T) {
 					}),
 				))
 			})
+			t.Run(`invalid`, func(t *testing.T) {
+				sb.Configure(&allocation.Provider{
+					Name: "test",
+					Kind: "bad",
+					Config: map[string]interface{}{
+						"min": 3000,
+						"max": 4000,
+					},
+				})
+				fixture.WaitNoError10(t, upstream.ExpectMessagesFn(
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "blackhole",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "range",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "range",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "bad",
+					}),
+				))
+
+				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+					bus.NewMessage("0", map[string]string{
+						"3.allocated": "false",
+						"3.provider":  "pod1.test",
+						"3.failure":   "invalid-provider-kind",
+					}),
+				))
+			})
+			t.Run(`range`, func(t *testing.T) {
+				sb.Configure(&allocation.Provider{
+					Name: "test",
+					Kind: "range",
+					Config: map[string]interface{}{
+						"min": 3000,
+						"max": 4000,
+					},
+				})
+				fixture.WaitNoError10(t, upstream.ExpectMessagesFn(
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "blackhole",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "range",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "range",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "bad",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "range",
+					}),
+				))
+				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+					bus.NewMessage("0", map[string]string{
+						"3.allocated": "true",
+						"3.provider":  "pod1.test",
+						"3.value":     "3000",
+					}),
+				))
+			})
 			t.Run(`shutdown`, func(t *testing.T) {
 				sb.Shutdown()
 				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
@@ -182,6 +257,14 @@ func TestSandbox(t *testing.T) {
 					bus.NewMessage("pod1.test", map[string]string{
 						"allocated": "true",
 						"kind":      "range",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "range",
+					}),
+					bus.NewMessage("pod1.test", map[string]string{
+						"allocated": "true",
+						"kind":      "bad",
 					}),
 					bus.NewMessage("pod1.test", map[string]string{
 						"allocated": "true",

@@ -11,7 +11,7 @@ import (
 
 func TestStandaloneLogger_Trace_On(t *testing.T) {
 	w := &bytes.Buffer{}
-	l := logx.NewLog(logx.NewSimpleAppender(w, 0), "")
+	l := logx.NewLog(logx.NewTextAppender(w, 0), "")
 	l.Trace("test")
 	assert.Equal(t, "TRACE test\n", w.String())
 }

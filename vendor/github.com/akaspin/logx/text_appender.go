@@ -1,26 +1,22 @@
 package logx
 
 import (
+	"bytes"
 	"io"
 	"runtime"
+	"sync"
 	"time"
 	"unicode"
 )
 
 const (
-	lInfo     = "INFO"
-	lWarning  = "WARNING"
-	lError    = "ERROR"
-	lCritical = "CRITICAL"
-
 	// Ldate adds the date in the local time zone: 2009/01/23
 	Ldate = 1 << iota
 
 	// Ltime adds the time in the local time zone: 01:23:23
 	Ltime
 
-	// Lmicroseconds adds microsecond resolution: 01:23:23.123123.
-	// assumes LTime.
+	// Lmicroseconds adds microsecond resolution: 01:23:23.123123. Assumes LTime.
 	Lmicroseconds
 
 	// Llongfile adds full file name and line number: /a/b/c/d.go:23
@@ -40,20 +36,29 @@ const (
 	LstdFlags = Lshortfile | Lcompact
 )
 
-type SimpleAppender struct {
-	output io.Writer
-	flags  int
+
+// Default Appender based on buffer pool
+type TextAppender struct {
+	output     io.Writer
+	flags      int
+	bufferPool sync.Pool
 }
 
-func NewSimpleAppender(output io.Writer, flags int) *SimpleAppender {
-	return &SimpleAppender{
+func NewTextAppender(output io.Writer, flags int) (a *TextAppender) {
+	a = &TextAppender{
 		output: output,
 		flags:  flags,
+		bufferPool: sync.Pool{
+			New: func() interface{} {
+				return &bytes.Buffer{}
+			},
+		},
 	}
+	return
 }
 
-func (a *SimpleAppender) Append(level, prefix, line string, tags ...string) {
-	var buf []byte
+func (a *TextAppender) Append(level, prefix, line string, tags ...string) {
+	buf := a.bufferPool.Get().(*bytes.Buffer)
 
 	// time
 	if a.flags&(Ldate|Ltime|Lmicroseconds|LUTC) != 0 {
@@ -64,50 +69,50 @@ func (a *SimpleAppender) Append(level, prefix, line string, tags ...string) {
 		if a.flags&(Ldate|Ltime|Lmicroseconds) != 0 {
 			if a.flags&Ldate != 0 {
 				year, month, day := t.Date()
-				itoa(&buf, year, 4)
-				buf = append(buf, '/')
-				itoa(&buf, int(month), 2)
-				buf = append(buf, '/')
-				itoa(&buf, day, 2)
-				buf = append(buf, ' ')
+				itoaBuf(buf, year, 4)
+				buf.WriteByte('/')
+				itoaBuf(buf, int(month), 2)
+				buf.WriteByte('/')
+				itoaBuf(buf, day, 2)
+				buf.WriteByte(' ')
 			}
 			if a.flags&(Ltime|Lmicroseconds) != 0 {
 				hour, min, sec := t.Clock()
-				itoa(&buf, hour, 2)
-				buf = append(buf, ':')
-				itoa(&buf, min, 2)
-				buf = append(buf, ':')
-				itoa(&buf, sec, 2)
+				itoaBuf(buf, hour, 2)
+				buf.WriteByte(':')
+				itoaBuf(buf, min, 2)
+				buf.WriteByte(':')
+				itoaBuf(buf, sec, 2)
 				if a.flags&Lmicroseconds != 0 {
-					buf = append(buf, '.')
-					itoa(&buf, t.Nanosecond()/1e3, 6)
+					buf.WriteByte('.')
+					itoaBuf(buf, t.Nanosecond()/1e3, 6)
 				}
-				buf = append(buf, ' ')
+				buf.WriteByte(' ')
 			}
 		}
 	}
 
 	// level
-	buf = append(buf, []byte(level)...)
-	buf = append(buf, ' ')
+	buf.WriteString(level)
+	buf.WriteByte(' ')
 
 	// prefix
 	if prefix != "" {
-		buf = append(buf, []byte(prefix)...)
-		buf = append(buf, ' ')
+		buf.WriteString(prefix)
+		buf.WriteByte(' ')
 	}
 
 	// tags
 	ltags := len(tags)
-	if ltags > 0 {
-		buf = append(buf, '[')
+	if ltags != 0 {
+		buf.WriteByte('[')
 		for i, tag := range tags {
-			buf = append(buf, tag...)
+			buf.WriteString(tag)
 			if i < ltags-1 {
-				buf = append(buf, ' ')
+				buf.WriteByte(' ')
 			}
 		}
-		buf = append(buf, "] "...)
+		buf.WriteString("] ")
 	}
 
 	// file
@@ -127,28 +132,27 @@ func (a *SimpleAppender) Append(level, prefix, line string, tags ...string) {
 			}
 			file = short
 		}
-		buf = append(buf, file...)
-		buf = append(buf, ':')
-		itoa(&buf, lineNo, -1)
-		buf = append(buf, ' ')
+		buf.WriteString(file)
+		buf.WriteByte(':')
+		itoaBuf(buf, lineNo, -1)
+		buf.WriteByte(' ')
 	}
 
 	if a.flags&(Lcompact) != 0 {
-		strip(&buf, line)
+		stripBuf(buf, line)
 	} else {
-		buf = append(buf, []byte(line)...)
+		buf.WriteString(line)
 	}
 
 	if len(line) == 0 || line[len(line)-1] != '\n' {
-		buf = append(buf, '\n')
+		buf.WriteByte('\n')
 	}
-	a.output.Write(buf)
+	buf.WriteTo(a.output)
+	buf.Reset()
+	a.bufferPool.Put(buf)
 }
 
-// Cheap integer to fixed-width decimal ASCII.
-// Give a negative width to avoid zero-padding.
-func itoa(buf *[]byte, i int, wid int) {
-	// Assemble decimal in reverse order.
+func itoaBuf(buf *bytes.Buffer, i int, wid int) {
 	var b [20]byte
 	bp := len(b) - 1
 	for i >= 10 || wid > 1 {
@@ -160,21 +164,20 @@ func itoa(buf *[]byte, i int, wid int) {
 	}
 	// i < 10
 	b[bp] = byte('0' + i)
-	*buf = append(*buf, b[bp:]...)
+	buf.Write(b[bp:])
 }
 
-func strip(buf *[]byte, src string) {
+func stripBuf(buf *bytes.Buffer, src string) {
 	var white bool
 	for _, c := range src {
 		if unicode.IsSpace(c) {
 			if !white {
-				*buf = append(*buf, ' ')
+				buf.WriteByte(' ')
 			}
 			white = true
 		} else {
-			*buf = append(*buf, []byte(string(c))...)
+			buf.WriteRune(c)
 			white = false
 		}
 	}
-	return
 }

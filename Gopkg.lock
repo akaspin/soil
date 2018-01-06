@@ -52,8 +52,8 @@
 [[projects]]
   name = "github.com/akaspin/logx"
   packages = ["."]
-  revision = "e954024879a231650143e016799faa339043d916"
-  version = "2.0.0"
+  revision = "fc34f16e5ee5a4b14972fdbff5394305764349dc"
+  version = "2.1.1"
 
 [[projects]]
   branch = "master"
@@ -512,15 +512,9 @@
 
 [[projects]]
   name = "github.com/shirou/gopsutil"
-  packages = ["cpu","host","internal/common","mem","net","process"]
+  packages = ["host","internal/common","process"]
   revision = "48fc5612898a1213aa5d6a0fb2d4f7b968e898fb"
   version = "v2.17.10"
-
-[[projects]]
-  branch = "master"
-  name = "github.com/shirou/w32"
-  packages = ["."]
-  revision = "bb4de0191aa41b5507caa14b0650cdbddcd9280b"
 
 [[projects]]
   branch = "master"
@@ -627,6 +621,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d6b89745aa827b55e7caae1b5cf0c0ab6c812716b17a28a30b6052664f659166"
+  inputs-digest = "64c33c8e3f1a609b9108d12294a2d74303a83837090cc081350310687de0854d"
   solver-name = "gps-cdcl"
   solver-version = 1

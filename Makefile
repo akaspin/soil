@@ -7,13 +7,13 @@ TEST_ARGS     =
 TEST_SYSTEMD_TAGS ?= test_cluster
 BENCH	      = .
 
-PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./...)
-TEST_PACKAGES ?= $(PACKAGES)
+# PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./...)
+TEST_PACKAGES ?= ./...
 
 GO_IMAGE    = golang:1.9.2
 CWD 		= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-SRC 		= $(shell find . -type f -name '*.go' -not -path "./vendor/*")
-SRC_VENDOR	= $(shell find ./vendor -type f -iname '*.go')
+# SRC 		= $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+# SRC_VENDOR	= $(shell find ./vendor -type f -iname '*.go')
 
 V           = $(shell git describe --always --tags --dirty)
 GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/proto.Version=$(V)'
@@ -21,8 +21,8 @@ GOBIN       ?= $(GOPATH)/bin
 
 
 sources: 		## go fmt and vet
-	go fmt $(PACKAGES)
-	go vet $(PACKAGES)
+	go fmt ./...
+	go vet ./...
 
 deps:			## update vendor
 	dep ensure --update -v

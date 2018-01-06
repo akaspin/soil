@@ -43,8 +43,8 @@ func (u *Unit) ParseAST(raw *ast.ObjectItem) (err error) {
 
 // Unit transition
 type Transition struct {
-	Create    string
-	Update    string
-	Destroy   string
-	Permanent bool
+	Create    string `json:",omitempty"`
+	Update    string `json:",omitempty"`
+	Destroy   string `json:",omitempty"`
+	Permanent bool   `json:",omitempty"`
 }

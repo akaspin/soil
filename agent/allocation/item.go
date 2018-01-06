@@ -22,8 +22,8 @@ type ItemMarshaller interface {
 	MarshalLine(w io.Writer) (err error)
 }
 
-// UnmershalItemSlice items from pod unit header
-func UnmershalItemSlice(v ItemSlice, empty ItemUnmarshaller, source string, prefixes []string) (err error) {
+// UnmarshalItemSlice items from pod unit header
+func UnmarshalItemSlice(v ItemSlice, empty ItemUnmarshaller, source string, prefixes []string) (err error) {
 	err = &multierror.Error{}
 	for _, line := range strings.Split(source, "\n") {
 		for _, prefix := range prefixes {

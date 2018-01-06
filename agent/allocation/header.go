@@ -21,7 +21,7 @@ func (h *Header) Mark() (res uint64) {
 	return
 }
 
-func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs []*Blob, err error) {
+func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, err error) {
 	split := strings.Split(src, "\n")
 	// extract header
 	var jsonSrc string
@@ -46,16 +46,6 @@ func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, blobs 
 				return
 			}
 			units = append(units, u)
-		}
-		if strings.HasPrefix(line, "### BLOB") {
-			b := &Blob{}
-			if _, err = fmt.Sscanf(line, "### BLOB %s %s", &b.Name, &jsonSrc); err != nil {
-				return
-			}
-			if err = json.Unmarshal([]byte(jsonSrc), &b); err != nil {
-				return
-			}
-			blobs = append(blobs, b)
 		}
 	}
 	return
@@ -82,7 +72,7 @@ func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []
 	}
 
 	for _, b := range blobs {
-		if err = b.MarshalHeader(buf, encoder); err != nil {
+		if err = b.MarshalLine(buf); err != nil {
 			return
 		}
 	}

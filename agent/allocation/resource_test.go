@@ -159,7 +159,7 @@ func TestResourceSlice_Append(t *testing.T) {
 	src := "### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"prov\",\"Config\":{\"a\":1}}}\n### RESOURCE {\"Request\":{\"Name\":\"2\",\"Provider\":\"test\"}}\n"
 	t.Run(`restore`, func(t *testing.T) {
 		var v allocation.ResourceSlice
-		err := allocation.UnmershalItemSlice(&v, &allocation.Resource{}, src, []string{"### RESOURCE "})
+		err := allocation.UnmarshalItemSlice(&v, &allocation.Resource{}, src, []string{"### RESOURCE "})
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
 	})

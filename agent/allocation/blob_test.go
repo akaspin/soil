@@ -38,5 +38,5 @@ func TestBlob_MarshalLine(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	assert.NoError(t, b.MarshalLine(&buf))
-	assert.Equal(t, "### BLOB_V2 {\"Name\":\"testdata/blob.txt\",\"Leave\":true,\"Source\":\"a\\nb\\n123\\n\"}\n", buf.String())
+	assert.Equal(t, "### BLOB_V2 {\"Name\":\"testdata/blob.txt\",\"Leave\":true}\n", buf.String())
 }

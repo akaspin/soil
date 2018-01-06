@@ -56,7 +56,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
 				"/run/systemd/system/unit-1.service":            0xbca69ea672e79d81,
-				"/run/systemd/system/pod-private-pod-1.service": 0xde611f40e523bcae,
+				"/run/systemd/system/pod-private-pod-1.service": 0xe73a67c6b8ab16fe,
 			},
 		)
 	})
@@ -78,8 +78,8 @@ func TestEvaluator_Allocate(t *testing.T) {
 		sd.AssertUnitHashes(t,
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
+				"/run/systemd/system/pod-private-pod-1.service": 0x977116e62948fb39,
 				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
-				"/run/systemd/system/pod-private-pod-1.service": 0xcba412475013e825,
 			},
 		)
 	})
@@ -96,7 +96,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
 				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
-				"/run/systemd/system/pod-private-pod-1.service": 0xcba412475013e825,
+				"/run/systemd/system/pod-private-pod-1.service": 0x977116e62948fb39,
 			},
 		)
 	})

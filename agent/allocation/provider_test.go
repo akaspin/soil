@@ -29,7 +29,7 @@ func TestProviderSlice_Append(t *testing.T) {
 	src := "### PROVIDER {\"Kind\":\"test\",\"Name\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### PROVIDER {\"Kind\":\"test\",\"Name\":\"test2\",\"Config\":{}}\n"
 	t.Run(`restore`, func(t *testing.T) {
 		var v allocation.ProviderSlice
-		err := allocation.UnmershalItemSlice(&v, &allocation.Provider{}, src, []string{"### PROVIDER "})
+		err := allocation.UnmarshalItemSlice(&v, &allocation.Provider{}, src, []string{"### PROVIDER "})
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
 	})

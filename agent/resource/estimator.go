@@ -40,6 +40,8 @@ func GetEstimator(globalConfig estimator.GlobalConfig, config estimator.Config) 
 		e = estimator.NewBlackhole(globalConfig, config)
 	case "range":
 		e = estimator.NewRange(globalConfig, config)
+	default:
+		e = estimator.NewInvalid(globalConfig, config)
 	}
 	return
 }

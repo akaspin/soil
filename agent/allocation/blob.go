@@ -17,7 +17,7 @@ const (
 
 type BlobSlice []*Blob
 
-func (s *BlobSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+func (s *BlobSlice) GetEmpty(paths SystemPaths) (empty Asset) {
 	empty = &Blob{
 		Permissions: 0644,
 	}
@@ -29,7 +29,7 @@ func (s *BlobSlice) GetVersionPrefix(v string) (p string) {
 	return
 }
 
-func (s *BlobSlice) AppendItem(v ItemUnmarshaller) {
+func (s *BlobSlice) AppendItem(v Asset) {
 	*s = append(*s, v.(*Blob))
 }
 
@@ -40,7 +40,7 @@ type Blob struct {
 	Source      string `json:"-"`
 }
 
-func (b *Blob) MarshalLine(w io.Writer) (err error) {
+func (b *Blob) MarshalSpec(w io.Writer) (err error) {
 	if _, err = w.Write([]byte(blobSpecPrefix)); err != nil {
 		return
 	}
@@ -49,7 +49,7 @@ func (b *Blob) MarshalLine(w io.Writer) (err error) {
 }
 
 // Unmarshal blob item from manifest. Line may be in two revisions:
-func (b *Blob) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
+func (b *Blob) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
 	switch spec.Revision {
 	case "":
 		if _, err = fmt.Sscanf(line, "### BLOB %s", &b.Name); err != nil {

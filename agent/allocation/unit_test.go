@@ -20,7 +20,7 @@ func TestUnit_MarshalLine(t *testing.T) {
 		},
 	}
 	var buf bytes.Buffer
-	assert.NoError(t, u.MarshalLine(&buf))
+	assert.NoError(t, u.MarshalSpec(&buf))
 	assert.Equal(t, "### UNIT {\"Path\":\"aaa\",\"Create\":\"start\"}\n", buf.String())
 }
 
@@ -36,13 +36,13 @@ func TestUnit_UnmarshalItem(t *testing.T) {
 	t.Run(`0`, func(t *testing.T) {
 		line := `### UNIT testdata/test-1-0.service {"Create":"start"}`
 		var u allocation.Unit
-		assert.NoError(t, (&u).UnmarshalItem(line, allocation.SpecMeta{}, allocation.SystemPaths{}))
+		assert.NoError(t, (&u).UnmarshalSpec(line, allocation.Spec{}, allocation.SystemPaths{}))
 		assert.Equal(t, expect, u)
 	})
 	t.Run(`1`, func(t *testing.T) {
 		line := `### UNIT {"Path":"testdata/test-1-0.service","Create":"start"}`
 		var u allocation.Unit
-		assert.NoError(t, (&u).UnmarshalItem(line, allocation.SpecMeta{
+		assert.NoError(t, (&u).UnmarshalSpec(line, allocation.Spec{
 			Revision: allocation.SpecRevision,
 		}, allocation.SystemPaths{}))
 		assert.Equal(t, expect, u)

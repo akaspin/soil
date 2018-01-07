@@ -22,7 +22,7 @@ func (h *Header) Mark() (res uint64) {
 	return
 }
 
-func (h *Header) MarshalLine(w io.Writer) (err error) {
+func (h *Header) MarshalSpec(w io.Writer) (err error) {
 	if _, err = w.Write([]byte(podSpecPrefix)); err != nil {
 		return
 	}
@@ -30,7 +30,7 @@ func (h *Header) MarshalLine(w io.Writer) (err error) {
 	return
 }
 
-func (h *Header) UnmarshalItem(src string, spec SpecMeta, paths SystemPaths) (err error) {
+func (h *Header) UnmarshalSpec(src string, spec Spec, paths SystemPaths) (err error) {
 	for _, line := range strings.Split(src, "\n") {
 		if strings.HasPrefix(line, podSpecPrefix) {
 			switch spec.Revision {

@@ -52,13 +52,13 @@ func TestEvaluator_Allocate(t *testing.T) {
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		//sd.AssertUnitHashes(t,
-		//	[]string{"pod-private-pod-1.service", "unit-1.service"},
-		//	map[string]uint64{
-		//		"/run/systemd/system/unit-1.service":            0xbca69ea672e79d81,
-		//		"/run/systemd/system/pod-private-pod-1.service": 0xe73a67c6b8ab16fe,
-		//	},
-		//)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{
+				"/run/systemd/system/unit-1.service":            0xbca69ea672e79d81,
+				"/run/systemd/system/pod-private-pod-1.service": 0x4f527920a0a712de,
+			},
+		)
 	})
 	t.Run("1 update pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
@@ -75,13 +75,13 @@ func TestEvaluator_Allocate(t *testing.T) {
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		//sd.AssertUnitHashes(t,
-		//	[]string{"pod-private-pod-1.service", "unit-1.service"},
-		//	map[string]uint64{
-		//		"/run/systemd/system/pod-private-pod-1.service": 0x977116e62948fb39,
-		//		"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
-		//	},
-		//)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{
+				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
+				"/run/systemd/system/pod-private-pod-1.service": 0xfb16774eba9e050f,
+			},
+		)
 	})
 	t.Run("2 destroy non-existent", func(t *testing.T) {
 		evaluator.Deallocate("pod-2")
@@ -92,13 +92,13 @@ func TestEvaluator_Allocate(t *testing.T) {
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		//sd.AssertUnitHashes(t,
-		//	[]string{"pod-private-pod-1.service", "unit-1.service"},
-		//	map[string]uint64{
-		//		"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
-		//		"/run/systemd/system/pod-private-pod-1.service": 0x977116e62948fb39,
-		//	},
-		//)
+		sd.AssertUnitHashes(t,
+			[]string{"pod-private-pod-1.service", "unit-1.service"},
+			map[string]uint64{
+				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
+				"/run/systemd/system/pod-private-pod-1.service": 0xfb16774eba9e050f,
+			},
+		)
 	})
 	t.Run("3 destroy pod-1", func(t *testing.T) {
 		evaluator.Deallocate("pod-1")

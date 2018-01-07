@@ -29,7 +29,8 @@ func TestProviderSlice_Append(t *testing.T) {
 	src := "### PROVIDER {\"Kind\":\"test\",\"Name\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n### PROVIDER {\"Kind\":\"test\",\"Name\":\"test2\",\"Config\":{}}\n"
 	t.Run(`restore`, func(t *testing.T) {
 		var v allocation.ProviderSlice
-		err := allocation.UnmarshalItemSlice(allocation.SpecMeta{}, allocation.SystemPaths{}, &v, src)
+		var spec allocation.Spec
+		err := spec.UnmarshalAssetSlice(allocation.SystemPaths{}, &v, src)
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
 	})
@@ -47,13 +48,13 @@ func TestProvider(t *testing.T) {
 	line := "### PROVIDER {\"Kind\":\"test\",\"Name\":\"test\",\"Config\":{\"a\":1,\"b\":\"aa \\\"bb\\\"\"}}\n"
 	t.Run(`store`, func(t *testing.T) {
 		buf := &bytes.Buffer{}
-		err := expect.MarshalLine(buf)
+		err := expect.MarshalSpec(buf)
 		assert.NoError(t, err)
 		assert.Equal(t, line, buf.String())
 	})
 	t.Run(`restore`, func(t *testing.T) {
 		v := &allocation.Provider{}
-		err := v.UnmarshalItem(line, allocation.SpecMeta{}, allocation.SystemPaths{})
+		err := v.UnmarshalSpec(line, allocation.Spec{}, allocation.SystemPaths{})
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
 	})

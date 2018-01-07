@@ -14,7 +14,7 @@ const providerSpecPrefix = "### PROVIDER "
 // Allocation providers
 type ProviderSlice []*Provider
 
-func (s *ProviderSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+func (s *ProviderSlice) GetEmpty(paths SystemPaths) (empty Asset) {
 	empty = &Provider{}
 	return
 }
@@ -34,7 +34,7 @@ func (s *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.FlatMap) (er
 	return
 }
 
-func (s *ProviderSlice) AppendItem(v ItemUnmarshaller) {
+func (s *ProviderSlice) AppendItem(v Asset) {
 	*s = append(*s, v.(*Provider))
 }
 
@@ -45,12 +45,12 @@ func (p *Provider) GetID(parent ...string) string {
 }
 
 // Restore state from header line
-func (p *Provider) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
+func (p *Provider) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerSpecPrefix)), p)
 	return
 }
 
-func (p *Provider) MarshalLine(w io.Writer) (err error) {
+func (p *Provider) MarshalSpec(w io.Writer) (err error) {
 	if _, err = fmt.Fprintf(w, "%s", providerSpecPrefix); err != nil {
 		return
 	}

@@ -11,7 +11,7 @@ import (
 
 func TestSpecMeta_Marshal(t *testing.T) {
 	var buf bytes.Buffer
-	assert.NoError(t, (&allocation.SpecMeta{
+	assert.NoError(t, (&allocation.Spec{
 		Revision: "1.3",
 	}).Marshal(&buf))
 	assert.Equal(t, "### SOIL {\"Revision\":\"1.3\"}\n", buf.String())
@@ -19,16 +19,16 @@ func TestSpecMeta_Marshal(t *testing.T) {
 
 func TestSpecMeta_Unmarshal(t *testing.T) {
 	t.Run(`1.3`, func(t *testing.T) {
-		var spec allocation.SpecMeta
+		var spec allocation.Spec
 		assert.NoError(t, (&spec).Unmarshal("### SOIL {\"Revision\":\"1.3\"}\n"))
-		assert.Equal(t, allocation.SpecMeta{
+		assert.Equal(t, allocation.Spec{
 			Revision: "1.3",
 		}, spec)
 	})
 	t.Run(`none`, func(t *testing.T) {
-		var spec allocation.SpecMeta
+		var spec allocation.Spec
 		assert.NoError(t, (&spec).Unmarshal("### POD {}\n"))
-		assert.Equal(t, allocation.SpecMeta{
+		assert.Equal(t, allocation.Spec{
 			Revision: "",
 		}, spec)
 	})

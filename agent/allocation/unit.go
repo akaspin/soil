@@ -17,7 +17,7 @@ const (
 
 type UnitSlice []*Unit
 
-func (s *UnitSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+func (s *UnitSlice) GetEmpty(paths SystemPaths) (empty Asset) {
 	empty = &Unit{
 		UnitFile: UnitFile{
 			SystemPaths: paths,
@@ -31,7 +31,7 @@ func (s *UnitSlice) GetVersionPrefix(v string) (p string) {
 	return
 }
 
-func (s *UnitSlice) AppendItem(v ItemUnmarshaller) {
+func (s *UnitSlice) AppendItem(v Asset) {
 	*s = append(*s, v.(*Unit))
 }
 
@@ -40,7 +40,7 @@ type Unit struct {
 	manifest.Transition `json:",squash"`
 }
 
-func (u *Unit) MarshalLine(w io.Writer) (err error) {
+func (u *Unit) MarshalSpec(w io.Writer) (err error) {
 	if _, err = w.Write([]byte(unitSpecPrefix)); err != nil {
 		return
 	}
@@ -48,8 +48,8 @@ func (u *Unit) MarshalLine(w io.Writer) (err error) {
 	return
 }
 
-// UnmarshalItem parses one line from manifest
-func (u *Unit) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
+// UnmarshalSpec parses one line from manifest
+func (u *Unit) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
 	u.SystemPaths = paths
 	switch spec.Revision {
 	case "":

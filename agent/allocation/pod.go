@@ -22,6 +22,30 @@ WantedBy=${pod.target}
 	dirSystemDRuntime = "/run/systemd/system"
 )
 
+// Allocations state
+type PodSlice []*Pod
+
+func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
+	paths, err := discoveryFunc()
+	var failures []error
+	for _, path := range paths {
+		pod := &Pod{
+			UnitFile: UnitFile{
+				SystemPaths: systemPaths,
+			},
+		}
+		if parseErr := pod.FromFilesystem(path); parseErr != nil {
+			failures = append(failures, parseErr)
+			continue
+		}
+		*s = append(*s, pod)
+	}
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
+	}
+	return
+}
+
 // Pod represents pod allocated on agent
 type Pod struct {
 	Header
@@ -30,16 +54,6 @@ type Pod struct {
 	Blobs     BlobSlice
 	Resources ResourceSlice
 	Providers ProviderSlice
-}
-
-func NewPod(systemPaths SystemPaths) (p *Pod) {
-	p = &Pod{
-		UnitFile: UnitFile{
-			SystemPaths: systemPaths,
-		},
-		Header: Header{},
-	}
-	return
 }
 
 func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
@@ -99,32 +113,32 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 
 	// marshal pod unit
 	var buf bytes.Buffer
-	spec := SpecMeta{
+	spec := Spec{
 		Revision: SpecRevision,
 	}
 	if err = spec.Marshal(&buf); err != nil {
 		return
 	}
-	if err = p.Header.MarshalLine(&buf); err != nil {
+	if err = p.Header.MarshalSpec(&buf); err != nil {
 		return
 	}
 	for _, a := range p.Units {
-		if err = a.MarshalLine(&buf); err != nil {
+		if err = a.MarshalSpec(&buf); err != nil {
 			return
 		}
 	}
 	for _, a := range p.Blobs {
-		if err = a.MarshalLine(&buf); err != nil {
+		if err = a.MarshalSpec(&buf); err != nil {
 			return
 		}
 	}
 	for _, a := range p.Providers {
-		if err = a.MarshalLine(&buf); err != nil {
+		if err = a.MarshalSpec(&buf); err != nil {
 			return
 		}
 	}
 	for _, a := range p.Resources {
-		if err = a.MarshalLine(&buf); err != nil {
+		if err = a.MarshalSpec(&buf); err != nil {
 			return
 		}
 	}
@@ -147,22 +161,23 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	if err = p.UnitFile.Read(); err != nil {
 		return
 	}
-
-	// get version
-	var meta SpecMeta
-	if err = meta.Unmarshal(p.UnitFile.Source); err != nil {
+	var spec Spec
+	if err = spec.Unmarshal(p.UnitFile.Source); err != nil {
 		return
 	}
-
-	if err = p.Header.UnmarshalItem(p.UnitFile.Source, meta, p.SystemPaths); err != nil {
+	if err = p.Header.UnmarshalSpec(p.UnitFile.Source, spec, p.SystemPaths); err != nil {
 		return
 	}
-
-	src := p.UnitFile.Source
-	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Units, src)
-	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Blobs, src)
-	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Resources, src)
-	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Providers, src)
+	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Units, p.UnitFile.Source); err != nil {
+		return
+	}
+	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Blobs, p.UnitFile.Source); err != nil {
+		return
+	}
+	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Resources, p.UnitFile.Source); err != nil {
+		return
+	}
+	err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Providers, p.UnitFile.Source)
 	return
 }
 

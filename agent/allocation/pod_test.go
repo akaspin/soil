@@ -15,7 +15,11 @@ func TestNewFromFS(t *testing.T) {
 		Local:   "testdata/etc",
 		Runtime: "testdata",
 	}
-	alloc := allocation.NewPod(paths)
+	alloc := &allocation.Pod{
+		UnitFile: allocation.UnitFile{
+			SystemPaths: paths,
+		},
+	}
 	err := alloc.FromFilesystem("testdata/pod-test-1.service")
 	assert.NoError(t, err)
 	assert.Equal(t, &allocation.Pod{

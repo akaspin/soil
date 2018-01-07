@@ -63,7 +63,12 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 }
 
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
-	alloc := allocation.NewPod(e.config.SystemPaths)
+
+	alloc := &allocation.Pod{
+		UnitFile: allocation.UnitFile{
+			SystemPaths: e.config.SystemPaths,
+		},
+	}
 	if err := alloc.FromManifest(pod, env); err != nil {
 		e.log.Error(err)
 		return

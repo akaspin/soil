@@ -18,7 +18,7 @@ const (
 // Allocation resources
 type ResourceSlice []*Resource
 
-func (s *ResourceSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+func (s *ResourceSlice) GetEmpty(paths SystemPaths) (empty Asset) {
 	empty = &Resource{}
 	return
 }
@@ -42,7 +42,7 @@ func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err 
 	return
 }
 
-func (r *ResourceSlice) AppendItem(v ItemUnmarshaller) {
+func (r *ResourceSlice) AppendItem(v Asset) {
 	*r = append(*r, v.(*Resource))
 }
 
@@ -77,7 +77,7 @@ func (r *Resource) ValuesKey() (res string) {
 }
 
 // Marshal resource line
-func (r *Resource) MarshalLine(w io.Writer) (err error) {
+func (r *Resource) MarshalSpec(w io.Writer) (err error) {
 	if _, err = fmt.Fprint(w, resourceSpecPrefix); err != nil {
 		return
 	}
@@ -85,7 +85,7 @@ func (r *Resource) MarshalLine(w io.Writer) (err error) {
 	return
 }
 
-func (r *Resource) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
+func (r *Resource) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
 	// old resources are skipped
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceSpecPrefix)), r)
 	return

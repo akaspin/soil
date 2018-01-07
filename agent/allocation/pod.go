@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
@@ -93,14 +94,51 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 		unitNames = append(unitNames, unitName)
 	}
 
-	// Resources
 	p.Resources.FromManifest(*m, env)
 	p.Providers.FromManifest(*m, env)
 
-	p.Source, err = p.Header.Marshal(p.Name, p.Units, p.Blobs, p.Resources, p.Providers)
-	p.Source += manifest.Interpolate(podUnitTemplate, baseEnv, baseSourceEnv, map[string]string{
-		"pod.units": strings.Join(unitNames, " "),
-	}, env)
+	// marshal pod unit
+	var buf bytes.Buffer
+	spec := SpecMeta{
+		Revision: SpecRevision,
+	}
+	if err = spec.Marshal(&buf); err != nil {
+		return
+	}
+	if err = p.Header.MarshalLine(&buf); err != nil {
+		return
+	}
+	for _, a := range p.Units {
+		if err = a.MarshalLine(&buf); err != nil {
+			return
+		}
+	}
+	for _, a := range p.Blobs {
+		if err = a.MarshalLine(&buf); err != nil {
+			return
+		}
+	}
+	for _, a := range p.Providers {
+		if err = a.MarshalLine(&buf); err != nil {
+			return
+		}
+	}
+	for _, a := range p.Resources {
+		if err = a.MarshalLine(&buf); err != nil {
+			return
+		}
+	}
+	if _, err = buf.WriteString(manifest.Interpolate(
+		podUnitTemplate,
+		baseEnv,
+		baseSourceEnv,
+		map[string]string{
+			"pod.units": strings.Join(unitNames, " "),
+		},
+		env)); err != nil {
+		return
+	}
+	p.Source = buf.String()
 	return
 }
 
@@ -116,11 +154,10 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 		return
 	}
 
-	if err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
+	if err = p.Header.UnmarshalItem(p.UnitFile.Source, meta, p.SystemPaths); err != nil {
 		return
 	}
 
-	// TODO: refactor all other stuff
 	src := p.UnitFile.Source
 	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Units, src)
 	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Blobs, src)

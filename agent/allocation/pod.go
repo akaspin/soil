@@ -25,7 +25,7 @@ WantedBy=${pod.target}
 type Pod struct {
 	Header
 	UnitFile
-	Units     []*Unit
+	Units     UnitSlice
 	Blobs     BlobSlice
 	Resources ResourceSlice
 	Providers ProviderSlice
@@ -109,21 +109,22 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	if err = p.UnitFile.Read(); err != nil {
 		return
 	}
-	if p.Units, err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
+	if err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
 		return
 	}
 
-	for _, u := range p.Units {
-		if err = u.UnitFile.Read(); err != nil {
-			return
-		}
-	}
+	//for _, u := range p.Units {
+	//	if err = u.UnitFile.Read(); err != nil {
+	//		return
+	//	}
+	//}
 
 	// TODO: refactor all other stuff
 	src := p.UnitFile.Source
-	err = UnmarshalItemSlice(&p.Blobs, &Blob{}, src, []string{blobV1Prefix, blobV2Prefix})
-	err = UnmarshalItemSlice(&p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
-	err = UnmarshalItemSlice(&p.Providers, &Provider{}, src, []string{providerHeadPrefix})
+	err = UnmarshalItemSlice(p.SystemPaths, &p.Units, &Unit{}, src, []string{unitV1Prefix, unitV2Prefix})
+	err = UnmarshalItemSlice(p.SystemPaths, &p.Blobs, &Blob{}, src, []string{blobV1Prefix, blobV2Prefix})
+	err = UnmarshalItemSlice(p.SystemPaths, &p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
+	err = UnmarshalItemSlice(p.SystemPaths, &p.Providers, &Provider{}, src, []string{providerHeadPrefix})
 	return
 }
 

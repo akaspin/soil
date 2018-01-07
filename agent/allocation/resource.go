@@ -76,7 +76,7 @@ func (r *Resource) MarshalLine(w io.Writer) (err error) {
 	return
 }
 
-func (r *Resource) UnmarshalItem(line string) (err error) {
+func (r *Resource) UnmarshalItem(line string, paths SystemPaths) (err error) {
 	// old resources are skipped
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceHeaderPrefix)), r)
 	return

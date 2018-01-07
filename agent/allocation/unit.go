@@ -7,14 +7,19 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
 
 const (
-	unitV1Prefix = "### BLOB "
-	unitV2Prefix = "### BLOB_V2 "
+	unitV1Prefix = "### UNIT "
+	unitV2Prefix = "### UNIT_V2 "
 )
 
 type UnitSlice []*Unit
+
+func (s *UnitSlice) AppendItem(v ItemUnmarshaller) {
+	*s = append(*s, v.(*Unit))
+}
 
 type Unit struct {
 	UnitFile
@@ -33,7 +38,29 @@ func (u *Unit) MarshalLine(w io.Writer) (err error) {
 //
 //	  v1: ### UNIT ...
 //	  v2: ### UNIT_V2 ...
-func (u *Unit) UnmarshalItem(line string) (err error) {
+func (u *Unit) UnmarshalItem(line string, paths SystemPaths) (err error) {
+	u.SystemPaths = paths
+	switch {
+	case strings.HasPrefix(line, unitV1Prefix):
+		// v1
+		if _, err = fmt.Sscanf(line, "### UNIT %s ", &u.UnitFile.Path); err != nil {
+			return
+		}
+		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", unitV1Prefix, u.UnitFile.Path))
+		if err = json.NewDecoder(strings.NewReader(line)).Decode(u); err != nil {
+			return
+		}
+	case strings.HasPrefix(line, unitV2Prefix):
+		// v2
+		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, unitV2Prefix))).Decode(u); err != nil {
+			return
+		}
+	}
+	src, err := ioutil.ReadFile(u.UnitFile.Path)
+	if err != nil {
+		return
+	}
+	u.UnitFile.Source = string(src)
 	return
 }
 

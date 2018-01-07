@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
 	"strings"
 )
@@ -21,7 +20,7 @@ func (h *Header) Mark() (res uint64) {
 	return
 }
 
-func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, err error) {
+func (h *Header) Unmarshal(src string, paths SystemPaths) (err error) {
 	split := strings.Split(src, "\n")
 	// extract header
 	var jsonSrc string
@@ -31,23 +30,23 @@ func (h *Header) Unmarshal(src string, paths SystemPaths) (units []*Unit, err er
 	if err = json.Unmarshal([]byte(jsonSrc), &h); err != nil {
 		return
 	}
-	for _, line := range split[1:] {
-		if strings.HasPrefix(line, "### UNIT") {
-			u := &Unit{
-				UnitFile: UnitFile{
-					SystemPaths: paths,
-				},
-				Transition: manifest.Transition{},
-			}
-			if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.UnitFile.Path, &jsonSrc); err != nil {
-				return
-			}
-			if err = json.Unmarshal([]byte(jsonSrc), &u); err != nil {
-				return
-			}
-			units = append(units, u)
-		}
-	}
+	//for _, line := range split[1:] {
+	//	if strings.HasPrefix(line, "### UNIT") {
+	//		u := &Unit{
+	//			UnitFile: UnitFile{
+	//				SystemPaths: paths,
+	//			},
+	//			Transition: manifest.Transition{},
+	//		}
+	//		if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.UnitFile.Path, &jsonSrc); err != nil {
+	//			return
+	//		}
+	//		if err = json.Unmarshal([]byte(jsonSrc), &u); err != nil {
+	//			return
+	//		}
+	//		units = append(units, u)
+	//	}
+	//}
 	return
 }
 

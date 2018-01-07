@@ -19,13 +19,13 @@ func TestBlob_UnmarshalItem(t *testing.T) {
 	t.Run(`v1`, func(t *testing.T) {
 		line := `### BLOB testdata/blob.txt {"Leave":true}`
 		var b allocation.Blob
-		assert.NoError(t, (&b).UnmarshalItem(line))
+		assert.NoError(t, (&b).UnmarshalItem(line, allocation.SystemPaths{}))
 		assert.Equal(t, expect, b)
 	})
 	t.Run(`v2`, func(t *testing.T) {
 		line := `### BLOB_V2 {"Name":"testdata/blob.txt","Leave":true}`
 		var b allocation.Blob
-		assert.NoError(t, (&b).UnmarshalItem(line))
+		assert.NoError(t, (&b).UnmarshalItem(line, allocation.SystemPaths{}))
 	})
 }
 

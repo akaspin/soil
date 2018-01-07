@@ -83,9 +83,7 @@ func TestHeader(t *testing.T) {
 	})
 	t.Run("unmarshal", func(t *testing.T) {
 		header := &allocation.Header{}
-		units, err := header.Unmarshal(src, allocation.DefaultSystemPaths())
+		err := header.Unmarshal(src, allocation.DefaultSystemPaths())
 		assert.NoError(t, err)
-		assert.Equal(t, units, expectUnits)
-		//assert.Equal(t, blobs, expectBlobs)
 	})
 }

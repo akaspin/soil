@@ -14,7 +14,7 @@ type ItemSlice interface {
 
 // ItemUnmarshaller entity can recover own state
 type ItemUnmarshaller interface {
-	UnmarshalItem(line string) (err error)
+	UnmarshalItem(line string, paths SystemPaths) (err error)
 }
 
 // Marshal item to pod manifest
@@ -23,14 +23,14 @@ type ItemMarshaller interface {
 }
 
 // UnmarshalItemSlice items from pod unit header
-func UnmarshalItemSlice(v ItemSlice, empty ItemUnmarshaller, source string, prefixes []string) (err error) {
+func UnmarshalItemSlice(paths SystemPaths, v ItemSlice, empty ItemUnmarshaller, source string, prefixes []string) (err error) {
 	err = &multierror.Error{}
 	for _, line := range strings.Split(source, "\n") {
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(line, prefix) {
 				cp, _ := copystructure.Copy(empty)
 				v1 := cp.(ItemUnmarshaller)
-				if rErr := v1.UnmarshalItem(line); rErr != nil {
+				if rErr := v1.UnmarshalItem(line, paths); rErr != nil {
 					err = multierror.Append(err, rErr)
 					continue
 				}

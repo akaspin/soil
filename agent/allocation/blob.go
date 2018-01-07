@@ -40,7 +40,7 @@ func (b *Blob) MarshalLine(w io.Writer) (err error) {
 //
 //	  v1: ### BLOB <name> <json-spec>
 //	  v2: ### BLOB.v2 <json-spec>
-func (b *Blob) UnmarshalItem(line string) (err error) {
+func (b *Blob) UnmarshalItem(line string, paths SystemPaths) (err error) {
 	switch {
 	case strings.HasPrefix(line, blobV1Prefix):
 		// v1

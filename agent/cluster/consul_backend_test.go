@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/consul/api"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sync"
 	"testing"
 	"time"
 )
@@ -107,10 +108,13 @@ func TestConsulBackend_Submit(t *testing.T) {
 	})
 	defer kv.Close()
 
+	commitsMu := &sync.Mutex{}
 	var commits []cluster.StoreCommit
 	go func() {
 		for ok := range kv.CommitChan() {
+			commitsMu.Lock()
 			commits = append(commits, ok...)
+			commitsMu.Unlock()
 		}
 	}()
 
@@ -133,9 +137,11 @@ func TestConsulBackend_Submit(t *testing.T) {
 			},
 		})
 		time.Sleep(time.Millisecond * 300)
+		commitsMu.Lock()
 		assert.Equal(t, commits, []cluster.StoreCommit{
 			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
 			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true}})
+		commitsMu.Unlock()
 	})
 	t.Run("ensure", func(t *testing.T) {
 		res, _, err := cli.KV().List("soil/test/", nil)
@@ -163,12 +169,14 @@ func TestConsulBackend_Submit(t *testing.T) {
 			},
 		})
 		time.Sleep(time.Millisecond * 300)
+		commitsMu.Lock()
 		assert.Equal(t, commits, []cluster.StoreCommit{
 			{ID: "test/01", Hash: 0x814776e2108083a4, WithTTL: false},
 			{ID: "test/02", Hash: 0x7c7cfc54f5f190b3, WithTTL: true},
 			{ID: "test/01", Hash: 0x0, WithTTL: false},
 			{ID: "test/02", Hash: 0x0, WithTTL: true},
 			{ID: "test/03", Hash: 0x0, WithTTL: false}})
+		commitsMu.Unlock()
 		res, _, err := cli.KV().List("soil/test/", nil)
 		assert.NoError(t, err)
 		assert.Len(t, res, 0)

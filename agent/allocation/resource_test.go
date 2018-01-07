@@ -47,7 +47,7 @@ func TestResource_MarshalLine(t *testing.T) {
 func TestResource_UnmarshalLine(t *testing.T) {
 	t.Run(`with values`, func(t *testing.T) {
 		r := &allocation.Resource{}
-		assert.NoError(t, r.UnmarshalItem("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\",\"Config\":{\"a\":1}},\"Values\":{\"a\":\"123\"}}\n", allocation.SystemPaths{}))
+		assert.NoError(t, r.UnmarshalItem("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\",\"Config\":{\"a\":1}},\"Values\":{\"a\":\"123\"}}\n", allocation.SpecMeta{}, allocation.SystemPaths{}))
 		assert.Equal(t, &allocation.Resource{
 			Request: manifest.Resource{
 				Provider: "test",
@@ -63,7 +63,7 @@ func TestResource_UnmarshalLine(t *testing.T) {
 	})
 	t.Run(`with values no config`, func(t *testing.T) {
 		r := &allocation.Resource{}
-		assert.NoError(t, r.UnmarshalItem("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\"},\"Values\":{\"a\":\"123\"}}\n", allocation.SystemPaths{}))
+		assert.NoError(t, r.UnmarshalItem("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\"},\"Values\":{\"a\":\"123\"}}\n", allocation.SpecMeta{}, allocation.SystemPaths{}))
 		assert.Equal(t, &allocation.Resource{
 			Request: manifest.Resource{
 				Provider: "test",
@@ -76,7 +76,7 @@ func TestResource_UnmarshalLine(t *testing.T) {
 	})
 	t.Run(`without values`, func(t *testing.T) {
 		r := &allocation.Resource{}
-		assert.NoError(t, r.UnmarshalItem("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\",\"Config\":{\"a\":1}}}\n", allocation.SystemPaths{}))
+		assert.NoError(t, r.UnmarshalItem("### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"test\",\"Config\":{\"a\":1}}}\n", allocation.SpecMeta{}, allocation.SystemPaths{}))
 		assert.Equal(t, &allocation.Resource{
 			Request: manifest.Resource{
 				Provider: "test",
@@ -159,7 +159,7 @@ func TestResourceSlice_Append(t *testing.T) {
 	src := "### RESOURCE {\"Request\":{\"Name\":\"1\",\"Provider\":\"prov\",\"Config\":{\"a\":1}}}\n### RESOURCE {\"Request\":{\"Name\":\"2\",\"Provider\":\"test\"}}\n"
 	t.Run(`restore`, func(t *testing.T) {
 		var v allocation.ResourceSlice
-		err := allocation.UnmarshalItemSlice("1", allocation.SystemPaths{}, &v, src, []string{"### RESOURCE "})
+		err := allocation.UnmarshalItemSlice(allocation.SpecMeta{}, allocation.SystemPaths{}, &v, src)
 		assert.NoError(t, err)
 		assert.Equal(t, expect, v)
 	})

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	blobPrefix   = "### BLOB "
-	blobV2Prefix = "### BLOB_V2 "
+	blobSpecPrefix = "### BLOB "
+	blobV2Prefix   = "### BLOB_V2 "
 )
 
 type BlobSlice []*Blob
@@ -25,7 +25,7 @@ func (s *BlobSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
 }
 
 func (s *BlobSlice) GetVersionPrefix(v string) (p string) {
-	p = blobPrefix
+	p = blobSpecPrefix
 	return
 }
 
@@ -41,7 +41,7 @@ type Blob struct {
 }
 
 func (b *Blob) MarshalLine(w io.Writer) (err error) {
-	if _, err = w.Write([]byte(blobV2Prefix)); err != nil {
+	if _, err = w.Write([]byte(blobSpecPrefix)); err != nil {
 		return
 	}
 	err = json.NewEncoder(w).Encode(b)
@@ -49,23 +49,19 @@ func (b *Blob) MarshalLine(w io.Writer) (err error) {
 }
 
 // Unmarshal blob item from manifest. Line may be in two revisions:
-//
-//	  v1: ### BLOB <name> <json-spec>
-//	  v2: ### BLOB.v2 <json-spec>
-func (b *Blob) UnmarshalItem(line string, paths SystemPaths) (err error) {
-	switch {
-	case strings.HasPrefix(line, blobPrefix):
-		// v1
+func (b *Blob) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
+	switch spec.Revision {
+	case "":
 		if _, err = fmt.Sscanf(line, "### BLOB %s", &b.Name); err != nil {
 			return
 		}
-		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", blobPrefix, b.Name))
+		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", blobSpecPrefix, b.Name))
 		if err = json.NewDecoder(strings.NewReader(line)).Decode(b); err != nil {
 			return
 		}
-	case strings.HasPrefix(line, blobV2Prefix):
+	case SpecRevision:
 		// v2
-		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, blobV2Prefix))).Decode(b); err != nil {
+		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, blobSpecPrefix))).Decode(b); err != nil {
 			return
 		}
 	}

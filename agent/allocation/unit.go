@@ -22,7 +22,6 @@ func (s *UnitSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
 		UnitFile: UnitFile{
 			SystemPaths: paths,
 		},
-
 	}
 	return
 }
@@ -42,7 +41,7 @@ type Unit struct {
 }
 
 func (u *Unit) MarshalLine(w io.Writer) (err error) {
-	if _, err = w.Write([]byte(unitV2Prefix)); err != nil {
+	if _, err = w.Write([]byte(unitSpecPrefix)); err != nil {
 		return
 	}
 	err = json.NewEncoder(w).Encode(u)
@@ -50,13 +49,10 @@ func (u *Unit) MarshalLine(w io.Writer) (err error) {
 }
 
 // UnmarshalItem parses one line from manifest
-//
-//	  v1: ### UNIT ...
-//	  v2: ### UNIT_V2 ...
-func (u *Unit) UnmarshalItem(line string, paths SystemPaths) (err error) {
+func (u *Unit) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
 	u.SystemPaths = paths
-	switch {
-	case strings.HasPrefix(line, unitSpecPrefix):
+	switch spec.Revision {
+	case "":
 		// v1
 		if _, err = fmt.Sscanf(line, "### UNIT %s ", &u.UnitFile.Path); err != nil {
 			return
@@ -65,9 +61,9 @@ func (u *Unit) UnmarshalItem(line string, paths SystemPaths) (err error) {
 		if err = json.NewDecoder(strings.NewReader(line)).Decode(u); err != nil {
 			return
 		}
-	case strings.HasPrefix(line, unitV2Prefix):
+	case SpecRevision:
 		// v2
-		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, unitV2Prefix))).Decode(u); err != nil {
+		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, unitSpecPrefix))).Decode(u); err != nil {
 			return
 		}
 	}
@@ -76,14 +72,6 @@ func (u *Unit) UnmarshalItem(line string, paths SystemPaths) (err error) {
 		return
 	}
 	u.UnitFile.Source = string(src)
-	return
-}
-
-func (u *Unit) MarshalHeader(w io.Writer, encoder *json.Encoder) (err error) {
-	if _, err = fmt.Fprintf(w, "### UNIT %s ", u.UnitFile.Path); err != nil {
-		return
-	}
-	err = encoder.Encode(&u.Transition)
 	return
 }
 

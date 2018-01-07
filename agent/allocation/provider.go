@@ -45,7 +45,7 @@ func (p *Provider) GetID(parent ...string) string {
 }
 
 // Restore state from header line
-func (p *Provider) UnmarshalItem(line string, paths SystemPaths) (err error) {
+func (p *Provider) UnmarshalItem(line string, spec SpecMeta, paths SystemPaths) (err error) {
 	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerSpecPrefix)), p)
 	return
 }

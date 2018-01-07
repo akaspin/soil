@@ -21,7 +21,7 @@ func TestUnit_MarshalLine(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	assert.NoError(t, u.MarshalLine(&buf))
-	assert.Equal(t, "### UNIT_V2 {\"Path\":\"aaa\",\"Create\":\"start\"}\n", buf.String())
+	assert.Equal(t, "### UNIT {\"Path\":\"aaa\",\"Create\":\"start\"}\n", buf.String())
 }
 
 func TestUnit_UnmarshalItem(t *testing.T) {
@@ -33,16 +33,18 @@ func TestUnit_UnmarshalItem(t *testing.T) {
 			Create: "start",
 		}}
 
-	t.Run(`v1`, func(t *testing.T) {
+	t.Run(`0`, func(t *testing.T) {
 		line := `### UNIT testdata/test-1-0.service {"Create":"start"}`
 		var u allocation.Unit
-		assert.NoError(t, (&u).UnmarshalItem(line, allocation.SystemPaths{}))
+		assert.NoError(t, (&u).UnmarshalItem(line, allocation.SpecMeta{}, allocation.SystemPaths{}))
 		assert.Equal(t, expect, u)
 	})
-	t.Run(`v2`, func(t *testing.T) {
-		line := `### UNIT_V2 {"Path":"testdata/test-1-0.service","Create":"start"}`
+	t.Run(`1`, func(t *testing.T) {
+		line := `### UNIT {"Path":"testdata/test-1-0.service","Create":"start"}`
 		var u allocation.Unit
-		assert.NoError(t, (&u).UnmarshalItem(line, allocation.SystemPaths{}))
+		assert.NoError(t, (&u).UnmarshalItem(line, allocation.SpecMeta{
+			Revision: allocation.SpecRevision,
+		}, allocation.SystemPaths{}))
 		assert.Equal(t, expect, u)
 	})
 }

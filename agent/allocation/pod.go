@@ -122,10 +122,10 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 
 	// TODO: refactor all other stuff
 	src := p.UnitFile.Source
-	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Units, src, []string{unitSpecPrefix, unitV2Prefix})
-	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Blobs, src, []string{blobPrefix, blobV2Prefix})
-	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Resources, src, []string{resourceSpecPrefix})
-	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Providers, src, []string{providerSpecPrefix})
+	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Units, src)
+	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Blobs, src)
+	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Resources, src)
+	err = UnmarshalItemSlice(meta, p.SystemPaths, &p.Providers, src)
 	return
 }
 

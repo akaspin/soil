@@ -61,7 +61,7 @@ func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []
 		return
 	}
 	for _, u := range units {
-		if err = u.MarshalHeader(buf, encoder); err != nil {
+		if err = u.MarshalLine(buf); err != nil {
 			return
 		}
 	}

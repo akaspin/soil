@@ -16,16 +16,18 @@ func TestBlob_UnmarshalItem(t *testing.T) {
 		Leave:       true,
 		Source:      "a\nb\n123\n",
 	}
-	t.Run(`v1`, func(t *testing.T) {
+	t.Run(`0`, func(t *testing.T) {
 		line := `### BLOB testdata/blob.txt {"Leave":true}`
 		var b allocation.Blob
-		assert.NoError(t, (&b).UnmarshalItem(line, allocation.SystemPaths{}))
+		assert.NoError(t, (&b).UnmarshalItem(line, allocation.SpecMeta{}, allocation.SystemPaths{}))
 		assert.Equal(t, expect, b)
 	})
-	t.Run(`v2`, func(t *testing.T) {
-		line := `### BLOB_V2 {"Name":"testdata/blob.txt","Leave":true}`
+	t.Run(`1`, func(t *testing.T) {
+		line := `### BLOB {"Name":"testdata/blob.txt","Leave":true}`
 		var b allocation.Blob
-		assert.NoError(t, (&b).UnmarshalItem(line, allocation.SystemPaths{}))
+		assert.NoError(t, (&b).UnmarshalItem(line, allocation.SpecMeta{
+			Revision: allocation.SpecRevision,
+		}, allocation.SystemPaths{}))
 	})
 }
 
@@ -38,5 +40,5 @@ func TestBlob_MarshalLine(t *testing.T) {
 	}
 	var buf bytes.Buffer
 	assert.NoError(t, b.MarshalLine(&buf))
-	assert.Equal(t, "### BLOB_V2 {\"Name\":\"testdata/blob.txt\",\"Leave\":true}\n", buf.String())
+	assert.Equal(t, "### BLOB {\"Name\":\"testdata/blob.txt\",\"Leave\":true}\n", buf.String())
 }

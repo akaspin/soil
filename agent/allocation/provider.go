@@ -9,25 +9,33 @@ import (
 	"strings"
 )
 
-const (
-	providerHeadPrefix = "### PROVIDER "
-)
+const providerSpecPrefix = "### PROVIDER "
 
 // Allocation providers
 type ProviderSlice []*Provider
 
-func (p *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.FlatMap) (err error) {
+func (s *ProviderSlice) GetEmpty(paths SystemPaths) (empty Asset) {
+	empty = &Provider{}
+	return
+}
+
+func (s *ProviderSlice) GetVersionPrefix(v string) (p string) {
+	p = providerSpecPrefix
+	return
+}
+
+func (s *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.FlatMap) (err error) {
 	for _, decl := range pod.Providers {
 		// clone provider
 		v, _ := copystructure.Copy(decl)
 		provider := Provider(v.(manifest.Provider))
-		*p = append(*p, &provider)
+		*s = append(*s, &provider)
 	}
 	return
 }
 
-func (p *ProviderSlice) Append(v ItemUnmarshaller) {
-	*p = append(*p, v.(*Provider))
+func (s *ProviderSlice) AppendItem(v Asset) {
+	*s = append(*s, v.(*Provider))
 }
 
 type Provider manifest.Provider
@@ -37,13 +45,13 @@ func (p *Provider) GetID(parent ...string) string {
 }
 
 // Restore state from header line
-func (p *Provider) UnmarshalLine(line string) (err error) {
-	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerHeadPrefix)), p)
+func (p *Provider) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
+	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerSpecPrefix)), p)
 	return
 }
 
-func (p *Provider) MarshalLine(w io.Writer) (err error) {
-	if _, err = fmt.Fprintf(w, "%s", providerHeadPrefix); err != nil {
+func (p *Provider) MarshalSpec(w io.Writer) (err error) {
+	if _, err = fmt.Fprintf(w, "%s", providerSpecPrefix); err != nil {
 		return
 	}
 	err = json.NewEncoder(w).Encode(p)

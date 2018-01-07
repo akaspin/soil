@@ -1,6 +1,7 @@
 package allocation
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
@@ -21,24 +22,38 @@ WantedBy=${pod.target}
 	dirSystemDRuntime = "/run/systemd/system"
 )
 
+// Allocations state
+type PodSlice []*Pod
+
+func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
+	paths, err := discoveryFunc()
+	var failures []error
+	for _, path := range paths {
+		pod := &Pod{
+			UnitFile: UnitFile{
+				SystemPaths: systemPaths,
+			},
+		}
+		if parseErr := pod.FromFilesystem(path); parseErr != nil {
+			failures = append(failures, parseErr)
+			continue
+		}
+		*s = append(*s, pod)
+	}
+	if len(failures) > 0 {
+		err = fmt.Errorf("%v", failures)
+	}
+	return
+}
+
 // Pod represents pod allocated on agent
 type Pod struct {
 	Header
 	UnitFile
-	Units     []*Unit
-	Blobs     []*Blob
+	Units     UnitSlice
+	Blobs     BlobSlice
 	Resources ResourceSlice
 	Providers ProviderSlice
-}
-
-func NewPod(systemPaths SystemPaths) (p *Pod) {
-	p = &Pod{
-		UnitFile: UnitFile{
-			SystemPaths: systemPaths,
-		},
-		Header: Header{},
-	}
-	return
 }
 
 func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
@@ -93,14 +108,51 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 		unitNames = append(unitNames, unitName)
 	}
 
-	// Resources
 	p.Resources.FromManifest(*m, env)
 	p.Providers.FromManifest(*m, env)
 
-	p.Source, err = p.Header.Marshal(p.Name, p.Units, p.Blobs, p.Resources, p.Providers)
-	p.Source += manifest.Interpolate(podUnitTemplate, baseEnv, baseSourceEnv, map[string]string{
-		"pod.units": strings.Join(unitNames, " "),
-	}, env)
+	// marshal pod unit
+	var buf bytes.Buffer
+	spec := Spec{
+		Revision: SpecRevision,
+	}
+	if err = spec.Marshal(&buf); err != nil {
+		return
+	}
+	if err = p.Header.MarshalSpec(&buf); err != nil {
+		return
+	}
+	for _, a := range p.Units {
+		if err = a.MarshalSpec(&buf); err != nil {
+			return
+		}
+	}
+	for _, a := range p.Blobs {
+		if err = a.MarshalSpec(&buf); err != nil {
+			return
+		}
+	}
+	for _, a := range p.Providers {
+		if err = a.MarshalSpec(&buf); err != nil {
+			return
+		}
+	}
+	for _, a := range p.Resources {
+		if err = a.MarshalSpec(&buf); err != nil {
+			return
+		}
+	}
+	if _, err = buf.WriteString(manifest.Interpolate(
+		podUnitTemplate,
+		baseEnv,
+		baseSourceEnv,
+		map[string]string{
+			"pod.units": strings.Join(unitNames, " "),
+		},
+		env)); err != nil {
+		return
+	}
+	p.Source = buf.String()
 	return
 }
 
@@ -109,24 +161,23 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	if err = p.UnitFile.Read(); err != nil {
 		return
 	}
-	if p.Units, p.Blobs, err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
+	var spec Spec
+	if err = spec.Unmarshal(p.UnitFile.Source); err != nil {
 		return
 	}
-
-	for _, u := range p.Units {
-		if err = u.UnitFile.Read(); err != nil {
-			return
-		}
+	if err = p.Header.UnmarshalSpec(p.UnitFile.Source, spec, p.SystemPaths); err != nil {
+		return
 	}
-	for _, b := range p.Blobs {
-		if err = b.Read(); err != nil {
-			return
-		}
+	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Units, p.UnitFile.Source); err != nil {
+		return
 	}
-	// TODO: refactor all other stuff
-	src := p.UnitFile.Source
-	err = Recover(&p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
-	err = Recover(&p.Providers, &Provider{}, src, []string{providerHeadPrefix})
+	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Blobs, p.UnitFile.Source); err != nil {
+		return
+	}
+	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Resources, p.UnitFile.Source); err != nil {
+		return
+	}
+	err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Providers, p.UnitFile.Source)
 	return
 }
 

@@ -1,61 +1,51 @@
 required = [
-    "github.com/docker/libkv",
-    "github.com/hashicorp/consul",
-#    "github.com/coreos/etcd",
     "github.com/kr/pretty",
 ]
 
 [[constraint]]
-  branch = "master"
   name = "github.com/akaspin/cut"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/akaspin/logx"
   version = "2.1.1"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/akaspin/supervisor"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/coreos/go-systemd"
   version = "v14"
 
-#[[constraint]]
-#  name = "github.com/docker/libkv"
-#  version = "v0.2.1"
-#
-#[[constraint]]
-#  name = "github.com/coreos/etcd"
-#  revision = "785a5a11edf826f8d3e3396c33bf38c717b6225e"
-
 [[constraint]]
-  branch = "master"
   name = "github.com/hashicorp/hcl"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/hashicorp/consul"
   version = "1.0.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/mitchellh/hashstructure"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/mitchellh/mapstructure"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/RoaringBitmap/roaring"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/pkg/errors"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/pmezard/go-difflib"
-  version = "1.0.0"
+  branch = "master"
+#  version = "1.0.0"
 
 [[constraint]]
   branch = "master"
@@ -63,19 +53,20 @@ required = [
 
 [[constraint]]
   name = "github.com/stretchr/testify"
-  version = "v1.1.4"
+  branch = "master"
+#  version = "v1.2.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/ryanuber/columnize"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/mitchellh/copystructure"
+  branch = "master"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/kr/pretty"
+  branch = "master"
 
 [[constraint]]
   name = "github.com/docker/docker"

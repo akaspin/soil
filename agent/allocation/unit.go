@@ -7,25 +7,78 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 )
+
+const (
+	unitSpecPrefix = "### UNIT "
+	unitV2Prefix   = "### UNIT_V2 "
+)
+
+type UnitSlice []*Unit
+
+func (s *UnitSlice) GetEmpty(paths SystemPaths) (empty Asset) {
+	empty = &Unit{
+		UnitFile: UnitFile{
+			SystemPaths: paths,
+		},
+	}
+	return
+}
+
+func (s *UnitSlice) GetVersionPrefix(v string) (p string) {
+	p = unitSpecPrefix
+	return
+}
+
+func (s *UnitSlice) AppendItem(v Asset) {
+	*s = append(*s, v.(*Unit))
+}
 
 type Unit struct {
 	UnitFile
 	manifest.Transition `json:",squash"`
 }
 
-func (u *Unit) MarshalHeader(w io.Writer, encoder *json.Encoder) (err error) {
-	if _, err = fmt.Fprintf(w, "### UNIT %s ", u.UnitFile.Path); err != nil {
+func (u *Unit) MarshalSpec(w io.Writer) (err error) {
+	if _, err = w.Write([]byte(unitSpecPrefix)); err != nil {
 		return
 	}
-	err = encoder.Encode(&u.Transition)
+	err = json.NewEncoder(w).Encode(u)
+	return
+}
+
+// UnmarshalSpec parses one line from manifest
+func (u *Unit) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
+	u.SystemPaths = paths
+	switch spec.Revision {
+	case "":
+		// v1
+		if _, err = fmt.Sscanf(line, "### UNIT %s ", &u.UnitFile.Path); err != nil {
+			return
+		}
+		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", unitSpecPrefix, u.UnitFile.Path))
+		if err = json.NewDecoder(strings.NewReader(line)).Decode(u); err != nil {
+			return
+		}
+	case SpecRevision:
+		// v2
+		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, unitSpecPrefix))).Decode(u); err != nil {
+			return
+		}
+	}
+	src, err := ioutil.ReadFile(u.UnitFile.Path)
+	if err != nil {
+		return
+	}
+	u.UnitFile.Source = string(src)
 	return
 }
 
 type UnitFile struct {
-	SystemPaths SystemPaths
+	SystemPaths SystemPaths `json:"-"`
 	Path        string
-	Source      string
+	Source      string `json:"-"`
 }
 
 func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f UnitFile) {

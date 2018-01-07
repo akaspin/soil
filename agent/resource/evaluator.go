@@ -300,6 +300,6 @@ func (e *Evaluator) jsonPipeFn(message bus.Message) (res bus.Message) {
 		e.log.Errorf(`failed to unmarshal %s: %v`, message, err)
 		return
 	}
-	res = bus.NewMessage(message.GetID(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON("__values")))
+	res = bus.NewMessage(message.GetID(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON(allocation.ResourceValuesPostfix)))
 	return
 }

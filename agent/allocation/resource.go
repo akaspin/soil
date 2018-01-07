@@ -11,13 +11,22 @@ import (
 )
 
 const (
-	resourceHeaderPrefix = "### RESOURCE "
-
+	resourceSpecPrefix    = "### RESOURCE "
 	ResourceValuesPostfix = "__values"
 )
 
 // Allocation resources
 type ResourceSlice []*Resource
+
+func (s *ResourceSlice) GetEmpty(paths SystemPaths) (empty Asset) {
+	empty = &Resource{}
+	return
+}
+
+func (s *ResourceSlice) GetVersionPrefix(v string) (p string) {
+	p = resourceSpecPrefix
+	return
+}
 
 func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err error) {
 	err = &multierror.Error{}
@@ -33,7 +42,7 @@ func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err 
 	return
 }
 
-func (r *ResourceSlice) Append(v ItemUnmarshaller) {
+func (r *ResourceSlice) AppendItem(v Asset) {
 	*r = append(*r, v.(*Resource))
 }
 
@@ -68,17 +77,17 @@ func (r *Resource) ValuesKey() (res string) {
 }
 
 // Marshal resource line
-func (r *Resource) MarshalLine(w io.Writer) (err error) {
-	if _, err = fmt.Fprint(w, resourceHeaderPrefix); err != nil {
+func (r *Resource) MarshalSpec(w io.Writer) (err error) {
+	if _, err = fmt.Fprint(w, resourceSpecPrefix); err != nil {
 		return
 	}
 	err = json.NewEncoder(w).Encode(r)
 	return
 }
 
-func (r *Resource) UnmarshalLine(line string) (err error) {
+func (r *Resource) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
 	// old resources are skipped
-	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceHeaderPrefix)), r)
+	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceSpecPrefix)), r)
 	return
 }
 

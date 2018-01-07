@@ -120,7 +120,7 @@ func (s *Systemd) DestroyPod(name ...string) (err error) {
 		if readErr != nil {
 			continue
 		}
-		if strings.HasPrefix(string(body), "### POD ") {
+		if strings.Contains(string(body), "### POD ") {
 			if err = s.destroyPod(conn, f.Path, body); err != nil {
 				fmt.Printf("ERR can't destroy pod %s", f.Path)
 				continue

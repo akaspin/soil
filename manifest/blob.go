@@ -23,7 +23,7 @@ func (b *Blobs) Append(v interface{}) (err error) {
 // Pod file
 type Blob struct {
 	Name        string
-	Permissions int
+	Permissions int  `json:",omitempty"`
 	Leave       bool `json:",omitempty"`
 	Source      string
 }

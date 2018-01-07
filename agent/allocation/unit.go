@@ -11,11 +11,26 @@ import (
 )
 
 const (
-	unitV1Prefix = "### UNIT "
-	unitV2Prefix = "### UNIT_V2 "
+	unitSpecPrefix = "### UNIT "
+	unitV2Prefix   = "### UNIT_V2 "
 )
 
 type UnitSlice []*Unit
+
+func (s *UnitSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+	empty = &Unit{
+		UnitFile: UnitFile{
+			SystemPaths: paths,
+		},
+
+	}
+	return
+}
+
+func (s *UnitSlice) GetVersionPrefix(v string) (p string) {
+	p = unitSpecPrefix
+	return
+}
 
 func (s *UnitSlice) AppendItem(v ItemUnmarshaller) {
 	*s = append(*s, v.(*Unit))
@@ -41,12 +56,12 @@ func (u *Unit) MarshalLine(w io.Writer) (err error) {
 func (u *Unit) UnmarshalItem(line string, paths SystemPaths) (err error) {
 	u.SystemPaths = paths
 	switch {
-	case strings.HasPrefix(line, unitV1Prefix):
+	case strings.HasPrefix(line, unitSpecPrefix):
 		// v1
 		if _, err = fmt.Sscanf(line, "### UNIT %s ", &u.UnitFile.Path); err != nil {
 			return
 		}
-		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", unitV1Prefix, u.UnitFile.Path))
+		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", unitSpecPrefix, u.UnitFile.Path))
 		if err = json.NewDecoder(strings.NewReader(line)).Decode(u); err != nil {
 			return
 		}

@@ -9,6 +9,8 @@ import (
 
 // Slice of recoverable entities
 type ItemSlice interface {
+	GetVersionPrefix(version string) (prefix string)
+	GetEmpty(paths SystemPaths) (empty ItemUnmarshaller)
 	AppendItem(v ItemUnmarshaller)
 }
 
@@ -23,12 +25,12 @@ type ItemMarshaller interface {
 }
 
 // UnmarshalItemSlice items from pod unit header
-func UnmarshalItemSlice(paths SystemPaths, v ItemSlice, empty ItemUnmarshaller, source string, prefixes []string) (err error) {
+func UnmarshalItemSlice(version string, paths SystemPaths, v ItemSlice, source string, prefixes []string) (err error) {
 	err = &multierror.Error{}
 	for _, line := range strings.Split(source, "\n") {
 		for _, prefix := range prefixes {
 			if strings.HasPrefix(line, prefix) {
-				cp, _ := copystructure.Copy(empty)
+				cp, _ := copystructure.Copy(v.GetEmpty(paths))
 				v1 := cp.(ItemUnmarshaller)
 				if rErr := v1.UnmarshalItem(line, paths); rErr != nil {
 					err = multierror.Append(err, rErr)

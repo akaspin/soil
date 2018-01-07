@@ -11,13 +11,22 @@ import (
 )
 
 const (
-	resourceHeaderPrefix = "### RESOURCE "
-
+	resourceSpecPrefix    = "### RESOURCE "
 	ResourceValuesPostfix = "__values"
 )
 
 // Allocation resources
 type ResourceSlice []*Resource
+
+func (s *ResourceSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+	empty = &Resource{}
+	return
+}
+
+func (s *ResourceSlice) GetVersionPrefix(v string) (p string) {
+	p = resourceSpecPrefix
+	return
+}
 
 func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err error) {
 	err = &multierror.Error{}
@@ -69,7 +78,7 @@ func (r *Resource) ValuesKey() (res string) {
 
 // Marshal resource line
 func (r *Resource) MarshalLine(w io.Writer) (err error) {
-	if _, err = fmt.Fprint(w, resourceHeaderPrefix); err != nil {
+	if _, err = fmt.Fprint(w, resourceSpecPrefix); err != nil {
 		return
 	}
 	err = json.NewEncoder(w).Encode(r)
@@ -78,7 +87,7 @@ func (r *Resource) MarshalLine(w io.Writer) (err error) {
 
 func (r *Resource) UnmarshalItem(line string, paths SystemPaths) (err error) {
 	// old resources are skipped
-	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceHeaderPrefix)), r)
+	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceSpecPrefix)), r)
 	return
 }
 

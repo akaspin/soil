@@ -109,22 +109,23 @@ func (p *Pod) FromFilesystem(path string) (err error) {
 	if err = p.UnitFile.Read(); err != nil {
 		return
 	}
+
+	// get version
+	var meta SpecMeta
+	if err = meta.Unmarshal(p.UnitFile.Source); err != nil {
+		return
+	}
+
 	if err = p.Header.Unmarshal(p.UnitFile.Source, p.SystemPaths); err != nil {
 		return
 	}
 
-	//for _, u := range p.Units {
-	//	if err = u.UnitFile.Read(); err != nil {
-	//		return
-	//	}
-	//}
-
 	// TODO: refactor all other stuff
 	src := p.UnitFile.Source
-	err = UnmarshalItemSlice(p.SystemPaths, &p.Units, &Unit{}, src, []string{unitV1Prefix, unitV2Prefix})
-	err = UnmarshalItemSlice(p.SystemPaths, &p.Blobs, &Blob{}, src, []string{blobV1Prefix, blobV2Prefix})
-	err = UnmarshalItemSlice(p.SystemPaths, &p.Resources, &Resource{}, src, []string{resourceHeaderPrefix})
-	err = UnmarshalItemSlice(p.SystemPaths, &p.Providers, &Provider{}, src, []string{providerHeadPrefix})
+	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Units, src, []string{unitSpecPrefix, unitV2Prefix})
+	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Blobs, src, []string{blobPrefix, blobV2Prefix})
+	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Resources, src, []string{resourceSpecPrefix})
+	err = UnmarshalItemSlice(meta.Revision, p.SystemPaths, &p.Providers, src, []string{providerSpecPrefix})
 	return
 }
 

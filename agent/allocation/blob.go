@@ -11,11 +11,23 @@ import (
 )
 
 const (
-	blobV1Prefix = "### BLOB "
+	blobPrefix   = "### BLOB "
 	blobV2Prefix = "### BLOB_V2 "
 )
 
 type BlobSlice []*Blob
+
+func (s *BlobSlice) GetEmpty(paths SystemPaths) (empty ItemUnmarshaller) {
+	empty = &Blob{
+		Permissions: 0644,
+	}
+	return
+}
+
+func (s *BlobSlice) GetVersionPrefix(v string) (p string) {
+	p = blobPrefix
+	return
+}
 
 func (s *BlobSlice) AppendItem(v ItemUnmarshaller) {
 	*s = append(*s, v.(*Blob))
@@ -42,12 +54,12 @@ func (b *Blob) MarshalLine(w io.Writer) (err error) {
 //	  v2: ### BLOB.v2 <json-spec>
 func (b *Blob) UnmarshalItem(line string, paths SystemPaths) (err error) {
 	switch {
-	case strings.HasPrefix(line, blobV1Prefix):
+	case strings.HasPrefix(line, blobPrefix):
 		// v1
 		if _, err = fmt.Sscanf(line, "### BLOB %s", &b.Name); err != nil {
 			return
 		}
-		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", blobV1Prefix, b.Name))
+		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", blobPrefix, b.Name))
 		if err = json.NewDecoder(strings.NewReader(line)).Decode(b); err != nil {
 			return
 		}

@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const podSpecPrefix = "### POD"
+
 type Header struct {
 	Name      string
 	PodMark   uint64
@@ -23,36 +25,30 @@ func (h *Header) Mark() (res uint64) {
 func (h *Header) Unmarshal(src string, paths SystemPaths) (err error) {
 	split := strings.Split(src, "\n")
 	// extract header
-	var jsonSrc string
-	if _, err = fmt.Sscanf(split[0], "### POD %s %s", &h.Name, &jsonSrc); err != nil {
-		return
+	for _, line := range split {
+		if strings.HasPrefix(line, podSpecPrefix) {
+			var jsonSrc string
+			if _, err = fmt.Sscanf(split[0], "### POD %s %s", &h.Name, &jsonSrc); err != nil {
+				return
+			}
+			if err = json.Unmarshal([]byte(jsonSrc), &h); err != nil {
+				return
+			}
+			return
+		}
 	}
-	if err = json.Unmarshal([]byte(jsonSrc), &h); err != nil {
-		return
-	}
-	//for _, line := range split[1:] {
-	//	if strings.HasPrefix(line, "### UNIT") {
-	//		u := &Unit{
-	//			UnitFile: UnitFile{
-	//				SystemPaths: paths,
-	//			},
-	//			Transition: manifest.Transition{},
-	//		}
-	//		if _, err = fmt.Sscanf(line, "### UNIT %s %s", &u.UnitFile.Path, &jsonSrc); err != nil {
-	//			return
-	//		}
-	//		if err = json.Unmarshal([]byte(jsonSrc), &u); err != nil {
-	//			return
-	//		}
-	//		units = append(units, u)
-	//	}
-	//}
 	return
 }
 
 func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []*Resource, providers ProviderSlice) (res string, err error) {
 	buf := &bytes.Buffer{}
 	encoder := json.NewEncoder(buf)
+
+	if err = (&SpecMeta{
+		Revision: SpecRevision,
+	}).Marshal(buf); err != nil {
+		return
+	}
 
 	if _, err = fmt.Fprintf(buf, "### POD %s ", name); err != nil {
 		return
@@ -85,6 +81,6 @@ func (h *Header) Marshal(name string, units []*Unit, blobs []*Blob, resources []
 			return
 		}
 	}
-	res = string(buf.Bytes())
+	res = buf.String()
 	return
 }

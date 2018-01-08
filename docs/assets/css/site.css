@@ -23,6 +23,10 @@ code, pre {
     line-height: 1.84em;
 }
 
+.hljs {
+    padding: 0;
+}
+
 code {
     color: #444444;
     font-size: 85%;
@@ -31,10 +35,14 @@ code {
 }
 
 pre {
-    padding: 12px 14px;
+    padding: 0;
     margin: 1.4em 0;
-    background-color: #fcfcfc;
-    border-color: #dddddd;
+    background-color: transparent;
+    border: none;
+    /*padding: 12px 14px;*/
+    /*margin: 1.4em 0;*/
+    /*background-color: #fcfcfc;*/
+    /*border-color: #dddddd;*/
 }
 
 a, a code {
@@ -318,7 +326,23 @@ header.landing a.logo {
 }
 
 .landing h2 {
-    font-size: 1.6em;
+    font-size: 2em;
+    /*font-size: 1.6em;*/
     margin-top: 1.2em;
     margin-bottom: .5em;
+}
+
+.landing td {
+    width: 50%;
+}
+
+.landing .test-image {
+    max-width: 100%;
+}
+
+.landing pre, .landing code {
+    background: none;
+    border: none;
+    padding: 0px;
+    margin: 0px;
 }

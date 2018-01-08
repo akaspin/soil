@@ -318,7 +318,23 @@ header.landing a.logo {
 }
 
 .landing h2 {
-    font-size: 1.6em;
+    font-size: 2em;
+    /*font-size: 1.6em;*/
     margin-top: 1.2em;
     margin-bottom: .5em;
+}
+
+.landing td {
+    width: 50%;
+}
+
+.landing .test-image {
+    max-width: 100%;
+}
+
+.landing pre, .landing code {
+    background: none;
+    border: none;
+    padding: 0px;
+    margin: 0px;
 }

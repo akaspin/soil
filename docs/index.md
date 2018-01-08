@@ -16,9 +16,11 @@ weight: 0
 Soil maintains the specified schema. Just change schema and Soil will sync everything.
 Define metadata for constraints and interpolation. All provision will be changed in dynamic way.
 
+---
+
 ## Behavioral 
 
-Soil never touch unchanged entities. All defined SystemD units have a specified behavior depending on the deployment: create, update, destroy.
+| Soil never touch unchanged entities. All defined SystemD units have a specified behavior depending on the deployment: create, update, destroy. | ![Pod lifecycle]({{site.baseurl}}/assets/images/noun_1437720_cc.svg){: .test-image } |
 
 ## Run anywhere
 

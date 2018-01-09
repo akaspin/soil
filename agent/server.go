@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/cluster"
 	"github.com/akaspin/soil/agent/provider"
 	"github.com/akaspin/soil/agent/provision"
@@ -71,7 +72,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 				regexp.MustCompile(`^provision\..+`),
 			},
 		})
-	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	provisionDrainPipe := pipe.NewDivert(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	provisionCompositePipe := bus.NewCompositePipe(
 		"private", log, provisionDrainPipe,
 		"meta",
@@ -93,7 +94,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
 	})
-	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	resourceDrainPipe := pipe.NewDivert(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	resourceCompositePipe := bus.NewCompositePipe(
 		"private", log, resourceDrainPipe,
 		"meta",
@@ -114,7 +115,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 			regexp.MustCompile(`^provision\..+`),
 		},
 	})
-	providerDrainPipe := bus.NewDivertPipe(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	providerDrainPipe := pipe.NewDivert(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
 	providerCompositePipe := bus.NewCompositePipe(
 		"private", log, providerDrainPipe,
 		"meta",

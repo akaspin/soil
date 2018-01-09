@@ -121,7 +121,7 @@ LOOP:
 
 func (a *Arbiter) updateCache() {
 	if len(a.config.ConstraintOnly) == 0 {
-		a.env = bus.NewMessage(a.state.GetID(), a.state.Payload())
+		a.env = bus.NewMessage(a.state.Topic(), a.state.Payload())
 		return
 	}
 	var src map[string]string
@@ -139,7 +139,7 @@ LOOP:
 			env[k] = v
 		}
 	}
-	a.env = bus.NewMessage(a.state.GetID(), env)
+	a.env = bus.NewMessage(a.state.Topic(), env)
 }
 
 func (a *Arbiter) notify(entity arbiterEntity) {

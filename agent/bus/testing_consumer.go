@@ -163,7 +163,7 @@ LOOP:
 			var err error
 			results := map[string][]Message{}
 			for _, message := range c.data {
-				results[message.GetID()] = append(results[message.GetID()], message)
+				results[message.Topic()] = append(results[message.Topic()], message)
 			}
 			if !reflect.DeepEqual(assertReq.expect, results) {
 				err = fmt.Errorf("not equal (expected)%s != (actual)%s", assertReq.expect, results)

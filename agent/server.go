@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/soil/agent/api"
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/cluster"
 	"github.com/akaspin/soil/agent/provider"
 	"github.com/akaspin/soil/agent/provision"
@@ -71,16 +72,16 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 				regexp.MustCompile(`^provision\..+`),
 			},
 		})
-	provisionDrainPipe := bus.NewDivertPipe(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	provisionCompositePipe := bus.NewCompositePipe(
+	provisionDrainPipe := pipe.NewDivert(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	provisionStrictPipe := pipe.NewStrict(
 		"private", log, provisionDrainPipe,
 		"meta",
 		"system",
 		"resource",  // downstream from provision evaluator
 		"provision", // upstream from provision executor
 	)
-	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
-		provisionCompositePipe,
+	provisionStateConsumer := pipe.NewLift("provision", pipe.NewTee(
+		provisionStrictPipe,
 	))
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
 		SystemPaths:    systemPaths,
@@ -93,16 +94,16 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	resourceArbiter := scheduler.NewArbiter(ctx, log, "resource", scheduler.ArbiterConfig{
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
 	})
-	resourceDrainPipe := bus.NewDivertPipe(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	resourceCompositePipe := bus.NewCompositePipe(
+	resourceDrainPipe := pipe.NewDivert(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	resourceStrictPipe := pipe.NewStrict(
 		"private", log, resourceDrainPipe,
 		"meta",
 		"system",
 		"provider", // resource evaluator upstream
 	)
 	resourceEvaluator := resource.NewEvaluator(ctx, log,
-		resourceCompositePipe,
-		provisionCompositePipe,
+		resourceStrictPipe,
+		provisionStrictPipe,
 		state)
 
 	// Provider evaluator
@@ -114,8 +115,8 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 			regexp.MustCompile(`^provision\..+`),
 		},
 	})
-	providerDrainPipe := bus.NewDivertPipe(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	providerCompositePipe := bus.NewCompositePipe(
+	providerDrainPipe := pipe.NewDivert(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
+	providerStrictPipe := pipe.NewStrict(
 		"private", log, providerDrainPipe,
 		"meta",
 		"system",
@@ -124,10 +125,10 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 
 	// Meta and system
 
-	s.confPipe = bus.NewTeePipe(
-		providerCompositePipe,
-		resourceCompositePipe,
-		provisionCompositePipe,
+	s.confPipe = pipe.NewTee(
+		providerStrictPipe,
+		resourceStrictPipe,
+		provisionStrictPipe,
 	)
 
 	drainFn := func(on bool) {
@@ -184,11 +185,11 @@ func (s *Server) Open() (err error) {
 		return
 	}
 
-	s.kv.Producer("nodes").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, bus.NewTeePipe(
+	s.kv.Producer("nodes").Subscribe(s.ctx, pipe.NewSlice(s.log, pipe.NewTee(
 		s.api,
 		s.endpoints.statusNodesGet.Processor().(bus.Consumer),
 	)))
-	s.kv.Producer("registry").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, bus.NewTeePipe(
+	s.kv.Producer("registry").Subscribe(s.ctx, pipe.NewSlice(s.log, pipe.NewTee(
 		s.sink,
 		s.endpoints.registryGet.Processor().(bus.Consumer),
 	)))

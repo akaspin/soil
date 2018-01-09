@@ -8,6 +8,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/resource/estimator"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -35,7 +36,7 @@ func TestRange(t *testing.T) {
 				},
 			})
 			defer r.Close()
-			downstream := bus.NewCatalogPipe("test", cons)
+			downstream := pipe.NewLift("test", cons)
 			_, _, ch := r.Results()
 			go func() {
 				for res := range ch {

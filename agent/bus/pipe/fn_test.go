@@ -1,10 +1,11 @@
 // +build ide test_unit
 
-package bus_test
+package pipe_test
 
 import (
 	"context"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/fixture"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -16,16 +17,16 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 
 	c1 := bus.NewTestingConsumer(ctx)
 
-	pipe := bus.NewFnPipe(func(message bus.Message) (res bus.Message) {
+	mPipe := pipe.NewFn(func(message bus.Message) (res bus.Message) {
 		var chunk map[string]string
 		err := message.Payload().Unmarshal(&chunk)
 		assert.NoError(t, err)
 		delete(chunk, "a")
-		res = bus.NewMessage(message.GetID(), chunk)
+		res = bus.NewMessage(message.Topic(), chunk)
 		return
 	}, c1)
 
-	pipe.ConsumeMessage(bus.NewMessage("test", map[string]string{
+	mPipe.ConsumeMessage(bus.NewMessage("test", map[string]string{
 		"a": "1",
 		"b": "2",
 	}))

@@ -166,19 +166,19 @@ LOOP:
 			s.log.Tracef(`received result %s`, res.Message)
 			if res.Message.Payload().IsEmpty() {
 				// empty: delete internal
-				delete(s.resources, res.Message.GetID())
+				delete(s.resources, res.Message.Topic())
 				s.config.Downstream.ConsumeMessage(res.Message)
-				s.log.Infof(`destroyed: %s`, res.Message.GetID())
+				s.log.Infof(`destroyed: %s`, res.Message.Topic())
 				continue LOOP
 			}
-			if state, ok := s.resources[res.Message.GetID()]; ok {
+			if state, ok := s.resources[res.Message.Topic()]; ok {
 				var payload manifest.FlatMap
 				if err = res.Message.Payload().Unmarshal(&payload); err != nil {
 					s.log.Warning(err)
 					continue LOOP
 				}
 				state.Values = payload
-				s.config.Downstream.ConsumeMessage(bus.NewMessage(res.Message.GetID(), payload.Merge(manifest.FlatMap{
+				s.config.Downstream.ConsumeMessage(bus.NewMessage(res.Message.Topic(), payload.Merge(manifest.FlatMap{
 					"provider": s.id,
 				})))
 				continue LOOP

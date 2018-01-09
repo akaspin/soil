@@ -9,6 +9,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/api/api-server"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/proto"
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 	router2 := api_server.NewRouter(log,
 		api_server.GET("/v1/route", &jsonEndpoint{"node-2"}),
 	)
-	nodesProducer := bus.NewTeePipe(router1, router2)
+	nodesProducer := pipe.NewTee(router1, router2)
 
 	ts1 := httptest.NewServer(router1)
 	defer ts1.Close()

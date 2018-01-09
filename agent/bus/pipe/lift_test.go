@@ -1,10 +1,11 @@
 // +build ide test_unit
 
-package bus_test
+package pipe_test
 
 import (
 	"context"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/fixture"
 	"testing"
 )
@@ -13,7 +14,7 @@ func TestCatalogPipe_ConsumeMessage_Reset(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	dummy := bus.NewTestingConsumer(ctx)
-	cat := bus.NewCatalogPipe("cat", dummy)
+	cat := pipe.NewLift("cat", dummy)
 
 	t.Run(`reset empty`, func(t *testing.T) {
 
@@ -50,7 +51,7 @@ func TestCatalogPipe_ConsumeMessage(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	dummy := bus.NewTestingConsumer(ctx)
-	cat := bus.NewCatalogPipe("cat", dummy)
+	cat := pipe.NewLift("cat", dummy)
 	t.Run(`reset with map`, func(t *testing.T) {
 		cat.ConsumeMessage(bus.NewMessage("", map[string]map[string]string{
 			"1": {

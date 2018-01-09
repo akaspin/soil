@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/lib"
@@ -29,7 +30,7 @@ func TestEvaluator_Allocate(t *testing.T) {
 	evaluator := provision.NewEvaluator(ctx, logx.GetLog("test"), provision.EvaluatorConfig{
 		SystemPaths:    allocation.DefaultSystemPaths(),
 		Recovery:       state,
-		StatusConsumer: &bus.BlackholePipe{},
+		StatusConsumer: &pipe.Blackhole{},
 	})
 	assert.NoError(t, evaluator.Open())
 

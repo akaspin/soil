@@ -1,25 +1,26 @@
-package bus
+package pipe
 
 import (
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/bus"
 	"sort"
 )
 
 // Slicer pipe accepts map[string]interface{} messages and converts them to []interface{}
-type SlicerPipe struct {
+type Slice struct {
 	log      *logx.Log
-	consumer Consumer
+	consumer bus.Consumer
 }
 
-func NewSlicerPipe(log *logx.Log, consumer Consumer) (p *SlicerPipe) {
-	p = &SlicerPipe{
+func NewSlice(log *logx.Log, consumer bus.Consumer) (p *Slice) {
+	p = &Slice{
 		log:      log.GetLog("pipe", "slicer"),
 		consumer: consumer,
 	}
 	return
 }
 
-func (p *SlicerPipe) ConsumeMessage(message Message) (err error) {
+func (p *Slice) ConsumeMessage(message bus.Message) (err error) {
 	var v map[string]interface{}
 	var keys []string
 	var res []interface{}
@@ -34,6 +35,6 @@ func (p *SlicerPipe) ConsumeMessage(message Message) (err error) {
 	for _, k := range keys {
 		res = append(res, v[k])
 	}
-	p.consumer.ConsumeMessage(NewMessage(message.GetID(), res))
+	p.consumer.ConsumeMessage(bus.NewMessage(message.Topic(), res))
 	return
 }

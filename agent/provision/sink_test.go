@@ -7,6 +7,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/provision"
 	"github.com/akaspin/soil/agent/scheduler"
 	"github.com/akaspin/soil/fixture"
@@ -31,7 +32,7 @@ func TestEvaluator_SinkFlow(t *testing.T) {
 	evaluator := provision.NewEvaluator(ctx, log, provision.EvaluatorConfig{
 		SystemPaths:    allocation.DefaultSystemPaths(),
 		Recovery:       state,
-		StatusConsumer: &bus.BlackholePipe{},
+		StatusConsumer: &pipe.Blackhole{},
 	})
 	sink := scheduler.NewSink(ctx, log, state,
 		scheduler.NewBoundedEvaluator(arbiter, evaluator))

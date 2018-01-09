@@ -73,7 +73,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 			},
 		})
 	provisionDrainPipe := pipe.NewDivert(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	provisionCompositePipe := bus.NewCompositePipe(
+	provisionCompositePipe := bus.NewStrictPipe(
 		"private", log, provisionDrainPipe,
 		"meta",
 		"system",
@@ -95,7 +95,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
 	})
 	resourceDrainPipe := pipe.NewDivert(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	resourceCompositePipe := bus.NewCompositePipe(
+	resourceCompositePipe := bus.NewStrictPipe(
 		"private", log, resourceDrainPipe,
 		"meta",
 		"system",
@@ -116,7 +116,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		},
 	})
 	providerDrainPipe := pipe.NewDivert(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	providerCompositePipe := bus.NewCompositePipe(
+	providerCompositePipe := bus.NewStrictPipe(
 		"private", log, providerDrainPipe,
 		"meta",
 		"system",

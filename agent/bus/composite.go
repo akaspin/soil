@@ -5,8 +5,12 @@ import (
 	"sync"
 )
 
-// Composite pipe
-type CompositePipe struct {
+// Strict pipe consumes flatmap messages only with predeclared IDs. If
+// at least one of declared messages or consumed message is empty Strict pipe
+// send empty message to downstream. If all messages are not empty Strict pipe
+// combines all messages as <message-id>.<flatmap-key> = <flatmap-value>
+// and sends result to downstream.
+type StrictPipe struct {
 	name       string
 	log        *logx.Log
 	downstream Consumer
@@ -15,10 +19,10 @@ type CompositePipe struct {
 	declared   map[string]Message
 }
 
-func NewCompositePipe(name string, log *logx.Log, downstream Consumer, declared ...string) (p *CompositePipe) {
-	p = &CompositePipe{
+func NewStrictPipe(name string, log *logx.Log, downstream Consumer, declared ...string) (p *StrictPipe) {
+	p = &StrictPipe{
 		name:       name,
-		log:        log.GetLog("pipe", "composite", name),
+		log:        log.GetLog("pipe", "strict", name),
 		downstream: downstream,
 		empty:      NewMessage(name, nil),
 		declared:   map[string]Message{},
@@ -29,7 +33,7 @@ func NewCompositePipe(name string, log *logx.Log, downstream Consumer, declared 
 	return
 }
 
-func (p *CompositePipe) ConsumeMessage(message Message) (err error) {
+func (p *StrictPipe) ConsumeMessage(message Message) (err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 

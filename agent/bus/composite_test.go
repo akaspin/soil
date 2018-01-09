@@ -14,7 +14,7 @@ func TestCompositePipe_ConsumeMessage(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	dummy := bus.NewTestingConsumer(ctx)
-	pipe := bus.NewCompositePipe("test", logx.GetLog("test"), dummy, "1", "2")
+	pipe := bus.NewStrictPipe("test", logx.GetLog("test"), dummy, "1", "2")
 
 	t.Run("1", func(t *testing.T) {
 		pipe.ConsumeMessage(bus.NewMessage("1", map[string]string{

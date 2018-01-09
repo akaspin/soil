@@ -185,11 +185,11 @@ func (s *Server) Open() (err error) {
 		return
 	}
 
-	s.kv.Producer("nodes").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, pipe.NewTee(
+	s.kv.Producer("nodes").Subscribe(s.ctx, pipe.NewSlice(s.log, pipe.NewTee(
 		s.api,
 		s.endpoints.statusNodesGet.Processor().(bus.Consumer),
 	)))
-	s.kv.Producer("registry").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, pipe.NewTee(
+	s.kv.Producer("registry").Subscribe(s.ctx, pipe.NewSlice(s.log, pipe.NewTee(
 		s.sink,
 		s.endpoints.registryGet.Processor().(bus.Consumer),
 	)))

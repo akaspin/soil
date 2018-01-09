@@ -1,11 +1,12 @@
 // +build ide test_unit
 
-package bus_test
+package pipe_test
 
 import (
 	"context"
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/fixture"
 	"testing"
 )
@@ -14,7 +15,7 @@ func TestSlicerPipe_ConsumeMessage(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	cons := bus.NewTestingConsumer(ctx)
-	slicer := bus.NewSlicerPipe(logx.GetLog("test"), cons)
+	slicer := pipe.NewSlice(logx.GetLog("test"), cons)
 	slicer.ConsumeMessage(bus.NewMessage("1", map[string]interface{}{
 		"1": 1,
 		"2": 2,

@@ -1,7 +1,8 @@
-package bus
+package pipe
 
 import (
 	"github.com/akaspin/logx"
+	"github.com/akaspin/soil/agent/bus"
 	"sync"
 )
 
@@ -13,27 +14,27 @@ import (
 type StrictPipe struct {
 	name       string
 	log        *logx.Log
-	downstream Consumer
-	empty      Message
+	downstream bus.Consumer
+	empty      bus.Message
 	mu         sync.Mutex
-	declared   map[string]Message
+	declared   map[string]bus.Message
 }
 
-func NewStrictPipe(name string, log *logx.Log, downstream Consumer, declared ...string) (p *StrictPipe) {
+func NewStrict(name string, log *logx.Log, downstream bus.Consumer, declared ...string) (p *StrictPipe) {
 	p = &StrictPipe{
 		name:       name,
 		log:        log.GetLog("pipe", "strict", name),
 		downstream: downstream,
-		empty:      NewMessage(name, nil),
-		declared:   map[string]Message{},
+		empty:      bus.NewMessage(name, nil),
+		declared:   map[string]bus.Message{},
 	}
 	for _, m := range declared {
-		p.declared[m] = NewMessage(m, nil)
+		p.declared[m] = bus.NewMessage(m, nil)
 	}
 	return
 }
 
-func (p *StrictPipe) ConsumeMessage(message Message) (err error) {
+func (p *StrictPipe) ConsumeMessage(message bus.Message) (err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -61,6 +62,6 @@ func (p *StrictPipe) ConsumeMessage(message Message) (err error) {
 			payload[prefix+"."+k] = v
 		}
 	}
-	err = p.downstream.ConsumeMessage(NewMessage(p.name, payload))
+	err = p.downstream.ConsumeMessage(bus.NewMessage(p.name, payload))
 	return
 }

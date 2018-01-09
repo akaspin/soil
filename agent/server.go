@@ -73,7 +73,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 			},
 		})
 	provisionDrainPipe := pipe.NewDivert(provisionArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	provisionCompositePipe := bus.NewStrictPipe(
+	provisionStrictPipe := pipe.NewStrict(
 		"private", log, provisionDrainPipe,
 		"meta",
 		"system",
@@ -81,7 +81,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		"provision", // upstream from provision executor
 	)
 	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
-		provisionCompositePipe,
+		provisionStrictPipe,
 	))
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
 		SystemPaths:    systemPaths,
@@ -95,15 +95,15 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		Required: manifest.Constraint{"${agent.drain}": "!= true"},
 	})
 	resourceDrainPipe := pipe.NewDivert(resourceArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	resourceCompositePipe := bus.NewStrictPipe(
+	resourceStrictPipe := pipe.NewStrict(
 		"private", log, resourceDrainPipe,
 		"meta",
 		"system",
 		"provider", // resource evaluator upstream
 	)
 	resourceEvaluator := resource.NewEvaluator(ctx, log,
-		resourceCompositePipe,
-		provisionCompositePipe,
+		resourceStrictPipe,
+		provisionStrictPipe,
 		state)
 
 	// Provider evaluator
@@ -116,7 +116,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		},
 	})
 	providerDrainPipe := pipe.NewDivert(providerArbiter, bus.NewMessage("private", map[string]string{"agent.drain": "true"}))
-	providerCompositePipe := bus.NewStrictPipe(
+	providerStrictPipe := pipe.NewStrict(
 		"private", log, providerDrainPipe,
 		"meta",
 		"system",
@@ -126,9 +126,9 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 	// Meta and system
 
 	s.confPipe = bus.NewTeePipe(
-		providerCompositePipe,
-		resourceCompositePipe,
-		provisionCompositePipe,
+		providerStrictPipe,
+		resourceStrictPipe,
+		provisionStrictPipe,
 	)
 
 	drainFn := func(on bool) {

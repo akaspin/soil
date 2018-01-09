@@ -28,11 +28,6 @@ func NewDivert(consumer bus.Consumer, divert bus.Message) (d *Divert) {
 	return
 }
 
-func (d *Divert) GetConsumer() (c bus.Consumer) {
-	c = d.consumer
-	return
-}
-
 // Consume message from upstream and resend it to downstream then not in divert mode. Otherwise send predefined divert message.
 func (d *Divert) ConsumeMessage(message bus.Message) (err error) {
 	d.mu.Lock()

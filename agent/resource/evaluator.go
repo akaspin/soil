@@ -6,6 +6,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/resource/estimator"
 	"github.com/akaspin/soil/manifest"
 	"github.com/akaspin/supervisor"
@@ -50,10 +51,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, upstream, downstream bus.C
 		allocateChan:   make(chan *allocation.Pod),
 		deallocateChan: make(chan string),
 	}
-	e.downstream = &bus.MutatePipe{
-		Downstream: bus.NewCatalogPipe("resource", downstream),
-		Fn:         e.jsonPipeFn,
-	}
+	e.downstream = pipe.NewFn(e.jsonPipeFn, bus.NewCatalogPipe("resource", downstream))
 	for _, alloc := range dirty {
 		e.allocations[alloc.Name] = alloc.Resources
 		for _, res := range alloc.Resources {
@@ -77,7 +75,7 @@ func (e *Evaluator) Open() (err error) {
 			}
 		}
 	}
-	if err = e.downstream.(*bus.MutatePipe).Downstream.ConsumeMessage(bus.NewMessage("", downstream)); err != nil {
+	if err = e.downstream.(bus.Pipe).GetConsumer().ConsumeMessage(bus.NewMessage("", downstream)); err != nil {
 		e.log.Error(err)
 	}
 	e.log.Debugf(`dirty state sent to downstream: %v`, downstream)

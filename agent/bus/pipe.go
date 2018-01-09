@@ -9,5 +9,3 @@ type Pipe interface {
 type ReplicatedPipe interface {
 	GetConsumers() (c []Consumer)
 }
-
-

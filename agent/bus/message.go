@@ -2,7 +2,7 @@ package bus
 
 import "fmt"
 
-// Message encapsulates topic and source ids with given payload
+// Message encapsulates topic with given payload
 type Message struct {
 	topic   string // Topic
 	payload Payload

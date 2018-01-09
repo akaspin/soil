@@ -17,7 +17,6 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 
 	c1 := bus.NewTestingConsumer(ctx)
 
-
 	mPipe := pipe.NewFn(func(message bus.Message) (res bus.Message) {
 		var chunk map[string]string
 		err := message.Payload().Unmarshal(&chunk)

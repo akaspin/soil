@@ -18,7 +18,6 @@ type Divert struct {
 	isDiverting bool
 }
 
-
 // Create new divert pipe with given consumer and divert message
 func NewDivert(consumer bus.Consumer, divert bus.Message) (d *Divert) {
 	d = &Divert{

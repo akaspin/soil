@@ -109,7 +109,7 @@ func (b *TestingBackend) Submit(ops []StoreOp) {
 	var commits []StoreCommit
 	for _, op := range ops {
 		commits = append(commits, StoreCommit{
-			ID:      op.Message.GetID(),
+			ID:      op.Message.Topic(),
 			Hash:    op.Message.Payload().Hash(),
 			WithTTL: op.WithTTL,
 		})
@@ -118,7 +118,7 @@ func (b *TestingBackend) Submit(ops []StoreOp) {
 			b.log.Error(err)
 			continue
 		}
-		data[op.Message.GetID()] = map[string]interface{}{
+		data[op.Message.Topic()] = map[string]interface{}{
 			"Data": res,
 			"TTL":  op.WithTTL,
 		}

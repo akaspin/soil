@@ -8,6 +8,7 @@ import (
 	"github.com/akaspin/logx"
 	"github.com/akaspin/soil/agent/allocation"
 	"github.com/akaspin/soil/agent/bus"
+	"github.com/akaspin/soil/agent/bus/pipe"
 	"github.com/akaspin/soil/agent/resource"
 	"github.com/akaspin/soil/fixture"
 	"github.com/akaspin/soil/manifest"
@@ -28,7 +29,7 @@ func TestSandbox(t *testing.T) {
 				resource.SandboxConfig{
 					Ctx:        ctx,
 					Log:        logx.GetLog("test"),
-					Downstream: bus.NewCatalogPipe("0", cons),
+					Downstream: pipe.NewLift("0", cons),
 					Upstream:   upstream,
 				},
 				"pod1.test",

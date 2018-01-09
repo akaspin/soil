@@ -17,7 +17,7 @@ type StrictPipe struct {
 	downstream bus.Consumer
 	empty      bus.Message
 	mu         sync.Mutex
-	declared   map[string]bus.Message
+	topics     map[string]bus.Message
 }
 
 func NewStrict(name string, log *logx.Log, downstream bus.Consumer, declared ...string) (p *StrictPipe) {
@@ -26,10 +26,10 @@ func NewStrict(name string, log *logx.Log, downstream bus.Consumer, declared ...
 		log:        log.GetLog("pipe", "strict", name),
 		downstream: downstream,
 		empty:      bus.NewMessage(name, nil),
-		declared:   map[string]bus.Message{},
+		topics:     map[string]bus.Message{},
 	}
 	for _, m := range declared {
-		p.declared[m] = bus.NewMessage(m, nil)
+		p.topics[m] = bus.NewMessage(m, nil)
 	}
 	return
 }
@@ -38,16 +38,16 @@ func (p *StrictPipe) ConsumeMessage(message bus.Message) (err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if _, declared := p.declared[message.GetID()]; !declared {
+	if _, declared := p.topics[message.Topic()]; !declared {
 		return
 	}
-	p.declared[message.GetID()] = message
+	p.topics[message.Topic()] = message
 	if message.Payload().IsEmpty() {
 		p.downstream.ConsumeMessage(p.empty)
 		return
 	}
 	payload := map[string]string{}
-	for prefix, msg := range p.declared {
+	for prefix, msg := range p.topics {
 		if msg.Payload().IsEmpty() {
 			p.downstream.ConsumeMessage(p.empty)
 			return

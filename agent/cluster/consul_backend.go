@@ -138,12 +138,12 @@ func (b *ConsulBackend) processStoreOpts(ops []StoreOp) {
 	for _, op := range ops {
 		var key string
 		if op.WithTTL {
-			key = NormalizeKey(b.config.Chroot, op.Message.GetID(), b.config.ID)
+			key = NormalizeKey(b.config.Chroot, op.Message.Topic(), b.config.ID)
 		} else {
-			key = NormalizeKey(b.config.Chroot, op.Message.GetID())
+			key = NormalizeKey(b.config.Chroot, op.Message.Topic())
 		}
 		commits = append(commits, StoreCommit{
-			ID:      op.Message.GetID(),
+			ID:      op.Message.Topic(),
 			Hash:    op.Message.Payload().Hash(),
 			WithTTL: op.WithTTL,
 		})

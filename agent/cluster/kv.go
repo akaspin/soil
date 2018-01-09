@@ -22,7 +22,7 @@ type operatorConsumer struct {
 func (c *operatorConsumer) ConsumeMessage(message bus.Message) (err error) {
 	c.kv.Submit([]StoreOp{
 		{
-			Message: bus.NewMessage(NormalizeKey(c.prefix, message.GetID()), message.Payload()),
+			Message: bus.NewMessage(NormalizeKey(c.prefix, message.Topic()), message.Payload()),
 			WithTTL: c.volatile,
 		},
 	})
@@ -212,7 +212,7 @@ LOOP:
 		case ops := <-k.storeRequestsChan:
 			log.Tracef(`submit: %v`, ops)
 			for _, op := range ops {
-				id := op.Message.GetID()
+				id := op.Message.Topic()
 				if op.WithTTL {
 					// volatile
 					if op.Message.Payload().IsEmpty() {

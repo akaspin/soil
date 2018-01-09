@@ -35,6 +35,6 @@ func (p *Slice) ConsumeMessage(message bus.Message) (err error) {
 	for _, k := range keys {
 		res = append(res, v[k])
 	}
-	p.consumer.ConsumeMessage(bus.NewMessage(message.GetID(), res))
+	p.consumer.ConsumeMessage(bus.NewMessage(message.Topic(), res))
 	return
 }

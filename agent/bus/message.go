@@ -2,43 +2,39 @@ package bus
 
 import "fmt"
 
-// Message
+// Message encapsulates topic and source ids with given payload
 type Message struct {
-	id   string // Producer id
-	data Payload
-	ok   bool
+	topic   string // Topic
+	payload Payload
 }
 
 // Create new message
-func NewMessage(id string, payload interface{}) (m Message) {
+func NewMessage(topic string, payload interface{}) (m Message) {
 	m = Message{
-		id:   id,
-		data: NewPayload(payload),
-		ok:   true,
+		topic:   topic,
+		payload: NewPayload(payload),
 	}
 	return
 }
 
-// Get message ID
-func (m Message) GetID() string {
-	return m.id
+// Get topic
+func (m Message) Topic() string {
+	return m.topic
 }
 
+// Get message payload
 func (m Message) Payload() (res Payload) {
-	if !m.ok {
-		res = NewPayload(nil)
-		return
-	}
-	res = m.data
+	res = m.payload
 	return
 }
 
+// Is message equal to given message
 func (m Message) IsEqual(ingest Message) (res bool) {
-	res = m.id == ingest.id && m.Payload().Hash() == ingest.Payload().Hash()
+	res = m.topic == ingest.topic && m.Payload().Hash() == ingest.Payload().Hash()
 	return
 }
 
 func (m Message) String() (res string) {
-	res = fmt.Sprintf("%s:%s", m.id, m.data)
+	res = fmt.Sprintf("%s:%s", m.topic, m.payload)
 	return
 }

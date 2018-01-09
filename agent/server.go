@@ -80,7 +80,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		"resource",  // downstream from provision evaluator
 		"provision", // upstream from provision executor
 	)
-	provisionStateConsumer := bus.NewCatalogPipe("provision", pipe.NewTee(
+	provisionStateConsumer := pipe.NewLift("provision", pipe.NewTee(
 		provisionStrictPipe,
 	))
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{

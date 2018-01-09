@@ -75,7 +75,7 @@ LOOP:
 				}
 			}()
 			g.log.Tracef("registered %s", id.String())
-			if g.cache.GetID() != "" {
+			if g.cache.Topic() != "" {
 				req.consumer.ConsumeMessage(g.cache)
 			}
 		case id := <-g.outChan:
@@ -99,7 +99,7 @@ LOOP:
 				g.log.Tracef(`skip broadcast: message is equal to cache`)
 				continue LOOP
 			}
-			g.cache = bus.NewMessage(ingest.GetID(), ingest.Payload())
+			g.cache = bus.NewMessage(ingest.Topic(), ingest.Payload())
 			g.log.Tracef(`broadcasting: %v to %d consumers`, result, len(g.requests))
 			for id, w := range g.requests {
 				select {

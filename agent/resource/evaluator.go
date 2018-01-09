@@ -44,14 +44,14 @@ func NewEvaluator(ctx context.Context, log *logx.Log, upstream, downstream bus.C
 	e = &Evaluator{
 		Control:        supervisor.NewControl(ctx),
 		log:            log.GetLog("resource", "evaluator"),
-		upstream:       bus.NewCatalogPipe("provider", upstream),
+		upstream:       pipe.NewLift("provider", upstream),
 		allocations:    map[string]allocation.ResourceSlice{},
 		sandboxes:      map[string]*Sandbox{},
 		providerOpChan: make(chan opProvider),
 		allocateChan:   make(chan *allocation.Pod),
 		deallocateChan: make(chan string),
 	}
-	e.downstream = pipe.NewFn(e.jsonPipeFn, bus.NewCatalogPipe("resource", downstream))
+	e.downstream = pipe.NewFn(e.jsonPipeFn, pipe.NewLift("resource", downstream))
 	for _, alloc := range dirty {
 		e.allocations[alloc.Name] = alloc.Resources
 		for _, res := range alloc.Resources {
@@ -298,6 +298,6 @@ func (e *Evaluator) jsonPipeFn(message bus.Message) (res bus.Message) {
 		e.log.Errorf(`failed to unmarshal %s: %v`, message, err)
 		return
 	}
-	res = bus.NewMessage(message.GetID(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON(allocation.ResourceValuesPostfix)))
+	res = bus.NewMessage(message.Topic(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON(allocation.ResourceValuesPostfix)))
 	return
 }

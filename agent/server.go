@@ -80,7 +80,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		"resource",  // downstream from provision evaluator
 		"provision", // upstream from provision executor
 	)
-	provisionStateConsumer := bus.NewCatalogPipe("provision", bus.NewTeePipe(
+	provisionStateConsumer := bus.NewCatalogPipe("provision", pipe.NewTee(
 		provisionStrictPipe,
 	))
 	provisionEvaluator := provision.NewEvaluator(ctx, s.log, provision.EvaluatorConfig{
@@ -125,7 +125,7 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 
 	// Meta and system
 
-	s.confPipe = bus.NewTeePipe(
+	s.confPipe = pipe.NewTee(
 		providerStrictPipe,
 		resourceStrictPipe,
 		provisionStrictPipe,
@@ -185,11 +185,11 @@ func (s *Server) Open() (err error) {
 		return
 	}
 
-	s.kv.Producer("nodes").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, bus.NewTeePipe(
+	s.kv.Producer("nodes").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, pipe.NewTee(
 		s.api,
 		s.endpoints.statusNodesGet.Processor().(bus.Consumer),
 	)))
-	s.kv.Producer("registry").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, bus.NewTeePipe(
+	s.kv.Producer("registry").Subscribe(s.ctx, bus.NewSlicerPipe(s.log, pipe.NewTee(
 		s.sink,
 		s.endpoints.registryGet.Processor().(bus.Consumer),
 	)))

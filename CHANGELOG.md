@@ -1,3 +1,9 @@
+## 0.5.2
+
+This release introduces new allocation spec format. After upgrade transparent 
+downgrade is not possible. To downgrade first put Agent in drain mode to remove 
+all allocations. 
+
 ## 0.5.1 (06.01.2018)
 
 ### Features

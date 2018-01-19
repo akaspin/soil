@@ -2,3 +2,4 @@
 .test*
 .vagrant*
 /dist
+coverage.txt

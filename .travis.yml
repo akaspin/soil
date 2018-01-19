@@ -5,14 +5,39 @@ notifications:
     on_success: change
     on_failure: change
 
-language: go
-
 services:
 - docker
 
-go:
-  - 1.9.2
+language: bash
+#language: go
+#go:
+#  - 1.9.2
+#script:
+#- go test -p=1 -tags="test_unit debug" ./...
+#- go test -p=1 -tags="test_cluster debug" ./...
+
+env:
+  global:
+  - "TEST_IMAGE=akaspin/travis-ci:go-systemd-test-1.0"
+  - BUILD_DIR=/go/src/github.com/akaspin/soil
+
+before_install:
+- docker login -u "$DOCKER_LOGIN" -p "$DOCKER_PASSWORD"
+- docker pull ${TEST_IMAGE} || (docker build -t ${TEST_IMAGE} -f testdata/ci/Dockerfile . && docker push ${TEST_IMAGE})
+
+install:
+- docker run -d --name=testing-container --privileged --net=host -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -v /run/soil -v /var/lib/soil -v ${PWD}:${BUILD_DIR} ${TEST_IMAGE} /bin/systemd --system
 
 script:
-- go test -p=1 -tags="test_unit debug" ./...
-- go test -p=1 -tags="test_cluster debug" ./...
+- docker exec testing-container /bin/bash -c "cd ${BUILD_DIR} && ./testdata/ci/run-tests.sh"
+- docker exec testing-container /bin/bash -c "cd ${BUILD_DIR} && ./testdata/ci/run-coverage.sh"
+- docker images
+
+after_script:
+- docker kill testing-container
+- docker rm -f testing-container
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)
+
+

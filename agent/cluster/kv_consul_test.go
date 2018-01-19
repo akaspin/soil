@@ -1,4 +1,4 @@
-// +build ide test_cluster,!test_systemd
+// +build ide test_cluster
 
 package cluster_test
 

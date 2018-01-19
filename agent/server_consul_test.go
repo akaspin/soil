@@ -1,4 +1,4 @@
-// +build ide test_systemd,test_cluster
+// +build ide test_systemd
 
 package agent_test
 

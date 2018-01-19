@@ -4,7 +4,6 @@ BIN		= soil
 TESTS	      = .
 TEST_TAGS     =
 TEST_ARGS     =
-TEST_SYSTEMD_TAGS ?= test_cluster
 BENCH	      = .
 
 # PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./...)
@@ -53,7 +52,7 @@ test-systemd: testdata/systemd/.vagrant-ok	## run SystemD tests
 	-v /var/run/docker.sock:/var/run/docker.sock \
 	-v /vagrant:/go/src/github.com/akaspin/soil \
 	-v /tmp:/tmp \
-	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_SYSTEMD_TAGS) $(TEST_TAGS)" $(TEST_PACKAGES)
+	$(GO_IMAGE) go test -run=$(TESTS) -p=1 $(TEST_ARGS) -tags="test_systemd $(TEST_TAGS)" $(TEST_PACKAGES)
 
 testdata/systemd/.vagrant-ok: testdata/systemd/Vagrantfile
 	cd testdata/systemd && vagrant up --parallel

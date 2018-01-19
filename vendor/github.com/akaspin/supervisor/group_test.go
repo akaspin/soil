@@ -1,98 +1,163 @@
 package supervisor_test
 
 import (
-	"testing"
 	"context"
+	"errors"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
-	"errors"
-	"sync/atomic"
+	"strconv"
+	"testing"
 )
 
-type crashable struct {
-	*supervisor.Control
+func TestGroup_Cycle(t *testing.T) {
+	t.Parallel()
+	for i := 0; i < compositeTestIterations; i++ {
 
-	openCn *int64
-	closeCn *int64
-	doneCn *int64
-	waitCn *int64
-	err    error
-}
+		t.Run(`empty owc `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			sv := supervisor.NewGroup(context.Background())
 
-func newCrashable(openCn, closeCn, doneCn, waitCn *int64) (c *crashable) {
-	c = &crashable{
-		Control: supervisor.NewControl(context.TODO()),
-		openCn: openCn,
-		closeCn: closeCn,
-		doneCn: doneCn,
-		waitCn: waitCn,
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			assert.NoError(t, sv.Close())
+
+			<-waitCh
+			assert.NoError(t, sv.Wait())
+		})
+		t.Run(`close first `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, nil)
+			sv := supervisor.NewGroup(context.Background(), c1, c2)
+
+			assert.NoError(t, sv.Close())
+			assert.EqualError(t, sv.Open(), "prematurely closed")
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+			<-waitCh
+			c1.assertEvents(t)
+			c1.assertEvents(t)
+		})
+		t.Run(`owc `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			sv := supervisor.NewGroup(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			assert.NoError(t, sv.Close())
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertCycle(t)
+			c3.assertCycle(t)
+		})
+		t.Run(`o-error wc `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", errors.New("2"), nil, nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			sv := supervisor.NewGroup(context.Background(), c1, c2, c3)
+
+			assert.EqualError(t, sv.Open(), "2")
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.EqualError(t, sv.Open(), "2")
+			assert.NoError(t, sv.Close())
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertEvents(t, "open")
+			c3.assertCycle(t)
+		})
+		t.Run(`ow c-error `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, errors.New("2"), nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			sv := supervisor.NewGroup(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			assert.EqualError(t, sv.Close(), "2")
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertCycle(t)
+			c3.assertCycle(t)
+		})
+		t.Run(`o w-error c `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, errors.New("2"))
+			c3 := newTestingComponent("3", nil, nil, nil)
+			sv := supervisor.NewGroup(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.EqualError(t, sv.Wait(), "2")
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			assert.NoError(t, sv.Close())
+			assert.EqualError(t, sv.Wait(), "2")
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertCycle(t)
+			c3.assertCycle(t)
+		})
+		t.Run(`exit one `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			sv := supervisor.NewGroup(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			close(c2.closedChan)
+			assert.NoError(t, sv.Wait())
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertEvents(t, "open", "done")
+			c3.assertCycle(t)
+		})
 	}
-	return
-}
 
-func (c *crashable) Open() (err error) {
-	go func() {
-		<-c.Ctx().Done()
-		atomic.AddInt64(c.doneCn, 1)
-	}()
-	c.Control.Open()
-	atomic.AddInt64(c.openCn, 1)
-	return
-}
-
-func (c *crashable) Close() (err error) {
-	c.Control.Close()
-	atomic.AddInt64(c.closeCn, 1)
-	return
-}
-
-func (c *crashable) Wait() (err error) {
-	c.Control.Wait()
-	atomic.AddInt64(c.waitCn, 1)
-	err = c.err
-	return
-}
-
-func (c *crashable) Crash(err error) {
-	c.err = err
-	c.Close()
-}
-
-func TestGroup_Empty(t *testing.T) {
-	g := supervisor.NewGroup(context.TODO())
-	g.Open()
-	//g.Close()
-	g.Wait()
-}
-
-func TestGroup_Regular(t *testing.T) {
-	var openCn, closeCn, doneCn, waitCn int64
-	g := supervisor.NewGroup(
-		context.TODO(),
-		newCrashable(&openCn, &closeCn, &doneCn, &waitCn),
-		newCrashable(&openCn, &closeCn, &doneCn, &waitCn),
-		newCrashable(&openCn, &closeCn, &doneCn, &waitCn),
-	)
-	g.Open()
-	g.Close()
-	err := g.Wait()
-	assert.NoError(t, err)
-	assert.Equal(t, []int64{3, 3, 3, 3}, []int64{openCn, closeCn, doneCn, waitCn})
-}
-
-func TestGroup_Crash(t *testing.T) {
-	var openCn, closeCn, doneCn, waitCn int64
-	messy := newCrashable(&openCn, &closeCn, &doneCn, &waitCn)
-	g := supervisor.NewGroup(
-		context.TODO(),
-		newCrashable(&openCn, &closeCn, &doneCn, &waitCn),
-		newCrashable(&openCn, &closeCn, &doneCn, &waitCn),
-		messy,
-	)
-	g.Open()
-	messy.Crash(errors.New("err"))
-	err := g.Wait()
-	assert.Error(t, err)
-	assert.Equal(t, "err", err.Error())
-	assert.Equal(t, []int64{3, 4, 3, 3}, []int64{openCn, closeCn, doneCn, waitCn})
 }

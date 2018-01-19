@@ -9,7 +9,6 @@ import (
 
 type Server struct {
 	*supervisor.Control
-	trap   *supervisor.Trap
 	log    *logx.Log
 	server *http.Server
 }
@@ -23,7 +22,6 @@ func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) 
 			Handler: router,
 		},
 	}
-	s.trap = supervisor.NewTrap(s.Control.Cancel)
 	return
 }
 
@@ -35,13 +33,11 @@ func (s *Server) Close() (err error) {
 }
 
 func (s *Server) Open() (err error) {
-	s.Acquire()
 	go func() {
-		defer s.Release()
 		serveErr := s.server.ListenAndServe()
 		if serveErr != nil && serveErr.Error() != "http: Server closed" {
 			s.log.Error(serveErr)
-			s.trap.Catch(serveErr)
+			s.Close()
 		}
 	}()
 	err = s.Control.Open()

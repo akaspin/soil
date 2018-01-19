@@ -2,84 +2,48 @@ package supervisor
 
 import (
 	"context"
-	"sync"
-	"time"
-	"errors"
 )
 
-var (
-	CloseTimeoutExceeded = errors.New("close timeout exceeded")
-)
-
-// Control provides ability to turn any type to supervisor component
+// Control provides ability to turn any type to supervisor component.
+//
+//	type MyComponent struct {
+//		*Control
+//	}
+//
+//	myComponent := &MyComponent{
+//		Control: NewControl(context.Background())
+//	}
+//
 type Control struct {
 	ctx    context.Context
-
-	// Cancel cancels control context
-	Cancel context.CancelFunc
-
-	closeTimeout time.Duration
-	boundedWg sync.WaitGroup
-
-	closeCtx context.Context
-	closeCancel context.CancelFunc
+	cancel context.CancelFunc
 }
 
-func NewControl(ctx context.Context) (c *Control) {
-	c = NewControlTimeout(ctx, 0)
-	return
-}
-
-func NewControlTimeout(ctx context.Context, timeout time.Duration) (c *Control) {
-	c = &Control{
-		closeTimeout: timeout,
-	}
-	c.ctx, c.Cancel = context.WithCancel(ctx)
-	c.closeCtx, c.closeCancel = context.WithCancel(context.Background())
+// NewControl returns new Control
+func NewControl(ctx context.Context, blockers ...Component) (c *Control) {
+	c = &Control{}
+	c.ctx, c.cancel = context.WithCancel(ctx)
 	return
 }
 
 func (c *Control) Open() (err error) {
-	go func() {
-		<-c.ctx.Done()
-		c.boundedWg.Wait()
-		c.closeCancel()
-	}()
-
-	return
+	return nil
 }
 
+// Close closes Control context
 func (c *Control) Close() (err error) {
-	c.Cancel()
-	return
+	c.cancel()
+	return nil
 }
 
+// Wait blocks until component shutdown
 func (c *Control) Wait() (err error) {
-	var timeoutChan <-chan time.Time
-	if c.closeTimeout > 0 {
-		timer := time.NewTimer(c.closeTimeout)
-		defer timer.Stop()
-		timeoutChan = timer.C
-	}
-	select {
-	case <-c.closeCtx.Done():
-	case <-timeoutChan:
-		err = CloseTimeoutExceeded
-	}
-	return
+	<-c.ctx.Done()
+	return nil
 }
 
-// Ctx returns Control context
+// Ctx returns Control context. Control context is always
+// closed before blockers evaluation.
 func (c *Control) Ctx() context.Context {
 	return c.ctx
 }
-
-// Acquire increases internal lock counter
-func (c *Control) Acquire() {
-	c.boundedWg.Add(1)
-}
-
-func (c *Control) Release() {
-	c.boundedWg.Done()
-}
-

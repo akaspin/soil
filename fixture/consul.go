@@ -60,7 +60,7 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 		wd:   wd,
 		addr: GetLocalIP(t),
 		Config: &ConsulServerConfig{
-			RepoTag:    "docker.io/library/consul",
+			RepoTag:    "docker.io/library/consul:1.0.0",
 			NodeName:   TestName(t),
 			NodeID:     id.String(),
 			ClientAddr: "0.0.0.0",
@@ -107,10 +107,14 @@ func (s *ConsulServer) Up() {
 	resp, err := s.dockerCli.ImagePull(s.ctx, s.Config.RepoTag, types.ImagePullOptions{})
 	if err != nil {
 		s.t.Error(err)
-		s.t.FailNow()
+		s.t.Fail()
 		return
 	}
-	ioutil.ReadAll(resp)
+	_, err = ioutil.ReadAll(resp)
+	if err != nil {
+		s.t.Error(err)
+		s.t.Fail()
+	}
 	resp.Close()
 
 	res, err := s.dockerCli.ContainerCreate(s.ctx,

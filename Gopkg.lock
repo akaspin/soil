@@ -26,16 +26,16 @@
   version = "2.1.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/akaspin/supervisor"
   packages = ["."]
-  revision = "cd25ad2bbad78eaa1d6e8318b3c5bfc7c2922ed0"
+  revision = "86ed7e69d9b445ac646a6085d325065024548395"
+  version = "2.0.0"
 
 [[projects]]
   name = "github.com/coreos/go-systemd"
   packages = ["dbus","unit"]
-  revision = "48702e0da86bd25e76cfef347e2adeb434a0d0a6"
-  version = "v14"
+  revision = "d2196463941895ee908e13531a23a39feb9e1243"
+  version = "v15"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -250,6 +250,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c3f757e62e8e57b015743f28e3099b5b52cadd6f9a384555b6331693042bbcbf"
+  inputs-digest = "d47524b9a0dc10c0cced4020d916ce9313b6acf48a185ff6f214b7abd84798ca"
   solver-name = "gps-cdcl"
   solver-version = 1

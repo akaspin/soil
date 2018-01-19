@@ -5,149 +5,206 @@ import (
 	"errors"
 	"github.com/akaspin/supervisor"
 	"github.com/stretchr/testify/assert"
-	"sync"
-	"sync/atomic"
+	"strconv"
 	"testing"
 )
 
-type chainableSig struct {
-	index int
-	op    string
-}
+func TestChain_Cycle(t *testing.T) {
+	t.Parallel()
+	for i := 0; i < compositeTestIterations; i++ {
+		t.Run(`empty owc `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			sv := supervisor.NewChain(context.Background())
 
-type chainable struct {
-	ctx    context.Context
-	cancel context.CancelFunc
-	wg     *sync.WaitGroup
+			assert.NoError(t, sv.Open())
 
-	index int
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
 
-	closeCount *int64
-	ch         chan chainableSig
-	err        error
-}
+			assert.NoError(t, sv.Open())
+			assert.NoError(t, sv.Close())
 
-func newChainable(index int, rCh chan chainableSig, closeCount *int64) (c *chainable) {
-	c = &chainable{
-		index:      index,
-		ch:         rCh,
-		closeCount: closeCount,
-		wg:         &sync.WaitGroup{},
+			<-waitCh
+			assert.NoError(t, sv.Wait())
+		})
+		t.Run(`close first `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, nil)
+			sv := supervisor.NewChain(context.Background(), c1, c2)
+
+			assert.NoError(t, sv.Close())
+			assert.EqualError(t, sv.Open(), "prematurely closed")
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+			<-waitCh
+			c1.assertEvents(t)
+			c1.assertEvents(t)
+		})
+		t.Run("o w c "+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			watcher := newTestingWatcher(9, c1, c2, c3)
+
+			sv := supervisor.NewChain(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Close())
+			assert.NoError(t, sv.Open())
+
+			<-waitCh
+			assert.NoError(t, sv.Wait())
+			c1.assertCycle(t)
+			c2.assertCycle(t)
+			c3.assertCycle(t)
+
+			watcher.wg.Wait()
+			assert.Equal(t, []string{
+				"1-open", "2-open", "3-open",
+				"3-close", "3-done",
+				"2-close", "2-done",
+				"1-close", "1-done",
+			}, watcher.res)
+		})
+		t.Run(`o-error w c `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", errors.New("2"), nil, nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			watcher := newTestingWatcher(4, c1, c2, c3)
+
+			sv := supervisor.NewChain(context.Background(), c1, c2, c3)
+
+			assert.EqualError(t, sv.Open(), "2")
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.EqualError(t, sv.Open(), "2")
+			assert.NoError(t, sv.Close())
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertEvents(t, "open")
+			c3.assertEvents(t)
+
+			watcher.wg.Wait()
+			assert.Equal(t, []string{
+				"1-open", "2-open",
+				"1-close",
+				"1-done",
+			}, watcher.res)
+		})
+		t.Run(`o w c-error `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, errors.New("2"), nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			watcher := newTestingWatcher(9, c1, c2, c3)
+
+			sv := supervisor.NewChain(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			assert.EqualError(t, sv.Close(), "2")
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertCycle(t)
+			c3.assertCycle(t)
+
+			watcher.wg.Wait()
+			assert.Equal(t, []string{
+				"1-open", "2-open", "3-open",
+				"3-close", "3-done",
+				"2-close", "2-done",
+				"1-close", "1-done",
+			}, watcher.res)
+		})
+		t.Run(`o w-error c `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, errors.New("2"))
+			c3 := newTestingComponent("3", nil, nil, nil)
+			watcher := newTestingWatcher(9, c1, c2, c3)
+
+			sv := supervisor.NewChain(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.EqualError(t, sv.Wait(), "2")
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			assert.NoError(t, sv.Close())
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertCycle(t)
+			c3.assertCycle(t)
+			assert.EqualError(t, sv.Wait(), "2")
+
+			watcher.wg.Wait()
+			assert.Equal(t, []string{
+				"1-open", "2-open", "3-open",
+				"3-close", "3-done",
+				"2-close", "2-done",
+				"1-close", "1-done",
+			}, watcher.res)
+		})
+		t.Run(`exit one `+strconv.Itoa(i), func(t *testing.T) {
+			waitCh := make(chan struct{})
+			c1 := newTestingComponent("1", nil, nil, nil)
+			c2 := newTestingComponent("2", nil, nil, nil)
+			c3 := newTestingComponent("3", nil, nil, nil)
+			watcher := newTestingWatcher(8, c1, c2, c3)
+
+			sv := supervisor.NewChain(context.Background(), c1, c2, c3)
+
+			assert.NoError(t, sv.Open())
+
+			go func() {
+				assert.NoError(t, sv.Wait())
+				close(waitCh)
+			}()
+
+			assert.NoError(t, sv.Open())
+			close(c2.closedChan)
+
+			<-waitCh
+			c1.assertCycle(t)
+			c2.assertEvents(t, "open", "done")
+			c3.assertCycle(t)
+			assert.NoError(t, sv.Wait())
+
+			watcher.wg.Wait()
+			assert.Equal(t, []string{
+				"1-open", "2-open", "3-open",
+				"2-done",
+				"3-close", "3-done",
+				"1-close", "1-done",
+			}, watcher.res)
+		})
 	}
-	c.ctx, c.cancel = context.WithCancel(context.TODO())
-	return
-}
-
-func (c *chainable) Open() (err error) {
-	c.wg.Add(1)
-	go func() {
-		<-c.ctx.Done()
-		c.wg.Done()
-		c.ch <- chainableSig{c.index, "done"}
-	}()
-	c.ch <- chainableSig{c.index, "open"}
-	return
-}
-
-func (c *chainable) Close() (err error) {
-	atomic.AddInt64(c.closeCount, 1)
-	//println("close", c.index)
-	c.cancel()
-	return
-}
-
-func (c *chainable) Wait() (err error) {
-	c.wg.Wait()
-	c.ch <- chainableSig{c.index, "wait"}
-	err = c.err
-	return
-}
-
-func (c *chainable) Crash(err error) {
-	c.err = err
-	c.cancel()
-}
-
-func TestChain_Empty(t *testing.T) {
-	c := supervisor.NewChain(context.TODO())
-	c.Open()
-	c.Wait()
-}
-
-func TestChain_OK(t *testing.T) {
-	var closeCount int64
-	resCh := make(chan chainableSig)
-	var res []chainableSig
-	resWg := &sync.WaitGroup{}
-	resWg.Add(1)
-	go func() {
-		for i := 0; i < 9; i++ {
-			res = append(res, <-resCh)
-		}
-		resWg.Done()
-	}()
-
-	c := supervisor.NewChain(
-		context.TODO(),
-		newChainable(1, resCh, &closeCount),
-		newChainable(2, resCh, &closeCount),
-		newChainable(3, resCh, &closeCount),
-	)
-	c.Open()
-	c.Close()
-	err := c.Wait()
-	resWg.Wait()
-
-	assert.NoError(t, err)
-	assert.Equal(t, res, []chainableSig{
-		{index: 1, op: "open"},
-		{index: 2, op: "open"},
-		{index: 3, op: "open"},
-		{index: 3, op: "done"},
-		{index: 3, op: "wait"},
-		{index: 2, op: "done"},
-		{index: 2, op: "wait"},
-		{index: 1, op: "done"},
-		{index: 1, op: "wait"}})
-	assert.Equal(t, int64(3), closeCount)
-}
-
-func TestChain_Crash(t *testing.T) {
-	var closeCount int64
-	resCh := make(chan chainableSig)
-	var res []chainableSig
-	resWg := &sync.WaitGroup{}
-	resWg.Add(1)
-	go func() {
-		for i := 0; i < 9; i++ {
-			res = append(res, <-resCh)
-		}
-		resWg.Done()
-	}()
-
-	messy := newChainable(1, resCh, &closeCount)
-	g := supervisor.NewChain(
-		context.TODO(),
-		newChainable(2, resCh, &closeCount),
-		newChainable(3, resCh, &closeCount),
-		messy,
-	)
-	g.Open()
-	messy.Crash(errors.New("err"))
-	err := g.Wait()
-	resWg.Wait()
-
-	assert.Error(t, err)
-	assert.Equal(t, "err", err.Error())
-	assert.Equal(t, res, []chainableSig{
-		{index: 2, op: "open"},
-		{index: 3, op: "open"},
-		{index: 1, op: "open"},
-		{index: 1, op: "done"},
-		{index: 1, op: "wait"},
-		{index: 3, op: "done"},
-		{index: 3, op: "wait"},
-		{index: 2, op: "done"},
-		{index: 2, op: "wait"}})
-	assert.Equal(t, int64(3), closeCount)
 }

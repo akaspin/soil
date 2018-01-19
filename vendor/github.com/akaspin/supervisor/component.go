@@ -1,15 +1,15 @@
 package supervisor
 
-import (
-	"io"
-)
-
+// Component is basic building block to build supervisor trees
 type Component interface {
-	io.Closer
 
+	// Open runs Component initialisation and should blocks until
+	// Component is initialised.
 	Open() (err error)
 
-	// Wait blocks until component is closed or error occurs
+	// Close initialises Component shutdown.
+	Close() (err error)
+
+	// Wait should blocks until Component shutdown.
 	Wait() (err error)
 }
-

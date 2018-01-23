@@ -11,7 +11,7 @@ Group supervises Components in parallel. All supervised components are open
 and closed concurrently.
 
 Group collects and returns error from corresponding Component methods. If more
-than one Components returns errors they will be wrapped in MultiError.
+than one Components returns errors they will be wrapped in errslice.Error.
 */
 type Group struct {
 	*composite

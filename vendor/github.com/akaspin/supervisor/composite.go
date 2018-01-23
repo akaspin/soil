@@ -15,9 +15,9 @@ type compositeControl struct {
 	closeWg sync.WaitGroup
 	waitWg  sync.WaitGroup // WG to wait for exit of all components
 
-	openError  wrapErr
-	closeError wrapErr
-	waitError  wrapErr // composite Wait() error
+	openError  compositeError
+	closeError compositeError
+	waitError  compositeError // composite Wait() error
 }
 
 func (c *compositeControl) isOpen() (ok bool) {

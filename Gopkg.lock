@@ -20,6 +20,12 @@
   version = "1.1.0"
 
 [[projects]]
+  name = "github.com/akaspin/errslice"
+  packages = ["."]
+  revision = "becf68cdf94944b2a0c5eab19f6c266cca0c9d92"
+  version = "0.1.1"
+
+[[projects]]
   name = "github.com/akaspin/logx"
   packages = ["."]
   revision = "fc34f16e5ee5a4b14972fdbff5394305764349dc"
@@ -28,8 +34,8 @@
 [[projects]]
   name = "github.com/akaspin/supervisor"
   packages = ["."]
-  revision = "86ed7e69d9b445ac646a6085d325065024548395"
-  version = "2.0.0"
+  revision = "26431bc223084707f357c9449e8ae2fef456482e"
+  version = "2.1.0"
 
 [[projects]]
   name = "github.com/coreos/go-systemd"
@@ -218,10 +224,10 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/stretchr/testify"
   packages = ["assert","require"]
-  revision = "87b1dfb5b2fa649f52695dd9eae19abe404a4308"
+  revision = "b91bfb9ebec76498946beb6af7c0230c7cc7ba6c"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/tinylib/msgp"
@@ -250,6 +256,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d47524b9a0dc10c0cced4020d916ce9313b6acf48a185ff6f214b7abd84798ca"
+  inputs-digest = "052a7119c130686229b3d809e77c5371c83c0d616416e01481ddb0b9636b18ca"
   solver-name = "gps-cdcl"
   solver-version = 1

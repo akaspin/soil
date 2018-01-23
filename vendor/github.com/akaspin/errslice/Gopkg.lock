@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/akaspin/errslice"
-  packages = ["."]
-  revision = "becf68cdf94944b2a0c5eab19f6c266cca0c9d92"
-  version = "0.1.1"
-
-[[projects]]
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
   revision = "346938d642f2ec3594ed81d874461961cd0faa76"
@@ -28,6 +22,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6eac32b2a03e63077aec3f93fa9107743560ca8c04622512ceab2fc2570307da"
+  inputs-digest = "a9dd4821c4522b2069722c1be94b191e7aff1736aeb5c12ab0070f87cdbc5af2"
   solver-name = "gps-cdcl"
   solver-version = 1

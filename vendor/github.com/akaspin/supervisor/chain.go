@@ -10,7 +10,7 @@ Chain supervises Components in order. All supervised components are open
 in FIFO order and closed in LIFO order.
 
 Chain collects and returns error from corresponding Component methods. If more
-than one Components returns errors they will be wrapped in MultiError.
+than one Components returns errors they will be wrapped in errslice.Error.
 */
 type Chain struct {
 	*composite

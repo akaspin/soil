@@ -28,7 +28,7 @@ func (c Constraint) Clone() (res Constraint) {
 	for left, right := range c {
 		res[left] = right
 	}
-	return
+	return res
 }
 
 // Merge returns constraint merged with given constraints
@@ -39,7 +39,7 @@ func (c Constraint) Merge(constraint ...Constraint) (res Constraint) {
 			res[left] = right
 		}
 	}
-	return
+	return res
 }
 
 // FilterOut returns Constraint without pairs which contains references with given prefixes
@@ -58,7 +58,7 @@ LOOP:
 		}
 		res[left] = right
 	}
-	return
+	return res
 }
 
 // Check constraint against given environment
@@ -67,27 +67,25 @@ func (c Constraint) Check(env map[string]string) (err error) {
 		leftV := Interpolate(left, env)
 		rightV := Interpolate(right, env)
 		if !check(leftV, rightV) {
-			err = fmt.Errorf(`constraint failed: "%s":"%s" ("%s":"%s")`, leftV, rightV, left, right)
-			return
+			return fmt.Errorf(`constraint failed: "%s":"%s" ("%s":"%s")`, leftV, rightV, left, right)
 		}
 	}
-	return
+	return nil
 }
 
 func check(left, right string) (res bool) {
 	// try to get op
 	split := strings.SplitN(right, " ", 2)
 	if len(split) != 2 {
-		// just compare and return
-		res = left == right
-		return
+		// bad split - just compare
+		return left == right
 	}
 	op := split[0]
 	switch op {
 	case opEqual:
-		res = left == split[1]
+		return left == split[1]
 	case opNotEqual:
-		res = left != split[1]
+		return left != split[1]
 	case opLess, opLessOrEqual, opGreater, opGreaterOrEqual:
 		right = split[1]
 		var cmpRes int
@@ -101,13 +99,13 @@ func check(left, right string) (res bool) {
 		}
 		switch op {
 		case opLess:
-			res = cmpRes == -1
+			return cmpRes == -1
 		case opLessOrEqual:
-			res = cmpRes <= 0
+			return cmpRes <= 0
 		case opGreater:
-			res = cmpRes == 1
+			return cmpRes == 1
 		case opGreaterOrEqual:
-			res = cmpRes >= 0
+			return cmpRes >= 0
 		}
 	case opIn, opNotIn:
 		leftSplit := strings.Split(left, ",")
@@ -124,13 +122,13 @@ func check(left, right string) (res bool) {
 		}
 		switch op {
 		case opIn:
-			res = found == len(leftSplit)
+			return found == len(leftSplit)
 		case opNotIn:
-			res = found == 0
+			return found == 0
 		}
 	default:
 		// ordinary string
-		res = left == right
+		return left == right
 	}
-	return
+	return false
 }

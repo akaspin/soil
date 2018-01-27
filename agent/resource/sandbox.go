@@ -61,7 +61,7 @@ func NewSandbox(config SandboxConfig, id string, provider *allocation.Provider) 
 	s.ctx, s.cancelFunc = context.WithCancel(config.Ctx)
 	s.reconfigure(provider)
 	go s.loop()
-	return
+	return s
 }
 
 // Update provider
@@ -75,7 +75,7 @@ func (s *Sandbox) Configure(p *allocation.Provider) (err error) {
 			s.log.Tracef(`provider configuration sent: %v`, p)
 		}
 	}()
-	return
+	return nil
 }
 
 // Create resource with id
@@ -93,7 +93,6 @@ func (s *Sandbox) Create(id string, req *allocation.Resource) {
 			s.log.Tracef(`create sent: %s:%v`, id, req)
 		}
 	}()
-	return
 }
 
 func (s *Sandbox) Update(id string, req *allocation.Resource) {
@@ -110,7 +109,6 @@ func (s *Sandbox) Update(id string, req *allocation.Resource) {
 			s.log.Tracef(`update sent: %s:%v`, id, req)
 		}
 	}()
-	return
 }
 
 func (s *Sandbox) Destroy(id string) {
@@ -126,19 +124,18 @@ func (s *Sandbox) Destroy(id string) {
 			s.log.Tracef(`destroy sent: %s`, id)
 		}
 	}()
-	return
 }
 
 // Destroy all resources in sandbox and notify upstream and downstream
 func (s *Sandbox) Shutdown() (err error) {
 	close(s.shutdownChan)
-	return
+	return nil
 }
 
 // close sandbox without deallocate any resources
 func (s *Sandbox) Close() (err error) {
 	s.cancelFunc()
-	return
+	return nil
 }
 
 func (s *Sandbox) loop() {
@@ -264,10 +261,10 @@ func (s *Sandbox) estimatorWatchDog(uuid string, ctx context.Context, ch chan *e
 		select {
 		case <-s.ctx.Done():
 			log.Tracef(`close: parent: %v`, uuid, s.ctx.Err())
-			return
+			return //
 		case <-ctx.Done():
 			log.Tracef(`close: %v`, uuid, ctx.Err())
-			return
+			return //
 		case s.resultChan <- res:
 			log.Debugf(`piped %s`, res.Message)
 		}

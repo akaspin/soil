@@ -62,7 +62,7 @@ func TestProvider(t *testing.T) {
 
 func TestProviders_FromManifest(t *testing.T) {
 	man := manifest.Pod{
-		Providers: manifest.Providers{
+		Providers: manifest.ProviderSlice{
 			{
 				Kind: "test",
 				Name: "test",

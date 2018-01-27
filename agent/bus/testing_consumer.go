@@ -42,7 +42,7 @@ func NewTestingConsumer(ctx context.Context) (c *TestingConsumer) {
 		}, 1),
 	}
 	go c.loop()
-	return
+	return c
 }
 
 func (c *TestingConsumer) ConsumeMessage(message Message) (err error) {
@@ -50,16 +50,15 @@ func (c *TestingConsumer) ConsumeMessage(message Message) (err error) {
 	case <-c.ctx.Done():
 	case c.messageChan <- message:
 	}
-	return
+	return nil
 }
 
 func (c *TestingConsumer) ExpectMessagesFn(expect ...Message) (fn func() error) {
-	fn = func() (err error) {
+	return func() (err error) {
 		resChan := make(chan error)
 		select {
 		case <-c.ctx.Done():
-			err = c.ctx.Err()
-			return
+			return c.ctx.Err()
 		case c.assertChan <- struct {
 			expect  []Message
 			resChan chan error
@@ -71,23 +70,19 @@ func (c *TestingConsumer) ExpectMessagesFn(expect ...Message) (fn func() error) 
 
 		select {
 		case <-c.ctx.Done():
-			err = c.ctx.Err()
-			return
+			return c.ctx.Err()
 		case err = <-resChan:
+			return err
 		}
-
-		return
 	}
-	return
 }
 
 func (c *TestingConsumer) ExpectLastMessageFn(message Message) (fn func() error) {
-	fn = func() (err error) {
+	return func() (err error) {
 		resChan := make(chan error)
 		select {
 		case <-c.ctx.Done():
-			err = c.ctx.Err()
-			return
+			return c.ctx.Err()
 		case c.assertLastChan <- struct {
 			expect  Message
 			resChan chan error
@@ -99,22 +94,19 @@ func (c *TestingConsumer) ExpectLastMessageFn(message Message) (fn func() error)
 
 		select {
 		case <-c.ctx.Done():
-			err = c.ctx.Err()
-			return
+			return c.ctx.Err()
 		case err = <-resChan:
+			return err
 		}
-		return
 	}
-	return
 }
 
 func (c *TestingConsumer) ExpectMessagesByIdFn(expect map[string][]Message) (fn func() error) {
-	fn = func() (err error) {
+	return func() (err error) {
 		resChan := make(chan error)
 		select {
 		case <-c.ctx.Done():
-			err = c.ctx.Err()
-			return
+			return c.ctx.Err()
 		case c.assertByIdChan <- struct {
 			expect  map[string][]Message
 			resChan chan error
@@ -126,13 +118,11 @@ func (c *TestingConsumer) ExpectMessagesByIdFn(expect map[string][]Message) (fn 
 
 		select {
 		case <-c.ctx.Done():
-			err = c.ctx.Err()
-			return
+			return c.ctx.Err()
 		case err = <-resChan:
+			return err
 		}
-		return
 	}
-	return
 }
 
 func (c *TestingConsumer) loop() {
@@ -140,7 +130,7 @@ LOOP:
 	for {
 		select {
 		case <-c.ctx.Done():
-			return
+			return //
 		case msg := <-c.messageChan:
 			c.data = append(c.data, msg)
 		case assertReq := <-c.assertChan:

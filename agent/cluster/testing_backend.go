@@ -17,7 +17,7 @@ type TestingBackendConfig struct {
 }
 
 func NewTestingBackendFactory(backendConfig TestingBackendConfig) (f BackendFactory) {
-	f = func(ctx context.Context, log *logx.Log, config Config) (b Backend, err error) {
+	return func(ctx context.Context, log *logx.Log, config Config) (b Backend, err error) {
 		kvConfig := BackendConfig{
 			Kind:    "local",
 			Chroot:  "soil",
@@ -41,9 +41,8 @@ func NewTestingBackendFactory(backendConfig TestingBackendConfig) (f BackendFact
 		default:
 			b = NewTestingBackend(ctx, log, backendConfig)
 		}
-		return
+		return b, err
 	}
-	return
 }
 
 // Backend for testing purposes
@@ -77,7 +76,7 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, config TestingBackend
 		for {
 			select {
 			case <-b.ctx.Done():
-				return
+				return //
 			case msg := <-b.config.MessageChan:
 				for key, values := range msg {
 					result := WatchResult{
@@ -94,14 +93,14 @@ func NewTestingBackend(ctx context.Context, log *logx.Log, config TestingBackend
 					}
 					select {
 					case <-b.ctx.Done():
-						return
+						return //
 					case b.watchResultsChan <- result:
 					}
 				}
 			}
 		}
 	}()
-	return
+	return b
 }
 
 func (b *TestingBackend) Submit(ops []StoreOp) {

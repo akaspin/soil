@@ -41,18 +41,16 @@ func NewRouter(log *logx.Log, endpoints ...*Endpoint) (r *Router) {
 		r.mux.HandleFunc(path, r.newHandler(recs))
 	}
 	r.mux.HandleFunc("/", r.notFoundHandlerFunc)
-	return
+	return r
 }
 
 func (r *Router) GetEndpoint(method, path string) (e *Endpoint, err error) {
 	for _, endpoint := range r.endpoints {
 		if endpoint.method == method && endpoint.path == path {
-			e = endpoint
-			return
+			return endpoint, nil
 		}
 	}
-	err = fmt.Errorf(`endpoint %s %s not found`, method, path)
-	return
+	return nil, fmt.Errorf(`endpoint %s %s not found`, method, path)
 }
 
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -68,13 +66,13 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		r.nodesMu.RUnlock()
 		if !ok {
 			sendCode(r.log, w, req, NewError(404, "node not found"))
-			return
+			return //
 		}
 		_, canRedirect := req.URL.Query()[queryParamRedirect]
 		targetUrl, err := req.URL.Parse(fmt.Sprintf("%s://%s", defaultHttpScheme, nodeAddr))
 		if err != nil {
 			sendCode(r.log, w, req, err)
-			return
+			return //
 		}
 
 		// remove node and redirect from query
@@ -88,7 +86,7 @@ func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			r.log.Debugf("redirecting %s %s to %s (%s)", req.Method, req.URL, nodeId, nodeAddr)
 			targetUrl = targetUrl.ResolveReference(req.URL)
 			sendCode(r.log, w, req, NewError(http.StatusMovedPermanently, targetUrl.String()))
-			return
+			return //
 		}
 
 		// proxy if can't redirect
@@ -104,9 +102,9 @@ func (r *Router) ConsumeMessage(message bus.Message) (err error) {
 		r.nodesMu.Lock()
 		defer r.nodesMu.Unlock()
 		var value proto.NodesInfo
-		if err := message.Payload().Unmarshal(&value); err != nil {
-			r.log.Error(err)
-			return
+		if unmarshalErr := message.Payload().Unmarshal(&value); unmarshalErr != nil {
+			r.log.Error(unmarshalErr)
+			return //
 		}
 		nodes := map[string]string{}
 		for _, node := range value {
@@ -115,7 +113,7 @@ func (r *Router) ConsumeMessage(message bus.Message) (err error) {
 		r.nodes = nodes
 		r.log.Infof("nodes updated: %v", r.nodes)
 	}()
-	return
+	return nil
 }
 
 func (r *Router) newHandler(endpoints []*Endpoint) (fn func(w http.ResponseWriter, req *http.Request)) {
@@ -132,7 +130,7 @@ func (r *Router) newHandler(endpoints []*Endpoint) (fn func(w http.ResponseWrite
 			del = endpoint.getHandleFunc(r.log)
 		}
 	}
-	fn = func(w http.ResponseWriter, req *http.Request) {
+	return func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case http.MethodGet:
 			get(w, req)
@@ -144,7 +142,6 @@ func (r *Router) newHandler(endpoints []*Endpoint) (fn func(w http.ResponseWrite
 			r.notAllowedHandlerFunc(w, req)
 		}
 	}
-	return
 }
 
 func (r *Router) notAllowedHandlerFunc(w http.ResponseWriter, req *http.Request) {

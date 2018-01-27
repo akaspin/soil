@@ -6,5 +6,5 @@ func CloneMap(v map[string]string) (res map[string]string) {
 	for k, v := range v {
 		res[k] = v
 	}
-	return
+	return res
 }

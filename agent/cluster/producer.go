@@ -11,11 +11,10 @@ type producer struct {
 }
 
 func NewProducer(kv *KV, key string) (p bus.Producer) {
-	p = &producer{
+	return &producer{
 		key: key,
 		kv:  kv,
 	}
-	return
 }
 
 func (p *producer) Subscribe(ctx context.Context, consumer bus.Consumer) {

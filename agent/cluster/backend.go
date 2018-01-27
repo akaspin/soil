@@ -67,8 +67,7 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 	}
 	kvLog := log.GetLog("cluster", "backend", config.BackendURL, config.NodeID)
 	if kvConfig.ID == "" {
-		err = fmt.Errorf(`empty node id`)
-		return
+		return nil, fmt.Errorf(`empty node id`)
 	}
 	switch kvConfig.Kind {
 	case backendConsul:
@@ -76,7 +75,7 @@ func DefaultBackendFactory(ctx context.Context, log *logx.Log, config Config) (c
 	default:
 		c = NewZeroBackend(ctx, kvLog)
 	}
-	return
+	return c, nil
 }
 
 type StoreOp struct {

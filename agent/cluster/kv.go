@@ -26,7 +26,7 @@ func (c *operatorConsumer) ConsumeMessage(message bus.Message) (err error) {
 			WithTTL: c.volatile,
 		},
 	})
-	return
+	return nil
 }
 
 type operatorProducer struct {
@@ -64,7 +64,7 @@ type KV struct {
 }
 
 func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
-	b = &KV{
+	return &KV{
 		Control:  supervisor.NewControl(ctx),
 		log:      log.GetLog("cluster", "kv"),
 		factory:  factory,
@@ -83,41 +83,36 @@ func NewKV(ctx context.Context, log *logx.Log, factory BackendFactory) (b *KV) {
 		pendingWatchGroups:   map[string]struct{}{},
 		closedWatchGroupChan: make(chan string),
 	}
-	return
 }
 
 func (k *KV) Open() (err error) {
 	go k.loop()
-	err = k.Control.Open()
-	return
+	return k.Control.Open()
 }
 
 func (k *KV) VolatileStore(prefix string) (consumer bus.Consumer) {
-	consumer = &operatorConsumer{
+	return &operatorConsumer{
 		kv:       k,
 		log:      k.log.GetLog("cluster", "kv", "store", "volatile", prefix),
 		prefix:   prefix,
 		volatile: true,
 	}
-	return
 }
 
 func (k *KV) PermanentStore(prefix string) (consumer bus.Consumer) {
-	consumer = &operatorConsumer{
+	return &operatorConsumer{
 		kv:       k,
 		log:      k.log.GetLog("cluster", "kv", "store", "permanent", prefix),
 		prefix:   prefix,
 		volatile: false,
 	}
-	return
 }
 
 func (k *KV) Producer(key string) (producer bus.Producer) {
-	producer = &operatorProducer{
+	return &operatorProducer{
 		kv:  k,
 		key: key,
 	}
-	return
 }
 
 func (k *KV) Configure(config Config) {

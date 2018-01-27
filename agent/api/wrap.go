@@ -11,10 +11,9 @@ type Wrapper struct {
 }
 
 func NewWrapper(fn func() (err error)) (e *Wrapper) {
-	e = &Wrapper{
+	return &Wrapper{
 		fn: fn,
 	}
-	return
 }
 
 func (e *Wrapper) Empty() interface{} {
@@ -22,8 +21,8 @@ func (e *Wrapper) Empty() interface{} {
 }
 
 func (e *Wrapper) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
-	if err = e.fn(); err == nil {
-		res = "ok"
+	if err = e.fn(); err != nil {
+		return nil, err
 	}
-	return
+	return "ok", nil
 }

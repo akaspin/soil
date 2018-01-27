@@ -20,19 +20,17 @@ type Spec struct {
 func (s *Spec) Unmarshal(src string) (err error) {
 	for _, line := range strings.Split(src, "\n") {
 		if strings.HasPrefix(line, specRevisionPrefix) {
-			err = json.NewDecoder(strings.NewReader(strings.TrimSpace(strings.TrimPrefix(line, specRevisionPrefix)))).Decode(&s)
-			return
+			return json.NewDecoder(strings.NewReader(strings.TrimSpace(strings.TrimPrefix(line, specRevisionPrefix)))).Decode(&s)
 		}
 	}
-	return
+	return nil
 }
 
 func (s *Spec) Marshal(w io.Writer) (err error) {
 	if _, err = w.Write([]byte(specRevisionPrefix)); err != nil {
-		return
+		return err
 	}
-	err = json.NewEncoder(w).Encode(s)
-	return
+	return json.NewEncoder(w).Encode(s)
 }
 
 func (s Spec) UnmarshalAssetSlice(paths SystemPaths, v AssetSlice, source string) (err error) {
@@ -49,6 +47,5 @@ func (s Spec) UnmarshalAssetSlice(paths SystemPaths, v AssetSlice, source string
 			v.AppendItem(v1)
 		}
 	}
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return err.(*multierror.Error).ErrorOrNil()
 }

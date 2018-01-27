@@ -31,5 +31,5 @@ func Plan(left, right allocation.ResourceSlice) (c, u, d allocation.ResourceSlic
 			d = append(d, l)
 		}
 	}
-	return
+	return c, u, d
 }

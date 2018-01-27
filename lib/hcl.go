@@ -35,15 +35,13 @@ func ParseHCLMerge(readers ...io.Reader) (roots *ast.ObjectList, err error) {
 	}
 	var rawRoot *ast.File
 	if rawRoot, err1 = hcl.Parse(contents.String()); err1 != nil {
-		err = multierror.Append(err, err1)
-		return
+		return nil, multierror.Append(err, err1)
 	}
 	roots, ok = rawRoot.Node.(*ast.ObjectList)
 	if !ok {
 		err = multierror.Append(err, fmt.Errorf("error parsing: root should be an object"))
 	}
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return roots, err.(*multierror.Error).ErrorOrNil()
 }
 
 func ParseHCL(readers ...io.Reader) (lists []*ast.ObjectList, err error) {
@@ -69,6 +67,5 @@ func ParseHCL(readers ...io.Reader) (lists []*ast.ObjectList, err error) {
 		}
 		lists = append(lists, list)
 	}
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return lists, err.(*multierror.Error).ErrorOrNil()
 }

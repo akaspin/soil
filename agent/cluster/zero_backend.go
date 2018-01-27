@@ -11,10 +11,9 @@ type ZeroBackend struct {
 }
 
 func NewZeroBackend(ctx context.Context, log *logx.Log) (w *ZeroBackend) {
-	w = &ZeroBackend{
+	return &ZeroBackend{
 		baseBackend: newBaseBackend(ctx, log, BackendConfig{}),
 	}
-	return
 }
 
 func (w *ZeroBackend) Submit(ops []StoreOp) {

@@ -41,7 +41,7 @@ func RandomPorts(t *testing.T, count int) (res []int) {
 	for _, listener := range listeners {
 		res = append(res, listener.Addr().(*net.TCPAddr).Port)
 	}
-	return
+	return res
 }
 
 func GetLocalIP(t *testing.T) string {

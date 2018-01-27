@@ -23,9 +23,8 @@ type BoundedEvaluator struct {
 }
 
 func NewBoundedEvaluator(binder ConstraintBinder, evaluator Evaluator) (e BoundedEvaluator) {
-	e = BoundedEvaluator{
+	return BoundedEvaluator{
 		binder:    binder,
 		evaluator: evaluator,
 	}
-	return
 }

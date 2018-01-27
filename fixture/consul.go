@@ -88,16 +88,15 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 		Retries: 100,
 	}, func() (err error) {
 		s.dockerCli, err = client.NewEnvClient()
-		return
+		return err
 	})
 	s.cleanupContainer()
 	os.RemoveAll(s.wd)
-	return
+	return s
 }
 
 func (s *ConsulServer) Address() (res string) {
-	res = fmt.Sprintf("%s:%d", s.addr, s.Config.Ports.HTTP)
-	return
+	return fmt.Sprintf("%s:%d", s.addr, s.Config.Ports.HTTP)
 }
 
 func (s *ConsulServer) Up() {
@@ -108,7 +107,7 @@ func (s *ConsulServer) Up() {
 	if err != nil {
 		s.t.Error(err)
 		s.t.Fail()
-		return
+		return //
 	}
 	_, err = ioutil.ReadAll(resp)
 	if err != nil {
@@ -150,14 +149,14 @@ func (s *ConsulServer) Up() {
 	if err != nil {
 		s.t.Error(err)
 		s.t.FailNow()
-		return
+		return //
 	}
 	s.containerID = res.ID
 	err = s.dockerCli.ContainerStart(s.ctx, s.containerID, types.ContainerStartOptions{})
 	if err != nil {
 		s.t.Error(err)
 		s.t.FailNow()
-		return
+		return //
 	}
 	s.t.Logf(`started: %s on %s`, TestName(s.t), s.Address())
 }
@@ -244,21 +243,20 @@ func (s *ConsulServer) WaitAlive() {
 	}, func() (err error) {
 		resp, err := http.Get(fmt.Sprintf("http://%s/v1/agent/self", s.Address()))
 		if err != nil {
-			return
+			return err
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			err = fmt.Errorf("bad status code: %d", resp.StatusCode)
-			return
+			return fmt.Errorf("bad status code: %d", resp.StatusCode)
 		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return
+			return err
 		}
 		if string(body) == "" {
-			err = fmt.Errorf(`empty api`)
+			return fmt.Errorf(`empty api`)
 		}
-		return
+		return nil
 	})
 	s.t.Logf(`consul %s is alive`, s.Address())
 }
@@ -273,48 +271,42 @@ func (s *ConsulServer) WaitLeader() {
 	}, func() (err error) {
 		resp, err := http.Get(fmt.Sprintf("http://%s/v1/catalog/nodes?index=%d", s.Address(), index))
 		if err != nil {
-			return
+			return err
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != 200 {
-			err = fmt.Errorf("bad status code: %d", resp.StatusCode)
-			return
+			return fmt.Errorf("bad status code: %d", resp.StatusCode)
 		}
 
 		// Ensure we have a leader and a node registration.
 		if leader := resp.Header.Get("X-Consul-KnownLeader"); leader != "true" {
-			err = fmt.Errorf("consul leader status: %#v", leader)
-			return
+			return fmt.Errorf("consul leader status: %#v", leader)
 		}
 		index, err = strconv.ParseInt(resp.Header.Get("X-Consul-Index"), 10, 64)
 		if err != nil {
-			err = fmt.Errorf("bad consul index: %v", err)
-			return
+			return fmt.Errorf("bad consul index: %v", err)
 		}
 		if index == 0 {
-			err = fmt.Errorf("consul index is 0")
-			return
+			return fmt.Errorf("consul index is 0")
 		}
 
 		// Watch for the anti-entropy sync to finish.
 		var v []map[string]interface{}
 		dec := json.NewDecoder(resp.Body)
 		if err = dec.Decode(&v); err != nil {
-			return
+			return err
 		}
 		if len(v) < 1 {
-			err = fmt.Errorf("no nodes")
-			return
+			return fmt.Errorf("no nodes")
 		}
 		taggedAddresses, ok := v[0]["TaggedAddresses"].(map[string]interface{})
 		if !ok {
-			err = fmt.Errorf("missing tagged addresses")
-			return
+			return fmt.Errorf("missing tagged addresses")
 		}
 		if _, ok = taggedAddresses["lan"]; !ok {
-			err = fmt.Errorf("no lan tagged addresses")
+			return fmt.Errorf("no lan tagged addresses")
 		}
-		return
+		return nil
 	})
 	s.t.Logf(`consul %s leader is alive`, s.Address())
 }
@@ -324,18 +316,18 @@ func (s *ConsulServer) writeConfig() {
 	if err := os.MkdirAll(s.wd, 0777); err != nil {
 		s.t.Error(err)
 		s.t.FailNow()
-		return
+		return //
 	}
 	os.MkdirAll(filepath.Join(s.wd, "config"), 0777)
 	f, err := os.Create(filepath.Join(s.wd, "config", "consul.json"))
 	if err != nil {
 		s.t.Error(err)
 		s.t.FailNow()
-		return
+		return //
 	}
 	if err = json.NewEncoder(f).Encode(s.Config); err != nil {
 		s.t.Error(err)
 		s.t.FailNow()
-		return
+		return //
 	}
 }

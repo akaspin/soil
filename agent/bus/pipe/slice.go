@@ -13,11 +13,10 @@ type Slice struct {
 }
 
 func NewSlice(log *logx.Log, consumer bus.Consumer) (p *Slice) {
-	p = &Slice{
+	return &Slice{
 		log:      log.GetLog("pipe", "slicer"),
 		consumer: consumer,
 	}
-	return
 }
 
 func (p *Slice) ConsumeMessage(message bus.Message) (err error) {
@@ -26,7 +25,7 @@ func (p *Slice) ConsumeMessage(message bus.Message) (err error) {
 	var res []interface{}
 	if err = message.Payload().Unmarshal(&v); err != nil {
 		p.log.Errorf(`can't unmarshal %s to map[string]interface{}: %v`, message, err)
-		return
+		return err
 	}
 	for k := range v {
 		keys = append(keys, k)
@@ -35,6 +34,5 @@ func (p *Slice) ConsumeMessage(message bus.Message) (err error) {
 	for _, k := range keys {
 		res = append(res, v[k])
 	}
-	p.consumer.ConsumeMessage(bus.NewMessage(message.Topic(), res))
-	return
+	return p.consumer.ConsumeMessage(bus.NewMessage(message.Topic(), res))
 }

@@ -38,6 +38,6 @@ func Run(stderr, stdout io.Writer, stdin io.Reader, args ...string) (err error) 
 	cmd.SetOutput(stderr)
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
-	err = cmd.Execute()
-	return
+
+	return cmd.Execute()
 }

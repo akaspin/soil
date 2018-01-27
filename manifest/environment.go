@@ -23,7 +23,7 @@ func (e FlatMap) Merge(env ...FlatMap) (res FlatMap) {
 			res[k] = v
 		}
 	}
-	return
+	return res
 }
 
 // Return flatmap without regex
@@ -38,20 +38,19 @@ LOOP:
 			res[k] = v
 		}
 	}
-	return
+	return res
 }
 
 func (e FlatMap) WithJSON(key string) (j FlatMap) {
 	buf, _ := json.Marshal(e)
-	j = e.Merge(FlatMap{
+	return e.Merge(FlatMap{
 		key: string(buf),
 	})
-	return
 }
 
 // Interpolate source
 func (e FlatMap) Interpolate(source string) (res string) {
-	res = envRe.ReplaceAllStringFunc(source, func(arg string) string {
+	return envRe.ReplaceAllStringFunc(source, func(arg string) string {
 		var hasDefaultValue bool
 		var defaultValue string
 		stripped := arg[2 : len(arg)-1]
@@ -69,7 +68,6 @@ func (e FlatMap) Interpolate(source string) (res string) {
 		}
 		return arg
 	})
-	return
 }
 
 func ExtractEnv(v string) (res []string) {
@@ -77,11 +75,11 @@ func ExtractEnv(v string) (res []string) {
 	for _, r := range res1 {
 		res = append(res, r[2:len(r)-1])
 	}
-	return
+	return res
 }
 
 func Interpolate(v string, env ...map[string]string) (res string) {
-	res = envRe.ReplaceAllStringFunc(v, func(arg string) string {
+	return envRe.ReplaceAllStringFunc(v, func(arg string) string {
 		var hasDefaultValue bool
 		var defaultValue string
 		stripped := arg[2 : len(arg)-1]
@@ -101,5 +99,4 @@ func Interpolate(v string, env ...map[string]string) (res string) {
 		}
 		return arg
 	})
-	return
 }

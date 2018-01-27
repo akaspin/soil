@@ -36,7 +36,7 @@ type Arbiter struct {
 }
 
 func NewArbiter(ctx context.Context, log *logx.Log, name string, config ArbiterConfig) (a *Arbiter) {
-	a = &Arbiter{
+	return &Arbiter{
 		Control:     supervisor.NewControl(ctx),
 		log:         log.GetLog("arbiter", name),
 		config:      config,
@@ -46,13 +46,11 @@ func NewArbiter(ctx context.Context, log *logx.Log, name string, config ArbiterC
 		bindChan:    make(chan arbiterEntity),
 		unbindChan:  make(chan arbiterEntity),
 	}
-	return
 }
 
 func (a *Arbiter) Open() (err error) {
 	go a.loop()
-	err = a.Control.Open()
-	return
+	return a.Control.Open()
 }
 
 // Bind entity to arbiter
@@ -85,7 +83,7 @@ func (a *Arbiter) ConsumeMessage(message bus.Message) (err error) {
 	case <-a.Control.Ctx().Done():
 	case a.messageChan <- message:
 	}
-	return
+	return nil
 }
 
 func (a *Arbiter) loop() {
@@ -122,12 +120,12 @@ LOOP:
 func (a *Arbiter) updateCache() {
 	if len(a.config.ConstraintOnly) == 0 {
 		a.env = bus.NewMessage(a.state.Topic(), a.state.Payload())
-		return
+		return //
 	}
 	var src map[string]string
 	if err := a.state.Payload().Unmarshal(&src); err != nil {
 		a.log.Error(err)
-		return
+		return //
 	}
 	env := map[string]string{}
 LOOP:
@@ -145,27 +143,27 @@ LOOP:
 func (a *Arbiter) notify(entity arbiterEntity) {
 	if a.state.Payload().IsEmpty() {
 		a.log.Tracef(`skipping arbitrate "%s": state is empty`, entity.id)
-		return
+		return //
 	}
 	a.log.Tracef(`evaluating "%s"`, entity.id)
 
 	var statePayload map[string]string
 	if err := a.state.Payload().Unmarshal(&statePayload); err != nil {
 		a.log.Error(err)
-		return
+		return //
 	}
 
 	if a.config.Required != nil {
 		if err := a.config.Required.Check(statePayload); err != nil {
 			a.log.Warningf(`notifying "%s" (required): %v`, entity.id, err)
 			entity.notifyFn(err, bus.NewMessage(a.name, nil))
-			return
+			return //
 		}
 	}
 	if err := entity.constraint.Check(statePayload); err != nil {
 		a.log.Debugf(`notifying "%s": %v`, entity.id, err)
 		entity.notifyFn(err, bus.NewMessage(a.name, nil))
-		return
+		return //
 	}
 	a.log.Debugf(`notifying "%s": ok:%x`, entity.id, a.env.Payload().Hash())
 	entity.notifyFn(nil, a.env)

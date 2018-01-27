@@ -10,11 +10,10 @@ type Message struct {
 
 // Create new message
 func NewMessage(topic string, payload interface{}) (m Message) {
-	m = Message{
+	return Message{
 		topic:   topic,
 		payload: NewPayload(payload),
 	}
-	return
 }
 
 // Get topic
@@ -24,17 +23,14 @@ func (m Message) Topic() string {
 
 // Get message payload
 func (m Message) Payload() (res Payload) {
-	res = m.payload
-	return
+	return m.payload
 }
 
 // Is message equal to given message
 func (m Message) IsEqual(ingest Message) (res bool) {
-	res = m.topic == ingest.topic && m.Payload().Hash() == ingest.Payload().Hash()
-	return
+	return m.topic == ingest.topic && m.Payload().Hash() == ingest.Payload().Hash()
 }
 
 func (m Message) String() (res string) {
-	res = fmt.Sprintf("%s:%s", m.topic, m.payload)
-	return
+	return fmt.Sprintf("%s:%s", m.topic, m.payload)
 }

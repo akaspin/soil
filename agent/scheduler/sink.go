@@ -21,10 +21,10 @@ type Sink struct {
 func (s *Sink) ConsumeMessage(message bus.Message) (err error) {
 	var pods manifest.PodSlice
 	if err = message.Payload().Unmarshal(&pods); err != nil {
-		return
+		return err
 	}
 	s.ConsumeRegistry(pods)
-	return
+	return nil
 }
 
 func NewSink(ctx context.Context, log *logx.Log, state allocation.PodSlice, boundedEvaluators ...BoundedEvaluator) (s *Sink) {
@@ -38,7 +38,7 @@ func NewSink(ctx context.Context, log *logx.Log, state allocation.PodSlice, boun
 		dirty[recovered.Name] = recovered.Namespace
 	}
 	s.state = NewSinkState([]string{"private", "public"}, dirty)
-	return
+	return s
 }
 
 func (s *Sink) ConsumeRegistry(registry manifest.PodSlice) {
@@ -73,7 +73,7 @@ func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) {
 				me.binder.Unbind(id, func() {
 					me.evaluator.Deallocate(id)
 				})
-				return
+				return //
 			}
 
 			s.log.Tracef(`register "%s"`, id)
@@ -82,7 +82,7 @@ func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) {
 				s.log.Tracef(`received %v for "%s"`, reason, id)
 				if reason != nil {
 					me.evaluator.Deallocate(id)
-					return
+					return //
 				}
 				var env map[string]string
 				if err := message.Payload().Unmarshal(&env); err != nil {
@@ -92,5 +92,4 @@ func (s *Sink) submitToEvaluators(id string, pod *manifest.Pod) {
 			})
 		}(me, pod)
 	}
-	return
 }

@@ -23,13 +23,13 @@ func writeConfig(t *testing.T, source string, env map[string]interface{}) {
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
-		return
+		return //
 	}
 	f, err := os.Create("testdata/.test_server.hcl")
 	if err != nil {
 		t.Error(err)
 		t.FailNow()
-		return
+		return //
 	}
 	defer f.Close()
 	if err = tmpl.Execute(f, env); err != nil {

@@ -25,7 +25,7 @@ func NewEvaluatorState(log *logx.Log, recovered allocation.PodSlice) (s *Evaluat
 	for _, pod := range recovered {
 		s.finished[pod.Name] = pod
 	}
-	return
+	return s
 }
 
 // Submit allocation to state. Returns allocations ready to execute.
@@ -35,8 +35,7 @@ func (s *EvaluatorState) Submit(name string, pod *allocation.Pod) (next []*Evalu
 	defer s.mu.Unlock()
 	s.pending[name] = pod
 	s.log.Tracef(`submit: registered pending %s`, name)
-	next = s.next()
-	return
+	return s.next()
 }
 
 // Commit in progress evaluation
@@ -54,8 +53,7 @@ func (s *EvaluatorState) Commit(name string) (next []*Evaluation) {
 	}
 	delete(s.inProgress, name)
 	s.log.Tracef(`%s removed from in progress`, name)
-	next = s.next()
-	return
+	return s.next()
 }
 
 func (s *EvaluatorState) next() (next []*Evaluation) {
@@ -92,5 +90,5 @@ LOOP:
 		s.log.Tracef(`pending %s promoted to in progress`, pendingName)
 	}
 	s.log.Debugf(`next: %s`, next)
-	return
+	return next
 }

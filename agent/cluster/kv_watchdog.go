@@ -23,7 +23,7 @@ func newWatchdog(kv *KV, backend Backend, config Config) (w *kvWatchdog) {
 	go w.ready()
 	go w.done()
 	go w.downstream()
-	return
+	return w
 }
 
 // watch ready context
@@ -31,7 +31,7 @@ func (w *kvWatchdog) ready() {
 	w.log.Trace(`ready: start`)
 	select {
 	case <-w.backend.Ctx().Done():
-		return
+		return //
 	case <-w.backend.ReadyCtx().Done():
 		w.log.Info(`backend is ready`)
 		select {

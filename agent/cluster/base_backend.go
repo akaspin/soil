@@ -37,7 +37,7 @@ func newBaseBackend(ctx context.Context, log *logx.Log, config BackendConfig) (b
 		<-ctx.Done()
 		b.cancel()
 	}()
-	return
+	return b
 }
 
 func (b *baseBackend) Close() error {

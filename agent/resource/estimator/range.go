@@ -33,7 +33,7 @@ func NewRange(globalConfig GlobalConfig, config Config) (r *Range) {
 		r.max = uint32(v.(int))
 	}
 	r.base = newBase(globalConfig, config, r)
-	return
+	return r
 }
 
 func (r *Range) createFn(id string, config map[string]interface{}, values map[string]string) (res interface{}, err error) {
@@ -41,7 +41,7 @@ func (r *Range) createFn(id string, config map[string]interface{}, values map[st
 	// try to find values in already allocated resources
 	if allocated, ok := r.allocations[id]; ok && allocated.failure == nil {
 		r.log.Tracef(`"id" is already allocated: %d`, allocated.value)
-		return
+		return nil, nil
 	}
 
 	// try to find recovered value
@@ -57,39 +57,33 @@ func (r *Range) createFn(id string, config map[string]interface{}, values map[st
 					r.notify(id, rangeExecutorAllocation{
 						value: recoveredValue,
 					})
-					res = recoveredValue
-					return
+					return recoveredValue, nil
 				}
 			} else {
 				r.log.Warningf(`recovered value exceeds limits: %s: %d(min) < %d < %d(max)`, id, r.min, recoveredValue, r.max)
 			}
 		}
 	}
-	res, err = r.try(id)
-	return
+	return r.try(id)
 }
 
 func (r *Range) updateFn(id string, config map[string]interface{}) (res interface{}, err error) {
 	var state rangeExecutorAllocation
 	var ok bool
 	if state, ok = r.allocations[id]; !ok {
-		err = fmt.Errorf(`not found: %s`, id)
-		return
+		return nil, fmt.Errorf(`not found: %s`, id)
 	}
 	if ok && state.failure == nil {
-		err = fmt.Errorf(`already allocated: %s`, id)
-		return
+		return nil, fmt.Errorf(`already allocated: %s`, id)
 	}
-	res, err = r.try(id)
-	return
+	return r.try(id)
 }
 
 func (r *Range) destroyFn(id string) (err error) {
 	var state rangeExecutorAllocation
 	var ok bool
 	if state, ok = r.allocations[id]; !ok {
-		err = fmt.Errorf(`not found: %s`, id)
-		return
+		return fmt.Errorf(`not found: %s`, id)
 	}
 
 	if state.failure == nil {
@@ -110,7 +104,7 @@ func (r *Range) destroyFn(id string) (err error) {
 			r.log.Infof(`reallocated %s: %v`, allocatedId, res)
 		}
 	}
-	return
+	return nil
 }
 
 func (r *Range) notify(id string, alloc rangeExecutorAllocation) {
@@ -127,35 +121,31 @@ func (r *Range) try(id string) (res uint32, err error) {
 		r.notify(id, rangeExecutorAllocation{
 			failure: err,
 		})
-		return
+		return res, err
 	}
 	r.notify(id, rangeExecutorAllocation{
 		value: res,
 	})
-	return
+	return res, err
 }
 
 func (r *Range) allocateBitmap() (res uint32, err error) {
 	if ok := r.bitmap.CheckedAdd(r.min); ok {
-		res = r.min
-		return
+		return r.min, nil
 	}
 	iter := r.bitmap.Iterator()
 	for iter.HasNext() {
 		candidate := iter.Next() + 1
 		if candidate > r.max {
-			err = ErrNotAvailable
-			return
+			return 0, ErrNotAvailable
 		}
 		if ok := r.bitmap.CheckedAdd(candidate); ok {
-			res = candidate
-			return
+			return candidate, nil
 		}
 	}
-	err = ErrNotAvailable
-	return
+	return 0, ErrNotAvailable
 }
 
 func (r *Range) shutdownFn() (err error) {
-	return
+	return nil
 }

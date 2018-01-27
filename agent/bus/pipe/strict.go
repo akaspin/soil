@@ -31,7 +31,7 @@ func NewStrict(name string, log *logx.Log, downstream bus.Consumer, declared ...
 	for _, m := range declared {
 		p.topics[m] = bus.NewMessage(m, nil)
 	}
-	return
+	return p
 }
 
 func (p *StrictPipe) ConsumeMessage(message bus.Message) (err error) {
@@ -39,18 +39,16 @@ func (p *StrictPipe) ConsumeMessage(message bus.Message) (err error) {
 	defer p.mu.Unlock()
 
 	if _, declared := p.topics[message.Topic()]; !declared {
-		return
+		return nil
 	}
 	p.topics[message.Topic()] = message
 	if message.Payload().IsEmpty() {
-		p.downstream.ConsumeMessage(p.empty)
-		return
+		return p.downstream.ConsumeMessage(p.empty)
 	}
 	payload := map[string]string{}
 	for prefix, msg := range p.topics {
 		if msg.Payload().IsEmpty() {
-			p.downstream.ConsumeMessage(p.empty)
-			return
+			return p.downstream.ConsumeMessage(p.empty)
 		}
 		var chunk map[string]string
 
@@ -62,6 +60,5 @@ func (p *StrictPipe) ConsumeMessage(message bus.Message) (err error) {
 			payload[prefix+"."+k] = v
 		}
 	}
-	err = p.downstream.ConsumeMessage(bus.NewMessage(p.name, payload))
-	return
+	return p.downstream.ConsumeMessage(bus.NewMessage(p.name, payload))
 }

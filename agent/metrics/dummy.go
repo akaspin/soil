@@ -16,12 +16,11 @@ type Dummy struct {
 }
 
 func NewDummy(name string, tags ...string) (r *Dummy) {
-	r = &Dummy{
+	return &Dummy{
 		name: name,
 		tags: tags,
 		Data: map[string]interface{}{},
 	}
-	return
 }
 
 func (r *Dummy) Count(name string, value int64, tags ...string) {

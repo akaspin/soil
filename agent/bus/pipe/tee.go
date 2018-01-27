@@ -8,15 +8,14 @@ type Tee struct {
 }
 
 func NewTee(downstreams ...bus.Consumer) (p *Tee) {
-	p = &Tee{
+	return &Tee{
 		downstreams: downstreams,
 	}
-	return
 }
 
 func (p *Tee) ConsumeMessage(message bus.Message) (err error) {
 	for _, downstream := range p.downstreams {
 		downstream.ConsumeMessage(message)
 	}
-	return
+	return nil
 }

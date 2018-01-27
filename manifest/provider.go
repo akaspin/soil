@@ -7,16 +7,16 @@ import (
 	"strings"
 )
 
-type Providers []Provider
+type ProviderSlice []Provider
 
-func (p *Providers) Empty() ObjectParser {
+func (p *ProviderSlice) Empty() ObjectParser {
 	return &Provider{}
 }
 
-func (p *Providers) Append(v interface{}) (err error) {
+func (p *ProviderSlice) Append(v interface{}) (err error) {
 	v1 := v.(*Provider)
 	*p = append(*p, *v1)
-	return
+	return nil
 }
 
 // Resource provider
@@ -36,18 +36,17 @@ func (p Provider) ID(parent string) string {
 
 func (p *Provider) ParseAST(raw *ast.ObjectItem) (err error) {
 	if len(raw.Keys) != 2 {
-		err = fmt.Errorf(`provuder should be "nature" "name"`)
-		return
+		return fmt.Errorf(`provuder should be "nature" "name"`)
 	}
 	p.Kind = raw.Keys[0].Token.Value().(string)
 	p.Name = raw.Keys[1].Token.Value().(string)
 	if err = hcl.DecodeObject(p, raw); err != nil {
-		return
+		return err
 	}
 	if err = hcl.DecodeObject(&p.Config, raw.Val); err != nil {
-		return
+		return err
 	}
 	delete(p.Config, "nature")
 	delete(p.Config, "kind")
-	return
+	return nil
 }

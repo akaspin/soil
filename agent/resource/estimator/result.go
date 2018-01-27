@@ -16,11 +16,10 @@ type Result struct {
 // Create new estimator message with "__values"
 func NewEstimatorMessage(id string, err error, values manifest.FlatMap) (res bus.Message) {
 	if err != nil {
-		res = bus.NewMessage(id, manifest.FlatMap{
+		return bus.NewMessage(id, manifest.FlatMap{
 			"allocated": "false",
 			"failure":   fmt.Sprint(err),
 		})
-		return
 	}
 	payload := manifest.FlatMap{
 		"allocated": "true",
@@ -30,6 +29,5 @@ func NewEstimatorMessage(id string, err error, values manifest.FlatMap) (res bus
 	}
 	buf, _ := json.Marshal(payload)
 	payload["__values"] = string(buf)
-	res = bus.NewMessage(id, payload)
-	return
+	return bus.NewMessage(id, payload)
 }

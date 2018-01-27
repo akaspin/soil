@@ -34,19 +34,18 @@ func (p *registryPodsGetProcessor) Empty() interface{} {
 func (p *registryPodsGetProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	res = p.pods
-	return
+	return p.pods, nil
 }
 
 func (p *registryPodsGetProcessor) ConsumeMessage(message bus.Message) (err error) {
 	var v manifest.PodSlice
 	if err = message.Payload().Unmarshal(&v); err != nil {
-		return
+		return err
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.pods = v
-	return
+	return nil
 }
 
 func NewRegistryPodsPut(log *logx.Log, consumer bus.Consumer) (e *api_server.Endpoint) {
@@ -68,15 +67,14 @@ func (p *registryPodsPutProcessor) Empty() interface{} {
 func (p *registryPodsPutProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	v1, ok := v.(*manifest.PodSlice)
 	if !ok || v1 == nil || len(*v1) == 0 {
-		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
-		return
+		return nil, api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
 	}
 	for _, pod := range *v1 {
 		if consumeErr := p.consumer.ConsumeMessage(bus.NewMessage(pod.Name, pod)); consumeErr != nil {
 			p.log.Error(err)
 		}
 	}
-	return
+	return nil, nil
 }
 
 func NewRegistryPodsDelete(log *logx.Log, consumer bus.Consumer) (e *api_server.Endpoint) {
@@ -98,13 +96,12 @@ func (p *registryPodsDeleteProcessor) Empty() interface{} {
 func (p *registryPodsDeleteProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	pods, ok := v.(*[]string)
 	if !ok || pods == nil || len(*pods) == 0 {
-		err = api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
-		return
+		return nil, api_server.NewError(http.StatusBadRequest, fmt.Sprintf("bad pods: %v", v))
 	}
 	for _, pod := range *pods {
 		if consumeErr := p.consumer.ConsumeMessage(bus.NewMessage(pod, nil)); consumeErr != nil {
 			p.log.Error(err)
 		}
 	}
-	return
+	return nil, nil
 }

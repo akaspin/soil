@@ -1,43 +1,48 @@
 package logx_test
 
+// without flags
+
 import (
 	"bytes"
+	"fmt"
 	"github.com/akaspin/logx"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestLog_Info(t *testing.T) {
-	w := &bytes.Buffer{}
-	l := logx.NewLog(logx.NewTextAppender(w, 0), "")
-	l.Info("test")
-	l.Infof("%s", "info format test")
-	assert.Equal(t, "INFO test\nINFO info format test\n", w.String())
+func checkLevels(t *testing.T, expect ...string) {
+	t.Helper()
+	var w bytes.Buffer
+	app := logx.NewTextAppender(&w, 0)
+	l1 := logx.NewLog(app, "test")
+
+	in := "test"
+	l1.Trace(in)
+	l1.Tracef("f:%s", in)
+	l1.Debug(in)
+	l1.Debugf("f:%s", in)
+	l1.Info(in)
+	l1.Infof("f:%s", in)
+	l1.Notice(in)
+	l1.Noticef("f:%s", in)
+	l1.Warning(in)
+	l1.Warningf("f:%s", in)
+	l1.Error(in)
+	l1.Errorf("f:%s", in)
+	l1.Critical(in)
+	l1.Criticalf("f:%s", in)
+
+	var res string
+	for _, level := range expect {
+		res += fmt.Sprintf("%s test %s\n", level, in)
+		res += fmt.Sprintf("%s test f:%s\n", level, in)
+	}
+	assert.Equal(t, res, w.String())
 }
 
-func TestLog_Prefix(t *testing.T) {
-	w := &bytes.Buffer{}
-	l := logx.NewLog(logx.NewTextAppender(w, logx.Lshortfile), "prefix")
-	l.Warning("2")
-	assert.Contains(t, w.String(), "WARNING prefix log_test.go")
-	assert.Equal(t, "prefix", l.Prefix())
-}
-
-func TestLog_PrefixEmpty(t *testing.T) {
-	w := &bytes.Buffer{}
-	l := logx.NewLog(logx.NewTextAppender(w, logx.Lshortfile), "")
-	l.Warning("2")
-	assert.Contains(t, w.String(), "WARNING log_test.go")
-	assert.Equal(t, "", l.Prefix())
-}
-
-func TestLog_GetLog(t *testing.T) {
-	w := &bytes.Buffer{}
-	l := logx.NewLog(logx.NewTextAppender(w, logx.Lshortfile), "")
-	l.Warning("2")
-	l2 := l.GetLog("second")
-	l2.Info("test")
-	assert.Regexp(t, ` log_test.go:\d\d `, w.String())
-	assert.Contains(t, w.String(), "WARNING log_test.go:")
-	assert.Contains(t, w.String(), "INFO second log_test.go:")
+func TestLog_Lshortfile(t *testing.T) {
+	var buf bytes.Buffer
+	l := logx.NewLog(logx.NewTextAppender(&buf, logx.Lshortfile), "test")
+	l.Notice("lineno")
+	assert.Contains(t, buf.String(), "log_test.go:46")
 }

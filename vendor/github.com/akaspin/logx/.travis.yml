@@ -4,6 +4,10 @@ go:
   - 1.9.2
 
 script:
-- go test -v ./...
-- go test -tags="debug" -v ./...
-- go test -tags="trace" -v ./...
+- go test -race -v -tags="notice"
+- go test -race -v
+- go test -race -v -tags="debug"
+- go test -race -v -tags="trace" -coverprofile=coverage.txt -covermode=atomic
+
+after_success:
+- bash <(curl -s https://codecov.io/bash)

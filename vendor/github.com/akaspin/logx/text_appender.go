@@ -34,31 +34,52 @@ const (
 
 	// LstdFlags initial values for the standard logger
 	LstdFlags = Lshortfile | Lcompact
+
+	lCallLevel = 2
 )
 
-
-// Default Appender based on buffer pool
-type TextAppender struct {
-	output     io.Writer
-	flags      int
-	bufferPool sync.Pool
+var bufferPool = sync.Pool{
+	New: func() interface{} {
+		return &bytes.Buffer{}
+	},
 }
 
+/*
+TextAppender is default for logx
+
+Format:
+
+	time LEVEL prefix [tags] file:line message
+*/
+type TextAppender struct {
+	output io.Writer
+	flags  int
+
+	identity []byte
+}
+
+// NewTextAppender returns new appender without prefix and tags
 func NewTextAppender(output io.Writer, flags int) (a *TextAppender) {
 	a = &TextAppender{
 		output: output,
 		flags:  flags,
-		bufferPool: sync.Pool{
-			New: func() interface{} {
-				return &bytes.Buffer{}
-			},
-		},
+		identity: []byte(" "),
 	}
-	return
+	return a
 }
 
-func (a *TextAppender) Append(level, prefix, line string, tags ...string) {
-	buf := a.bufferPool.Get().(*bytes.Buffer)
+// Clone returns copy of TextAppender with given prefix and tags
+func (a *TextAppender) Clone(prefix string, tags []string) (a1 Appender) {
+	a1 = &TextAppender{
+		output: a.output,
+		flags:  a.flags,
+	}
+	a1.(*TextAppender).setIdentity(prefix, tags)
+	return a1
+}
+
+func (a *TextAppender) Append(level, line string) {
+	buf := bufferPool.Get().(*bytes.Buffer)
 
 	// time
 	if a.flags&(Ldate|Ltime|Lmicroseconds|LUTC) != 0 {
@@ -94,30 +115,13 @@ func (a *TextAppender) Append(level, prefix, line string, tags ...string) {
 
 	// level
 	buf.WriteString(level)
-	buf.WriteByte(' ')
 
-	// prefix
-	if prefix != "" {
-		buf.WriteString(prefix)
-		buf.WriteByte(' ')
-	}
-
-	// tags
-	ltags := len(tags)
-	if ltags != 0 {
-		buf.WriteByte('[')
-		for i, tag := range tags {
-			buf.WriteString(tag)
-			if i < ltags-1 {
-				buf.WriteByte(' ')
-			}
-		}
-		buf.WriteString("] ")
-	}
+	// identity
+	buf.Write(a.identity)
 
 	// file
 	if a.flags&(Lshortfile|Llongfile) != 0 {
-		_, file, lineNo, ok := runtime.Caller(3)
+		_, file, lineNo, ok := runtime.Caller(lCallLevel)
 		if !ok {
 			file = "???"
 			lineNo = 0
@@ -149,7 +153,31 @@ func (a *TextAppender) Append(level, prefix, line string, tags ...string) {
 	}
 	buf.WriteTo(a.output)
 	buf.Reset()
-	a.bufferPool.Put(buf)
+	bufferPool.Put(buf)
+}
+
+func (a *TextAppender) setIdentity(prefix string, tags []string) {
+	buf := bufferPool.Get().(*bytes.Buffer)
+	buf.WriteByte(' ')
+	if prefix != "" {
+		buf.WriteString(prefix)
+		buf.WriteByte(' ')
+	}
+	if len(tags) > 0 {
+		buf.WriteByte('[')
+		for i, tag := range tags {
+			if i > 0 {
+				buf.WriteByte(' ')
+			}
+			buf.WriteString(tag)
+		}
+		buf.WriteByte(']')
+		buf.WriteByte(' ')
+	}
+	a.identity = make([]byte, buf.Len())
+	copy(a.identity, buf.Bytes())
+	buf.Reset()
+	bufferPool.Put(buf)
 }
 
 func itoaBuf(buf *bytes.Buffer, i int, wid int) {

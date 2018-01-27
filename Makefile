@@ -6,13 +6,10 @@ TEST_TAGS     =
 TEST_ARGS     =
 BENCH	      = .
 
-# PACKAGES    = $(shell cd $(GOPATH)/src/$(REPO) && go list ./...)
 TEST_PACKAGES ?= ./...
 
 GO_IMAGE    = golang:1.9.2
 CWD 		= $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-# SRC 		= $(shell find . -type f -name '*.go' -not -path "./vendor/*")
-# SRC_VENDOR	= $(shell find ./vendor -type f -iname '*.go')
 
 V           = $(shell git describe --always --tags --dirty)
 GOOPTS      = -installsuffix cgo -ldflags '-s -w -X $(REPO)/proto.Version=$(V)'
@@ -24,13 +21,13 @@ sources: 		## go fmt and vet
 	go vet ./...
 
 deps:			## update vendor
-	dep ensure --update -v
+	dep ensure -v
 
 ###
 ### Test
 ###
 
-test: test-systemd		## run all tests
+test: test-unit test-cluster test-systemd		## run all tests
 
 clean-test: clean-test-systemd		## clean test artifacts
 	-find . -name ".test_*" -exec rm -rf {} \;

@@ -59,7 +59,7 @@ func TestKV_ConsulBackend(t *testing.T) {
 	})
 	t.Run(`start Consul`, func(t *testing.T) {
 		srv.Up()
-		srv.WaitAlive()
+		srv.WaitLeader()
 	})
 	t.Run(`ensure stored messages in first`, func(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {

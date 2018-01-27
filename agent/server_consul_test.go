@@ -44,7 +44,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 	consulServer := fixture.NewConsulServer(t, nil)
 	defer consulServer.Clean()
 	consulServer.Up()
-	consulServer.WaitAlive()
+	consulServer.WaitLeader()
 	consulServer.Pause()
 
 	cli, cliErr := api.NewClient(&api.Config{

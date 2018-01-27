@@ -44,7 +44,7 @@ func TestNewConsulBackend(t *testing.T) {
 	})
 	t.Run(`up`, func(t *testing.T) {
 		srv.Up()
-		srv.WaitAlive()
+		srv.WaitLeader()
 	})
 	t.Run(`kv 1`, func(t *testing.T) {
 		kv := cluster.NewConsulBackend(ctx, log, cluster.BackendConfig{
@@ -90,7 +90,7 @@ func TestConsulBackend_Submit(t *testing.T) {
 	srv := fixture.NewConsulServer(t, nil)
 	defer srv.Clean()
 	srv.Up()
-	srv.WaitAlive()
+	srv.WaitLeader()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -187,7 +187,7 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 	srv := fixture.NewConsulServer(t, nil)
 	defer srv.Clean()
 	srv.Up()
-	srv.WaitAlive()
+	srv.WaitLeader()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

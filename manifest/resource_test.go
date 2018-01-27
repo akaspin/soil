@@ -21,19 +21,6 @@ func TestResource(t *testing.T) {
 	t.Run("Id", func(t *testing.T) {
 		assert.Equal(t, "test.8080", res.GetID(podName))
 	})
-	t.Run("request constraint", func(t *testing.T) {
-		assert.Equal(t, manifest.Constraint{
-			"${resource.request.port.allow}": "true",
-		}, res.GetRequestConstraint())
-	})
-	t.Run("allocation constraint", func(t *testing.T) {
-		assert.Equal(t, manifest.Constraint{
-			"${resource.port.test.8080.allocated}": "true",
-		}, res.GetAllocationConstraint(podName))
-	})
-	t.Run("values key", func(t *testing.T) {
-		assert.Equal(t, "resource.port.test.8080.__values", res.GetValuesKey(podName))
-	})
 	t.Run("clone", func(t *testing.T) {
 		res1 := res.Clone()
 		assert.Equal(t, res, res1)

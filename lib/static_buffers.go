@@ -17,8 +17,7 @@ func (s *StaticBuffers) ReadFiles(paths ...string) (err error) {
 			err = multierror.Append(err, failure)
 		}
 	}
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return err.(*multierror.Error).ErrorOrNil()
 }
 
 // Get readers for each buffer
@@ -26,19 +25,19 @@ func (s StaticBuffers) GetReaders() (res []io.Reader) {
 	for _, buf := range s {
 		res = append(res, bytes.NewReader(buf))
 	}
-	return
+	return res
 }
 
 func (s *StaticBuffers) read(path string) (err error) {
 	f, err := os.Open(path)
 	if err != nil {
-		return
+		return err
 	}
 	defer f.Close()
 	data, err := ioutil.ReadAll(f)
 	if err != nil {
-		return
+		return err
 	}
 	*s = append(*s, data)
-	return
+	return nil
 }

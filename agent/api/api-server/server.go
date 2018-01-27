@@ -14,7 +14,7 @@ type Server struct {
 }
 
 func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) (s *Server) {
-	s = &Server{
+	return &Server{
 		Control: supervisor.NewControl(ctx),
 		log:     log.GetLog("api", "server"),
 		server: &http.Server{
@@ -22,14 +22,12 @@ func NewServer(ctx context.Context, log *logx.Log, addr string, router *Router) 
 			Handler: router,
 		},
 	}
-	return
 }
 
 func (s *Server) Close() (err error) {
 	s.server.Shutdown(s.Ctx())
-	err = s.Control.Close()
 	s.log.Info("closed")
-	return
+	return s.Control.Close()
 }
 
 func (s *Server) Open() (err error) {
@@ -40,7 +38,6 @@ func (s *Server) Open() (err error) {
 			s.Close()
 		}
 	}()
-	err = s.Control.Open()
 	s.log.Infof("listening on %s", s.server.Addr)
-	return
+	return s.Control.Open()
 }

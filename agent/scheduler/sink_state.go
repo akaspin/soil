@@ -22,7 +22,7 @@ func NewSinkState(namespaces []string, dirty map[string]string) (s *SinkState) {
 	for _, n := range namespaces {
 		s.registrations[n] = map[string]*manifest.Pod{}
 	}
-	return
+	return s
 }
 
 // SyncNamespace syncs registry in specific namespace and returns actual changes
@@ -83,15 +83,15 @@ func (s *SinkState) SyncNamespace(namespace string, pods manifest.PodSlice) (cha
 			delete(changes, name)
 		}
 	}
-	return
+	return changes
 }
 
 func (s *SinkState) get(name string) (res *manifest.Pod) {
 	var ok bool
 	for _, namespace := range s.namespaces {
 		if res, ok = s.registrations[namespace][name]; ok {
-			return
+			return res
 		}
 	}
-	return
+	return nil
 }

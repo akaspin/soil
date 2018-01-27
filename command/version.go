@@ -18,5 +18,5 @@ func (c *Version) Bind(cc *cobra.Command) {
 
 func (c *Version) Run(args ...string) (err error) {
 	fmt.Fprint(c.Stderr, proto.Version)
-	return
+	return nil
 }

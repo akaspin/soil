@@ -45,6 +45,5 @@ func ParseList(lists []*ast.ObjectList, key string, parser ListParser) (err erro
 			multierror.Append(err, fmt.Errorf(`%s with %s already defined`, key, id))
 		}
 	}
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return err.(*multierror.Error).ErrorOrNil()
 }

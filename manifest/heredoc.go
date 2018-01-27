@@ -9,8 +9,7 @@ func Heredoc(raw string) (res string) {
 	minIndentSize := int(^uint(0) >> 1) // Max value of type int
 	lines := strings.Split(raw, "\n")
 	if len(lines) == 1 {
-		res = lines[0]
-		return
+		return lines[0]
 	}
 	if strings.TrimSpace(string(raw[0])) == "" {
 		lines = lines[0:]
@@ -43,6 +42,5 @@ func Heredoc(raw string) (res string) {
 		}
 	}
 
-	res = strings.Join(lines, "\n")
-	return
+	return strings.Join(lines, "\n")
 }

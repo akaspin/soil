@@ -29,18 +29,17 @@ func (p *clusterNodesProcessor) Empty() interface{} {
 func (p *clusterNodesProcessor) Process(ctx context.Context, u *url.URL, v interface{}) (res interface{}, err error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	res = p.nodes
-	return
+	return p.nodes, nil
 }
 
 func (p *clusterNodesProcessor) ConsumeMessage(message bus.Message) (err error) {
 	var v proto.NodesInfo
 	if err = message.Payload().Unmarshal(&v); err != nil {
 		p.log.Error(err)
-		return
+		return err
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.nodes = v
-	return
+	return nil
 }

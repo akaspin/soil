@@ -19,15 +19,14 @@ type Header struct {
 
 func (h *Header) Mark() (res uint64) {
 	res, _ = hashstructure.Hash(h, nil)
-	return
+	return res
 }
 
 func (h *Header) MarshalSpec(w io.Writer) (err error) {
 	if _, err = w.Write([]byte(podSpecPrefix)); err != nil {
-		return
+		return err
 	}
-	err = json.NewEncoder(w).Encode(h)
-	return
+	return json.NewEncoder(w).Encode(h)
 }
 
 func (h *Header) UnmarshalSpec(src string, spec Spec, paths SystemPaths) (err error) {
@@ -36,19 +35,19 @@ func (h *Header) UnmarshalSpec(src string, spec Spec, paths SystemPaths) (err er
 			switch spec.Revision {
 			case SpecRevision:
 				if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, podSpecPrefix))).Decode(h); err != nil {
-					return
+					return err
 				}
 			default:
 				var jsonSrc string
 				if _, err = fmt.Sscanf(line, "### POD %s %s", &h.Name, &jsonSrc); err != nil {
-					return
+					return err
 				}
 				if err = json.Unmarshal([]byte(jsonSrc), &h); err != nil {
-					return
+					return err
 				}
 			}
-			return
+			return nil
 		}
 	}
-	return
+	return nil
 }

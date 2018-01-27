@@ -9,26 +9,26 @@ type Invalid struct {
 func NewInvalid(globalConfig GlobalConfig, config Config) (i *Invalid) {
 	i = &Invalid{}
 	i.base = newBase(globalConfig, config, i)
-	return
+	return i
 }
 
 func (i *Invalid) createFn(id string, config map[string]interface{}, values map[string]string) (res interface{}, err error) {
 	err = ErrInvalidProvider
 	i.send(id, err, nil)
-	return
+	return nil, err
 }
 
 func (i *Invalid) updateFn(id string, config map[string]interface{}) (res interface{}, err error) {
 	err = ErrInvalidProvider
 	i.send(id, err, nil)
-	return
+	return nil, err
 }
 
 func (i *Invalid) destroyFn(id string) (err error) {
 	i.send(id, nil, nil)
-	return
+	return nil
 }
 
 func (i *Invalid) shutdownFn() (err error) {
-	return
+	return nil
 }

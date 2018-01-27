@@ -58,7 +58,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, upstream, downstream bus.C
 			e.sandboxes[res.Request.Provider] = nil
 		}
 	}
-	return
+	return e
 }
 
 func (e *Evaluator) Open() (err error) {
@@ -99,25 +99,22 @@ func (e *Evaluator) Open() (err error) {
 		})
 	}
 
-	err = e.Control.Open()
-	return
+	return e.Control.Open()
 }
 
 // If Pod has any resources returns "${provider.<resource-provider>.allocated}":"true"
 // for each resource. Elsewhere returns "resource.allocate":"false".
 func (e *Evaluator) GetConstraint(pod *manifest.Pod) (c manifest.Constraint) {
 	if len(pod.Resources) == 0 {
-		c = manifest.Constraint{
+		return manifest.Constraint{
 			"resource.allocate": "false",
 		}
-		return
 	}
 	c1 := manifest.Constraint{}
 	for _, r := range pod.Resources {
 		c1[fmt.Sprintf("${provider.%s.allocated}", r.Provider)] = "true"
 	}
-	c = pod.Constraint.Merge(c1)
-	return
+	return pod.Constraint.Merge(c1)
 }
 
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
@@ -284,20 +281,19 @@ func (e *Evaluator) createSandbox(id string, alloc *allocation.Provider) (s *San
 			}
 		}
 	}
-	return
+	return s
 }
 
 func (e *Evaluator) jsonPipeFn(message bus.Message) (res bus.Message) {
 	e.log.Tracef(`got message %s`, message)
 	res = message
 	if message.Payload().IsEmpty() {
-		return
+		return res
 	}
 	var payload manifest.FlatMap
 	if err := message.Payload().Unmarshal(&payload); err != nil {
 		e.log.Errorf(`failed to unmarshal %s: %v`, message, err)
-		return
+		return res
 	}
-	res = bus.NewMessage(message.Topic(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON(allocation.ResourceValuesPostfix)))
-	return
+	return bus.NewMessage(message.Topic(), payload.Merge(payload.Filter(regexp.MustCompile(`provider`)).WithJSON(allocation.ResourceValuesPostfix)))
 }

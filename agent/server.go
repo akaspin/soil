@@ -177,12 +177,12 @@ func NewServer(ctx context.Context, log *logx.Log, options ServerOptions) (s *Se
 		s.sink,
 		api_server.NewServer(ctx, s.log, s.options.Address, s.api),
 	)
-	return
+	return s
 }
 
 func (s *Server) Open() (err error) {
 	if err = s.sv.Open(); err != nil {
-		return
+		return err
 	}
 
 	s.kv.Producer("nodes").Subscribe(s.ctx, pipe.NewSlice(s.log, pipe.NewTee(
@@ -195,7 +195,7 @@ func (s *Server) Open() (err error) {
 	)))
 
 	s.Configure()
-	return
+	return nil
 }
 
 func (s *Server) Close() error {

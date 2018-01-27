@@ -13,8 +13,7 @@ func TestEvaluatorState_Submit(t *testing.T) {
 	zeroEvaluatorState := func(t *testing.T) (s *provision.EvaluatorState) {
 		t.Helper()
 		recovered := makeAllocations(t, "testdata/evaluator_state_test_0.hcl")
-		s = provision.NewEvaluatorState(logx.GetLog("test"), recovered)
-		return
+		return provision.NewEvaluatorState(logx.GetLog("test"), recovered)
 	}
 
 	t.Run("1 submit pod-1", func(t *testing.T) {

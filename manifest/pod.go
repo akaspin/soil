@@ -29,7 +29,7 @@ func (r *PodSlice) Empty() ObjectParser {
 
 func (r *PodSlice) Append(v interface{}) (err error) {
 	*r = append(*r, v.(*Pod))
-	return
+	return nil
 }
 
 func (r *PodSlice) SetNamespace(namespace string) {
@@ -44,8 +44,7 @@ func (r *PodSlice) Unmarshal(namespace string, reader ...io.Reader) (err error) 
 	err = multierror.Append(err, parseErr)
 	err = multierror.Append(err, ParseList(roots, "pod", r))
 	r.SetNamespace(namespace)
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return err.(*multierror.Error).ErrorOrNil()
 }
 
 // Pod manifest
@@ -54,11 +53,11 @@ type Pod struct {
 	Name       string
 	Runtime    bool
 	Target     string
-	Constraint Constraint `json:",omitempty"`
-	Units      Units      `json:",omitempty" hcl:"-"`
-	Blobs      Blobs      `json:",omitempty" hcl:"-"`
-	Resources  Resources  `json:",omitempty" hcl:"-"`
-	Providers  Providers  `json:",omitempty" hcl:"-"`
+	Constraint Constraint    `json:",omitempty"`
+	Units      Units         `json:",omitempty" hcl:"-"`
+	Blobs      Blobs         `json:",omitempty" hcl:"-"`
+	Resources  Resources     `json:",omitempty" hcl:"-"`
+	Providers  ProviderSlice `json:",omitempty" hcl:"-"`
 }
 
 func (p Pod) GetID(parent ...string) string {
@@ -70,7 +69,7 @@ func (p *Pod) ParseAST(raw *ast.ObjectItem) (err error) {
 	list := raw.Val.(*ast.ObjectType).List
 
 	if err = multierror.Append(err, hcl.DecodeObject(p, raw)); err.(*multierror.Error).ErrorOrNil() != nil {
-		return
+		return err
 	}
 	p.Name = raw.Keys[0].Token.Value().(string)
 
@@ -79,28 +78,25 @@ func (p *Pod) ParseAST(raw *ast.ObjectItem) (err error) {
 	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "resource", &p.Resources))
 	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "provider", &p.Providers))
 
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return err.(*multierror.Error).ErrorOrNil()
 }
 
 // Get Pod checksum
 func (p *Pod) Mark() (res uint64) {
 	buf, _ := json.Marshal(p)
-	res = crc64.Checksum(buf, crc64.MakeTable(crc64.ECMA))
-	return
+	return crc64.Checksum(buf, crc64.MakeTable(crc64.ECMA))
 }
 
 // Compare
 func IsEqual(left, right *Pod) (ok bool) {
 	if left == nil {
 		if right != nil {
-			return
+			return false
 		}
-		ok = true
-		return
+		return true
 	}
 	if left.Mark() == right.Mark() {
-		ok = true
+		return true
 	}
-	return
+	return false
 }

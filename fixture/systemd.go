@@ -57,14 +57,14 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `, unitName)
 		if err = ioutil.WriteFile(filepath.Join(s.Dir, unitName), []byte(unitSrc), 0775); err != nil {
-			return
+			return err
 		}
 	}
 
 	// POD
 	headerJSON, err := json.Marshal(podHeaderJ)
 	if err != nil {
-		return
+		return err
 	}
 	podSrc := fmt.Sprintf(`### POD %s %s
 %s
@@ -77,28 +77,28 @@ ExecStart=/usr/bin/sleep inf
 WantedBy=multi-user.target
 `, name, string(headerJSON), strings.Join(unitS, "\n"), name, strings.Join(unitNames, " "))
 	if err = ioutil.WriteFile(filepath.Join(s.Dir, podUnitName), []byte(podSrc), 755); err != nil {
-		return
+		return err
 	}
 	conn, err := dbus.New()
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
 
 	if err = conn.Reload(); err != nil {
-		return
+		return err
 	}
 	if _, _, err = conn.EnableUnitFiles(append(unitNames, podUnitName), isRuntime, false); err != nil {
-		return
+		return err
 	}
 	for _, n := range append([]string{podUnitName}, unitNames...) {
 		ch := make(chan string)
 		if _, err = conn.StartUnit(n, "replace", ch); err != nil {
-			return
+			return err
 		}
 		<-ch
 	}
-	return
+	return nil
 }
 
 func (s *Systemd) DestroyPod(name ...string) (err error) {
@@ -108,12 +108,12 @@ func (s *Systemd) DestroyPod(name ...string) (err error) {
 	}
 	conn, err := dbus.New()
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
 	fs, err := conn.ListUnitFilesByPatterns([]string{}, unitNames)
 	if err != nil {
-		return
+		return err
 	}
 	for _, f := range fs {
 		body, readErr := ioutil.ReadFile(f.Path)
@@ -127,35 +127,33 @@ func (s *Systemd) DestroyPod(name ...string) (err error) {
 			}
 		}
 	}
-	return
+	return err
 }
 
 func (s *Systemd) Cleanup() (err error) {
-	err = s.DestroyPod("*")
-	return
+	return s.DestroyPod("*")
 }
 
 func (s *Systemd) UnitStatesFn(names []string, states map[string]string) (fn func() error) {
-	fn = func() (err error) {
+	return func() (err error) {
 		conn, err := dbus.New()
 		if err != nil {
-			return
+			return err
 		}
 		defer conn.Close()
 		l, err := conn.ListUnitsByPatterns([]string{}, names)
 		if err != nil {
-			return
+			return err
 		}
 		res := map[string]string{}
 		for _, u := range l {
 			res[u.Name] = u.ActiveState
 		}
 		if !reflect.DeepEqual(states, res) {
-			err = fmt.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
+			return fmt.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
 		}
-		return
+		return nil
 	}
-	return
 }
 
 func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[string]string) {
@@ -164,14 +162,14 @@ func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[stri
 	if err != nil {
 		t.Error(err)
 		t.Fail()
-		return
+		return //
 	}
 	defer conn.Close()
 	l, err := conn.ListUnitFilesByPatterns([]string{}, names)
 	if err != nil {
 		t.Error(err)
 		t.Fail()
-		return
+		return //
 	}
 	res := map[string]string{}
 	for _, u := range l {
@@ -179,7 +177,7 @@ func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[stri
 		if data, err = ioutil.ReadFile(u.Path); err != nil {
 			t.Error(err)
 			t.Fail()
-			return
+			return //
 		}
 		res[u.Path] = string(data)
 	}
@@ -195,14 +193,14 @@ func (s *Systemd) AssertUnitHashes(t *testing.T, names []string, states map[stri
 	if err != nil {
 		t.Error(err)
 		t.Fail()
-		return
+		return //
 	}
 	defer conn.Close()
 	l, err := conn.ListUnitFilesByPatterns([]string{}, names)
 	if err != nil {
 		t.Error(err)
 		t.Fail()
-		return
+		return //
 	}
 	res := map[string]uint64{}
 	for _, u := range l {
@@ -210,7 +208,7 @@ func (s *Systemd) AssertUnitHashes(t *testing.T, names []string, states map[stri
 		if data, err = ioutil.ReadFile(u.Path); err != nil {
 			t.Error(err)
 			t.Fail()
-			return
+			return //
 		}
 		res[u.Path], _ = hashstructure.Hash(data, nil)
 	}
@@ -224,7 +222,7 @@ func (s *Systemd) destroyPod(conn *dbus.Conn, path string, src []byte) (err erro
 	isRuntime := strings.HasPrefix(path, "/run")
 	unitSpec, err := unit.Deserialize(bytes.NewReader(src))
 	if err != nil {
-		return
+		return err
 	}
 	unitNames := []string{filepath.Base(path)}
 	for _, prop := range unitSpec {
@@ -240,12 +238,12 @@ func (s *Systemd) destroyPod(conn *dbus.Conn, path string, src []byte) (err erro
 
 	files1, err := conn.ListUnitFilesByPatterns([]string{}, unitNames)
 	if err != nil {
-		return
+		return err
 	}
 	for _, f := range files1 {
 		os.Remove(f.Path)
 	}
 	conn.Reload()
 
-	return
+	return nil
 }

@@ -35,7 +35,7 @@ func (r *jsonEndpoint) Process(ctx context.Context, u *url.URL, v interface{}) (
 		"url":    u.Path,
 		"params": u.Query(),
 	}
-	return
+	return res, nil
 }
 
 func TestNewServer(t *testing.T) {
@@ -77,23 +77,22 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), func() (err error) {
 			resp, err := http.Get(uri)
 			if err != nil {
-				return
+				return err
 			}
 			if resp.StatusCode != code {
-				err = fmt.Errorf(`bad status code: %d != %d`, code, resp.StatusCode)
-				return
+				return fmt.Errorf(`bad status code: %d != %d`, code, resp.StatusCode)
 			}
 			if expect == nil {
-				return
+				return nil
 			}
 			var res map[string]interface{}
 			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-				return
+				return err
 			}
 			if !reflect.DeepEqual(expect, res) {
-				err = fmt.Errorf("not equal (expected)%s != (actual)%s", expect, res)
+				return fmt.Errorf("not equal (expected)%s != (actual)%s", expect, res)
 			}
-			return
+			return nil
 		})
 	}
 

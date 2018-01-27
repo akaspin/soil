@@ -9,7 +9,7 @@ import (
 	"github.com/mitchellh/copystructure"
 )
 
-// Providers evaluator
+// ProviderSlice evaluator
 type Evaluator struct {
 	*supervisor.Control
 	log       *logx.Log
@@ -39,13 +39,12 @@ func NewEvaluator(ctx context.Context, log *logx.Log, estimator Manager, state a
 			e.dirty[pod.Name] = struct{}{}
 		}
 	}
-	return
+	return e
 }
 
 func (e *Evaluator) Open() (err error) {
 	go e.loop()
-	err = e.Control.Open()
-	return
+	return e.Control.Open()
 }
 
 // Returns base constraint from manifest. For pods without resources GetConstraint adds constraint "__provider.allocate = false".
@@ -63,7 +62,8 @@ func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
 	go func() {
 		var alloc allocation.Pod
 		if err := alloc.FromManifest(pod, env); err != nil {
-			return
+			e.log.Errorf(`create alloc %s: %v`, pod.Name, err)
+			return //
 		}
 		select {
 		case <-e.Control.Ctx().Done():
@@ -141,7 +141,7 @@ func (e *Evaluator) updateState(name string, providers allocation.ProviderSlice)
 	if providers == nil {
 		delete(e.state, name)
 		e.log.Tracef(`pod %s removed from state`, name)
-		return
+		return //
 	}
 	e.state[name] = providers
 	e.log.Tracef(`pod %s updated in state`, name)

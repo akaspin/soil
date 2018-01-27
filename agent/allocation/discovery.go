@@ -7,23 +7,22 @@ const DefaultPodPrefix = "pod-*"
 func dbusDiscoveryFunc(prefix ...string) (res []string, err error) {
 	conn, err := dbus.New()
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer conn.Close()
 
 	files, err := conn.ListUnitFilesByPatterns([]string{}, prefix)
 	if err != nil {
-		return
+		return nil, err
 	}
 	for _, f := range files {
 		res = append(res, f.Path)
 	}
-	return
+	return res, nil
 }
 
 func DefaultDbusDiscoveryFunc() (res []string, err error) {
-	res, err = dbusDiscoveryFunc(DefaultPodPrefix)
-	return
+	return dbusDiscoveryFunc(DefaultPodPrefix)
 }
 
 func GetZeroDiscoveryFunc(paths ...string) func() ([]string, error) {

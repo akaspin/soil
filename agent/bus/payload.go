@@ -25,7 +25,7 @@ func NewPayload(v interface{}) (p Payload) {
 		}
 		p.data, _ = json.Marshal(v)
 	}
-	return
+	return p
 }
 
 func (p Payload) IsEmpty() bool {
@@ -44,6 +44,5 @@ func (p Payload) Unmarshal(v interface{}) error {
 }
 
 func (p Payload) String() (res string) {
-	res = fmt.Sprintf("%s(%d)", string(p.data), p.Hash())
-	return
+	return fmt.Sprintf("%s(%d)", string(p.data), p.Hash())
 }

@@ -135,21 +135,20 @@ func TestRegistryPodsGetProcessor_Process(t *testing.T) {
 		fixture.WaitNoError10(t, func() (err error) {
 			var resp *http.Response
 			if resp, err = http.Get(fmt.Sprintf("%s/v1/registry", srv.URL)); err != nil {
-				return
+				return err
 			}
 			if resp == nil {
-				err = fmt.Errorf(`no response`)
-				return
+				return fmt.Errorf(`no response`)
 			}
 			var pods manifest.PodSlice
 			if err = json.NewDecoder(resp.Body).Decode(&pods); err != nil {
-				return
+				return err
 			}
 			defer resp.Body.Close()
 			if !reflect.DeepEqual(v, pods) {
-				err = fmt.Errorf(`bad response: %v`, pods)
+				return fmt.Errorf(`bad response: %v`, pods)
 			}
-			return
+			return nil
 		})
 	})
 }

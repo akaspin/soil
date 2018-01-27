@@ -21,21 +21,19 @@ type Config struct {
 }
 
 func DefaultConfig() (c Config) {
-	c = Config{
+	return Config{
 		BackendURL:    "local://localhost/soil",
 		Advertise:     "localhost:7654",
 		NodeID:        "",
 		TTL:           time.Minute * 3,
 		RetryInterval: time.Second * 30,
 	}
-	return
 }
 
 func (c Config) IsEqual(config Config) (res bool) {
 	left, _ := hashstructure.Hash(c, nil)
 	right, _ := hashstructure.Hash(config, nil)
-	res = left == right
-	return
+	return left == right
 }
 
 func (c *Config) Unmarshal(readers ...io.Reader) (err error) {
@@ -46,27 +44,25 @@ func (c *Config) Unmarshal(readers ...io.Reader) (err error) {
 		}
 	}
 	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+		return fmt.Errorf("%v", failures)
 	}
-	return
+	return nil
 }
 
 func (c *Config) unmarshal(r io.Reader) (err error) {
 	var buf bytes.Buffer
 	if _, err = io.Copy(&buf, r); err != nil {
-		return
+		return err
 	}
 	root, err := hcl.Parse(buf.String())
 	if err != nil {
-		err = fmt.Errorf("error parsing: %s", err)
-		return
+		return fmt.Errorf("error parsing: %s", err)
 	}
 	buf.Reset()
 
 	list, ok := root.Node.(*ast.ObjectList)
 	if !ok {
-		err = fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object"))
-		return
+		return fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object"))
 	}
 	matches := list.Filter("cluster")
 
@@ -96,7 +92,7 @@ func (c *Config) unmarshal(r io.Reader) (err error) {
 		}
 	}
 	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+		return fmt.Errorf("%v", failures)
 	}
-	return
+	return nil
 }

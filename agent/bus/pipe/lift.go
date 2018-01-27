@@ -16,21 +16,18 @@ type Lift struct {
 }
 
 func NewLift(name string, consumer bus.Consumer) (p *Lift) {
-	p = &Lift{
+	return &Lift{
 		name:     name,
 		consumer: consumer,
 		catalog:  map[string]bus.Payload{},
 	}
-	return
 }
 
 func (p *Lift) ConsumeMessage(message bus.Message) (err error) {
 	if message.Topic() == "" {
-		err = p.consumeReset(message)
-		return
+		return p.consumeReset(message)
 	}
-	err = p.consumeOne(message)
-	return
+	return p.consumeOne(message)
 }
 
 func (p *Lift) consumeReset(message bus.Message) (err error) {
@@ -38,15 +35,14 @@ func (p *Lift) consumeReset(message bus.Message) (err error) {
 	defer p.mu.Unlock()
 	var ingest map[string]map[string]string
 	if err = message.Payload().Unmarshal(&ingest); err != nil {
-		return
+		return err
 	}
 	catalog := map[string]bus.Payload{}
 	for id, val := range ingest {
 		catalog[id] = bus.NewPayload(val)
 	}
 	p.catalog = catalog
-	err = p.consumer.ConsumeMessage(p.makeMessage())
-	return
+	return p.consumer.ConsumeMessage(p.makeMessage())
 }
 
 func (p *Lift) consumeOne(message bus.Message) (err error) {
@@ -56,19 +52,17 @@ func (p *Lift) consumeOne(message bus.Message) (err error) {
 	if current, exists := p.catalog[topic]; exists {
 		if message.Payload().IsEmpty() {
 			delete(p.catalog, topic)
-			err = p.consumer.ConsumeMessage(p.makeMessage())
-			return
+			return p.consumer.ConsumeMessage(p.makeMessage())
 		}
 		if current.Hash() == message.Payload().Hash() {
-			return
+			return nil
 		}
 	}
 	if message.Payload().IsEmpty() {
-		return
+		return nil
 	}
 	p.catalog[topic] = message.Payload()
-	err = p.consumer.ConsumeMessage(p.makeMessage())
-	return
+	return p.consumer.ConsumeMessage(p.makeMessage())
 }
 
 func (p *Lift) makeMessage() (res bus.Message) {
@@ -80,6 +74,5 @@ func (p *Lift) makeMessage() (res bus.Message) {
 			fields[root+"."+k] = v
 		}
 	}
-	res = bus.NewMessage(p.name, fields)
-	return
+	return bus.NewMessage(p.name, fields)
 }

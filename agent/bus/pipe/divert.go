@@ -20,11 +20,10 @@ type Divert struct {
 
 // Create new divert pipe with given consumer and divert message
 func NewDivert(consumer bus.Consumer, divert bus.Message) (d *Divert) {
-	d = &Divert{
+	return &Divert{
 		consumer: consumer,
 		inDrain:  divert,
 	}
-	return
 }
 
 // Consume message from upstream and resend it to downstream then not in divert mode. Otherwise send predefined divert message.
@@ -33,9 +32,9 @@ func (d *Divert) ConsumeMessage(message bus.Message) (err error) {
 	defer d.mu.Unlock()
 	d.last = message
 	if !d.isDiverting {
-		d.consumer.ConsumeMessage(d.last)
+		return d.consumer.ConsumeMessage(d.last)
 	}
-	return
+	return nil
 }
 
 // Divert sets Divert pipe state
@@ -43,7 +42,7 @@ func (d *Divert) Divert(on bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	if d.isDiverting == on {
-		return
+		return //
 	}
 	d.isDiverting = on
 	if d.isDiverting {

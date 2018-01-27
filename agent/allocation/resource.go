@@ -3,8 +3,8 @@ package allocation
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/akaspin/errslice"
 	"github.com/akaspin/soil/manifest"
-	"github.com/hashicorp/go-multierror"
 	"github.com/mitchellh/copystructure"
 	"io"
 	"strings"
@@ -27,16 +27,15 @@ func (s *ResourceSlice) GetVersionPrefix(v string) (p string) {
 }
 
 func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err error) {
-	err = &multierror.Error{}
 	for _, decl := range m.Resources {
 		v, _ := copystructure.Copy(decl)
 		var resource Resource
 		if err1 := (&resource).FromManifest(m.Name, v.(manifest.Resource), env); err1 != nil {
-			err = multierror.Append(err, err1)
+			err = errslice.Append(err, err1)
 		}
 		*r = append(*r, &resource)
 	}
-	return err.(*multierror.Error).ErrorOrNil()
+	return err
 }
 
 func (r *ResourceSlice) AppendItem(v Asset) {

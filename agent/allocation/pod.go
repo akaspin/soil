@@ -3,6 +3,7 @@ package allocation
 import (
 	"bytes"
 	"fmt"
+	"github.com/akaspin/errslice"
 	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
 	"strings"
@@ -27,7 +28,6 @@ type PodSlice []*Pod
 
 func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
 	paths, err := discoveryFunc()
-	var failures []error
 	for _, path := range paths {
 		pod := &Pod{
 			UnitFile: UnitFile{
@@ -35,15 +35,13 @@ func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() 
 			},
 		}
 		if parseErr := pod.FromFilesystem(path); parseErr != nil {
-			failures = append(failures, parseErr)
+			err = errslice.Append(err, parseErr)
 			continue
 		}
 		*s = append(*s, pod)
 	}
-	if len(failures) > 0 {
-		return fmt.Errorf("%v", failures)
-	}
-	return nil
+
+	return err
 }
 
 // Pod represents pod allocated on agent

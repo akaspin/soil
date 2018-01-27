@@ -2,7 +2,7 @@ package manifest
 
 import (
 	"fmt"
-	"github.com/hashicorp/go-multierror"
+	"github.com/akaspin/errslice"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"sort"
 )
@@ -19,13 +19,12 @@ type ObjectParser interface {
 
 func ParseList(lists []*ast.ObjectList, key string, parser ListParser) (err error) {
 	var res1 []ObjectParser
-	err = &multierror.Error{}
 
 	for _, list := range lists {
 		for _, obj := range list.Filter(key).Items {
 			objParser := parser.Empty()
 			if parseErr := objParser.ParseAST(obj); parseErr != nil {
-				multierror.Append(err, parseErr)
+				err = errslice.Append(err, parseErr)
 				continue
 			}
 			res1 = append(res1, objParser)
@@ -39,11 +38,11 @@ func ParseList(lists []*ast.ObjectList, key string, parser ListParser) (err erro
 		if id := obj.GetID(); lastId != id {
 			lastId = id
 			if appendErr := parser.Append(obj); appendErr != nil {
-				multierror.Append(err, appendErr)
+				err = errslice.Append(err, appendErr)
 			}
 		} else {
-			multierror.Append(err, fmt.Errorf(`%s with %s already defined`, key, id))
+			err = errslice.Append(err, fmt.Errorf(`%s with %s already defined`, key, id))
 		}
 	}
-	return err.(*multierror.Error).ErrorOrNil()
+	return err
 }

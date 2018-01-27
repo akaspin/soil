@@ -2,7 +2,7 @@ package lib
 
 import (
 	"bytes"
-	"github.com/hashicorp/go-multierror"
+	"github.com/akaspin/errslice"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,13 +11,12 @@ import (
 type StaticBuffers [][]byte
 
 func (s *StaticBuffers) ReadFiles(paths ...string) (err error) {
-	err = &multierror.Error{}
 	for _, path := range paths {
 		if failure := s.read(path); failure != nil {
-			err = multierror.Append(err, failure)
+			err = errslice.Append(err, failure)
 		}
 	}
-	return err.(*multierror.Error).ErrorOrNil()
+	return err
 }
 
 // Get readers for each buffer

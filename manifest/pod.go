@@ -2,8 +2,8 @@ package manifest
 
 import (
 	"encoding/json"
+	"github.com/akaspin/errslice"
 	"github.com/akaspin/soil/lib"
-	"github.com/hashicorp/go-multierror"
 	"github.com/hashicorp/hcl"
 	"github.com/hashicorp/hcl/hcl/ast"
 	"hash/crc64"
@@ -39,12 +39,11 @@ func (r *PodSlice) SetNamespace(namespace string) {
 }
 
 func (r *PodSlice) Unmarshal(namespace string, reader ...io.Reader) (err error) {
-	err = &multierror.Error{}
 	roots, parseErr := lib.ParseHCL(reader...)
-	err = multierror.Append(err, parseErr)
-	err = multierror.Append(err, ParseList(roots, "pod", r))
+	err = errslice.Append(err, parseErr)
+	err = errslice.Append(err, ParseList(roots, "pod", r))
 	r.SetNamespace(namespace)
-	return err.(*multierror.Error).ErrorOrNil()
+	return err
 }
 
 // Pod manifest
@@ -65,20 +64,19 @@ func (p Pod) GetID(parent ...string) string {
 }
 
 func (p *Pod) ParseAST(raw *ast.ObjectItem) (err error) {
-	err = &multierror.Error{}
 	list := raw.Val.(*ast.ObjectType).List
 
-	if err = multierror.Append(err, hcl.DecodeObject(p, raw)); err.(*multierror.Error).ErrorOrNil() != nil {
+	if err = errslice.Append(err, hcl.DecodeObject(p, raw)); err != nil {
 		return err
 	}
 	p.Name = raw.Keys[0].Token.Value().(string)
 
-	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "unit", &p.Units))
-	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "blob", &p.Blobs))
-	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "resource", &p.Resources))
-	err = multierror.Append(err, ParseList([]*ast.ObjectList{list}, "provider", &p.Providers))
+	err = errslice.Append(err, ParseList([]*ast.ObjectList{list}, "unit", &p.Units))
+	err = errslice.Append(err, ParseList([]*ast.ObjectList{list}, "blob", &p.Blobs))
+	err = errslice.Append(err, ParseList([]*ast.ObjectList{list}, "resource", &p.Resources))
+	err = errslice.Append(err, ParseList([]*ast.ObjectList{list}, "provider", &p.Providers))
 
-	return err.(*multierror.Error).ErrorOrNil()
+	return err
 }
 
 // Get Pod checksum

@@ -16,13 +16,12 @@ type Config struct {
 }
 
 func DefaultConfig() (c *Config) {
-	c = &Config{
+	return &Config{
 		Meta: map[string]string{},
 		System: map[string]string{
 			"pod_exec": "ExecStart=/usr/bin/sleep inf",
 		},
 	}
-	return
 }
 
 func (c *Config) Unmarshal(readers ...io.Reader) (err error) {
@@ -33,36 +32,36 @@ func (c *Config) Unmarshal(readers ...io.Reader) (err error) {
 		}
 	}
 	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+		return fmt.Errorf("%v", failures)
 	}
-	return
+	return nil
 }
 
 func (c *Config) unmarshal(r io.Reader) (err error) {
 	var buf bytes.Buffer
 	if _, err = io.Copy(&buf, r); err != nil {
-		return
+		return err
 	}
 
 	root, err := hcl.Parse(buf.String())
 	if err != nil {
-		return
+		return err
 	}
 	buf.Reset()
 
 	list, ok := root.Node.(*ast.ObjectList)
 	if !ok {
 		err = fmt.Errorf("error parsing: %s", fmt.Errorf("error parsing: root should be an object"))
-		return
+		return err
 	}
 	var failures []error
 	if err = hcl.DecodeObject(c, list); err != nil {
 		failures = append(failures, err)
 	}
 	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+		return fmt.Errorf("%v", failures)
 	}
-	return
+	return nil
 }
 
 func (c *Config) Read(path ...string) (err error) {
@@ -71,18 +70,17 @@ func (c *Config) Read(path ...string) (err error) {
 		readErr := func(configPath string) (err error) {
 			f, err := os.Open(configPath)
 			if err != nil {
-				return
+				return err
 			}
 			defer f.Close()
-			err = c.unmarshal(f)
-			return
+			return c.unmarshal(f)
 		}(p)
 		if readErr != nil {
 			failures = append(failures, readErr)
 		}
 	}
 	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
+		return fmt.Errorf("%v", failures)
 	}
-	return
+	return nil
 }

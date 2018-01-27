@@ -18,17 +18,15 @@ const (
 type UnitSlice []*Unit
 
 func (s *UnitSlice) GetEmpty(paths SystemPaths) (empty Asset) {
-	empty = &Unit{
+	return &Unit{
 		UnitFile: UnitFile{
 			SystemPaths: paths,
 		},
 	}
-	return
 }
 
 func (s *UnitSlice) GetVersionPrefix(v string) (p string) {
-	p = unitSpecPrefix
-	return
+	return unitSpecPrefix
 }
 
 func (s *UnitSlice) AppendItem(v Asset) {
@@ -42,10 +40,9 @@ type Unit struct {
 
 func (u *Unit) MarshalSpec(w io.Writer) (err error) {
 	if _, err = w.Write([]byte(unitSpecPrefix)); err != nil {
-		return
+		return err
 	}
-	err = json.NewEncoder(w).Encode(u)
-	return
+	return json.NewEncoder(w).Encode(u)
 }
 
 // UnmarshalSpec parses one line from manifest
@@ -55,24 +52,24 @@ func (u *Unit) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err err
 	case "":
 		// v1
 		if _, err = fmt.Sscanf(line, "### UNIT %s ", &u.UnitFile.Path); err != nil {
-			return
+			return err
 		}
 		line = strings.TrimPrefix(line, fmt.Sprintf("%s%s ", unitSpecPrefix, u.UnitFile.Path))
 		if err = json.NewDecoder(strings.NewReader(line)).Decode(u); err != nil {
-			return
+			return err
 		}
 	case SpecRevision:
 		// v2
 		if err = json.NewDecoder(strings.NewReader(strings.TrimPrefix(line, unitSpecPrefix))).Decode(u); err != nil {
-			return
+			return err
 		}
 	}
 	src, err := ioutil.ReadFile(u.UnitFile.Path)
 	if err != nil {
-		return
+		return err
 	}
 	u.UnitFile.Source = string(src)
-	return
+	return nil
 }
 
 type UnitFile struct {
@@ -86,33 +83,29 @@ func NewUnitFile(unitName string, paths SystemPaths, runtime bool) (f UnitFile) 
 	if runtime {
 		basePath = paths.Runtime
 	}
-	f = UnitFile{
+	return UnitFile{
 		SystemPaths: paths,
 		Path:        filepath.Join(basePath, unitName),
 	}
-	return
 }
 
 func (f *UnitFile) Read() (err error) {
 	src, err := ioutil.ReadFile(f.Path)
 	if err != nil {
-		return
+		return err
 	}
 	f.Source = string(src)
-	return
+	return nil
 }
 
 func (f *UnitFile) Write() (err error) {
-	err = ioutil.WriteFile(f.Path, []byte(f.Source), 755)
-	return
+	return ioutil.WriteFile(f.Path, []byte(f.Source), 755)
 }
 
 func (f *UnitFile) UnitName() (res string) {
-	res = filepath.Base(f.Path)
-	return
+	return filepath.Base(f.Path)
 }
 
 func (f *UnitFile) IsRuntime() (res bool) {
-	res = filepath.Dir(f.Path) == f.SystemPaths.Runtime
-	return
+	return filepath.Dir(f.Path) == f.SystemPaths.Runtime
 }

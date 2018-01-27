@@ -21,7 +21,7 @@ func (u *Units) Empty() ObjectParser {
 func (u *Units) Append(v interface{}) (err error) {
 	v1 := v.(*Unit)
 	*u = append(*u, *v1)
-	return
+	return nil
 }
 
 type Unit struct {
@@ -38,7 +38,7 @@ func (u *Unit) ParseAST(raw *ast.ObjectItem) (err error) {
 	u.Name = raw.Keys[0].Token.Value().(string)
 	err = hcl.DecodeObject(u, raw)
 	u.Source = Heredoc(u.Source)
-	return
+	return err
 }
 
 // Unit transition

@@ -29,9 +29,5 @@ func (c *Nodes) Bind(cc *cobra.Command) {
 func (c *Nodes) Run(args ...string) (err error) {
 	p := fmt.Sprintf("%s/v1/status/nodes", c.ClientURLOptions.URL)
 	_, err = http.NewRequest(http.MethodGet, p, nil)
-	if err != nil {
-		return
-	}
-
-	return
+	return err
 }

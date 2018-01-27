@@ -34,5 +34,5 @@ func makeAllocations(t *testing.T, path string) (recovered []*allocation.Pod) {
 		}
 		recovered = append(recovered, alloc)
 	}
-	return
+	return recovered
 }

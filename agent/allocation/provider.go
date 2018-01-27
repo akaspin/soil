@@ -15,13 +15,11 @@ const providerSpecPrefix = "### PROVIDER "
 type ProviderSlice []*Provider
 
 func (s *ProviderSlice) GetEmpty(paths SystemPaths) (empty Asset) {
-	empty = &Provider{}
-	return
+	return &Provider{}
 }
 
 func (s *ProviderSlice) GetVersionPrefix(v string) (p string) {
-	p = providerSpecPrefix
-	return
+	return providerSpecPrefix
 }
 
 func (s *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.FlatMap) (err error) {
@@ -31,7 +29,7 @@ func (s *ProviderSlice) FromManifest(pod manifest.Pod, env manifest.FlatMap) (er
 		provider := Provider(v.(manifest.Provider))
 		*s = append(*s, &provider)
 	}
-	return
+	return nil
 }
 
 func (s *ProviderSlice) AppendItem(v Asset) {
@@ -46,20 +44,17 @@ func (p *Provider) GetID(parent ...string) string {
 
 // Restore state from header line
 func (p *Provider) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
-	err = json.Unmarshal([]byte(strings.TrimPrefix(line, providerSpecPrefix)), p)
-	return
+	return json.Unmarshal([]byte(strings.TrimPrefix(line, providerSpecPrefix)), p)
 }
 
 func (p *Provider) MarshalSpec(w io.Writer) (err error) {
 	if _, err = fmt.Fprintf(w, "%s", providerSpecPrefix); err != nil {
-		return
+		return err
 	}
-	err = json.NewEncoder(w).Encode(p)
-	return
+	return json.NewEncoder(w).Encode(p)
 }
 
 func (p *Provider) Clone() (res *Provider) {
 	r1, _ := copystructure.Copy(p)
-	res = r1.(*Provider)
-	return
+	return r1.(*Provider)
 }

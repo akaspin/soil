@@ -33,7 +33,7 @@ func NewEvaluator(ctx context.Context, log *logx.Log, config EvaluatorConfig) (e
 		config:  config,
 	}
 	e.state = NewEvaluatorState(e.log, config.Recovery)
-	return
+	return e
 }
 
 func (e *Evaluator) Open() (err error) {
@@ -45,8 +45,7 @@ func (e *Evaluator) Open() (err error) {
 		}
 	}
 	e.config.StatusConsumer.ConsumeMessage(bus.NewMessage("", resetData))
-	err = e.Control.Open()
-	return
+	return e.Control.Open()
 }
 
 // Returns all base constraints including resources
@@ -59,11 +58,10 @@ func (e *Evaluator) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 		}
 		res = res.Merge(c1)
 	}
-	return
+	return res
 }
 
 func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
-
 	alloc := &allocation.Pod{
 		UnitFile: allocation.UnitFile{
 			SystemPaths: e.config.SystemPaths,
@@ -71,7 +69,7 @@ func (e *Evaluator) Allocate(pod *manifest.Pod, env map[string]string) {
 	}
 	if err := alloc.FromManifest(pod, env); err != nil {
 		e.log.Error(err)
-		return
+		return //
 	}
 	e.submitAllocation(pod.Name, alloc)
 }
@@ -99,7 +97,7 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 	conn, err := dbus.New()
 	if err != nil {
 		e.log.Error(err)
-		return
+		return //
 	}
 	defer conn.Close()
 
@@ -142,12 +140,12 @@ func (e *Evaluator) executeEvaluation(evaluation *Evaluation) {
 
 	next := e.state.Commit(evaluation.Name())
 	e.fanOut(next)
-	return
+	return //
 }
 
 func (e *Evaluator) executePhase(phase []Instruction, conn *dbus.Conn) (failures []error) {
 	if len(phase) == 0 {
-		return
+		return nil
 	}
 	e.log.Tracef("begin phase %v", phase)
 	ch := make(chan error, len(phase))
@@ -175,5 +173,5 @@ func (e *Evaluator) executePhase(phase []Instruction, conn *dbus.Conn) (failures
 	wg.Wait()
 	e.log.Debugf("finish phase %v", phase)
 
-	return
+	return failures
 }

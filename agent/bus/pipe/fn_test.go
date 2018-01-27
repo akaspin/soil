@@ -22,8 +22,7 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 		err := message.Payload().Unmarshal(&chunk)
 		assert.NoError(t, err)
 		delete(chunk, "a")
-		res = bus.NewMessage(message.Topic(), chunk)
-		return
+		return bus.NewMessage(message.Topic(), chunk)
 	}, c1)
 
 	mPipe.ConsumeMessage(bus.NewMessage("test", map[string]string{

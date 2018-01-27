@@ -8,8 +8,7 @@ import (
 
 func TestName(t *testing.T) (res string) {
 	t.Helper()
-	res = strings.ToLower(strings.Join(strings.Split(t.Name(), "/"), "__"))
-	return
+	return strings.ToLower(strings.Join(strings.Split(t.Name(), "/"), "__"))
 }
 
 // Poll while provided fn return no error
@@ -42,9 +41,8 @@ type WaitConfig struct {
 }
 
 func DefaultWaitConfig() (c WaitConfig) {
-	c = WaitConfig{
+	return WaitConfig{
 		Retry:   time.Millisecond * 100,
 		Retries: 100,
 	}
-	return
 }

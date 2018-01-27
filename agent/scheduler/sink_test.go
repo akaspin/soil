@@ -40,7 +40,7 @@ func (e *dummyEv) GetConstraint(pod *manifest.Pod) (res manifest.Constraint) {
 		}
 		res = res.Merge(c1)
 	}
-	return
+	return res
 }
 
 func (e *dummyEv) Allocate(pod *manifest.Pod, env map[string]string) {
@@ -71,9 +71,9 @@ func (e *dummyEv) assertFn(recs map[string][]dummyEvRecord) func() (err error) {
 		e.mu.Lock()
 		defer e.mu.Unlock()
 		if !reflect.DeepEqual(recs, e.records) {
-			err = fmt.Errorf("%v != %v", recs, e.records)
+			return fmt.Errorf("%v != %v", recs, e.records)
 		}
-		return
+		return nil
 	}
 }
 

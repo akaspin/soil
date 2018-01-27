@@ -17,11 +17,10 @@ type Error struct {
 }
 
 func NewError(code int, reason string) (e *Error) {
-	e = &Error{
+	return &Error{
 		Code:   code,
 		Reason: reason,
 	}
-	return
 }
 
 func (e *Error) Error() string {
@@ -30,18 +29,16 @@ func (e *Error) Error() string {
 
 func UnwrapError(in error) (out *Error) {
 	if in == nil {
-		return
+		return nil
 	}
 	maybe, ok := in.(*Error)
 	if ok {
-		out = maybe
-		return
+		return maybe
 	}
-	out = NewError(http.StatusInternalServerError, in.Error())
-	return
+	return NewError(http.StatusInternalServerError, in.Error())
 }
 
-func sendCode(log *logx.Log, w http.ResponseWriter, req *http.Request, handlerErr error) (err error) {
+func sendCode(log *logx.Log, w http.ResponseWriter, req *http.Request, handlerErr error) {
 	parsed := NewError(http.StatusInternalServerError, "unknown")
 	if unwrapped := UnwrapError(handlerErr); unwrapped != nil {
 		parsed = unwrapped
@@ -55,5 +52,4 @@ func sendCode(log *logx.Log, w http.ResponseWriter, req *http.Request, handlerEr
 	default:
 		http.Error(w, parsed.Reason, parsed.Code)
 	}
-	return
 }

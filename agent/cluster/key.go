@@ -6,11 +6,9 @@ import (
 )
 
 func NormalizeKey(v ...string) (res string) {
-	res = strings.Trim(path.Clean(path.Join(v...)), "/.")
-	return
+	return strings.Trim(path.Clean(path.Join(v...)), "/.")
 }
 
 func TrimKeyPrefix(prefix string, key string) (res string) {
-	res = NormalizeKey(strings.TrimPrefix(key, prefix))
-	return
+	return NormalizeKey(strings.TrimPrefix(key, prefix))
 }

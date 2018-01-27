@@ -34,7 +34,7 @@ func newWatchGroup(ctx context.Context, log *logx.Log, key string) (g *watchGrou
 	}
 	g.ctx, g.cancel = context.WithCancel(ctx)
 	go g.loop()
-	return
+	return g
 }
 
 func (g *watchGroup) register(req watcher) {

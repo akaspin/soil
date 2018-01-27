@@ -61,11 +61,10 @@ func (e *dummyArbiterEntity) checkErrorsFn(errs ...error) func() (err error) {
 				continue
 			}
 			if fmt.Sprint(err1) != fmt.Sprint(errs[i]) {
-				err = fmt.Errorf("not equal [%d] (expected)%v != (actual)%v", i, errs[i], err)
-				return
+				return fmt.Errorf("not equal [%d] (expected)%v != (actual)%v", i, errs[i], err)
 			}
 		}
-		return
+		return nil
 	}
 }
 
@@ -78,7 +77,7 @@ func (e *dummyArbiterEntity) assertErrors(t *testing.T, errors []error) {
 		if fmt.Sprint(err) != fmt.Sprint(errors[i]) {
 			t.Errorf("not equal [%d] (expected)%v != (actual)%v", i, errors[i], err)
 			t.Fail()
-			return
+			return //
 		}
 	}
 }
@@ -230,12 +229,12 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 					lastMsg := entity1.messages[len(entity1.messages)-1]
 					var chunk map[string]string
 					if err = lastMsg.Payload().Unmarshal(&chunk); err != nil {
-						return
+						return err
 					}
 					if !reflect.DeepEqual(expect, chunk) {
-						err = fmt.Errorf(`%v != %v`, expect, chunk)
+						return fmt.Errorf(`%v != %v`, expect, chunk)
 					}
-					return
+					return nil
 				})
 			})
 

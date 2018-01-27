@@ -43,5 +43,5 @@ func GetEstimator(globalConfig estimator.GlobalConfig, config estimator.Config) 
 	default:
 		e = estimator.NewInvalid(globalConfig, config)
 	}
-	return
+	return e, nil
 }

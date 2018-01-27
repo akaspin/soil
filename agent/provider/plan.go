@@ -31,5 +31,5 @@ func Plan(left, right allocation.ProviderSlice) (create, update allocation.Provi
 			destroy = append(destroy, prov.Name)
 		}
 	}
-	return
+	return create, update, destroy
 }

@@ -3,8 +3,8 @@ package allocation
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/akaspin/errslice"
 	"github.com/akaspin/soil/manifest"
-	"github.com/hashicorp/go-multierror"
 	"github.com/mitchellh/copystructure"
 	"io"
 	"strings"
@@ -19,27 +19,23 @@ const (
 type ResourceSlice []*Resource
 
 func (s *ResourceSlice) GetEmpty(paths SystemPaths) (empty Asset) {
-	empty = &Resource{}
-	return
+	return &Resource{}
 }
 
 func (s *ResourceSlice) GetVersionPrefix(v string) (p string) {
-	p = resourceSpecPrefix
-	return
+	return resourceSpecPrefix
 }
 
 func (r *ResourceSlice) FromManifest(m manifest.Pod, env manifest.FlatMap) (err error) {
-	err = &multierror.Error{}
 	for _, decl := range m.Resources {
 		v, _ := copystructure.Copy(decl)
 		var resource Resource
 		if err1 := (&resource).FromManifest(m.Name, v.(manifest.Resource), env); err1 != nil {
-			err = multierror.Append(err, err1)
+			err = errslice.Append(err, err1)
 		}
 		*r = append(*r, &resource)
 	}
-	err = err.(*multierror.Error).ErrorOrNil()
-	return
+	return err
 }
 
 func (r *ResourceSlice) AppendItem(v Asset) {
@@ -65,34 +61,29 @@ func (r *Resource) FromManifest(podName string, req manifest.Resource, env manif
 
 	// try to recover values from env
 	if values, ok := env["resource."+podName+"."+r.ValuesKey()]; ok {
-		err = json.Unmarshal([]byte(values), &r.Values)
+		return json.Unmarshal([]byte(values), &r.Values)
 	}
-	return
+	return nil
 }
 
 // Returns values bag key without provider
 func (r *Resource) ValuesKey() (res string) {
-	res = r.Request.Name + "." + ResourceValuesPostfix
-	return
+	return r.Request.Name + "." + ResourceValuesPostfix
 }
 
 // Marshal resource line
 func (r *Resource) MarshalSpec(w io.Writer) (err error) {
 	if _, err = fmt.Fprint(w, resourceSpecPrefix); err != nil {
-		return
+		return err
 	}
-	err = json.NewEncoder(w).Encode(r)
-	return
+	return json.NewEncoder(w).Encode(r)
 }
 
 func (r *Resource) UnmarshalSpec(line string, spec Spec, paths SystemPaths) (err error) {
-	// old resources are skipped
-	err = json.Unmarshal([]byte(strings.TrimPrefix(line, resourceSpecPrefix)), r)
-	return
+	return json.Unmarshal([]byte(strings.TrimPrefix(line, resourceSpecPrefix)), r)
 }
 
 func (r *Resource) Clone() (res *Resource) {
 	i, _ := copystructure.Copy(r)
-	res = i.(*Resource)
-	return
+	return i.(*Resource)
 }

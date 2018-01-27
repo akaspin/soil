@@ -51,7 +51,7 @@ func (a *Agent) Run(args ...string) (err error) {
 
 	server := agent.NewServer(ctx, log, a.ServerOptions)
 	if err = server.Open(); err != nil {
-		return
+		return err
 	}
 	server.Configure()
 
@@ -75,6 +75,5 @@ LOOP:
 
 	err = server.Wait()
 	log.Info("Bye")
-
-	return
+	return err
 }

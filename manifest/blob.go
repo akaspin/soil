@@ -17,7 +17,7 @@ func (b *Blobs) Empty() ObjectParser {
 func (b *Blobs) Append(v interface{}) (err error) {
 	v1 := v.(*Blob)
 	*b = append(*b, *v1)
-	return
+	return nil
 }
 
 // Pod file
@@ -36,5 +36,5 @@ func (b *Blob) ParseAST(raw *ast.ObjectItem) (err error) {
 	b.Name = raw.Keys[0].Token.Value().(string)
 	err = hcl.DecodeObject(b, raw)
 	b.Source = Heredoc(b.Source)
-	return
+	return err
 }

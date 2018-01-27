@@ -58,10 +58,9 @@ func NewWriteUnitInstruction(unitFile allocation.UnitFile) *WriteUnitInstruction
 
 func (i *WriteUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	if err = i.unitFile.Write(); err != nil {
-		return
+		return err
 	}
-	err = conn.Reload()
-	return
+	return conn.Reload()
 }
 
 // DeleteUnitInstruction disables and removes unit from systemd
@@ -76,10 +75,9 @@ func NewDeleteUnitInstruction(unitFile allocation.UnitFile) *DeleteUnitInstructi
 func (i *DeleteUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	conn.DisableUnitFiles([]string{i.unitFile.UnitName()}, i.unitFile.IsRuntime())
 	if err = os.Remove(i.unitFile.Path); err != nil {
-		return
+		return err
 	}
-	err = conn.Reload()
-	return
+	return conn.Reload()
 }
 
 type EnableUnitInstruction struct {
@@ -92,7 +90,7 @@ func NewEnableUnitInstruction(unitFile allocation.UnitFile) *EnableUnitInstructi
 
 func (i *EnableUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	_, _, err = conn.EnableUnitFiles([]string{i.unitFile.Path}, i.unitFile.IsRuntime(), false)
-	return
+	return err
 }
 
 type DisableUnitInstruction struct {
@@ -105,7 +103,7 @@ func NewDisableUnitInstruction(unitFile allocation.UnitFile) *DisableUnitInstruc
 
 func (i *DisableUnitInstruction) Execute(conn *dbus.Conn) (err error) {
 	_, err = conn.DisableUnitFiles([]string{i.unitFile.UnitName()}, i.unitFile.IsRuntime())
-	return
+	return err
 }
 
 type CommandInstruction struct {
@@ -141,10 +139,10 @@ func (i *CommandInstruction) Execute(conn *dbus.Conn) (err error) {
 		err = fmt.Errorf("unknown systemd command %s", i.command)
 	}
 	if err != nil {
-		return
+		return err
 	}
 	<-ch
-	return
+	return nil
 }
 
 type baseBlobInstruction struct {
@@ -166,19 +164,17 @@ type WriteBlobInstruction struct {
 }
 
 func NewWriteBlobInstruction(phase int, blob *allocation.Blob) (i *WriteBlobInstruction) {
-	i = &WriteBlobInstruction{
+	return &WriteBlobInstruction{
 		&baseBlobInstruction{
 			phase:   phase,
 			explain: "write-blob",
 			blob:    blob,
 		},
 	}
-	return
 }
 
 func (i *WriteBlobInstruction) Execute(conn *dbus.Conn) (err error) {
-	err = i.baseBlobInstruction.blob.Write()
-	return
+	return i.baseBlobInstruction.blob.Write()
 }
 
 type DestroyBlobInstruction struct {
@@ -186,17 +182,15 @@ type DestroyBlobInstruction struct {
 }
 
 func NewDestroyBlobInstruction(phase int, blob *allocation.Blob) (i *DestroyBlobInstruction) {
-	i = &DestroyBlobInstruction{
+	return &DestroyBlobInstruction{
 		&baseBlobInstruction{
 			phase:   phase,
 			explain: "delete-blob",
 			blob:    blob,
 		},
 	}
-	return
 }
 
 func (i *DestroyBlobInstruction) Execute(conn *dbus.Conn) (err error) {
-	err = os.Remove(i.blob.Name)
-	return
+	return os.Remove(i.blob.Name)
 }

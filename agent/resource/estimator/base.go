@@ -61,7 +61,7 @@ func newBase(globalConfig GlobalConfig, config Config, engine baseEngine) (b *ba
 	}
 	b.ctx, b.cancel = context.WithCancel(config.Ctx)
 	go b.loop()
-	return
+	return b
 }
 
 func (b *base) Close() error {
@@ -70,10 +70,7 @@ func (b *base) Close() error {
 }
 
 func (b *base) Results() (id string, ctx context.Context, ch chan *Result) {
-	id = b.uuid
-	ctx = b.ctx
-	ch = b.resultChan
-	return
+	return b.uuid, b.ctx, b.resultChan
 }
 
 func (b *base) Create(id string, resource *allocation.Resource) (err error) {
@@ -81,7 +78,7 @@ func (b *base) Create(id string, resource *allocation.Resource) (err error) {
 	select {
 	case <-b.ctx.Done():
 		b.log.Warningf(`ignore create %s:%v: %v`, id, resource, b.ctx.Err())
-		err = b.ctx.Err()
+		return b.ctx.Err()
 	case b.opChan <- &resourceOp{
 		op:     opResourceCreate,
 		id:     id,
@@ -89,8 +86,8 @@ func (b *base) Create(id string, resource *allocation.Resource) (err error) {
 		values: stub.Values,
 	}:
 		b.log.Debugf(`accepted create: %s:%v`, id, resource)
+		return nil
 	}
-	return
 }
 
 func (b *base) Update(id string, resource *allocation.Resource) (err error) {
@@ -98,34 +95,33 @@ func (b *base) Update(id string, resource *allocation.Resource) (err error) {
 	select {
 	case <-b.ctx.Done():
 		b.log.Warningf(`ignore update %s:%v: %v`, id, resource, b.ctx.Err())
-		err = b.ctx.Err()
+		return b.ctx.Err()
 	case b.opChan <- &resourceOp{
 		op:     opResourceUpdate,
 		id:     id,
 		config: stub.Request.Config,
 	}:
 		b.log.Debugf(`accepted update: %s:%v`, id, resource)
+		return nil
 	}
-	return
 }
 
 func (b *base) Destroy(id string) (err error) {
 	select {
 	case <-b.ctx.Done():
 		b.log.Warningf(`ignore destroy %s: %v`, id, b.ctx.Err())
-		err = b.ctx.Err()
+		return b.ctx.Err()
 	case b.opChan <- &resourceOp{
 		op: opResourceDestroy,
 		id: id,
 	}:
 		b.log.Debugf(`accepted destroy: %s`, id)
+		return nil
 	}
-	return
 }
 
 func (b *base) Shutdown() {
 	close(b.shutdownChan)
-	return
 }
 
 func (b *base) send(id string, failure error, values manifest.FlatMap) {

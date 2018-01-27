@@ -65,12 +65,12 @@ func TestKV_ConsulBackend(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {
 			res, _, err := cli.KV().List("first/up", nil)
 			if err != nil {
-				return
+				return err
 			}
 			if len(res) != 2 {
-				err = fmt.Errorf(`expected two keys in first/up`)
+				return fmt.Errorf(`expected two keys in first/up`)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`reconfigure with new node id`, func(t *testing.T) {
@@ -89,24 +89,24 @@ func TestKV_ConsulBackend(t *testing.T) {
 
 			res, _, err := cli.KV().List("first/up", nil)
 			if err != nil {
-				return
+				return err
 			}
 			if len(res) != 0 {
-				err = fmt.Errorf(`expected no keys in first/up`)
+				return fmt.Errorf(`expected no keys in first/up`)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`ensure stored messages in second`, func(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {
 			res, _, err := cli.KV().List("second/up", nil)
 			if err != nil {
-				return
+				return err
 			}
 			if len(res) != 2 {
-				err = fmt.Errorf(`expected two keys in second/up`)
+				return fmt.Errorf(`expected two keys in second/up`)
 			}
-			return
+			return nil
 		})
 	})
 

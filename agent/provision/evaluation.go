@@ -29,17 +29,15 @@ func NewEvaluation(left, right *allocation.Pod) (e *Evaluation) {
 	sort.Slice(e.plan, func(i, j int) bool {
 		return e.plan[i].String() < e.plan[j].String()
 	})
-	return
+	return e
 }
 
 func (e *Evaluation) Name() (res string) {
-	res = e.name
-	return
+	return e.name
 }
 
 func (e *Evaluation) Plan() (res []Instruction) {
-	res = e.plan
-	return
+	return e.plan
 }
 
 func (e *Evaluation) String() (res string) {
@@ -55,7 +53,7 @@ func (e *Evaluation) String() (res string) {
 	} else {
 		res += "nil"
 	}
-	return
+	return res
 }
 
 func (e *Evaluation) Explain() string {
@@ -71,7 +69,7 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 		for _, b := range e.Left.Blobs {
 			res = append(res, PlanBlob(b, nil)...)
 		}
-		return
+		return res
 	}
 
 	if e.Left == nil {
@@ -82,7 +80,7 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 		for _, b := range e.Right.Blobs {
 			res = append(res, PlanBlob(nil, b)...)
 		}
-		return
+		return res
 	}
 
 	// ok. hard case
@@ -120,35 +118,32 @@ func (e *Evaluation) planPhases() (res []Instruction) {
 		}
 		res = append(res, PlanBlob(nil, b)...)
 	}
-	return
+	return res
 }
 
 func planUnit(left, right *allocation.Unit) (res []Instruction) {
 	if right == nil {
-		res = planUnitDestroy(left)
-		return
+		return planUnitDestroy(left)
 	}
 
 	if left == nil {
-		res = planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Create)
-		return
+		return planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Create)
 	}
 	if left.UnitFile.Path != right.UnitFile.Path {
 		// unit path changed: generate destroy/create
 		res = append(res, planUnitDestroy(left)...)
 		res = append(res, planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Create)...)
-		return
+		return res
 	}
 	if left.UnitFile.Source != right.UnitFile.Source {
-		res = planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Update)
-		return
+		return planUnitDeploy(right.UnitFile, right.Permanent, right.Transition.Update)
 	}
 	// just permanency check
 	if left.Permanent != right.Permanent {
 		res = append(res, planUnitPerm(right.UnitFile, right.Permanent))
 	}
 
-	return
+	return res
 }
 
 func planUnitDestroy(what *allocation.Unit) (res []Instruction) {
@@ -158,7 +153,7 @@ func planUnitDestroy(what *allocation.Unit) (res []Instruction) {
 	if what.Transition.Destroy != "" {
 		res = append(res, NewCommandInstruction(phaseDestroyCommand, what.UnitFile, what.Transition.Destroy))
 	}
-	return
+	return res
 }
 
 func planUnitDeploy(what allocation.UnitFile, permanent bool, command string) (res []Instruction) {
@@ -166,35 +161,32 @@ func planUnitDeploy(what allocation.UnitFile, permanent bool, command string) (r
 	if command != "" {
 		res = append(res, NewCommandInstruction(phaseDeployCommand, what, command))
 	}
-	return
+	return res
 }
 
 func planUnitPerm(what allocation.UnitFile, permanent bool) (res Instruction) {
 	if permanent {
-		res = NewEnableUnitInstruction(what)
-		return
+		return NewEnableUnitInstruction(what)
 	}
-	res = NewDisableUnitInstruction(what)
-	return
+	return NewDisableUnitInstruction(what)
 }
 
 func PlanBlob(left, right *allocation.Blob) (res []Instruction) {
 	if left == nil && right == nil {
-		return
+		return nil
 	}
 	if left == nil {
-		res = append(res, NewWriteBlobInstruction(phaseDeployFS, right))
-		return
+		return append(res, NewWriteBlobInstruction(phaseDeployFS, right))
 	}
 	if right == nil {
 		if !left.Leave {
 			res = append(res, NewDestroyBlobInstruction(phaseDestroyBlobs, left))
 		}
-		return
+		return res
 	}
 	// ok we have two blobs
 	if left.Source != right.Source || left.Permissions != right.Permissions {
 		res = append(res, NewWriteBlobInstruction(phaseDeployFS, right))
 	}
-	return
+	return res
 }

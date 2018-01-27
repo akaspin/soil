@@ -11,14 +11,13 @@ func IsEqual(left, right *Pod) (ok bool) {
 	if right != nil {
 		rightMark = right.Header.Mark()
 	}
-	ok = leftMark == rightMark
-	return
+	return leftMark == rightMark
 }
 
 // Returns true if right allocation is blocked by left allocation.
 func IsBlocked(left, right *Pod) (err error) {
 	if left == nil || right == nil {
-		return
+		return nil
 	}
 	leftUnits := map[string]struct{}{}
 	for _, unit := range left.Units {
@@ -27,18 +26,15 @@ func IsBlocked(left, right *Pod) (err error) {
 	for _, unit := range right.Units {
 		name := unit.UnitName()
 		if _, ok := leftUnits[name]; ok {
-			err = fmt.Errorf(`%s blocked by %s(unit:%s)`, left.Name, right.Name, right.Name)
-			return
+			return fmt.Errorf(`%s blocked by %s(unit:%s)`, left.Name, right.Name, right.Name)
 		}
 	}
-	return
+	return nil
 }
 
 func ToString(p *Pod) (res string) {
 	if p == nil {
-		res = "<nil>"
-		return
+		return "<nil>"
 	}
-	res = fmt.Sprintf("%v", p.Header)
-	return
+	return fmt.Sprintf("%v", p.Header)
 }

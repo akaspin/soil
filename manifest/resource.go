@@ -22,7 +22,7 @@ func (r *Resources) Empty() ObjectParser {
 func (r *Resources) Append(v interface{}) (err error) {
 	v1 := v.(*Resource)
 	*r = append(*r, *v1)
-	return
+	return nil
 }
 
 // Resources are referenced by ${resource.<pod>.<name>}
@@ -44,45 +44,22 @@ func (r Resource) GetID(parent ...string) string {
 
 func (r *Resource) ParseAST(raw *ast.ObjectItem) (err error) {
 	if len(raw.Keys) != 2 {
-		err = fmt.Errorf(`resource should be "provider" "name"`)
-		return
+		return fmt.Errorf(`resource should be "provider" "name"`)
 	}
 	r.Provider = raw.Keys[0].Token.Value().(string)
 	r.Name = raw.Keys[1].Token.Value().(string)
 	if err = hcl.DecodeObject(r, raw); err != nil {
-		return
+		return err
 	}
 	if err = hcl.DecodeObject(&r.Config, raw.Val); err != nil {
-		return
+		return err
 	}
 	delete(r.Config, "name")
 	delete(r.Config, "kind")
-	return
+	return nil
 }
 
 func (r Resource) Clone() (res Resource) {
 	res1, _ := copystructure.Copy(r)
-	res = res1.(Resource)
-	return
-}
-
-// Returns "resource.request.<kind>.allow": "true"
-func (r *Resource) GetRequestConstraint() (res Constraint) {
-	res = Constraint{
-		fmt.Sprintf("${%s.%s.allow}", resourceRequestPrefix, r.Provider): "true",
-	}
-	return
-}
-
-// Returns required constraint for provision with allocated resource
-func (r *Resource) GetAllocationConstraint(podName string) (res Constraint) {
-	res = Constraint{}
-	res[fmt.Sprintf("${%s.%s.%s.allocated}", openResourcePrefix, r.Provider, r.GetID(podName))] = "true"
-	return
-}
-
-// Returns `resource.<kind>.<pod>.<name>.__values_json`
-func (r *Resource) GetValuesKey(podName string) (res string) {
-	res = fmt.Sprintf("%s.%s.%s.__values", openResourcePrefix, r.Provider, r.GetID(podName))
-	return
+	return res1.(Resource)
 }

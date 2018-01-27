@@ -28,7 +28,7 @@ func NewConsulBackend(ctx context.Context, log *logx.Log, config BackendConfig) 
 	}
 	go w.connect()
 	go w.loop()
-	return
+	return w
 }
 
 func (b *ConsulBackend) Close() error {
@@ -59,7 +59,7 @@ func (b *ConsulBackend) loop() {
 	select {
 	case <-b.ctx.Done():
 		b.log.Error(`backend prematurely closed`)
-		return
+		return //
 	case <-b.readyCtx.Done():
 		b.log.Trace(`clean state reached`)
 	}
@@ -182,11 +182,11 @@ func (b *ConsulBackend) processStoreOpts(ops []StoreOp) {
 	ok, _, _, txnErr := b.conn.KV().Txn(kvOps, (&api.QueryOptions{}).WithContext(b.ctx))
 	if txnErr != nil {
 		b.fail(txnErr)
-		return
+		return //
 	}
 	if !ok {
 		b.fail(fmt.Errorf(`transaction failed`))
-		return
+		return //
 	}
 	select {
 	case <-b.ctx.Done():
@@ -203,13 +203,13 @@ func (b *ConsulBackend) connect() {
 		Address: b.config.Address,
 	}); err != nil {
 		b.fail(err)
-		return
+		return //
 	}
 
 	sessions, _, err := b.conn.Session().List((&api.QueryOptions{}).WithContext(b.ctx))
 	if err != nil {
 		b.fail(err)
-		return
+		return //
 	}
 	sessionName := NormalizeKey(b.config.Chroot, b.config.ID)
 	for _, session := range sessions {
@@ -226,7 +226,7 @@ func (b *ConsulBackend) connect() {
 		}, (&api.WriteOptions{}).WithContext(b.ctx))
 		if err != nil {
 			b.fail(err)
-			return
+			return //
 		}
 	}
 

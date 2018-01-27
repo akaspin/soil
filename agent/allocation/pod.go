@@ -3,6 +3,7 @@ package allocation
 import (
 	"bytes"
 	"fmt"
+	"github.com/akaspin/errslice"
 	"github.com/akaspin/soil/manifest"
 	"github.com/mitchellh/hashstructure"
 	"strings"
@@ -27,7 +28,6 @@ type PodSlice []*Pod
 
 func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() ([]string, error)) (err error) {
 	paths, err := discoveryFunc()
-	var failures []error
 	for _, path := range paths {
 		pod := &Pod{
 			UnitFile: UnitFile{
@@ -35,15 +35,13 @@ func (s *PodSlice) FromFilesystem(systemPaths SystemPaths, discoveryFunc func() 
 			},
 		}
 		if parseErr := pod.FromFilesystem(path); parseErr != nil {
-			failures = append(failures, parseErr)
+			err = errslice.Append(err, parseErr)
 			continue
 		}
 		*s = append(*s, pod)
 	}
-	if len(failures) > 0 {
-		err = fmt.Errorf("%v", failures)
-	}
-	return
+
+	return err
 }
 
 // Pod represents pod allocated on agent
@@ -117,72 +115,73 @@ func (p *Pod) FromManifest(m *manifest.Pod, env map[string]string) (err error) {
 		Revision: SpecRevision,
 	}
 	if err = spec.Marshal(&buf); err != nil {
-		return
+		return err
 	}
 	if err = p.Header.MarshalSpec(&buf); err != nil {
-		return
+		return err
 	}
 	for _, a := range p.Units {
 		if err = a.MarshalSpec(&buf); err != nil {
-			return
+			return err
 		}
 	}
 	for _, a := range p.Blobs {
 		if err = a.MarshalSpec(&buf); err != nil {
-			return
+			return err
 		}
 	}
 	for _, a := range p.Providers {
 		if err = a.MarshalSpec(&buf); err != nil {
-			return
+			return err
 		}
 	}
 	for _, a := range p.Resources {
 		if err = a.MarshalSpec(&buf); err != nil {
-			return
+			return err
 		}
 	}
-	if _, err = buf.WriteString(manifest.Interpolate(
-		podUnitTemplate,
-		baseEnv,
-		baseSourceEnv,
-		map[string]string{
-			"pod.units": strings.Join(unitNames, " "),
-		},
-		env)); err != nil {
-		return
+	if _, err = buf.WriteString(
+		manifest.Interpolate(
+			podUnitTemplate,
+			baseEnv,
+			baseSourceEnv,
+			map[string]string{
+				"pod.units": strings.Join(unitNames, " "),
+			},
+			env),
+	); err != nil {
+		return err
 	}
 	p.Source = buf.String()
-	return
+	return nil
 }
 
 func (p *Pod) FromFilesystem(path string) (err error) {
 	p.UnitFile.Path = path
 	if err = p.UnitFile.Read(); err != nil {
-		return
+		return err
 	}
 	var spec Spec
 	if err = spec.Unmarshal(p.UnitFile.Source); err != nil {
-		return
+		return err
 	}
 	if err = p.Header.UnmarshalSpec(p.UnitFile.Source, spec, p.SystemPaths); err != nil {
-		return
+		return err
 	}
 	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Units, p.UnitFile.Source); err != nil {
-		return
+		return err
 	}
 	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Blobs, p.UnitFile.Source); err != nil {
-		return
+		return err
 	}
 	if err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Resources, p.UnitFile.Source); err != nil {
-		return
+		return err
 	}
-	err = spec.UnmarshalAssetSlice(p.SystemPaths, &p.Providers, p.UnitFile.Source)
-	return
+	return spec.UnmarshalAssetSlice(p.SystemPaths, &p.Providers, p.UnitFile.Source)
 }
 
 func (p *Pod) GetPodUnit() (res *Unit) {
-	res = &Unit{
+	return &Unit{
 		UnitFile: p.UnitFile,
 		Transition: manifest.Transition{
 			Create:    "start",
@@ -191,5 +190,4 @@ func (p *Pod) GetPodUnit() (res *Unit) {
 			Permanent: true,
 		},
 	}
-	return
 }

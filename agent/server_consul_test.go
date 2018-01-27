@@ -80,16 +80,16 @@ func TestServer_Configure_Consul(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {
 			res, _, err := cli.KV().List("soil/nodes", nil)
 			if err != nil {
-				return
+				return err
 			}
 			if len(res) != 1 {
-				err = fmt.Errorf(`node registration not found`)
+				return fmt.Errorf(`node registration not found`)
 			}
 			var found bool
 			for _, raw := range res {
 				var node proto.NodeInfo
 				if err = json.NewDecoder(bytes.NewReader(raw.Value)).Decode(&node); err != nil {
-					return
+					return err
 				}
 				if node.ID == "node" && node.Advertise == configEnv["AgentAddress"] {
 					found = true
@@ -97,54 +97,50 @@ func TestServer_Configure_Consul(t *testing.T) {
 				}
 			}
 			if !found {
-				err = fmt.Errorf(`node not found`)
+				return fmt.Errorf(`node not found`)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`ping node`, func(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/status/ping?node=node", configEnv["AgentAddress"]))
 			if err != nil {
-				return
+				return err
 			}
 			if resp == nil {
-				err = fmt.Errorf(`no resp`)
-				return
+				return fmt.Errorf(`no resp`)
 			}
 			if resp.StatusCode != 200 {
-				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
+				return fmt.Errorf(`bad status code: %d`, resp.StatusCode)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`get nodes`, func(t *testing.T) {
 		fixture.WaitNoError(t, waitConfig, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/status/nodes", configEnv["AgentAddress"]))
 			if err != nil {
-				return
+				return err
 			}
 			if resp == nil {
-				err = fmt.Errorf(`no resp`)
-				return
+				return fmt.Errorf(`no resp`)
 			}
 			if resp.StatusCode != 200 {
-				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
-				return
+				return fmt.Errorf(`bad status code: %d`, resp.StatusCode)
 			}
 			var v proto.NodesInfo
 			if err = json.NewDecoder(resp.Body).Decode(&v); err != nil {
-				return
+				return err
 			}
 			defer resp.Body.Close()
 			if len(v) == 0 {
-				err = fmt.Errorf(`no nodes`)
-				return
+				return fmt.Errorf(`no nodes`)
 			}
 			if v[0].ID != "node" {
-				err = fmt.Errorf(`bad node id: %v`, v)
+				return fmt.Errorf(`bad node id: %v`, v)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`10 put /v1/registry`, func(t *testing.T) {
@@ -171,25 +167,23 @@ func TestServer_Configure_Consul(t *testing.T) {
 		fixture.WaitNoError10(t, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]))
 			if err != nil {
-				return
+				return err
 			}
 			if resp == nil {
-				err = fmt.Errorf(`response is nil`)
-				return
+				return fmt.Errorf(`response is nil`)
 			}
 			if resp.StatusCode != 200 {
-				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
-				return
+				return fmt.Errorf(`bad status code: %d`, resp.StatusCode)
 			}
 			var res manifest.PodSlice
 			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-				return
+				return err
 			}
 			defer resp.Body.Close()
 			if !reflect.DeepEqual(res, pods) {
-				err = fmt.Errorf(`not equal: (expect)%v != (actual)%v`, pods, res)
+				return fmt.Errorf(`not equal: (expect)%v != (actual)%v`, pods, res)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`ensure public pods`, func(t *testing.T) {
@@ -219,25 +213,23 @@ func TestServer_Configure_Consul(t *testing.T) {
 		fixture.WaitNoError10(t, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]))
 			if err != nil {
-				return
+				return err
 			}
 			if resp == nil {
-				err = fmt.Errorf(`response is nil`)
-				return
+				return fmt.Errorf(`response is nil`)
 			}
 			if resp.StatusCode != 200 {
-				err = fmt.Errorf(`bad status code: %d`, resp.StatusCode)
-				return
+				return fmt.Errorf(`bad status code: %d`, resp.StatusCode)
 			}
 			var res manifest.PodSlice
 			if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-				return
+				return err
 			}
 			defer resp.Body.Close()
 			if !reflect.DeepEqual(res, pods) {
-				err = fmt.Errorf(`not equal: (expect)%v != (actual)%v`, pods, res)
+				return fmt.Errorf(`not equal: (expect)%v != (actual)%v`, pods, res)
 			}
-			return
+			return nil
 		})
 	})
 	t.Run(`ensure 2-public is removed`, func(t *testing.T) {

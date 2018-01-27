@@ -60,16 +60,16 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 	testCommand := func(command string, state string) (err error) {
 		c := provision.NewCommandInstruction(0, unitFile, command)
 		if err = c.Execute(conn); err != nil {
-			return
+			return err
 		}
 		var res []dbus.UnitStatus
 		if res, err = conn.ListUnitsByNames([]string{unitFile.UnitName()}); err != nil {
-			return
+			return err
 		}
 		if res[0].ActiveState != state {
-			err = fmt.Errorf("%s != %s", state, res[0].ActiveState)
+			return fmt.Errorf("%s != %s", state, res[0].ActiveState)
 		}
-		return
+		return nil
 	}
 
 	t.Run("stop", func(t *testing.T) {

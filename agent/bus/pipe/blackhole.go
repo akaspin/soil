@@ -6,5 +6,5 @@ import "github.com/akaspin/soil/agent/bus"
 type Blackhole struct{}
 
 func (*Blackhole) ConsumeMessage(message bus.Message) (err error) {
-	return
+	return nil
 }

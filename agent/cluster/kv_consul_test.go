@@ -62,7 +62,7 @@ func TestKV_ConsulBackend(t *testing.T) {
 		srv.WaitLeader()
 	})
 	t.Run(`ensure stored messages in first`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, func() (err error) {
+		fixture.WaitNoErrorT(t, waitConfig, func() (err error) {
 			res, _, err := cli.KV().List("first/up", nil)
 			if err != nil {
 				return
@@ -85,7 +85,7 @@ func TestKV_ConsulBackend(t *testing.T) {
 	t.Run(`ensure no messages in first`, func(t *testing.T) {
 		wc2 := fixture.DefaultWaitConfig()
 		wc2.Retries = 2
-		fixture.WaitNoError(t, wc2, func() (err error) {
+		fixture.WaitNoErrorT(t, wc2, func() (err error) {
 
 			res, _, err := cli.KV().List("first/up", nil)
 			if err != nil {
@@ -98,7 +98,7 @@ func TestKV_ConsulBackend(t *testing.T) {
 		})
 	})
 	t.Run(`ensure stored messages in second`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, func() (err error) {
+		fixture.WaitNoErrorT(t, waitConfig, func() (err error) {
 			res, _, err := cli.KV().List("second/up", nil)
 			if err != nil {
 				return

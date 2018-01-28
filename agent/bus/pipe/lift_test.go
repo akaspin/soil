@@ -19,7 +19,7 @@ func TestCatalogPipe_ConsumeMessage_Reset(t *testing.T) {
 	t.Run(`reset empty`, func(t *testing.T) {
 
 		cat.ConsumeMessage(bus.NewMessage("", map[string]map[string]string{}))
-		fixture.WaitNoError10(t, dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, dummy.ExpectMessagesFn(
 			bus.NewMessage("cat", map[string]string{}),
 		))
 	})
@@ -35,7 +35,7 @@ func TestCatalogPipe_ConsumeMessage_Reset(t *testing.T) {
 				"two-2": "2",
 			},
 		}))
-		fixture.WaitNoError10(t, dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, dummy.ExpectMessagesFn(
 			bus.NewMessage("cat", map[string]string{}),
 			bus.NewMessage("cat", map[string]string{
 				"1.one-1": "1",
@@ -63,7 +63,7 @@ func TestCatalogPipe_ConsumeMessage(t *testing.T) {
 				"two-2": "2",
 			},
 		}))
-		fixture.WaitNoError10(t, dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, dummy.ExpectMessagesFn(
 			bus.NewMessage("cat", map[string]string{
 				"1.one-1": "1",
 				"1.one-2": "2",
@@ -74,7 +74,7 @@ func TestCatalogPipe_ConsumeMessage(t *testing.T) {
 	})
 	t.Run(`remove 1`, func(t *testing.T) {
 		cat.ConsumeMessage(bus.NewMessage("1", nil))
-		fixture.WaitNoError10(t, dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, dummy.ExpectMessagesFn(
 			bus.NewMessage("cat", map[string]string{
 				"1.one-1": "1",
 				"1.one-2": "2",
@@ -91,7 +91,7 @@ func TestCatalogPipe_ConsumeMessage(t *testing.T) {
 		cat.ConsumeMessage(bus.NewMessage("3", map[string]string{
 			"three-1": "1",
 		}))
-		fixture.WaitNoError10(t, dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, dummy.ExpectMessagesFn(
 			bus.NewMessage("cat", map[string]string{
 				"1.one-1": "1",
 				"1.one-2": "2",
@@ -113,7 +113,7 @@ func TestCatalogPipe_ConsumeMessage(t *testing.T) {
 		cat.ConsumeMessage(bus.NewMessage("2", map[string]string{
 			"two-3": "1",
 		}))
-		fixture.WaitNoError10(t, dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, dummy.ExpectMessagesFn(
 			bus.NewMessage("cat", map[string]string{
 				"1.one-1": "1",
 				"1.one-2": "2",

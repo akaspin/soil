@@ -56,7 +56,7 @@ func TestEvaluator_Open(t *testing.T) {
 		for _, pod := range pods {
 			evaluator.Allocate(pod, map[string]string{})
 		}
-		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("test-1.test", "create"),
 		))
 	})
@@ -70,7 +70,7 @@ func TestEvaluator_Open(t *testing.T) {
 			evaluator.Allocate(pod, map[string]string{})
 		}
 
-		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("test-1.test", "create"),
 			bus.NewMessage("test-1.port", "create"),
 			bus.NewMessage("test-1.test", "destroy"),
@@ -86,7 +86,7 @@ func TestEvaluator_Open(t *testing.T) {
 			evaluator.Allocate(pod, map[string]string{})
 		}
 
-		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("test-1.test", "create"),
 			bus.NewMessage("test-1.port", "create"),
 			bus.NewMessage("test-1.test", "destroy"),
@@ -95,7 +95,7 @@ func TestEvaluator_Open(t *testing.T) {
 	})
 	t.Run(`destroy`, func(t *testing.T) {
 		evaluator.Deallocate("test-1")
-		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("test-1.test", "create"),
 			bus.NewMessage("test-1.port", "create"),
 			bus.NewMessage("test-1.test", "destroy"),

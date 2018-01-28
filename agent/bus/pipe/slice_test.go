@@ -21,7 +21,7 @@ func TestSlicerPipe_ConsumeMessage(t *testing.T) {
 		"2": 2,
 	}))
 
-	fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+	fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 		bus.NewMessage("1", []int{1, 2}),
 	))
 }

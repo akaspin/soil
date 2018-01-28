@@ -1,6 +1,7 @@
 package fixture
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -12,28 +13,36 @@ func TestName(t *testing.T) (res string) {
 	return
 }
 
-// Poll while provided fn return no error
-func WaitNoError(t *testing.T, config WaitConfig, fn func() error) {
-	t.Helper()
-	var err error
+func WaitNoError10(fn func() error) (err error) {
+	return WaitNoError(DefaultWaitConfig(), fn)
+}
+
+func WaitNoError(config WaitConfig, fn func() error) (err error) {
 	var i int
 	for i = 0; i < config.Retries; i++ {
-		//println(fmt.Sprintf(`>>> retry %d of %d: %v`, i, config.Retries, err))
 		if err = fn(); err == nil {
-			break
+			return nil
 		}
-		//println(fmt.Sprintf(`<<< retry %d of %d: %v`, i, config.Retries, err))
 		time.Sleep(config.Retry)
 	}
 	if err != nil {
-		t.Errorf(`%v after %d if %d retries`, err, i, config.Retries)
+		return fmt.Errorf(`%v after %d if %d retries`, err, i, config.Retries)
+	}
+	return nil
+}
+
+// Poll while provided fn return no error
+func WaitNoErrorT(t *testing.T, config WaitConfig, fn func() error) {
+	t.Helper()
+	if err := WaitNoError(config, fn); err != nil {
+		t.Error(err)
 		t.Fail()
 	}
 }
 
-func WaitNoError10(t *testing.T, fn func() error) {
+func WaitNoErrorT10(t *testing.T, fn func() error) {
 	t.Helper()
-	WaitNoError(t, DefaultWaitConfig(), fn)
+	WaitNoErrorT(t, DefaultWaitConfig(), fn)
 }
 
 type WaitConfig struct {

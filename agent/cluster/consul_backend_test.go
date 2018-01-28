@@ -244,7 +244,7 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 		})
 	})
 	t.Run(`ensure empty messages`, func(t *testing.T) {
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
 			"1": {
 				bus.NewMessage("1", map[string]interface{}{}),
 			},
@@ -261,7 +261,7 @@ func TestConsulBackend_Subscribe(t *testing.T) {
 		assert.NoError(t, err)
 	})
 	t.Run(`ensure messages`, func(t *testing.T) {
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), cons1.ExpectMessagesByIdFn(map[string][]bus.Message{
 			"1": {
 				bus.NewMessage("1", map[string]interface{}{}),
 				bus.NewMessage("1", map[string]interface{}{

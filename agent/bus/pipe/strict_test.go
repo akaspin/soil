@@ -21,7 +21,7 @@ func TestCompositePipe_ConsumeMessage(t *testing.T) {
 		strictPipe.ConsumeMessage(bus.NewMessage("1", map[string]string{
 			"1": "1",
 		}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", nil),
 		))
 	})
@@ -29,7 +29,7 @@ func TestCompositePipe_ConsumeMessage(t *testing.T) {
 		strictPipe.ConsumeMessage(bus.NewMessage("2", map[string]string{
 			"2": "2",
 		}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", nil),
 			bus.NewMessage("test", map[string]string{
 				"1.1": "1",
@@ -39,7 +39,7 @@ func TestCompositePipe_ConsumeMessage(t *testing.T) {
 	})
 	t.Run("2 off", func(t *testing.T) {
 		strictPipe.ConsumeMessage(bus.NewMessage("2", nil))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", nil),
 			bus.NewMessage("test", map[string]string{
 				"1.1": "1",
@@ -52,7 +52,7 @@ func TestCompositePipe_ConsumeMessage(t *testing.T) {
 		strictPipe.ConsumeMessage(bus.NewMessage("2", map[string]string{
 			"2": "3",
 		}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", nil),
 			bus.NewMessage("test", map[string]string{
 				"1.1": "1",

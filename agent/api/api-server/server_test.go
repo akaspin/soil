@@ -74,7 +74,7 @@ func TestRouter_ConsumeMessage(t *testing.T) {
 
 	checkGet := func(t *testing.T, uri string, code int, expect map[string]interface{}) {
 		t.Helper()
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), func() (err error) {
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), func() (err error) {
 			resp, err := http.Get(uri)
 			if err != nil {
 				return

@@ -39,7 +39,7 @@ func TestClusterNodesProcessor_Process(t *testing.T) {
 	})
 	t.Run(`with nodes`, func(t *testing.T) {
 		processor.(bus.Consumer).ConsumeMessage(bus.NewMessage("1", nodes))
-		fixture.WaitNoError10(t, func() error {
+		fixture.WaitNoErrorT10(t, func() error {
 			res, _ := processor.Process(context.Background(), nil, nil)
 			if !reflect.DeepEqual(res, nodes) {
 				return fmt.Errorf(`not equal`)

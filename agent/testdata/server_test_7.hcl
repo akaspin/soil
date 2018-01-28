@@ -18,6 +18,8 @@ pod "1" {
 [Service]
 # ${resource.port.1.8080.value}
 ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target
 EOF
   }
 }

@@ -11,6 +11,8 @@ pod "1" {
 [Service]
 # ${meta.2}
 ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target
 EOF
   }
 }
@@ -25,6 +27,8 @@ pod "2" {
     source = <<EOF
 [Service]
 ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target
 EOF
   }
 }

@@ -18,9 +18,8 @@ import (
 )
 
 func TestEvaluator_Allocate(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod-private")
-	sd.Cleanup()
-	defer sd.Cleanup()
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
 
 	ctx := context.Background()
 
@@ -34,8 +33,6 @@ func TestEvaluator_Allocate(t *testing.T) {
 	})
 	assert.NoError(t, evaluator.Open())
 
-	waitConfig := fixture.DefaultWaitConfig()
-
 	time.Sleep(time.Millisecond * 500)
 	t.Run("0 create pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
@@ -47,19 +44,19 @@ func TestEvaluator_Allocate(t *testing.T) {
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		sd.AssertUnitHashes(t,
+		assert.NoError(t, fixture.CheckUnitHashes(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
 				"/run/systemd/system/unit-1.service":            0xbca69ea672e79d81,
 				"/run/systemd/system/pod-private-pod-1.service": 0x4f527920a0a712de,
 			},
-		)
+		))
 	})
 	t.Run("1 update pod-1", func(t *testing.T) {
 		var buffers lib.StaticBuffers
@@ -70,41 +67,42 @@ func TestEvaluator_Allocate(t *testing.T) {
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		sd.AssertUnitHashes(t,
+
+		assert.NoError(t, fixture.CheckUnitHashes(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
 				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
 				"/run/systemd/system/pod-private-pod-1.service": 0xfb16774eba9e050f,
 			},
-		)
+		))
 	})
 	t.Run("2 destroy non-existent", func(t *testing.T) {
 		evaluator.Deallocate("pod-2")
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{
 				"pod-private-pod-1.service": "active",
 				"unit-1.service":            "active",
 			}))
-		sd.AssertUnitHashes(t,
+		assert.NoError(t, fixture.CheckUnitHashes(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]uint64{
 				"/run/systemd/system/unit-1.service":            0x448529ac4d4389a0,
 				"/run/systemd/system/pod-private-pod-1.service": 0xfb16774eba9e050f,
 			},
-		)
+		))
 	})
 	t.Run("3 destroy pod-1", func(t *testing.T) {
 		evaluator.Deallocate("pod-1")
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(
 			[]string{"pod-private-pod-1.service", "unit-1.service"},
 			map[string]string{}))
 	})
@@ -114,11 +112,10 @@ func TestEvaluator_Allocate(t *testing.T) {
 }
 
 func TestEvaluator_Report(t *testing.T) {
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
 
-	sd := fixture.NewSystemd("/run/systemd/system", "pod-private")
-	sd.Cleanup()
-	sd.DeployPod("test-1", 1)
-	defer sd.Cleanup()
+	assert.NoError(t, deployPod("test-1", 1))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -135,7 +132,7 @@ func TestEvaluator_Report(t *testing.T) {
 	assert.NoError(t, evaluator.Open())
 
 	t.Run(`ensure recovered`, func(t *testing.T) {
-		fixture.WaitNoError10(t, stat.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, stat.ExpectMessagesFn(
 			bus.NewMessage("", map[string]map[string]string{
 				"test-1": {
 					"present": "true",
@@ -146,7 +143,7 @@ func TestEvaluator_Report(t *testing.T) {
 	})
 	t.Run("deallocate test-1", func(t *testing.T) {
 		evaluator.Deallocate("test-1")
-		fixture.WaitNoError10(t, stat.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, stat.ExpectMessagesFn(
 			// reset
 			bus.NewMessage("", map[string]map[string]string{
 				"test-1": {
@@ -171,7 +168,7 @@ func TestEvaluator_Report(t *testing.T) {
 			"system.pod_exec": "ExecStart=/usr/bin/sleep inf",
 		})
 
-		fixture.WaitNoError10(t, stat.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, stat.ExpectMessagesFn(
 			// reset
 			bus.NewMessage("", map[string]map[string]string{
 				"test-1": {

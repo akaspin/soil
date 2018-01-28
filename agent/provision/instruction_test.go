@@ -14,10 +14,11 @@ import (
 )
 
 func TestWantsInstruction_Execute(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
-	defer sd.Cleanup()
-	assert.NoError(t, sd.DeployPod("test-1", 3))
-	assert.NoError(t, sd.DeployPod("test-2", 3))
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
+
+	assert.NoError(t, deployPod("test-1", 3))
+	assert.NoError(t, deployPod("test-2", 3))
 
 	conn, err := dbus.New()
 	assert.NoError(t, err)
@@ -25,27 +26,28 @@ func TestWantsInstruction_Execute(t *testing.T) {
 
 	unitFile := allocation.UnitFile{
 		SystemPaths: allocation.DefaultSystemPaths(),
-		Path:        "/run/systemd/system/test-1-0.service",
+		Path:        "/run/systemd/system/unit-test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
 
 	t.Run("disable", func(t *testing.T) {
 		assert.NoError(t, provision.NewDisableUnitInstruction(unitFile).Execute(conn))
-		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/test-1-0.service")
+		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/unit-test-1-0.service")
 		assert.Error(t, err)
 	})
 	t.Run("enable", func(t *testing.T) {
 		assert.NoError(t, provision.NewEnableUnitInstruction(unitFile).Execute(conn))
-		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/test-1-0.service")
+		_, err = os.Stat("/run/systemd/system/multi-user.target.wants/unit-test-1-0.service")
 		assert.NoError(t, err)
 	})
 }
 
 func TestExecuteCommandInstruction_Execute(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
-	defer sd.Cleanup()
-	assert.NoError(t, sd.DeployPod("test-1", 3))
-	assert.NoError(t, sd.DeployPod("test-2", 3))
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
+
+	assert.NoError(t, deployPod("test-1", 3))
+	assert.NoError(t, deployPod("test-2", 3))
 
 	conn, err := dbus.New()
 	assert.NoError(t, err)
@@ -53,7 +55,7 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 
 	unitFile := allocation.UnitFile{
 		SystemPaths: allocation.DefaultSystemPaths(),
-		Path:        "/run/systemd/system/test-1-0.service",
+		Path:        "/run/systemd/system/unit-test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
 
@@ -95,10 +97,11 @@ func TestExecuteCommandInstruction_Execute(t *testing.T) {
 }
 
 func TestFSInstruction_Execute(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
-	defer sd.Cleanup()
-	assert.NoError(t, sd.DeployPod("test-1", 3))
-	assert.NoError(t, sd.DeployPod("test-2", 3))
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
+
+	assert.NoError(t, deployPod("test-1", 3))
+	assert.NoError(t, deployPod("test-2", 3))
 
 	conn, err := dbus.New()
 	assert.NoError(t, err)
@@ -106,7 +109,7 @@ func TestFSInstruction_Execute(t *testing.T) {
 
 	unitFile := allocation.UnitFile{
 		SystemPaths: allocation.DefaultSystemPaths(),
-		Path:        "/run/systemd/system/test-1-0.service",
+		Path:        "/run/systemd/system/unit-test-1-0.service",
 	}
 	assert.NoError(t, unitFile.Read())
 

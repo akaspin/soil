@@ -15,6 +15,8 @@ pod "r1" {
     source = <<EOF
 [Service]
 ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target
 EOF
   }
 }
@@ -28,6 +30,8 @@ pod "r2" {
 [Service]
 # ${resource.r2.ok.value}
 ExecStart=/usr/bin/sleep inf
+[Install]
+WantedBy=multi-user.target
 EOF
   }
 }

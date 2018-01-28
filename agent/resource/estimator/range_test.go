@@ -52,7 +52,7 @@ func TestRange(t *testing.T) {
 					},
 					Values: manifest.FlatMap{"value": "8002"},
 				})
-				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("test", map[string]string{
 						"8080.allocated": "true",
 						"8080.value":     "8002",
@@ -67,7 +67,7 @@ func TestRange(t *testing.T) {
 					},
 					Values: manifest.FlatMap{"value": "1000"},
 				})
-				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("test", map[string]string{
 						"8080.allocated": "true",
 						"8080.value":     "8002",
@@ -80,7 +80,7 @@ func TestRange(t *testing.T) {
 				r.Create("8082", &allocation.Resource{
 					Request: manifest.Resource{Provider: "port", Name: "8082"},
 				})
-				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("test", map[string]string{
 						"8080.allocated": "true",
 						"8080.value":     "8002",
@@ -96,7 +96,7 @@ func TestRange(t *testing.T) {
 					Request: manifest.Resource{Provider: "port", Name: "8083"},
 				})
 
-				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("test", map[string]string{
 						"8080.allocated": "true",
 						"8080.value":     "8002",
@@ -113,7 +113,7 @@ func TestRange(t *testing.T) {
 				r.Create("failed", &allocation.Resource{
 					Request: manifest.Resource{Provider: "port", Name: "failed"},
 				})
-				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("test", map[string]string{
 						"8080.allocated":   "true",
 						"8080.value":       "8002",
@@ -130,7 +130,7 @@ func TestRange(t *testing.T) {
 			})
 			t.Run("0 remove 8082", func(t *testing.T) {
 				r.Destroy("8082")
-				fixture.WaitNoError10(t, cons.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, cons.ExpectLastMessageFn(
 					bus.NewMessage("test", map[string]string{
 						"8080.allocated":   "true",
 						"8080.value":       "8002",

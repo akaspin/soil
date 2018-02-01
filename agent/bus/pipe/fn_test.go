@@ -31,7 +31,7 @@ func TestFnPipe_ConsumeMessage(t *testing.T) {
 		"b": "2",
 	}))
 
-	fixture.WaitNoError(t, fixture.DefaultWaitConfig(), c1.ExpectMessagesFn(
+	fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), c1.ExpectMessagesFn(
 		bus.NewMessage("test", map[string]string{"b": "2"}),
 	))
 }

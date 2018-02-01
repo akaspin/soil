@@ -2,250 +2,141 @@ package fixture
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"github.com/coreos/go-systemd/dbus"
-	"github.com/coreos/go-systemd/unit"
 	"github.com/mitchellh/hashstructure"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
-	"testing"
+	"text/template"
 )
 
-type Systemd struct {
-	Dir    string
-	Prefix string
-}
-
-func NewSystemd(dir, prefix string) *Systemd {
-	return &Systemd{
-		Dir:    dir,
-		Prefix: prefix,
+func WriteTemplate(w io.Writer, source string, env map[string]interface{}) (err error) {
+	var lines []string
+	for _, line := range strings.Split(source, "\n") {
+		lines = append(lines, strings.TrimSpace(line))
 	}
-}
-
-func (s *Systemd) DeployPod(name string, n int) (err error) {
-	isRuntime := strings.HasPrefix(s.Dir, "/run")
-	podUnitName := fmt.Sprintf("%s-%s.service", s.Prefix, name)
-
-	var unitNames []string
-	podHeaderJ := map[string]interface{}{
-		"PodMark":   123,
-		"AgentMark": 456,
-		"Namespace": "private",
-	}
-
-	var unitS []string
-	for i := 0; i < n; i++ {
-		unitName := fmt.Sprintf("%s-%d.service", name, i)
-		unitNames = append(unitNames, unitName)
-		unitHeaderJ, _ := json.Marshal(map[string]interface{}{
-			"Create":    "start",
-			"Update":    "restart",
-			"Destroy":   "stop",
-			"Permanent": true,
-		})
-		unitS = append(unitS, fmt.Sprintf("### UNIT %s %s", filepath.Join(s.Dir, unitName), string(unitHeaderJ)))
-		unitSrc := fmt.Sprintf(`[Unit]
-Description=Unit %s
-[Service]
-ExecStart=/usr/bin/sleep inf
-[Install]
-WantedBy=multi-user.target
-`, unitName)
-		if err = ioutil.WriteFile(filepath.Join(s.Dir, unitName), []byte(unitSrc), 0775); err != nil {
-			return
-		}
-	}
-
-	// POD
-	headerJSON, err := json.Marshal(podHeaderJ)
+	tpl, err := template.New("T").Parse(strings.Join(lines, "\n"))
 	if err != nil {
-		return
+		return err
 	}
-	podSrc := fmt.Sprintf(`### POD %s %s
-%s
-[Unit]
-Description=%s
-Before=%s
-[Service]
-ExecStart=/usr/bin/sleep inf
-[Install]
-WantedBy=multi-user.target
-`, name, string(headerJSON), strings.Join(unitS, "\n"), name, strings.Join(unitNames, " "))
-	if err = ioutil.WriteFile(filepath.Join(s.Dir, podUnitName), []byte(podSrc), 755); err != nil {
-		return
-	}
+	return tpl.Execute(w, env)
+}
+
+// CreateUnit creates unit with given body template
+func CreateUnit(path, source string, env map[string]interface{}) (err error) {
 	conn, err := dbus.New()
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
+
+	if err = func() error {
+		f, err1 := os.Create(path)
+		if err1 != nil {
+			return err1
+		}
+		defer f.Close()
+		if err1 = WriteTemplate(f, source, env); err != nil {
+			return err1
+		}
+		return nil
+	}(); err != nil {
+		return err
+	}
 
 	if err = conn.Reload(); err != nil {
-		return
+		return err
 	}
-	if _, _, err = conn.EnableUnitFiles(append(unitNames, podUnitName), isRuntime, false); err != nil {
-		return
-	}
-	for _, n := range append([]string{podUnitName}, unitNames...) {
-		ch := make(chan string)
-		if _, err = conn.StartUnit(n, "replace", ch); err != nil {
-			return
-		}
-		<-ch
-	}
+	ch := make(chan string, 1)
+	_, err = conn.StartUnit(filepath.Base(path), "replace", ch)
+	<-ch
 	return
 }
 
-func (s *Systemd) DestroyPod(name ...string) (err error) {
-	var unitNames []string
-	for _, n := range name {
-		unitNames = append(unitNames, fmt.Sprintf("%s-%s.service", s.Prefix, n))
+// CheckUnitBody compares file contents with template
+func CheckUnitBody(path, source string, env map[string]interface{}) (err error) {
+	var buf bytes.Buffer
+	if err = WriteTemplate(&buf, source, env); err != nil {
+		return
 	}
+	data, err := ioutil.ReadFile(path)
+	if buf.String() != string(data) {
+		return fmt.Errorf("(expect)%s != (actual)%s", buf.String(), string(data))
+	}
+	return nil
+}
+
+func CheckUnitHashes(names []string, states map[string]uint64) (err error) {
 	conn, err := dbus.New()
 	if err != nil {
-		return
-	}
-	defer conn.Close()
-	fs, err := conn.ListUnitFilesByPatterns([]string{}, unitNames)
-	if err != nil {
-		return
-	}
-	for _, f := range fs {
-		body, readErr := ioutil.ReadFile(f.Path)
-		if readErr != nil {
-			continue
-		}
-		if strings.Contains(string(body), "### POD ") {
-			if err = s.destroyPod(conn, f.Path, body); err != nil {
-				fmt.Printf("ERR can't destroy pod %s", f.Path)
-				continue
-			}
-		}
-	}
-	return
-}
-
-func (s *Systemd) Cleanup() (err error) {
-	err = s.DestroyPod("*")
-	return
-}
-
-func (s *Systemd) UnitStatesFn(names []string, states map[string]string) (fn func() error) {
-	fn = func() (err error) {
-		conn, err := dbus.New()
-		if err != nil {
-			return
-		}
-		defer conn.Close()
-		l, err := conn.ListUnitsByPatterns([]string{}, names)
-		if err != nil {
-			return
-		}
-		res := map[string]string{}
-		for _, u := range l {
-			res[u.Name] = u.ActiveState
-		}
-		if !reflect.DeepEqual(states, res) {
-			err = fmt.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
-		}
-		return
-	}
-	return
-}
-
-func (s *Systemd) AssertUnitBodies(t *testing.T, names []string, states map[string]string) {
-	t.Helper()
-	conn, err := dbus.New()
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-		return
+		return err
 	}
 	defer conn.Close()
 	l, err := conn.ListUnitFilesByPatterns([]string{}, names)
 	if err != nil {
-		t.Error(err)
-		t.Fail()
-		return
-	}
-	res := map[string]string{}
-	for _, u := range l {
-		var data []byte
-		if data, err = ioutil.ReadFile(u.Path); err != nil {
-			t.Error(err)
-			t.Fail()
-			return
-		}
-		res[u.Path] = string(data)
-	}
-	if !reflect.DeepEqual(states, res) {
-		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
-		t.Fail()
-	}
-}
-
-func (s *Systemd) AssertUnitHashes(t *testing.T, names []string, states map[string]uint64) {
-	t.Helper()
-	conn, err := dbus.New()
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-		return
-	}
-	defer conn.Close()
-	l, err := conn.ListUnitFilesByPatterns([]string{}, names)
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-		return
+		return err
 	}
 	res := map[string]uint64{}
 	for _, u := range l {
 		var data []byte
 		if data, err = ioutil.ReadFile(u.Path); err != nil {
-			t.Error(err)
-			t.Fail()
-			return
+			return err
 		}
+		//println(string(data))
 		res[u.Path], _ = hashstructure.Hash(data, nil)
 	}
 	if !reflect.DeepEqual(states, res) {
-		t.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
-		t.Fail()
+		return fmt.Errorf("not equal (expected)%#v != (actual)%#v", states, res)
+	}
+	return nil
+}
+
+// UnitStatesFn returns function to check all states for units founded
+// by patterns. Expect should be "unit.service":"systemd-state"
+func UnitStatesFn(patterns []string, expect map[string]string) func() error {
+	return func() error {
+		conn, err := dbus.New()
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+		l, err := conn.ListUnitsByPatterns([]string{}, patterns)
+		if err != nil {
+			return err
+		}
+		res := map[string]string{}
+		for _, u := range l {
+			res[u.Name] = u.ActiveState
+		}
+		if !reflect.DeepEqual(expect, res) {
+			return fmt.Errorf("not equal (expected)%#v != (actual)%#v", expect, res)
+		}
+		return nil
 	}
 }
 
-func (s *Systemd) destroyPod(conn *dbus.Conn, path string, src []byte) (err error) {
-	isRuntime := strings.HasPrefix(path, "/run")
-	unitSpec, err := unit.Deserialize(bytes.NewReader(src))
+// DestroyUnits disables and destroys units with given patterns
+func DestroyUnits(patterns ...string) (err error) {
+	conn, err := dbus.New()
 	if err != nil {
-		return
+		return err
 	}
-	unitNames := []string{filepath.Base(path)}
-	for _, prop := range unitSpec {
-		if prop.Name == "Before" && prop.Section == "Unit" {
-			unitNames = append(unitNames, strings.Split(prop.Value, " ")...)
-		}
-	}
+	defer conn.Close()
+	unitFiles, err := conn.ListUnitFilesByPatterns([]string{}, patterns)
 
-	conn.DisableUnitFiles(unitNames, isRuntime)
-	for _, u := range unitNames {
-		conn.StopUnit(u, "replace", nil)
-	}
-
-	files1, err := conn.ListUnitFilesByPatterns([]string{}, unitNames)
+	//pretty.Log(unitFiles)
 	if err != nil {
-		return
+		return err
 	}
-	for _, f := range files1 {
-		os.Remove(f.Path)
+	for _, u := range unitFiles {
+		conn.DisableUnitFiles([]string{filepath.Base(u.Path)}, strings.HasPrefix(u.Path, "/run"))
+		conn.StopUnit(filepath.Base(u.Path), "replace", nil)
+		os.Remove(u.Path)
 	}
 	conn.Reload()
-
-	return
+	return nil
 }

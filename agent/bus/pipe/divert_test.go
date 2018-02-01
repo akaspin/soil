@@ -20,13 +20,13 @@ func TestDivert_Divert(t *testing.T) {
 
 	t.Run("initial message", func(t *testing.T) {
 		divertPipe.ConsumeMessage(bus.NewMessage("test", map[string]string{"test": "1"}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]string{"test": "1"}),
 		))
 	})
 	t.Run("drain on", func(t *testing.T) {
 		divertPipe.Divert(true)
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]string{"test": "1"}),
 			bus.NewMessage("drain", map[string]string{"drain": "true"}),
 		))
@@ -34,14 +34,14 @@ func TestDivert_Divert(t *testing.T) {
 	t.Run("message in drain mode", func(t *testing.T) {
 		divertPipe.Divert(true)
 		divertPipe.ConsumeMessage(bus.NewMessage("test", map[string]string{"test": "2"}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]string{"test": "1"}),
 			bus.NewMessage("drain", map[string]string{"drain": "true"}),
 		))
 	})
 	t.Run("drain off", func(t *testing.T) {
 		divertPipe.Divert(false)
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), dummy.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]string{"test": "1"}),
 			bus.NewMessage("drain", map[string]string{"drain": "true"}),
 			bus.NewMessage("test", map[string]string{"test": "2"}),

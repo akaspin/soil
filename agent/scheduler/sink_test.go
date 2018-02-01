@@ -102,14 +102,14 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 				assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_0.hcl"))
 				assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 				sink.ConsumeRegistry(registry)
-				fixture.WaitNoError10(t, evaluator1.assertFn(nil))
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(nil))
 			})
 			t.Run("1 enable first and second", func(t *testing.T) {
 				arbiter1.ConsumeMessage(bus.NewMessage("", map[string]string{
 					"meta.first":  "true",
 					"meta.second": "true",
 				}))
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}},
@@ -121,7 +121,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 				assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_2.hcl"))
 				assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 				sink.ConsumeRegistry(registry)
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}},
@@ -129,7 +129,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 			})
 			t.Run("3 deactivate", func(t *testing.T) {
 				arbiter1.ConsumeMessage(bus.NewMessage("", nil))
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}},
@@ -141,7 +141,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 				assert.NoError(t, buffers.ReadFiles("testdata/sink_test_ConsumeRegistry_4.hcl"))
 				assert.NoError(t, registry.Unmarshal(manifest.PrivateNamespace, buffers.GetReaders()...))
 				sink.ConsumeRegistry(registry)
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
@@ -152,7 +152,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 					"meta.first":  "true",
 					"meta.second": "true",
 				}))
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
@@ -163,7 +163,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 				arbiter1.ConsumeMessage(bus.NewMessage("", map[string]string{
 					"drain": "true",
 				}))
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},
@@ -174,7 +174,7 @@ func TestSink_ConsumeRegistry(t *testing.T) {
 					"meta.first":  "true",
 					"meta.second": "true",
 				}))
-				fixture.WaitNoError10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
+				fixture.WaitNoErrorT10(t, evaluator1.assertFn(map[string][]dummyEvRecord{
 					"first":  {{alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0x1c2120eda6a20a7f, env: 0x88be0fba4063a209}},
 					"second": {{alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xadbac957c6a4641f, env: 0x88be0fba4063a209}},
 					"third":  {{alloc: false, pod: 0x0, env: 0x0}, {alloc: true, pod: 0xa0249adc0c01cf50, env: 0x88be0fba4063a209}, {alloc: false, pod: 0x0, env: 0x0}},

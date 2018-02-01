@@ -59,7 +59,7 @@ func TestRegistryPodsPutProcessor_Process(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("1", manifest.Pod{
 				Name:      "1",
 				Namespace: manifest.PublicNamespace,
@@ -99,7 +99,7 @@ func TestRegistryPodsDeleteProcessor_Process(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError10(t, cons.ExpectMessagesFn(
+		fixture.WaitNoErrorT10(t, cons.ExpectMessagesFn(
 			bus.NewMessage("1", nil),
 			bus.NewMessage("2", nil),
 		))
@@ -132,7 +132,7 @@ func TestRegistryPodsGetProcessor_Process(t *testing.T) {
 			},
 		}
 		endpoint.Processor().(bus.Consumer).ConsumeMessage(bus.NewMessage("public", v))
-		fixture.WaitNoError10(t, func() (err error) {
+		fixture.WaitNoErrorT10(t, func() (err error) {
 			var resp *http.Response
 			if resp, err = http.Get(fmt.Sprintf("%s/v1/registry", srv.URL)); err != nil {
 				return

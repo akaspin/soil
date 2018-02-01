@@ -39,9 +39,8 @@ func writeConfig(t *testing.T, source string, env map[string]interface{}) {
 }
 
 func TestServer_Configure_Local(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
-	sd.Cleanup()
-	defer sd.Cleanup()
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
 
 	os.RemoveAll("testdata/.test_server.hcl")
 	serverOptions := agent.ServerOptions{
@@ -59,17 +58,15 @@ func TestServer_Configure_Local(t *testing.T) {
 		"unit-*",
 	}
 
-	waitConfig := fixture.DefaultWaitConfig()
-
 	t.Run("0 pods should not be present", func(t *testing.T) {
 		//t.Skip()
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("1 deploy first configuration", func(t *testing.T) {
 		//t.Skip()
 		writeConfig(t, "testdata/server_test_1.hcl", nil)
 		server.Configure()
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
@@ -81,7 +78,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		writeConfig(t, "testdata/server_test_2.hcl", nil)
 		server.Configure()
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 		}))
@@ -101,7 +98,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
@@ -115,8 +112,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
-		sd.AssertUnitHashes(t, allUnitNames, map[string]uint64{})
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("6 drain off", func(t *testing.T) {
 		//t.Skip()
@@ -125,7 +121,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		_, err = http.DefaultClient.Do(req)
 		assert.NoError(t, err)
 
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"pod-private-2.service": "active",
 			"unit-1.service":        "active",
@@ -136,13 +132,13 @@ func TestServer_Configure_Local(t *testing.T) {
 		//t.Skip()
 		writeConfig(t, "testdata/server_test_8.hcl", nil)
 		server.Configure()
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{}))
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{}))
 	})
 	t.Run("9 with dependency ok", func(t *testing.T) {
 		//t.Skip()
 		writeConfig(t, "testdata/server_test_9.hcl", nil)
 		server.Configure()
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 			"pod-private-2.service": "active",
@@ -153,7 +149,7 @@ func TestServer_Configure_Local(t *testing.T) {
 		//t.Skip()
 		writeConfig(t, "testdata/server_test_10.hcl", nil)
 		server.Configure()
-		fixture.WaitNoError10(t, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-r1.service": "active",
 			"unit-0.service":         "active",
 			"pod-private-r2.service": "active",

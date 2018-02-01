@@ -83,7 +83,7 @@ func NewConsulServer(t *testing.T, configFn func(config *ConsulServerConfig)) (s
 	}
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	// wait for cli
-	WaitNoError(t, WaitConfig{
+	WaitNoErrorT(t, WaitConfig{
 		Retry:   time.Millisecond * 500,
 		Retries: 100,
 	}, func() (err error) {
@@ -238,7 +238,7 @@ func (s *ConsulServer) Clean() {
 func (s *ConsulServer) WaitAlive() {
 	s.t.Helper()
 
-	WaitNoError(s.t, WaitConfig{
+	WaitNoErrorT(s.t, WaitConfig{
 		Retry:   time.Millisecond * 500,
 		Retries: 100,
 	}, func() (err error) {
@@ -267,7 +267,7 @@ func (s *ConsulServer) WaitLeader() {
 	s.t.Helper()
 
 	var index int64
-	WaitNoError(s.t, WaitConfig{
+	WaitNoErrorT(s.t, WaitConfig{
 		Retry:   time.Millisecond * 500,
 		Retries: 100,
 	}, func() (err error) {

@@ -24,9 +24,8 @@ import (
 )
 
 func TestServer_Configure_Consul(t *testing.T) {
-	sd := fixture.NewSystemd("/run/systemd/system", "pod")
-	sd.Cleanup()
-	defer sd.Cleanup()
+	fixture.DestroyUnits("pod-*", "unit-*")
+	defer fixture.DestroyUnits("pod-*", "unit-*")
 
 	os.RemoveAll("testdata/.test_server.hcl")
 
@@ -56,7 +55,6 @@ func TestServer_Configure_Consul(t *testing.T) {
 		"ConsulAddress": consulServer.Address(),
 		"AgentAddress":  fmt.Sprintf("%s%s", fixture.GetLocalIP(t), serverOptions.Address),
 	}
-	waitConfig := fixture.DefaultWaitConfig()
 	allUnitNames := []string{
 		"pod-*",
 		"unit-*",
@@ -68,7 +66,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 	t.Run(`0 configure with consul`, func(t *testing.T) {
 		writeConfig(t, "testdata/TestServer_Configure_Consul_0.hcl", configEnv)
 		server.Configure()
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service": "active",
 			"unit-1.service":        "active",
 		}))
@@ -77,7 +75,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		consulServer.Unpause()
 	})
 	t.Run(`ensure node announced`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, func() (err error) {
+		fixture.WaitNoErrorT10(t, func() (err error) {
 			res, _, err := cli.KV().List("soil/nodes", nil)
 			if err != nil {
 				return
@@ -103,7 +101,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		})
 	})
 	t.Run(`ping node`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, func() (err error) {
+		fixture.WaitNoErrorT10(t, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/status/ping?node=node", configEnv["AgentAddress"]))
 			if err != nil {
 				return
@@ -119,7 +117,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		})
 	})
 	t.Run(`get nodes`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, func() (err error) {
+		fixture.WaitNoErrorT10(t, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/status/nodes", configEnv["AgentAddress"]))
 			if err != nil {
 				return
@@ -168,7 +166,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_10.hcl"))
 		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
 
-		fixture.WaitNoError10(t, func() (err error) {
+		fixture.WaitNoErrorT10(t, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]))
 			if err != nil {
 				return
@@ -193,7 +191,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		})
 	})
 	t.Run(`ensure public pods`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service":       "active",
 			"unit-1.service":              "active",
 			"pod-public-1-public.service": "active",
@@ -216,7 +214,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		require.NoError(t, rs.ReadFiles("testdata/TestServer_Configure_Consul_11.hcl"))
 		require.NoError(t, pods.Unmarshal(manifest.PublicNamespace, rs.GetReaders()...))
 
-		fixture.WaitNoError10(t, func() (err error) {
+		fixture.WaitNoErrorT10(t, func() (err error) {
 			resp, err := http.Get(fmt.Sprintf("http://%s/v1/registry", configEnv["AgentAddress"]))
 			if err != nil {
 				return
@@ -241,7 +239,7 @@ func TestServer_Configure_Consul(t *testing.T) {
 		})
 	})
 	t.Run(`ensure 2-public is removed`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, sd.UnitStatesFn(allUnitNames, map[string]string{
+		fixture.WaitNoErrorT10(t, fixture.UnitStatesFn(allUnitNames, map[string]string{
 			"pod-private-1.service":       "active",
 			"unit-1.service":              "active",
 			"pod-public-1-public.service": "active",

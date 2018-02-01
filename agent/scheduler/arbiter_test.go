@@ -113,15 +113,15 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 					"1": "true",
 					"2": "true",
 				}))
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(nil))
-				fixture.WaitNoError10(t, entity2.checkErrorsFn(nil))
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(nil))
+				fixture.WaitNoErrorT10(t, entity2.checkErrorsFn(nil))
 			})
 			t.Run("disable 2", func(t *testing.T) {
 				arbiter.ConsumeMessage(bus.NewMessage("", map[string]string{
 					"1": "true",
 				}))
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(nil, nil))
-				fixture.WaitNoError10(t, entity2.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(nil, nil))
+				fixture.WaitNoErrorT10(t, entity2.checkErrorsFn(
 					nil,
 					fmt.Errorf(`constraint failed: "${2}":"true" ("${2}":"true")`),
 				))
@@ -130,12 +130,12 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 				arbiter.ConsumeMessage(bus.NewMessage("", map[string]string{
 					"drain": "true",
 				}))
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(
 					nil,
 					nil,
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
 				))
-				fixture.WaitNoError10(t, entity2.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity2.checkErrorsFn(
 					nil,
 					fmt.Errorf(`constraint failed: "${2}":"true" ("${2}":"true")`),
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
@@ -146,13 +146,13 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 					"1": "true",
 					"2": "true",
 				}))
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(
 					nil,
 					nil,
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
 					nil,
 				))
-				fixture.WaitNoError10(t, entity2.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity2.checkErrorsFn(
 					nil,
 					fmt.Errorf(`constraint failed: "${2}":"true" ("${2}":"true")`),
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
@@ -161,19 +161,19 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 			})
 			t.Run("bind 3", func(t *testing.T) {
 				arbiter.Bind("3", manifest.Constraint{"${2}": "true"}, entity3.notify)
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(
 					nil,
 					nil,
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
 					nil,
 				))
-				fixture.WaitNoError10(t, entity2.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity2.checkErrorsFn(
 					nil,
 					fmt.Errorf(`constraint failed: "${2}":"true" ("${2}":"true")`),
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
 					nil,
 				))
-				fixture.WaitNoError10(t, entity3.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity3.checkErrorsFn(
 					nil,
 				))
 			})
@@ -181,7 +181,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 				arbiter.Unbind("1", func() {
 					entity1.notify(fmt.Errorf("unbind"), bus.NewMessage("", nil))
 				})
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(
 					nil,
 					nil,
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
@@ -194,7 +194,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 					"${1}":            "true",
 					"${status.pod.1}": "ok",
 				}, entity1.notify)
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(
 					nil,
 					nil,
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
@@ -210,7 +210,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 					"3":            "true",
 					"status.pod.1": "ok",
 				}))
-				fixture.WaitNoError10(t, entity1.checkErrorsFn(
+				fixture.WaitNoErrorT10(t, entity1.checkErrorsFn(
 					nil,
 					nil,
 					fmt.Errorf(`constraint failed: "true":"!= true" ("${drain}":"!= true")`),
@@ -219,7 +219,7 @@ func TestArbiter_ConsumeMessage(t *testing.T) {
 					fmt.Errorf("constraint failed: \"${status.pod.1}\":\"ok\" (\"${status.pod.1}\":\"ok\")"),
 					nil,
 				))
-				fixture.WaitNoError10(t, func() (err error) {
+				fixture.WaitNoErrorT10(t, func() (err error) {
 					expect := map[string]string{
 						"1": "true",
 						"2": "true",

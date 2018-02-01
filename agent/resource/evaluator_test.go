@@ -134,7 +134,7 @@ func TestNewEvaluator(t *testing.T) {
 			assert.NoError(t, evaluator.Open())
 
 			t.Run(`recovery`, func(t *testing.T) {
-				fixture.WaitNoError10(t, upstream.ExpectMessagesFn(
+				fixture.WaitNoErrorT10(t, upstream.ExpectMessagesFn(
 					bus.NewMessage("provider", map[string]string{
 						"res-0.0.allocated": "true",
 						"res-0.0.kind":      "blackhole",
@@ -144,7 +144,7 @@ func TestNewEvaluator(t *testing.T) {
 						"res-0.2.kind":      "blackhole",
 					}),
 				))
-				fixture.WaitNoError10(t, downstream.ExpectMessagesFn(
+				fixture.WaitNoErrorT10(t, downstream.ExpectMessagesFn(
 					bus.NewMessage("resource", map[string]string{
 						"pod-0.0.allocated": "true",
 						"pod-0.0.provider":  "res-0.0",
@@ -174,7 +174,7 @@ func TestNewEvaluator(t *testing.T) {
 						"max": 3002,
 					},
 				})
-				fixture.WaitNoError10(t, upstream.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, upstream.ExpectLastMessageFn(
 					bus.NewMessage("provider", map[string]string{
 						"res-0.0.allocated": "true",
 						"res-0.0.kind":      "range",
@@ -184,7 +184,7 @@ func TestNewEvaluator(t *testing.T) {
 						"res-0.2.kind":      "blackhole",
 					}),
 				))
-				fixture.WaitNoError10(t, downstream.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, downstream.ExpectLastMessageFn(
 					bus.NewMessage("resource", map[string]string{
 						"pod-0.0.allocated": "true",
 						"pod-0.0.value":     "3000",
@@ -207,7 +207,7 @@ func TestNewEvaluator(t *testing.T) {
 			})
 			t.Run(`deallocate pod-1`, func(t *testing.T) {
 				evaluator.Deallocate("pod-1")
-				fixture.WaitNoError10(t, downstream.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, downstream.ExpectLastMessageFn(
 					bus.NewMessage("resource", map[string]string{
 						"pod-0.0.allocated": "true",
 						"pod-0.0.value":     "3000",
@@ -230,7 +230,7 @@ func TestNewEvaluator(t *testing.T) {
 						},
 					},
 				}, map[string]string{})
-				fixture.WaitNoError10(t, downstream.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, downstream.ExpectLastMessageFn(
 					bus.NewMessage("resource", map[string]string{
 						"pod-0.0.allocated": "true",
 						"pod-0.0.value":     "3000",
@@ -249,7 +249,7 @@ func TestNewEvaluator(t *testing.T) {
 			})
 			t.Run(`destroy provider res-0.1`, func(t *testing.T) {
 				evaluator.DestroyProvider("res-0.1")
-				fixture.WaitNoError10(t, downstream.ExpectLastMessageFn(
+				fixture.WaitNoErrorT10(t, downstream.ExpectLastMessageFn(
 					bus.NewMessage("resource", map[string]string{
 						"pod-0.0.allocated": "true",
 						"pod-0.0.value":     "3000",

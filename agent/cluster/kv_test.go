@@ -57,7 +57,7 @@ func TestKV_Configure(t *testing.T) {
 			<-time.After(time.Millisecond * 200)
 			backendCfg.ReadyChan <- struct{}{}
 		}()
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("crash", map[string]interface{}{}),
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
@@ -96,7 +96,7 @@ func TestKV_Submit(t *testing.T) {
 		kv.Submit([]cluster.StoreOp{
 			{bus.NewMessage("pre-permanent", map[string]string{"1": "1"}), false},
 		})
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn())
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn())
 	})
 	t.Run(`configure 1`, func(t *testing.T) {
 		config := cluster.DefaultConfig()
@@ -109,7 +109,7 @@ func TestKV_Submit(t *testing.T) {
 		}()
 	})
 	t.Run(`ensure submit after config`, func(t *testing.T) {
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -128,7 +128,7 @@ func TestKV_Submit(t *testing.T) {
 			<-time.After(time.Millisecond * 100)
 			backendCfg.ReadyChan <- struct{}{}
 		}()
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -154,7 +154,7 @@ func TestKV_Submit(t *testing.T) {
 		config.RetryInterval = time.Millisecond * 10
 		kv.Configure(config)
 
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -179,7 +179,7 @@ func TestKV_Submit(t *testing.T) {
 			{bus.NewMessage("pre-volatile", nil), true},
 		})
 
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -210,7 +210,7 @@ func TestKV_Submit(t *testing.T) {
 			{bus.NewMessage("post-volatile", map[string]string{"1": "1"}), true},
 		})
 
-		fixture.WaitNoError(t, waitConfig, consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"pre-volatile": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -285,7 +285,7 @@ func TestKV_Subscribe(t *testing.T) {
 		msgChan <- map[string]map[string]interface{}{
 			"test/1": {"1": "1"},
 		}
-		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
@@ -293,13 +293,13 @@ func TestKV_Subscribe(t *testing.T) {
 		msgChan <- map[string]map[string]interface{}{
 			"test/1": {"1": "1"},
 		}
-		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
 	t.Run(`subscribe 2`, func(t *testing.T) {
 		kv.SubscribeKey("test/1", ctx2, cons2)
-		fixture.WaitNoError(t, waitConfig, cons2.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons2.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
@@ -309,10 +309,10 @@ func TestKV_Subscribe(t *testing.T) {
 			time.After(time.Millisecond * 100)
 			backendCfg.ReadyChan <- struct{}{}
 		}()
-		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
-		fixture.WaitNoError(t, waitConfig, cons2.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons2.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
@@ -322,11 +322,11 @@ func TestKV_Subscribe(t *testing.T) {
 		msgChan <- map[string]map[string]interface{}{
 			"test/1": {"1": "2"},
 		}
-		fixture.WaitNoError(t, waitConfig, cons1.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons1.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 			bus.NewMessage("test/1", map[string]string{"1": "2"}),
 		))
-		fixture.WaitNoError(t, waitConfig, cons2.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, waitConfig, cons2.ExpectMessagesFn(
 			bus.NewMessage("test/1", map[string]string{"1": "1"}),
 		))
 	})
@@ -363,7 +363,7 @@ func TestStore_ConsumeMessage(t *testing.T) {
 		store.ConsumeMessage(bus.NewMessage("1", map[string]string{
 			"1": "1",
 		}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"prefix/1": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
@@ -374,7 +374,7 @@ func TestStore_ConsumeMessage(t *testing.T) {
 		store.ConsumeMessage(bus.NewMessage("", map[string]string{
 			"1": "2",
 		}))
-		fixture.WaitNoError(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
+		fixture.WaitNoErrorT(t, fixture.DefaultWaitConfig(), consumer.ExpectMessagesFn(
 			bus.NewMessage("test", map[string]interface{}{
 				"prefix/1": map[string]interface{}{
 					"Data": map[string]string{"1": "1"},
